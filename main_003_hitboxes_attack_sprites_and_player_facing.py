@@ -53,7 +53,7 @@ ATTACK_LIFETIME = 12          # frames the hit-box stays active
 ATTACK_SIZE     = (30, 18)    # (w, h) of the rectangle
 EYE_OFFSET_X    = 10           # distance from body edge
 EYE_OFFSET_Y    = 12           # distance from body top
-EYE_RADIUS = 6
+EYE_RADIUS = 10
 
 # ---------------------------------------------------------------------------
 # Stage geometry helpers
