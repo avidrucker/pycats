@@ -59,7 +59,6 @@ class Player(pygame.sprite.Sprite):
             self.shield_tick = 0
             #### TODO: implement slow replenishing of shield when not in shielded state
 
-
         # timers ----------------------------------------------------
         if self.dodge_timer > 0:
             self.dodge_timer -= 1
