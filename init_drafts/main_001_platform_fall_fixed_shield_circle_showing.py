@@ -3,7 +3,7 @@
 ★ UPDATES IN THIS REVISION ★
 • Proper "drop‑through" behaviour on thin platforms:
     – When the player holds the down key while grounded on a THIN platform,
-      collisions are disabled with THAT platform until the player’s bounding
+      collisions are disabled with THAT platform until the player's bounding
       box has fully cleared below it.  This fixes the sticky “bounce back up”
       you observed.
 • Replaced the old `drop_timer` with a more robust `drop_platform` reference.
@@ -39,7 +39,7 @@ class Platform(pygame.sprite.Sprite):
     """Simple axis‑aligned rectangular platform.
 
     *thin* platforms are pass‑through from below and drop‑through via ↓.
-    *thick* platforms are solid on all sides (think Final Destination’s base).
+    *thick* platforms are solid on all sides (think Final Destination's base).
     """
 
     def __init__(self, rect: pygame.Rect, thin: bool = False):
@@ -73,7 +73,7 @@ class Player(pygame.sprite.Sprite):
         self.shield_radius = 30  # starting radius of the shield
         self.shield_tick = 0     # number of frames holding shield
 
-        # NEW: platform we’re currently ignoring for drop‑through
+        # NEW: platform we're currently ignoring for drop‑through
         self.drop_platform = None
 
     # -------------------------------------- input helpers
@@ -150,14 +150,14 @@ class Player(pygame.sprite.Sprite):
     def vertical_collision(self, platforms):
         self.on_ground = False
 
-        # If we’re currently dropping through a platform, ignore it until clear
+        # If we're currently dropping through a platform, ignore it until clear
         if self.drop_platform and self.rect.top > self.drop_platform.rect.bottom:
             self.drop_platform = None
 
         landing_platform = None
 
         for p in platforms:
-            # Skip platform we’re purposely dropping through
+            # Skip platform we're purposely dropping through
             if p is self.drop_platform:
                 continue
 
