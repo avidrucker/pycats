@@ -14,9 +14,9 @@ platforms = [
 ]
 
 P1_KEYS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-               attack=pygame.K_f, special=pygame.K_g, shield=pygame.K_r, dodge=pygame.K_e)
+               attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
 P2_KEYS = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-               attack=pygame.K_COMMA, special=pygame.K_PERIOD, shield=pygame.K_SLASH, dodge=pygame.K_SEMICOLON)
+               attack=pygame.K_SLASH, special=pygame.K_PERIOD, shield=pygame.K_COMMA)
 
 player1 = Player(WIDTH//2-100, HEIGHT-200, P1_KEYS, (255,160,64), True)
 player2 = Player(WIDTH//2+100, HEIGHT-200, P2_KEYS, (90,90,90),  False)
