@@ -1,1 +1,1 @@
-# Empty for now - lets "python -m game" work.
+# Empty for now - lets "python -m pycats.game" work.
