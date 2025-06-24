@@ -74,7 +74,7 @@ while running:
     # ---- render
     screen.fill(BG_COLOR)
     for pl in platforms: screen.blit(pl.image, pl.rect)
-    for a  in attacks:   screen.blit(a.image, a.rect)
+    
     for p  in players:
         screen.blit(p.image, p.rect)
         draw_eye(p)
@@ -83,6 +83,9 @@ while running:
             s  = pygame.Surface((r*2, r*2), pygame.SRCALPHA)
             pygame.draw.circle(s, (*SHIELD_COLOR,100), (r,r), r)
             screen.blit(s, (p.rect.centerx - r, p.rect.centery - r))
+    
+    for a  in attacks:   screen.blit(a.image, a.rect)
+    
     draw_hud(player1, "P1")
     draw_hud(player2, "P2", topright=True)
 
