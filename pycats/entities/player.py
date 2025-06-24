@@ -4,6 +4,11 @@ from ..config    import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL,
                          DODGE_FRAMES, MAX_JUMPS, WIDTH, HEIGHT)
 from .attack     import Attack
 
+#### TODO: implement grabs which are combo regular-attack + shield, and can be initiated from idle or shielding
+#### TODO: implement dodges which are combo move + shield, and can be iniated from idle or walking
+#### TODO: research and implement move/input buffering
+#### TODO: implement friction and horizontal movement acceleration
+
 class PState(Enum):
     IDLE   = auto()
     RUN    = auto()
@@ -52,6 +57,8 @@ class Player(pygame.sprite.Sprite):
         else:
             self.shielding = False
             self.shield_tick = 0
+            #### TODO: implement slow replenishing of shield when not in shielded state
+
 
         # timers ----------------------------------------------------
         if self.dodge_timer > 0:
@@ -118,6 +125,7 @@ class Player(pygame.sprite.Sprite):
         jump_pressed = (self._pressed(keys, "up")
                         and not self._pressed(prev_keys, "up")
                         and self.state != PState.SHIELD)
+        #### TODO: determine whether walking off of a ledge "consumes" a jump
         if jump_pressed and self.jumps_remaining:
             self.vel.y = JUMP_VEL
             self.jumps_remaining -= 1
