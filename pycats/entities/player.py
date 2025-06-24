@@ -104,14 +104,15 @@ class Player(pygame.sprite.Sprite):
             self.state = PState.IDLE
 
         # ------- Dodge --------------------------------------------
-        if (self._pressed(keys, "dodge") and not self._pressed(prev_keys, "dodge")
-                and self.dodge_timer == 0 and self.state != PState.SHIELD):
-            self.state = PState.DODGE
-            self.dodge_timer = DODGE_FRAMES
-            direction = 1 if self.vel.x >= 0 else -1
-            self.vel.x = direction * MOVE_SPEED * 2
-            self.vel.y = JUMP_VEL / 2
-            return
+        #### TODO: implement dodge as a combo press of directional + shield
+        # if (self._pressed(keys, "dodge") and not self._pressed(prev_keys, "dodge")
+        #         and self.dodge_timer == 0 and self.state != PState.SHIELD):
+        #     self.state = PState.DODGE
+        #     self.dodge_timer = DODGE_FRAMES
+        #     direction = 1 if self.vel.x >= 0 else -1
+        #     self.vel.x = direction * MOVE_SPEED * 2
+        #     self.vel.y = JUMP_VEL / 2
+        #     return
 
         # ------- Jump ---------------------------------------------
         jump_pressed = (self._pressed(keys, "up")
