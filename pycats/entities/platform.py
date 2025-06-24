@@ -1,3 +1,14 @@
+"""
+Purpose: Defines the Platform class.
+
+Contents:
+- Subclass of pygame.sprite.Sprite
+- Handles thin and thick platform logic
+- Visual differentiation based on thickness
+
+Use: Used to build the stage (collision platforms).
+"""
+
 import pygame
 from ..config import WIDTH, HEIGHT  # not strictly needed yet
 

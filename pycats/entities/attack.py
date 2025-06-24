@@ -1,3 +1,15 @@
+"""
+Purpose: Defines the Attack hit-box sprite.
+
+Contents:
+- Attack is a pygame.sprite.Sprite
+- Spawned when a player attacks
+- Lives for a fixed number of frames, then self-deletes
+- Positioned based on the owner player's facing direction
+
+Use: Used to detect hit interactions between players.
+"""
+
 import pygame
 from ..config import ATTACK_LIFETIME, ATTACK_SIZE
 

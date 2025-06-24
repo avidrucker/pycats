@@ -1,3 +1,15 @@
+"""
+Purpose: Defines the Player class and PState enum.
+
+Contents:
+- FSM states: IDLE, RUN, JUMP, FALL, SHIELD, DODGE
+- Movement, shield logic, dodge, jump, attack
+- Ground/platform collision detection
+- Shield visuals and eye facing direction
+
+Use: Core gameplay logic for player control and interaction.
+"""
+
 import pygame
 from enum        import Enum, auto
 from ..config    import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL,

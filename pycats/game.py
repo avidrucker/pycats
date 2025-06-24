@@ -1,3 +1,15 @@
+"""
+Purpose: Main game loop and top-level orchestration.
+
+Contents:
+- Initializes Pygame and window.
+- Creates players, platforms, and attack sprite groups.
+- Runs the game loop (handling input, updating, rendering).
+- Renders eye, shield bubble, HUD.
+
+Use: This is the entry point for running the game.
+"""
+
 import sys, pygame
 from .config    import *
 from .entities  import Platform, Player

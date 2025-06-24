@@ -1,3 +1,15 @@
+"""
+Purpose: Central configuration module.
+
+Contents:
+- Screen dimensions (WIDTH, HEIGHT), framerate (FPS)
+- Physics constants (gravity, fall speed, movement speed)
+- Player action constants (jump velocity, dodge frames, max jumps)
+- UI constants (attack hit-box size and lifetime, eye offset, shield color)
+
+Use: Shared constants across modules for tuning gameplay and UI.
+"""
+
 WIDTH, HEIGHT = 960, 540
 FPS = 60
 
