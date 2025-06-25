@@ -20,14 +20,19 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame
-from ..config import ATTACK_LIFETIME, ATTACK_SIZE
+from ..config import ATTACK_LIFETIME, ATTACK_SIZE, HIT_DAMAGE
 
 class Attack(pygame.sprite.Sprite):
-    """Simple rectangular hit-box that disappears after N frames."""
+    """Simple rectangular hit-box that disappears after N frames, and that can either vanish on hit or persist visually."""
     COLOR = (255, 60, 60, 180)   # semi-transparent red
 
-    def __init__(self, owner):
+    def __init__(self, owner, damage: int = HIT_DAMAGE, disappear_on_hit=False):
         super().__init__()
+        self.owner  = owner
+        self.damage = damage
+        self.disappear_on_hit = disappear_on_hit
+        self.active = True
+
         self.frames_left = ATTACK_LIFETIME
 
         offset_x = owner.rect.width // 2 + 4
