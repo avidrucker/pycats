@@ -16,6 +16,7 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: change private method func signatures to start with underscore, make sure to update all calls
 #### TODO: consider writing a helper that checks for fresh input vs. held input, for example for different attacks and jumping (e.g. holding down up should not repeatedly jump, and to do a double jump requires the player to press up, let go of up, and then press it again)
 #### TODO: make shielding / entering shield state only possible when on the ground
+#### TODO: fix bug where shield hp of 0 prevents knock-back, but it shouldn't
 
 #### LESS READY/LOW PRIORITY TODOS
 #### TODO: make shield bubble go down by X amount when the player is hit
@@ -30,7 +31,7 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: make shielding in the air do an air dodge instead of a shield bubble, and max sure to cap air dodges to once per jump/fall status entering (i.e. until the player lands (Q: or is hit?) they don't get another air dodge)
 #### TODO: implement ledge grabbing mechanics where the player can grab the ledge when falling off of a platform, and then can press up to get back on the platform, or down to drop down from the ledge, they get limited time invunerability while hanging on the ledge, and eventually fall off the ledge if they don't get back on the platform (Q: can thin platforms be grabbed as well as thick platforms?)
 
-import pygame
+import pygame, math
 from enum        import Enum, auto
 from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES, MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SIZE, INITIAL_LIVES, MAX_SHIELD_RADIUS, SHIELD_MAX_HP, BLAST_PADDING, RESPAWN_DELAY_FRAMES)
 from .attack     import Attack
@@ -105,6 +106,12 @@ class Player(pygame.sprite.Sprite):
             self.shield_hp = max(0, self.shield_hp - atk.damage)
         else:
             self.percent += atk.damage
+            kb = atk.base_kb + atk.kb_scale * self.percent
+            direction = 1 if atk.owner.facing_right else -1
+            radians   = math.radians(atk.angle)
+            self.vel.x = kb * math.cos(radians) * direction
+            self.vel.y = kb * -math.sin(radians)  # up = negative y
+            self.state = PState.FALL
 
     # ============================================================== update
     def update(self, keys, prev_keys, platforms, attack_group):
@@ -161,7 +168,7 @@ class Player(pygame.sprite.Sprite):
             self.vel.x = 0
             return
 
-        self.vel.x = 0
+        self.vel.x = int(self.vel.x*0.75)  # apply friction
         if self._pressed(keys, "left"):
             self.vel.x = -MOVE_SPEED
             self.facing_right = False

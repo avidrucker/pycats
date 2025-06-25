@@ -20,13 +20,13 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame
-from ..config import ATTACK_LIFETIME, ATTACK_SIZE, HIT_DAMAGE
+from ..config import ATTACK_LIFETIME, ATTACK_SIZE, HIT_DAMAGE, KNOCKBACK_BASE, KNOCKBACK_SCALE
 
 class Attack(pygame.sprite.Sprite):
     """Simple rectangular hit-box that disappears after N frames, and that can either vanish on hit or persist visually."""
     COLOR = (255, 60, 60, 180)   # semi-transparent red
 
-    def __init__(self, owner, damage: int = HIT_DAMAGE, disappear_on_hit=False):
+    def __init__(self, owner, damage: int = HIT_DAMAGE, disappear_on_hit=False, base_kb=KNOCKBACK_BASE, kb_scale=KNOCKBACK_SCALE, angle=0):
         super().__init__()
         self.owner  = owner
         self.damage = damage
@@ -42,6 +42,10 @@ class Attack(pygame.sprite.Sprite):
         self.image = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
         self.image.fill(self.COLOR)
         self.rect = self.image.get_rect(center=(x, y))
+
+        self.base_kb  = base_kb
+        self.kb_scale = kb_scale
+        self.angle    = angle
 
     # called every frame by sprite.Group.update()
     def update(self):

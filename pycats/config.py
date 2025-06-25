@@ -41,6 +41,10 @@ SHIELD_MAX_HP     = 50 # fresh shield bubble hit points
 MAX_SHIELD_RADIUS = 40
 MIN_SHIELD_RADIUS = 10
 
+# ---------------- knockback ----------------
+KNOCKBACK_SCALE = 0.5
+KNOCKBACK_BASE  = 5
+
 # ---------------- platform constants ------------
 # note: 300 is good for a 540 width map
 THICK_PLAT_WIDTH = 800
