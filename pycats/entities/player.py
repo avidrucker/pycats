@@ -32,7 +32,7 @@ Use: Core gameplay logic for player control and interaction.
 
 import pygame
 from enum        import Enum, auto
-from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES, MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SIZE, INITIAL_LIVES, MAX_SHIELD_RADIUS, BLAST_PADDING, RESPAWN_DELAY_FRAMES)
+from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES, MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SIZE, INITIAL_LIVES, MAX_SHIELD_RADIUS, SHIELD_MAX_HP, BLAST_PADDING, RESPAWN_DELAY_FRAMES)
 from .attack     import Attack
 
 class PState(Enum):
@@ -64,9 +64,13 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(midbottom=(x, y))
         self.eye_color = eye_color
 
-        # --------- gameplay identity ---------
+        # ---------- combat stats ----------
+        self.percent   = 0
+        self.shield_hp = SHIELD_MAX_HP
+        self.lives     = INITIAL_LIVES
+
+        # ---------- spawn / KO ----------        
         self.spawn_point = pygame.Vector2(x, y)
-        self.lives       = INITIAL_LIVES
         self.is_alive    = True
         self.respawn_timer = 0     # frames until next spawn
 
@@ -83,8 +87,6 @@ class Player(pygame.sprite.Sprite):
         
         # shield visual helpers
         self.shielding     = False
-        self.shield_radius = MAX_SHIELD_RADIUS
-        self.shield_tick   = 0
 
         # Platform drop-through reference
         self.drop_platform = None
@@ -122,11 +124,10 @@ class Player(pygame.sprite.Sprite):
         # ---------- shield tick ----------
         if self._pressed(keys, "shield") and self.state == PState.SHIELD:
             self.shielding = True
-            self.shield_tick += 1
+            self.shield_hp = round(max(self.shield_hp - 0.2, 0), 2)
         else:
             self.shielding = False
-            self.shield_tick = 0
-            #### TODO: implement slow replenishing of shield when not in shielded state
+            self.shield_hp = round(min(self.shield_hp + 0.2, SHIELD_MAX_HP), 2)
 
         # timers ----------------------------------------------------
         if self.dodge_timer > 0: #### Q: is `if self.dodge_timer:` better or more performant?
@@ -172,10 +173,10 @@ class Player(pygame.sprite.Sprite):
     def handle_actions(self, keys, prev_keys, attack_group):
         # ------- Shield -------------------------------------------
         if self._pressed(keys, "shield"):
+            #### TODO: prevent entering of shield state when falling/jumping, when in hurt state, etc.
             if self.state != PState.SHIELD:
                 self.state = PState.SHIELD
             self.shielding = True
-            self.shield_tick += 1
         elif self.state == PState.SHIELD:
             self.state = PState.IDLE
 
@@ -272,8 +273,10 @@ class Player(pygame.sprite.Sprite):
         #### TODO: implement spawning animation
         #### TODO: ensure that lives don't go negative
         #### TODO: implement respawn visible count-down
-        self.is_alive = True
-        self.rect.midbottom = self.spawn_point
+        self.is_alive         = True
+        self.rect.midbottom   = self.spawn_point
         self.vel.update(0, 0)
-        self.state = PState.FALL   # will auto-snap to IDLE on landing
-        self.jumps_remaining = MAX_JUMPS
+        self.state            = PState.FALL   # will auto-snap to IDLE on landing
+        self.jumps_remaining  = MAX_JUMPS
+        self.percent          = 0
+        self.shield_hp        = SHIELD_MAX_HP

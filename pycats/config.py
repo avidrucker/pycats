@@ -32,7 +32,11 @@ MAX_JUMPS      = 2     # single + double
 
 # ---------------- combat / attacks ----------------
 ATTACK_LIFETIME = 12
-ATTACK_SIZE     = (30, 18)
+
+# ---------------- shield / bubble ---------------
+SHIELD_MAX_HP     = 50 # fresh shield bubble hit points
+MAX_SHIELD_RADIUS = 40
+MIN_SHIELD_RADIUS = 10
 
 # ---------------- platform constants ------------
 # note: 300 is good for a 540 width map

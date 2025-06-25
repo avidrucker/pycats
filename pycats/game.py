@@ -59,6 +59,7 @@ def draw_hud(p: Player, label, topright=False):
     # state = p.state.name.capitalize() # TODO: restore this after implementing KO state
     state = "KO" if not p.is_alive else p.state.name.capitalize() # TODO: remove this after implementing KO state
     jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining!=1 else ''} left"
+    shield = f"Shield HP: {p.shield_hp}"
     stocks = f"Lives: {p.lives}"
     for i, txt in enumerate((label, state, jumps, stocks)):
         surf = font.render(txt, True, WHITE) # TODO: replace magic vals w/ named vars
@@ -95,7 +96,9 @@ while running:
         draw_eye(p)
         if p.shielding:
             #### TODO: convert shield radius magic nums to config constants (READY)
-            r  = max(10, p.shield_radius - int(p.shield_tick * 0.4))
+            ratio = p.shield_hp / SHIELD_MAX_HP
+            shield_radius = int(MAX_SHIELD_RADIUS * ratio)
+            r  = max(MIN_SHIELD_RADIUS, shield_radius)
             s  = pygame.Surface((r*2, r*2), pygame.SRCALPHA)
             # s = surface, r = radius, (r,r) is for centering the circle on the player character
             pygame.draw.circle(s, (*SHIELD_COLOR,100), (r,r), r) #*SHIELD_COLOR is a tuple unpacking technique to get the RGB values, 100 is the alpha value for transparency
