@@ -13,7 +13,7 @@ Use: Core gameplay logic for player control and interaction.
 import pygame
 from enum        import Enum, auto
 from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES,
-                      MAX_JUMPS, WIDTH, HEIGHT, INITIAL_LIVES,
+                      MAX_JUMPS, WIDTH, HEIGHT, INITIAL_LIVES, MAX_SHIELD_RADIUS,
                       BLAST_PADDING, RESPAWN_DELAY_FRAMES)
 from .attack     import Attack
 
@@ -83,7 +83,7 @@ class Player(pygame.sprite.Sprite):
         
         # shield visual helpers
         self.shielding     = False
-        self.shield_radius = 30
+        self.shield_radius = MAX_SHIELD_RADIUS
         self.shield_tick   = 0
 
         # Platform drop-through reference

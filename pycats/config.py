@@ -43,6 +43,7 @@ EYE_RADIUS   = 10
 
 BG_COLOR      = (60, 60, 70)
 SHIELD_COLOR  = (80, 180, 255)
+MAX_SHIELD_RADIUS = 30
 
 # ---------------- stocks / blast zone --------
 INITIAL_LIVES       = 3
