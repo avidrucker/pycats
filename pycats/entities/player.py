@@ -16,20 +16,38 @@ from ..config    import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL,
                          DODGE_FRAMES, MAX_JUMPS, WIDTH, HEIGHT)
 from .attack     import Attack
 
+#### MOST READY/PRIORITY TODOS
+#### TODO: add thorough docstrings to all methods and classes
+#### TODO: implement friction and horizontal movement acceleration
+#### TODO: change private method func signatures to start with underscore, make sure to update all calls
+#### TODO: consider writing a helper that checks for fresh input vs. held input, for example for different attacks and jumping (e.g. holding down up should not repeatedly jump, and to do a double jump requires the player to press up, let go of up, and then press it again)
+
+#### LESS READY/LOW PRIORITY TODOS
 #### TODO: implement grabs which are combo regular-attack + shield, and can be initiated from idle or shielding
 #### TODO: implement dodges which are combo move + shield, and can be iniated from idle or walking
 #### TODO: research and implement move/input buffering
-#### TODO: implement friction and horizontal movement acceleration
+#### TODO: implement fast fall by holding down which will cause the player to fall faster
 
 class PState(Enum):
     IDLE   = auto()
+    #### TODO: implement walk state
+    #### TODO: implement crouch state
+    #### TODO: implement double-tap LEFT/RIGHT keys to enter run state while on the ground
     RUN    = auto()
+    #### TODO: implement lunge attacks that start from run state
     JUMP   = auto()
     FALL   = auto()
+    #### TODO: implement squash and stretch when jumping and landing
     SHIELD = auto()
     DODGE  = auto()
+    #### TODO: implement grabbed state
+    #### TODO: implement grabbing state
+    #### TODO: implement stunned state
+    #### TODO: implement hurt state
+    #### TODO: implement KO state
 
 class Player(pygame.sprite.Sprite):
+    #### TODO: implement variable player sizes
     SIZE = (40, 60)
 
     def __init__(self, x, y, controls: dict, color, facing_right=True):
@@ -72,12 +90,12 @@ class Player(pygame.sprite.Sprite):
             #### TODO: implement slow replenishing of shield when not in shielded state
 
         # timers ----------------------------------------------------
-        if self.dodge_timer > 0:
+        if self.dodge_timer > 0: #### Q: is `if self.dodge_timer:` better or more performant?
             self.dodge_timer -= 1
             if self.dodge_timer == 0 and self.state == PState.DODGE:
                 self.state = PState.FALL if not self.on_ground else PState.IDLE
 
-        # input & state logic --------------------------------------
+        # input / movement / state logic --------------------------------------
         if self.state != PState.DODGE:
             self.handle_actions(keys, prev_keys, attack_group)
             self.handle_move(keys)
@@ -98,6 +116,7 @@ class Player(pygame.sprite.Sprite):
     def _pressed(self, snapshot, name):
         return snapshot[self.controls[name]]
 
+    # input movement
     def handle_move(self, keys):
         if self.state == PState.SHIELD:
             self.vel.x = 0
@@ -111,6 +130,7 @@ class Player(pygame.sprite.Sprite):
             self.vel.x = MOVE_SPEED
             self.facing_right = True
 
+    # actions
     def handle_actions(self, keys, prev_keys, attack_group):
         # ------- Shield -------------------------------------------
         if self._pressed(keys, "shield"):
