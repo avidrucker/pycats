@@ -31,7 +31,10 @@ DODGE_FRAMES   = 15
 MAX_JUMPS      = 2     # single + double
 
 # ---------------- combat / attacks ----------------
+#### TODO: implement variable attack lifetimes, attack sizes, attack colors, and hit damage, save each attack into a dictionary with the attack name as the key
 ATTACK_LIFETIME = 12
+ATTACK_SIZE     = (30, 18) # width, height
+HIT_DAMAGE      = 10 # default damage per hit
 
 # ---------------- shield / bubble ---------------
 SHIELD_MAX_HP     = 50 # fresh shield bubble hit points
@@ -71,7 +74,7 @@ THIN_PLAT_DICT_R = {
 }
 
 # ---------------- player size, position, color ---------------
-PLAYER_SIZE = (40, 60) # width, height
+PLAYER_SIZE     = (40, 60) # width, height
 PLAYER1_START_X = SCREEN_WIDTH//2 + THIN_PLAT_LEFT_X_OFF
 PLAYER2_START_X = SCREEN_WIDTH//2 + THIN_PLAT_RIGHT_X_OFF
 PLAYER1_START_Y = SCREEN_HEIGHT - PLAYER_SIZE[1] - GLOBAL_Y_OFF - THIN_PLAT_Y_OFF
@@ -81,19 +84,21 @@ EYE_OFFSET_X = 10
 EYE_OFFSET_Y = 12
 EYE_RADIUS   = 10
 
+# ---------------- Other UI / visuals --------------------
+HUD_PADDING = 10
+HUD_SPACING = 22
+
+# ---------------- colors -------------------
+BG_COLOR      = (60, 60, 70)
 P1_COLOR = (255, 160, 64)  # orange
 P2_COLOR = (90, 90, 90)     # gray
 BLACK    = (0, 0, 0)        # black
 WHITE    = (255, 255, 255)  # white
-
-# ---------------- Other UI / visuals --------------------
-BG_COLOR      = (60, 60, 70)
-SHIELD_COLOR  = (80, 180, 255)
-MAX_SHIELD_RADIUS = 30
-HUD_PADDING = 10
-HUD_SPACING = 22
+#### TODO: implement player color (yellow, blue, red, green) which will affect the shield color
+#### TODO: implement parameterized shield color
+SHIELD_COLOR      = (80, 180, 255)
 
 # ---------------- stocks / blast zone --------
-INITIAL_LIVES       = 3
-BLAST_PADDING       = 50                         # px beyond screen = KO
-RESPAWN_DELAY_FRAMES = int(2 * FPS)              # 2 s freeze before respawn
+INITIAL_LIVES        = 3
+BLAST_PADDING        = 50 # px beyond screen = KO
+RESPAWN_DELAY_FRAMES = int(2 * FPS) # 2 s freeze before respawn
