@@ -95,6 +95,15 @@ class Player(pygame.sprite.Sprite):
         # Facing
         self.facing_right = facing_right
 
+
+    # ----------- hit processing ------------
+    def receive_hit(self, atk):
+        """Called by combat system when this player is struck."""
+        if self.shielding and self.shield_hp > 0:
+            self.shield_hp = max(0, self.shield_hp - atk.damage)
+        else:
+            self.percent += atk.damage
+
     # ============================================================== update
     def update(self, keys, prev_keys, platforms, attack_group):
         """Master per-frame update; handles KO/respawn before usual logic."""

@@ -22,6 +22,7 @@ Use: This is the entry point for running the game.
 import sys, pygame
 from .config    import *
 from .entities  import Platform, Player
+from .systems   import combat 
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
@@ -79,6 +80,7 @@ while running:
     for p in players:
         p.update(keys, prev_keys, platforms, attacks)
     attacks.update()
+    combat.process_hits(players, attacks)
     prev_keys = keys
 
     # ---- render
