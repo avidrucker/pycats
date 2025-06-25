@@ -63,7 +63,8 @@ def draw_hud(p: Player, label, topright=False):
     jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining!=1 else ''} left"
     shield = f"Shield HP: {p.shield_hp}"
     stocks = f"Lives: {p.lives}"
-    for i, txt in enumerate((label, state, jumps, stocks)):
+    percent = f"Damage: {int(p.percent)}%"
+    for i, txt in enumerate((label, state, jumps, shield, stocks, percent)):
         surf = font.render(txt, True, WHITE) # TODO: replace magic vals w/ named vars
         pos  = (SCREEN_WIDTH - surf.get_width() - HUD_PADDING, HUD_PADDING + i*HUD_SPACING) if topright else (HUD_PADDING, HUD_PADDING + i*HUD_SPACING)
         screen.blit(surf, pos)
