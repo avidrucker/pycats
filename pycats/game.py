@@ -22,8 +22,8 @@ pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
 #### TODO: implement menu options for pause screen such as restart, quit, etc.
 
 # ------------------------------------------------ stage & sprites
-#### TODO: convert platform location/size magic nums to config constants (READY)
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
+#### TODO: implement player pushing & sliding where players can push each other left/right (if both players are pushing on each other, there is no horizontal movement, else, there is slowed movement in the pushed direction) and when one lands on the other they also get pushed apart and the bottom character gets their vertical velocity downward increased if they are both in the air and the top character gets their vertical velocity upward increased with a short hop/bounce up
 
 # Rect: (x, y, width, height)
 platforms = [
@@ -59,8 +59,8 @@ def draw_hud(p: Player, label, topright=False):
     jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining!=1 else ''} left"
     stocks = f"Lives: {p.lives}"
     for i, txt in enumerate((label, state, jumps, stocks)):
-        surf = font.render(txt, True, (255,255,255)) # TODO: replace magic vals w/ named vars
-        pos  = (SCREEN_WIDTH - surf.get_width() - 10, 10 + i*22) if topright else (10, 10 + i*22)
+        surf = font.render(txt, True, WHITE) # TODO: replace magic vals w/ named vars
+        pos  = (SCREEN_WIDTH - surf.get_width() - HUD_PADDING, HUD_PADDING + i*HUD_SPACING) if topright else (HUD_PADDING, HUD_PADDING + i*HUD_SPACING)
         screen.blit(surf, pos)
 
 # ------------------------------------------------ main loop
@@ -91,10 +91,11 @@ while running:
         screen.blit(p.image, p.rect)
         draw_eye(p)
         if p.shielding:
-            #### TODO: convert shield radius magic num to config constant (READY)
+            #### TODO: convert shield radius magic nums to config constants (READY)
             r  = max(10, p.shield_radius - int(p.shield_tick * 0.4))
             s  = pygame.Surface((r*2, r*2), pygame.SRCALPHA)
-            pygame.draw.circle(s, (*SHIELD_COLOR,100), (r,r), r) #*SHIELD_COLOR is a tuple unpacking technique to get the RGB values
+            # s = surface, r = radius, (r,r) is for centering the circle on the player character
+            pygame.draw.circle(s, (*SHIELD_COLOR,100), (r,r), r) #*SHIELD_COLOR is a tuple unpacking technique to get the RGB values, 100 is the alpha value for transparency
             # Draw shield bubble centered on player
             screen.blit(s, (p.rect.centerx - r, p.rect.centery - r))
     

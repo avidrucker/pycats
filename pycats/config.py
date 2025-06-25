@@ -87,6 +87,8 @@ WHITE    = (255, 255, 255)  # white
 BG_COLOR      = (60, 60, 70)
 SHIELD_COLOR  = (80, 180, 255)
 MAX_SHIELD_RADIUS = 30
+HUD_PADDING = 10
+HUD_SPACING = 22
 
 # ---------------- stocks / blast zone --------
 INITIAL_LIVES       = 3
