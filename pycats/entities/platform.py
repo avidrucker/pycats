@@ -15,8 +15,8 @@ from ..config import SCREEN_WIDTH, SCREEN_HEIGHT  # not strictly needed yet
 class Platform(pygame.sprite.Sprite):
     """Axis-aligned rectangular platform.
 
-    *thin*  – pass-through from below, drop-through via ↓ while grounded.
-    *thick* – solid on all sides (e.g. main stage).
+    *thin*  - allows pass-through from below, drop-through via DOWN while grounded.
+    *thick* - solid on all sides (e.g. main stage).
     """
     def __init__(self, rect: pygame.Rect, thin: bool = False):
         super().__init__()
