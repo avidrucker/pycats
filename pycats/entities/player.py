@@ -12,8 +12,9 @@ Use: Core gameplay logic for player control and interaction.
 
 import pygame
 from enum        import Enum, auto
-from ..config    import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL,
-                         DODGE_FRAMES, MAX_JUMPS, WIDTH, HEIGHT)
+from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES,
+                      MAX_JUMPS, WIDTH, HEIGHT, INITIAL_LIVES,
+                      BLAST_PADDING, RESPAWN_DELAY_FRAMES)
 from .attack     import Attack
 
 #### MOST READY/PRIORITY TODOS
@@ -56,6 +57,12 @@ class Player(pygame.sprite.Sprite):
         self.image.fill(color)
         self.rect = self.image.get_rect(midbottom=(x, y))
 
+        # ───────── gameplay identity ─────────
+        self.spawn_point = pygame.Vector2(x, y)
+        self.lives       = INITIAL_LIVES
+        self.is_alive    = True
+        self.respawn_timer = 0     # frames until next spawn
+
         # Input mapping
         self.controls = controls
 
@@ -66,6 +73,8 @@ class Player(pygame.sprite.Sprite):
         # Timers / counters
         self.dodge_timer   = 0
         self.jumps_remaining = MAX_JUMPS
+        
+        # shield visual helpers
         self.shielding     = False
         self.shield_radius = 30
         self.shield_tick   = 0
@@ -81,6 +90,20 @@ class Player(pygame.sprite.Sprite):
 
     # ============================================================== update
     def update(self, keys, prev_keys, platforms, attack_group):
+        """Master per-frame update; handles KO/respawn before usual logic."""
+        # ---------- dead / waiting to respawn ----------
+        if not self.is_alive:
+            self.respawn_timer -= 1
+            if self.respawn_timer <= 0 and self.lives > 0:
+                self._respawn()
+            return                              # nothing else while dead
+
+        # ---------- blast-zone KO check ----------
+        if self._outside_blast_zone():
+            self._ko()
+            return
+        
+        # ---------- shield tick ----------
         if self._pressed(keys, "shield") and self.state == PState.SHIELD:
             self.shielding = True
             self.shield_tick += 1
@@ -219,3 +242,29 @@ class Player(pygame.sprite.Sprite):
             self.jumps_remaining = MAX_JUMPS
             if landing.thin and self._pressed(keys, "down"):
                 self.drop_platform = landing
+
+    # ============================================================= KO / respawn
+    def _outside_blast_zone(self) -> bool:
+        return (self.rect.right  < -BLAST_PADDING or
+                self.rect.left   > WIDTH + BLAST_PADDING or
+                self.rect.bottom < -BLAST_PADDING or
+                self.rect.top    > HEIGHT + BLAST_PADDING)
+
+    def _ko(self):
+        self.lives -= 1
+        self.is_alive = False
+        self.respawn_timer = RESPAWN_DELAY_FRAMES
+        # hide sprite off-screen
+        self.rect.center = (-1000, -1000)
+        self.vel.update(0, 0)
+
+    def _respawn(self):
+        #### TODO: implement temporary respawn invulnerability
+        #### TODO: implement spawning animation
+        #### TODO: ensure that lives don't go negative
+        #### TODO: implement respawn visible count-down
+        self.is_alive = True
+        self.rect.midbottom = self.spawn_point
+        self.vel.update(0, 0)
+        self.state = PState.FALL   # will auto-snap to IDLE on landing
+        self.jumps_remaining = MAX_JUMPS

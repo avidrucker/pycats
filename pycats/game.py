@@ -13,9 +13,9 @@ Use: This is the entry point for running the game.
 import sys, pygame
 from .config    import *
 from .entities  import Platform, Player
-from .entities  import Attack   # only for draw order
 
 pygame.init()
+pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
 
 #### TODO: implement game pause w/ P key press (READY)
 #### TODO: implement win screen when one player runs out of stocks
@@ -54,10 +54,12 @@ def draw_eye(p: Player):
 
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
 def draw_hud(p: Player, label, topright=False):
-    state = p.state.name.capitalize()
+    # state = p.state.name.capitalize() # TODO: restore this after implementing KO state
+    state = "KO" if not p.is_alive else p.state.name.capitalize() # TODO: remove this after implementing KO state
     jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining!=1 else ''} left"
-    for i, txt in enumerate((label, state, jumps)):
-        surf = font.render(txt, True, (255,255,255))
+    stocks = f"Lives: {p.lives}"
+    for i, txt in enumerate((label, state, jumps, stocks)):
+        surf = font.render(txt, True, (255,255,255)) # TODO: replace magic vals w/ named vars
         pos  = (WIDTH - surf.get_width() - 10, 10 + i*22) if topright else (10, 10 + i*22)
         screen.blit(surf, pos)
 
@@ -82,7 +84,10 @@ while running:
     screen.fill(BG_COLOR)
     for pl in platforms: screen.blit(pl.image, pl.rect)
     
+    # Draw alive players
     for p  in players:
+        if not p.is_alive: # TODO: replace this w/ KO state check after implementing KO state
+            continue
         screen.blit(p.image, p.rect)
         draw_eye(p)
         if p.shielding:

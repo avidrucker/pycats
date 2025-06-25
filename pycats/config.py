@@ -43,3 +43,10 @@ EYE_RADIUS   = 10
 
 BG_COLOR      = (60, 60, 70)
 SHIELD_COLOR  = (80, 180, 255)
+
+# ---------------- stocks / blast zone --------
+INITIAL_LIVES       = 3
+BLAST_PADDING       = 50                         # px beyond screen = KO
+RESPAWN_DELAY_FRAMES = int(2 * FPS)              # 2 s freeze before respawn
+
+#### TODO: implement spawn points for each player with corresponding constants
