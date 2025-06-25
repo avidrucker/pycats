@@ -10,7 +10,7 @@ Use: Used to build the stage (collision platforms).
 """
 
 import pygame
-from ..config import WIDTH, HEIGHT  # not strictly needed yet
+from ..config import SCREEN_WIDTH, SCREEN_HEIGHT  # not strictly needed yet
 
 class Platform(pygame.sprite.Sprite):
     """Axis-aligned rectangular platform.

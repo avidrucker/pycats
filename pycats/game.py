@@ -25,9 +25,9 @@ pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
 #### TODO: convert platform location/size magic nums to config constants (READY)
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
 platforms = [
-    Platform(pygame.Rect(WIDTH//2-150, HEIGHT-40, 300, 40), thin=False),
-    Platform(pygame.Rect(WIDTH//2-250, HEIGHT-130, 120, 20), thin=True),
-    Platform(pygame.Rect(WIDTH//2+130, HEIGHT-130, 120, 20), thin=True),
+    Platform(pygame.Rect(SCREEN_WIDTH//2-150, SCREEN_HEIGHT-40, 300, 40), thin=False),
+    Platform(pygame.Rect(SCREEN_WIDTH//2-250, SCREEN_HEIGHT-130, 120, 20), thin=True),
+    Platform(pygame.Rect(SCREEN_WIDTH//2+130, SCREEN_HEIGHT-130, 120, 20), thin=True),
 ]
 
 P1_KEYS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
@@ -36,13 +36,13 @@ P2_KEYS = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=py
                attack=pygame.K_SLASH, special=pygame.K_PERIOD, shield=pygame.K_COMMA)
 
 #### TODO: convert player start positions to config constants (READY)
-player1 = Player(WIDTH//2-100, HEIGHT-200, P1_KEYS, (255,160,64), True)
-player2 = Player(WIDTH//2+100, HEIGHT-200, P2_KEYS, (90,90,90),  False)
+player1 = Player(SCREEN_WIDTH//2-100, SCREEN_HEIGHT-200, P1_KEYS, (255,160,64), True)
+player2 = Player(SCREEN_WIDTH//2+100, SCREEN_HEIGHT-200, P2_KEYS, (90,90,90),  False)
 players  = pygame.sprite.Group(player1, player2)
 attacks  = pygame.sprite.Group()
 
 # ------------------------------------------------ pygame set-up
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock  = pygame.time.Clock()
 font   = pygame.font.SysFont(None, 24)
 
@@ -60,7 +60,7 @@ def draw_hud(p: Player, label, topright=False):
     stocks = f"Lives: {p.lives}"
     for i, txt in enumerate((label, state, jumps, stocks)):
         surf = font.render(txt, True, (255,255,255)) # TODO: replace magic vals w/ named vars
-        pos  = (WIDTH - surf.get_width() - 10, 10 + i*22) if topright else (10, 10 + i*22)
+        pos  = (SCREEN_WIDTH - surf.get_width() - 10, 10 + i*22) if topright else (10, 10 + i*22)
         screen.blit(surf, pos)
 
 # ------------------------------------------------ main loop

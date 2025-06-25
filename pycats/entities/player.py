@@ -13,7 +13,7 @@ Use: Core gameplay logic for player control and interaction.
 import pygame
 from enum        import Enum, auto
 from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES,
-                      MAX_JUMPS, WIDTH, HEIGHT, INITIAL_LIVES, MAX_SHIELD_RADIUS,
+                      MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, INITIAL_LIVES, MAX_SHIELD_RADIUS,
                       BLAST_PADDING, RESPAWN_DELAY_FRAMES)
 from .attack     import Attack
 
@@ -246,9 +246,9 @@ class Player(pygame.sprite.Sprite):
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
         return (self.rect.right  < -BLAST_PADDING or
-                self.rect.left   > WIDTH + BLAST_PADDING or
+                self.rect.left   > SCREEN_WIDTH + BLAST_PADDING or
                 self.rect.bottom < -BLAST_PADDING or
-                self.rect.top    > HEIGHT + BLAST_PADDING)
+                self.rect.top    > SCREEN_HEIGHT + BLAST_PADDING)
 
     def _ko(self):
         self.lives -= 1
