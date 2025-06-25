@@ -13,6 +13,7 @@ Use: This is the entry point for running the game.
 #### TODO: implement game pause w/ P key press (READY)
 #### TODO: implement win screen when one player runs out of stocks
 #### TODO: implement menu options for pause screen such as restart, quit, etc.
+#### TODO: increase player jump height, and increase thin platforms height
 
 # ------------------------------------------------ stage & sprites
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
