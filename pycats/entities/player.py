@@ -22,12 +22,19 @@ from .attack     import Attack
 #### TODO: implement friction and horizontal movement acceleration
 #### TODO: change private method func signatures to start with underscore, make sure to update all calls
 #### TODO: consider writing a helper that checks for fresh input vs. held input, for example for different attacks and jumping (e.g. holding down up should not repeatedly jump, and to do a double jump requires the player to press up, let go of up, and then press it again)
+#### TODO: make shielding / entering shield state only possible when on the ground
 
 #### LESS READY/LOW PRIORITY TODOS
+#### TODO: make shield bubble go down by X amount when the player is hit
+#### TODO: make player invunerable to attacks unless they break the shield bubble
+#### TODO: make player shielding ineffective against attacks when shield bubble reaches smallest size
+#### TODO: make player shielding ineffective against grabs
 #### TODO: implement grabs which are combo regular-attack + shield, and can be initiated from idle or shielding
 #### TODO: implement dodges which are combo move + shield, and can be iniated from idle or walking
 #### TODO: research and implement move/input buffering
 #### TODO: implement fast fall by holding down which will cause the player to fall faster
+#### TODO: make shield bubble shrink grow back over time when not shielding
+#### TODO: make shielding in the air do an air dodge instead of a shield bubble, and max sure to cap air dodges to once per jump/fall status entering (i.e. until the player lands (Q: or is hit?) they don't get another air dodge)
 
 class PState(Enum):
     IDLE   = auto()
