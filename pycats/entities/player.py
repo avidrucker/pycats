@@ -27,12 +27,13 @@ from .attack     import Attack
 #### TODO: make player invunerable to attacks unless they break the shield bubble
 #### TODO: make player shielding ineffective against attacks when shield bubble reaches smallest size
 #### TODO: make player shielding ineffective against grabs
-#### TODO: implement grabs which are combo regular-attack + shield, and can be initiated from idle or shielding
+#### TODO: implement grabs which are combo regular-attack + shield, and can be initiated from idle or shielding, and can be used against an opponent who is in idle, walking, running, or shielding state, and the grab will put the opponent into a grabbed state where they cannot move or attack, and the grabber can then throw them off the stage or do a follow-up attack
 #### TODO: implement dodges which are combo move + shield, and can be iniated from idle or walking
 #### TODO: research and implement move/input buffering
 #### TODO: implement fast fall by holding down which will cause the player to fall faster
 #### TODO: make shield bubble shrink grow back over time when not shielding
 #### TODO: make shielding in the air do an air dodge instead of a shield bubble, and max sure to cap air dodges to once per jump/fall status entering (i.e. until the player lands (Q: or is hit?) they don't get another air dodge)
+#### TODO: implement ledge grabbing mechanics where the player can grab the ledge when falling off of a platform, and then can press up to get back on the platform, or down to drop down from the ledge, they get limited time invunerability while hanging on the ledge, and eventually fall off the ledge if they don't get back on the platform (Q: can thin platforms be grabbed as well as thick platforms?)
 
 class PState(Enum):
     IDLE   = auto()

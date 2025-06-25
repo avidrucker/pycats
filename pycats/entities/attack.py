@@ -13,6 +13,14 @@ Use: Used to detect hit interactions between players.
 import pygame
 from ..config import ATTACK_LIFETIME, ATTACK_SIZE
 
+#### TODO: implement grabbing, which puts attacker into grabbing and, if successful, puts the defender into grabbed state, the duration is dependent on defender damage percent (low damager percent == shorter grab durations)
+#### TODO: implement parameterized attack colors, to distinguish whom is attacking
+#### TODO: implement attack hit-boxes that are larger for heavy characters and smaller for light characters
+#### TODO: implement ranged attacks such as fireballs & lazer blasts
+#### TODO: implement throw attacks that can throw the opponent off the stage, with a directional key (forward, backward, up, down), and throw attacks can only be executed while the attacker is in grabbing state and the opponent is in grabbed state
+#### TODO: implement grab attacks ("pummeling") that can deal minor damage to a grabbed opponent
+#### TODO: implement grab escape mechanics where the grabbed player can mash their inputs to escape sooner
+
 class Attack(pygame.sprite.Sprite):
     """Simple rectangular hit-box that disappears after N frames."""
     COLOR = (255, 60, 60, 180)   # semi-transparent red

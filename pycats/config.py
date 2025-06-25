@@ -10,10 +10,9 @@ Contents:
 Use: Shared constants across modules for tuning gameplay and UI.
 """
 
-#### TODO: create global constants to move entire map up/down/left/right
 #### TODO: implement unique attacks for each player
 #### TODO: implement attack cooldowns
-#### TODO: implement attack blocking
+#### TODO: implement attack blocking via having enough shield strength left
 #### TODO: implement attack dodging
 #### TODO: implement character selection that offers heavy, medium, & light-weight choices where heavy characters do more damage but are slower, and lighter characters are faster but deal less damage
 #### TODO: implement knockback based on attack strength and player weight
@@ -94,5 +93,3 @@ HUD_SPACING = 22
 INITIAL_LIVES       = 3
 BLAST_PADDING       = 50                         # px beyond screen = KO
 RESPAWN_DELAY_FRAMES = int(2 * FPS)              # 2 s freeze before respawn
-
-#### TODO: implement spawn points for each player with corresponding constants
