@@ -24,9 +24,9 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 960, 540
 FPS = 60
 
 GRAVITY        = 0.5
-MAX_FALL_SPEED = 12
+MAX_FALL_SPEED = 13
 MOVE_SPEED     = 5
-JUMP_VEL       = -10
+JUMP_VEL       = -13
 DODGE_FRAMES   = 15
 MAX_JUMPS      = 2     # single + double
 
