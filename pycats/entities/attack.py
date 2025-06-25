@@ -17,6 +17,7 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement throw attacks that can throw the opponent off the stage, with a directional key (forward, backward, up, down), and throw attacks can only be executed while the attacker is in grabbing state and the opponent is in grabbed state
 #### TODO: implement grab attacks ("pummeling") that can deal minor damage to a grabbed opponent
 #### TODO: implement grab escape mechanics where the grabbed player can mash their inputs to escape sooner
+#### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame
 from ..config import ATTACK_LIFETIME, ATTACK_SIZE

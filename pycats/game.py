@@ -14,6 +14,7 @@ Use: This is the entry point for running the game.
 #### TODO: implement win screen when one player runs out of stocks
 #### TODO: implement menu options for pause screen such as restart, quit, etc.
 #### TODO: increase player jump height, and increase thin platforms height
+#### TODO: implement hurt state where, if a player is hit with an attack and they recieve damage, that they flash red, and cannot attack or jump for a short duration (e.g. 0.5 seconds), and then return to normal state
 
 # ------------------------------------------------ stage & sprites
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
@@ -54,6 +55,7 @@ def draw_eye(p: Player):
     y = p.rect.top + EYE_OFFSET_Y
     pygame.draw.circle(screen, p.eye_color, (x,y), EYE_RADIUS)
 
+#### TODO: split off damage % and stock lives rendering so that they are rendering last and at the bottom left and right corners of the screen
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
 def draw_hud(p: Player, label, topright=False):
     # state = p.state.name.capitalize() # TODO: restore this after implementing KO state

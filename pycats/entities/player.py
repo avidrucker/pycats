@@ -204,7 +204,10 @@ class Player(pygame.sprite.Sprite):
         # ------- Attack -------------------------------------------
         atk_pressed = self._pressed(keys, "attack") and not self._pressed(prev_keys, "attack")
         if atk_pressed and self.state not in (PState.SHIELD, PState.DODGE):
-            attack_group.add(Attack(self))
+        #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
+
+        # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs
+        # attack_group.add(Attack(self, disappear_on_hit=True))
 
     # ============================================================== physics
     def apply_gravity(self):
