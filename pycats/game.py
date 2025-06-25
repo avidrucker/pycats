@@ -10,13 +10,6 @@ Contents:
 Use: This is the entry point for running the game.
 """
 
-import sys, pygame
-from .config    import *
-from .entities  import Platform, Player
-
-pygame.init()
-pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
-
 #### TODO: implement game pause w/ P key press (READY)
 #### TODO: implement win screen when one player runs out of stocks
 #### TODO: implement menu options for pause screen such as restart, quit, etc.
@@ -24,6 +17,13 @@ pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
 # ------------------------------------------------ stage & sprites
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
 #### TODO: implement player pushing & sliding where players can push each other left/right (if both players are pushing on each other, there is no horizontal movement, else, there is slowed movement in the pushed direction) and when one lands on the other they also get pushed apart and the bottom character gets their vertical velocity downward increased if they are both in the air and the top character gets their vertical velocity upward increased with a short hop/bounce up
+
+import sys, pygame
+from .config    import *
+from .entities  import Platform, Player
+
+pygame.init()
+pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
 
 # Rect: (x, y, width, height)
 platforms = [

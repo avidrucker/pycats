@@ -10,11 +10,6 @@ Contents:
 Use: Core gameplay logic for player control and interaction.
 """
 
-import pygame
-from enum        import Enum, auto
-from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES, MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SIZE, INITIAL_LIVES, MAX_SHIELD_RADIUS, BLAST_PADDING, RESPAWN_DELAY_FRAMES)
-from .attack     import Attack
-
 #### MOST READY/PRIORITY TODOS
 #### TODO: add thorough docstrings to all methods and classes
 #### TODO: implement friction and horizontal movement acceleration
@@ -34,6 +29,11 @@ from .attack     import Attack
 #### TODO: make shield bubble shrink grow back over time when not shielding
 #### TODO: make shielding in the air do an air dodge instead of a shield bubble, and max sure to cap air dodges to once per jump/fall status entering (i.e. until the player lands (Q: or is hit?) they don't get another air dodge)
 #### TODO: implement ledge grabbing mechanics where the player can grab the ledge when falling off of a platform, and then can press up to get back on the platform, or down to drop down from the ledge, they get limited time invunerability while hanging on the ledge, and eventually fall off the ledge if they don't get back on the platform (Q: can thin platforms be grabbed as well as thick platforms?)
+
+import pygame
+from enum        import Enum, auto
+from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES, MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SIZE, INITIAL_LIVES, MAX_SHIELD_RADIUS, BLAST_PADDING, RESPAWN_DELAY_FRAMES)
+from .attack     import Attack
 
 class PState(Enum):
     IDLE   = auto()
