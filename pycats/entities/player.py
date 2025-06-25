@@ -168,6 +168,8 @@ class Player(pygame.sprite.Sprite):
             self.vel.x = 0
             return
 
+        #### TODO: implement per character friction
+        #### TODO: implement platform type friction modifier
         self.vel.x = int(self.vel.x*0.75)  # apply friction
         if self._pressed(keys, "left"):
             self.vel.x = -MOVE_SPEED
