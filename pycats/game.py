@@ -15,6 +15,7 @@ Use: This is the entry point for running the game.
 #### TODO: implement menu options for pause screen such as restart, quit, etc.
 #### TODO: increase player jump height, and increase thin platforms height
 #### TODO: implement hurt state where, if a player is hit with an attack and they recieve damage, that they flash red, and cannot attack or jump for a short duration (e.g. 0.5 seconds), and then return to normal state
+#### TODO: implement coyote time where players can, for a single frame after leaving the ledge, still have 2 jumps
 
 # ------------------------------------------------ stage & sprites
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
