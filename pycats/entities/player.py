@@ -125,7 +125,6 @@ class Player(pygame.sprite.Sprite):
 
         # physics ---------------------------------------------------
         self.apply_gravity()
-        self.horizontal_bounds()
         self.vertical_collision(platforms, keys)
 
         # automatic state transitions ------------------------------
@@ -196,12 +195,6 @@ class Player(pygame.sprite.Sprite):
             self.vel.y += GRAVITY
         self.rect.x += self.vel.x
         self.rect.y += self.vel.y
-
-    def horizontal_bounds(self):
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if self.rect.right > WIDTH:
-            self.rect.right = WIDTH
 
     def vertical_collision(self, platforms, keys):
         self.on_ground = False
