@@ -12,9 +12,7 @@ Use: Core gameplay logic for player control and interaction.
 
 import pygame
 from enum        import Enum, auto
-from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES,
-                      MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, INITIAL_LIVES, MAX_SHIELD_RADIUS,
-                      BLAST_PADDING, RESPAWN_DELAY_FRAMES)
+from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES, MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SIZE, INITIAL_LIVES, MAX_SHIELD_RADIUS, BLAST_PADDING, RESPAWN_DELAY_FRAMES)
 from .attack     import Attack
 
 #### MOST READY/PRIORITY TODOS
@@ -56,15 +54,16 @@ class PState(Enum):
 
 class Player(pygame.sprite.Sprite):
     #### TODO: implement variable player sizes
-    SIZE = (40, 60)
+    SIZE = PLAYER_SIZE
 
-    def __init__(self, x, y, controls: dict, color, facing_right=True):
+    def __init__(self, x, y, controls: dict, color, eye_color, facing_right=True):
         super().__init__()
         self.image = pygame.Surface(self.SIZE)
         self.image.fill(color)
         self.rect = self.image.get_rect(midbottom=(x, y))
+        self.eye_color = eye_color
 
-        # ───────── gameplay identity ─────────
+        # --------- gameplay identity ---------
         self.spawn_point = pygame.Vector2(x, y)
         self.lives       = INITIAL_LIVES
         self.is_alive    = True

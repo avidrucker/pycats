@@ -24,20 +24,20 @@ pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
 # ------------------------------------------------ stage & sprites
 #### TODO: convert platform location/size magic nums to config constants (READY)
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
+
+# Rect: (x, y, width, height)
 platforms = [
-    Platform(pygame.Rect(SCREEN_WIDTH//2-150, SCREEN_HEIGHT-40, 300, 40), thin=False),
-    Platform(pygame.Rect(SCREEN_WIDTH//2-250, SCREEN_HEIGHT-130, 120, 20), thin=True),
-    Platform(pygame.Rect(SCREEN_WIDTH//2+130, SCREEN_HEIGHT-130, 120, 20), thin=True),
+    Platform(pygame.Rect(THICK_PLAT_DICT["x"], THICK_PLAT_DICT["y"], THICK_PLAT_DICT["w"], THICK_PLAT_DICT["h"]), thin=False),
+    Platform(pygame.Rect(THIN_PLAT_DICT_L["x"], THIN_PLAT_DICT_L["y"], THIN_PLAT_DICT_L["w"], THIN_PLAT_DICT_L["h"]), thin=True),
+    Platform(pygame.Rect(THIN_PLAT_DICT_R["x"], THIN_PLAT_DICT_R["y"], THIN_PLAT_DICT_R["w"], THIN_PLAT_DICT_R["h"]), thin=True),
 ]
 
-P1_KEYS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-               attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-P2_KEYS = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-               attack=pygame.K_SLASH, special=pygame.K_PERIOD, shield=pygame.K_COMMA)
+P1_KEYS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
+P2_KEYS = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN, attack=pygame.K_SLASH, special=pygame.K_PERIOD, shield=pygame.K_COMMA)
 
 #### TODO: convert player start positions to config constants (READY)
-player1 = Player(SCREEN_WIDTH//2-100, SCREEN_HEIGHT-200, P1_KEYS, (255,160,64), True)
-player2 = Player(SCREEN_WIDTH//2+100, SCREEN_HEIGHT-200, P2_KEYS, (90,90,90),  False)
+player1 = Player(PLAYER1_START_X, PLAYER1_START_Y, P1_KEYS, P1_COLOR, eye_color=BLACK, facing_right=True)
+player2 = Player(PLAYER2_START_X, PLAYER2_START_Y, P2_KEYS, P2_COLOR, eye_color=WHITE, facing_right=False)
 players  = pygame.sprite.Group(player1, player2)
 attacks  = pygame.sprite.Group()
 
@@ -49,8 +49,8 @@ font   = pygame.font.SysFont(None, 24)
 # ------------------------------------------------ helpers
 def draw_eye(p: Player):
     x = p.rect.right - EYE_OFFSET_X if p.facing_right else p.rect.left + EYE_OFFSET_X
-    y = p.rect.top   + EYE_OFFSET_Y
-    pygame.draw.circle(screen, (0,0,0), (x,y), EYE_RADIUS)
+    y = p.rect.top + EYE_OFFSET_Y
+    pygame.draw.circle(screen, p.eye_color, (x,y), EYE_RADIUS)
 
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
 def draw_hud(p: Player, label, topright=False):
