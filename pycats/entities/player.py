@@ -127,6 +127,10 @@ class Player(pygame.sprite.Sprite):
             self.vel.y = kb * -math.sin(radians)  # up = negative y
             self.state = PState.FALL
 
+    def _handle_landing(self, was_airborne: bool):
+        if self.on_ground and was_airborne:
+            self.jumps_remaining = MAX_JUMPS
+
     # ============================================================== update
     def update(self, input_frame, platforms, attack_group):
         held = input_frame.held
@@ -183,8 +187,7 @@ class Player(pygame.sprite.Sprite):
             self.drop_platform,
         )
 
-        if self.on_ground and was_airborne:
-            self.jumps_remaining = MAX_JUMPS
+        self._handle_landing(was_airborne)
 
         # automatic state transitions ------------------------------
         if self.state not in (PState.SHIELD, PState.DODGE):
