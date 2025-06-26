@@ -206,7 +206,9 @@ class Player(pygame.sprite.Sprite):
     # actions
     def handle_actions(self, input_frame, attack_group):
         held = input_frame.held
-        pressed = input_frame.pressed  # formerly prev_keys, refers to keys just freshly pressed this frame
+        pressed = (
+            input_frame.pressed
+        )  # formerly prev_keys, refers to keys just freshly pressed this frame
 
         # ------- Shield -------------------------------------------
         if self._pressed(held, "shield"):
