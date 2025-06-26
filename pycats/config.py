@@ -29,6 +29,8 @@ MOVE_SPEED = 5
 JUMP_VEL = -13
 DODGE_FRAMES = 15
 MAX_JUMPS = 2  # single + double
+GROUND_FRICTION = 0.2
+AIR_FRICTION = 0.05
 
 # ---------------- combat / attacks ----------------
 #### TODO: implement variable attack lifetimes, attack sizes, attack colors, and hit damage, save each attack into a dictionary with the attack name as the key

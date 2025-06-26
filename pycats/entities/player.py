@@ -35,9 +35,6 @@ import pygame # type: ignore
 import math
 from enum import Enum, auto
 from ..config import (
-    GRAVITY,
-    MAX_FALL_SPEED,
-    MOVE_SPEED,
     JUMP_VEL,
     MAX_JUMPS,
     SCREEN_WIDTH,
@@ -49,6 +46,8 @@ from ..config import (
     RESPAWN_DELAY_FRAMES,
 )
 from .attack import Attack
+from ..core.physics import apply_gravity, move_rect, solve_vertical
+from ..systems.movement import step_horizontal
 
 
 class PState(Enum):
@@ -166,14 +165,26 @@ class Player(pygame.sprite.Sprite):
             if self.dodge_timer == 0 and self.state == PState.DODGE:
                 self.state = PState.FALL if not self.on_ground else PState.IDLE
 
+        was_airborne = not self.on_ground
+
         # input / movement / state logic --------------------------------------
         if self.state != PState.DODGE:
             self.handle_actions(input_frame, attack_group)
             self.handle_move(held)
 
         # physics ---------------------------------------------------
-        self.apply_gravity()
-        self.vertical_collision(platforms, held)
+        apply_gravity(self.vel)
+        move_rect(self.rect, self.vel)
+        self.vel, self.on_ground, self.drop_platform = solve_vertical(
+            self.rect,
+            self.vel,
+            platforms,
+            self._pressed(held, "down"),
+            self.drop_platform,
+        )
+
+        if self.on_ground and was_airborne:
+            self.jumps_remaining = MAX_JUMPS
 
         # automatic state transitions ------------------------------
         if self.state not in (PState.SHIELD, PState.DODGE):
@@ -188,20 +199,17 @@ class Player(pygame.sprite.Sprite):
         return self.controls[name] in key_set
 
     # horizontal input movement
-    def handle_move(self, held_keys):
-        if self.state == PState.SHIELD:
-            self.vel.x = 0
-            return
-
-        #### TODO: implement per character friction
-        #### TODO: implement platform type friction modifier
-        self.vel.x = int(self.vel.x * 0.75)  # apply friction
-        if self._pressed(held_keys, "left"):
-            self.vel.x = -MOVE_SPEED
-            self.facing_right = False
-        if self._pressed(held_keys, "right"):
-            self.vel.x = MOVE_SPEED
-            self.facing_right = True
+    #### TODO: implement per character friction
+    #### TODO: implement platform type friction modifier
+    def handle_move(self, keys):
+        self.vel, self.facing_right = step_horizontal(
+            self.vel,
+            self.facing_right,
+            self.on_ground,
+            self._pressed(keys, "left"),
+            self._pressed(keys, "right"),
+            locked=self.state == PState.SHIELD,
+        )
 
     # actions
     def handle_actions(self, input_frame, attack_group):
