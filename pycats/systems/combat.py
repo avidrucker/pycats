@@ -2,7 +2,6 @@
 Collision & hit-resolution system.
 """
 
-import pygame
 
 def process_hits(players, attacks):
     """
@@ -15,13 +14,12 @@ def process_hits(players, attacks):
         - Else: deactivate, but keep visible
     """
     for atk in list(attacks):  # copy to allow safe removal
-        
         if not atk.active:
             continue
-        
+
         for defender in players:
             # Skip if defender is dead or is the owner of the attack
-            if not defender.is_alive or defender is atk.owner:          # no self-hit
+            if not defender.is_alive or defender is atk.owner:  # no self-hit
                 continue
 
             if atk.rect.colliderect(defender.rect):

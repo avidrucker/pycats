@@ -23,86 +23,88 @@ Use: Shared constants across modules for tuning gameplay and UI.
 SCREEN_WIDTH, SCREEN_HEIGHT = 960, 540
 FPS = 60
 
-GRAVITY        = 0.5
+GRAVITY = 0.5
 MAX_FALL_SPEED = 13
-MOVE_SPEED     = 5
-JUMP_VEL       = -13
-DODGE_FRAMES   = 15
-MAX_JUMPS      = 2     # single + double
+MOVE_SPEED = 5
+JUMP_VEL = -13
+DODGE_FRAMES = 15
+MAX_JUMPS = 2  # single + double
 
 # ---------------- combat / attacks ----------------
 #### TODO: implement variable attack lifetimes, attack sizes, attack colors, and hit damage, save each attack into a dictionary with the attack name as the key
 ATTACK_LIFETIME = 12
-ATTACK_SIZE     = (30, 18) # width, height
-HIT_DAMAGE      = 10 # default damage per hit
+ATTACK_SIZE = (30, 18)  # width, height
+HIT_DAMAGE = 10  # default damage per hit
 
 # ---------------- shield / bubble ---------------
-SHIELD_MAX_HP     = 50 # fresh shield bubble hit points
+SHIELD_MAX_HP = 50  # fresh shield bubble hit points
 MAX_SHIELD_RADIUS = 40
 MIN_SHIELD_RADIUS = 10
 
 # ---------------- knockback ----------------
 KNOCKBACK_SCALE = 0.5
-KNOCKBACK_BASE  = 5
+KNOCKBACK_BASE = 5
 
 # ---------------- platform constants ------------
 # note: 300 is good for a 540 width map
 THICK_PLAT_WIDTH = 800
-# note: 40 is good for a 540 height map 
+# note: 40 is good for a 540 height map
 THICK_PLAT_HEIGHT = 80
 THICK_PLAT_Y_OFF = THICK_PLAT_HEIGHT
-THIN_PLAT_WIDTH  = 150
-THIN_PLAT_HEIGHT  = 20
-THIN_PLAT_LEFT_X_OFF  = -200
+THIN_PLAT_WIDTH = 150
+THIN_PLAT_HEIGHT = 20
+THIN_PLAT_LEFT_X_OFF = -200
 THIN_PLAT_RIGHT_X_OFF = 200
 THIN_PLAT_Y_OFF = 200
 GLOBAL_Y_OFF = 50
 
 THICK_PLAT_DICT = {
-    "x": SCREEN_WIDTH//2-THICK_PLAT_WIDTH//2,
-    "y": SCREEN_HEIGHT-THICK_PLAT_Y_OFF-GLOBAL_Y_OFF,
+    "x": SCREEN_WIDTH // 2 - THICK_PLAT_WIDTH // 2,
+    "y": SCREEN_HEIGHT - THICK_PLAT_Y_OFF - GLOBAL_Y_OFF,
     "w": THICK_PLAT_WIDTH,
     "h": THICK_PLAT_HEIGHT,
 }
 
 THIN_PLAT_DICT_L = {
-    "x": SCREEN_WIDTH//2-THIN_PLAT_WIDTH//2+THIN_PLAT_LEFT_X_OFF, "y": SCREEN_HEIGHT-THIN_PLAT_Y_OFF-GLOBAL_Y_OFF, 
-    "w": THIN_PLAT_WIDTH, 
-    "h": THIN_PLAT_HEIGHT
+    "x": SCREEN_WIDTH // 2 - THIN_PLAT_WIDTH // 2 + THIN_PLAT_LEFT_X_OFF,
+    "y": SCREEN_HEIGHT - THIN_PLAT_Y_OFF - GLOBAL_Y_OFF,
+    "w": THIN_PLAT_WIDTH,
+    "h": THIN_PLAT_HEIGHT,
 }
 
 THIN_PLAT_DICT_R = {
-    "x": SCREEN_WIDTH//2-THIN_PLAT_WIDTH//2+THIN_PLAT_RIGHT_X_OFF, "y": SCREEN_HEIGHT-THIN_PLAT_Y_OFF-GLOBAL_Y_OFF, 
-    "w": THIN_PLAT_WIDTH, 
-    "h": THIN_PLAT_HEIGHT
+    "x": SCREEN_WIDTH // 2 - THIN_PLAT_WIDTH // 2 + THIN_PLAT_RIGHT_X_OFF,
+    "y": SCREEN_HEIGHT - THIN_PLAT_Y_OFF - GLOBAL_Y_OFF,
+    "w": THIN_PLAT_WIDTH,
+    "h": THIN_PLAT_HEIGHT,
 }
 
 # ---------------- player size, position, color ---------------
-PLAYER_SIZE     = (40, 60) # width, height
-PLAYER1_START_X = SCREEN_WIDTH//2 + THIN_PLAT_LEFT_X_OFF
-PLAYER2_START_X = SCREEN_WIDTH//2 + THIN_PLAT_RIGHT_X_OFF
+PLAYER_SIZE = (40, 60)  # width, height
+PLAYER1_START_X = SCREEN_WIDTH // 2 + THIN_PLAT_LEFT_X_OFF
+PLAYER2_START_X = SCREEN_WIDTH // 2 + THIN_PLAT_RIGHT_X_OFF
 PLAYER1_START_Y = SCREEN_HEIGHT - PLAYER_SIZE[1] - GLOBAL_Y_OFF - THIN_PLAT_Y_OFF
 PLAYER2_START_Y = SCREEN_HEIGHT - PLAYER_SIZE[1] - GLOBAL_Y_OFF - THIN_PLAT_Y_OFF
 
 EYE_OFFSET_X = 10
 EYE_OFFSET_Y = 12
-EYE_RADIUS   = 10
+EYE_RADIUS = 10
 
 # ---------------- Other UI / visuals --------------------
 HUD_PADDING = 10
 HUD_SPACING = 22
 
 # ---------------- colors -------------------
-BG_COLOR      = (60, 60, 70)
+BG_COLOR = (60, 60, 70)
 P1_COLOR = (255, 160, 64)  # orange
-P2_COLOR = (90, 90, 90)     # gray
-BLACK    = (0, 0, 0)        # black
-WHITE    = (255, 255, 255)  # white
+P2_COLOR = (90, 90, 90)  # gray
+BLACK = (0, 0, 0)  # black
+WHITE = (255, 255, 255)  # white
 #### TODO: implement player color (yellow, blue, red, green) which will affect the shield color
 #### TODO: implement parameterized shield color
-SHIELD_COLOR      = (80, 180, 255)
+SHIELD_COLOR = (80, 180, 255)
 
 # ---------------- stocks / blast zone --------
-INITIAL_LIVES        = 3
-BLAST_PADDING        = 50 # px beyond screen = KO
-RESPAWN_DELAY_FRAMES = int(2 * FPS) # 2 s freeze before respawn
+INITIAL_LIVES = 3
+BLAST_PADDING = 50  # px beyond screen = KO
+RESPAWN_DELAY_FRAMES = int(2 * FPS)  # 2 s freeze before respawn

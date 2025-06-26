@@ -6,5 +6,5 @@ Use: Allows you to import all entities with:
 """
 
 from .platform import Platform
-from .attack   import Attack
-from .player   import Player, PState
+from .attack import Attack
+from .player import Player, PState
