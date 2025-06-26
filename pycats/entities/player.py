@@ -109,7 +109,6 @@ class Player(pygame.sprite.Sprite):
         self.drop_platform = None
 
         # FSM current state
-        self.state = PState.IDLE
         self.fsm = self._build_fsm()
 
         # Facing
@@ -120,14 +119,14 @@ class Player(pygame.sprite.Sprite):
         """Called by combat system when this player is struck."""
         if self.shielding and self.shield_hp > 0:
             self.shield_hp = max(0, self.shield_hp - atk.damage)
+        #### TODO: elif dodging
         else:
             self.percent += atk.damage
-            kb = atk.base_kb + atk.kb_scale * self.percent
-            direction = 1 if atk.owner.facing_right else -1
+            kb = atk.base_kb + atk.kb_scale * self.percent # knockback calculation
+            direction = 1 if atk.owner.facing_right else -1 # the direction of the attack
             radians = math.radians(atk.angle)
             self.vel.x = kb * math.cos(radians) * direction
             self.vel.y = kb * -math.sin(radians)  # up = negative y
-            self.state = PState.FALL
 
     def _handle_landing(self, was_airborne: bool):
         if self.on_ground and was_airborne:
@@ -156,27 +155,22 @@ class Player(pygame.sprite.Sprite):
             return
 
         # ---------- shield tick ----------
-        if self._pressed(held, "shield") and self.state == PState.SHIELD:
+        if self._pressed(held, "shield") and self.fsm.state == "shield":
             self.shielding = True
             self.shield_hp = round(max(self.shield_hp - 0.2, 0), 2)
         else:
             self.shielding = False
             self.shield_hp = round(min(self.shield_hp + 0.2, SHIELD_MAX_HP), 2)
 
-        # timers ----------------------------------------------------
-        if (
-            self.dodge_timer > 0
-        ):  #### Q: is `if self.dodge_timer:` better or more performant?
-            self.dodge_timer -= 1
-            if self.dodge_timer == 0 and self.state == PState.DODGE:
-                self.state = PState.FALL if not self.on_ground else PState.IDLE
-
+        # ---------- airborne check ----------
+        # note: this is used to determine whether the player was airborne before landing, so that
+        #       the player can reset their jumps when landing
         was_airborne = not self.on_ground
 
         # input / movement / state logic --------------------------------------
-        if self.state != PState.DODGE:
-            self.handle_actions(input_frame, attack_group)
-            self.handle_move(held)
+        # if self.fsm.state != "dodge": #### TODO: implement dodge state
+        self.handle_actions(input_frame, attack_group)
+        self.handle_move(held)
 
         # physics ---------------------------------------------------
         apply_gravity(self.vel)
@@ -191,16 +185,8 @@ class Player(pygame.sprite.Sprite):
 
         self._handle_landing(was_airborne)
 
-        # automatic state transitions ------------------------------
-        if self.state not in (PState.SHIELD, PState.DODGE):
-            if not self.on_ground:
-                self.state = PState.JUMP if self.vel.y < 0 else PState.FALL
-            else:
-                self.state = PState.RUN if self.vel.x else PState.IDLE
-
         # FSM state transitions -----------------------------------
         self.fsm.update()
-        assert self.fsm.state.upper() == self.state.name, f"FSM desync detected: {self.fsm.state.upper()} != {self.state.name}"
 
     # ============================================================== helpers
     def _pressed(self, key_set: set[int], name):
@@ -217,7 +203,7 @@ class Player(pygame.sprite.Sprite):
             self.on_ground,
             self._pressed(keys, "left"),
             self._pressed(keys, "right"),
-            locked=self.state == PState.SHIELD,
+            locked=self.fsm.state == "shield", # prevents moving while shielding, this may need to change when dodging is implemented
         )
 
     # actions
@@ -228,24 +214,20 @@ class Player(pygame.sprite.Sprite):
         )  # formerly prev_keys, refers to keys just freshly pressed this frame
 
         # ------- Shield -------------------------------------------
-        if self._pressed(held, "shield"):
+        if self._pressed(held, "shield") and self.fsm.state in ("idle", "shield"):
             #### TODO: prevent entering of shield state when falling/jumping, when in hurt state, etc.
-            if self.state != PState.SHIELD:
-                self.state = PState.SHIELD
             self.shielding = True
-        elif self.state == PState.SHIELD:
-            self.state = PState.IDLE
+        else:
+            self.shielding = False
+
+        # if shielding, then shield HP goes down, otherwise it goes up
+        if self.fsm.state == "shield":
+            self.shield_hp = round(max(self.shield_hp - 0.2, 0), 2)
+        else:
+            self.shield_hp = round(min(self.shield_hp + 0.2, SHIELD_MAX_HP), 2)
 
         # ------- Dodge --------------------------------------------
         #### TODO: implement dodge as a combo press of directional + shield
-        # if (self._pressed(pressed, "dodge") and not self._pressed(prev_keys, "dodge")
-        #         and self.dodge_timer == 0 and self.state != PState.SHIELD):
-        #     self.state = PState.DODGE
-        #     self.dodge_timer = DODGE_FRAMES
-        #     direction = 1 if self.vel.x >= 0 else -1
-        #     self.vel.x = direction * MOVE_SPEED * 2
-        #     self.vel.y = JUMP_VEL / 2
-        #     return
 
         # ------- Jump ---------------------------------------------
         jump_pressed = self._pressed(pressed, "up")
@@ -253,73 +235,20 @@ class Player(pygame.sprite.Sprite):
         if (
             jump_pressed
             and self.jumps_remaining
-            and self.state in (PState.RUN, PState.IDLE, PState.FALL, PState.JUMP)
+            and self.fsm.state in ("fall", "jump", "idle", "run")
         ):
             self.vel.y = JUMP_VEL
             self.jumps_remaining -= 1
-            self.state = PState.JUMP
 
         # ------- Attack -------------------------------------------
         #### TODO: implement attack buffering, that attacks can be chained
         atk_pressed = self._pressed(pressed, "attack")
-        if atk_pressed and self.state not in (PState.SHIELD, PState.DODGE):
+        if atk_pressed and self.fsm.state not in ("shield", "dodge"):
             attack_group.add(Attack(self, disappear_on_hit=False))
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
 
         # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs
         # attack_group.add(Attack(self, disappear_on_hit=True))
-
-    # ============================================================== physics
-    def apply_gravity(self):
-        if self.vel.y < MAX_FALL_SPEED:
-            self.vel.y += GRAVITY
-        self.rect.x += self.vel.x
-        self.rect.y += self.vel.y
-
-    def vertical_collision(self, platforms, keys):
-        self.on_ground = False
-
-        def x_overlap(a: pygame.Rect, b: pygame.Rect):
-            return a.right > b.left and a.left < b.right
-
-        if self.drop_platform and self.rect.top > self.drop_platform.rect.bottom:
-            self.drop_platform = None
-
-        landing = None
-        for p in platforms:
-            if p is self.drop_platform:
-                continue
-
-            overlap = self.rect.colliderect(p.rect)
-            flush = (
-                self.rect.bottom == p.rect.top
-                and self.vel.y >= 0
-                and x_overlap(self.rect, p.rect)
-            )
-
-            if not (overlap or flush):
-                continue
-
-            if p.thin:
-                from_above = (
-                    self.vel.y >= 0 and self.rect.bottom - self.vel.y <= p.rect.top
-                )
-                if from_above and not self._pressed(keys, "down"):
-                    landing = p
-            else:
-                if self.vel.y >= 0 and self.rect.bottom - self.vel.y <= p.rect.top:
-                    landing = p
-                elif self.vel.y < 0 and self.rect.top - self.vel.y >= p.rect.bottom:
-                    self.rect.top = p.rect.bottom
-                    self.vel.y = 0
-
-        if landing:
-            self.rect.bottom = landing.rect.top
-            self.vel.y = 0
-            self.on_ground = True
-            self.jumps_remaining = MAX_JUMPS
-            if landing.thin and self._pressed(keys, "down"):
-                self.drop_platform = landing
 
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
@@ -337,6 +266,7 @@ class Player(pygame.sprite.Sprite):
         # hide sprite off-screen
         self.rect.center = (-1000, -1000)
         self.vel.update(0, 0)
+        self.fsm.state = "ko"
 
     def _respawn(self):
         #### TODO: implement temporary respawn invulnerability
@@ -346,7 +276,6 @@ class Player(pygame.sprite.Sprite):
         self.is_alive = True
         self.rect.midbottom = self.spawn_point
         self.vel.update(0, 0)
-        self.state = PState.FALL  # will auto-snap to IDLE on landing
         self.jumps_remaining = MAX_JUMPS
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
@@ -367,11 +296,14 @@ class Player(pygame.sprite.Sprite):
                     Transition("jump", lambda f, ctx: self.vel.y < 0),
                     Transition("fall", lambda f, ctx: not self.on_ground and self.vel.y > 0),
                 ],
-                "jump":[ Transition("fall", lambda f,ctx: self.vel.y >= 0) ],
+                "jump":[ Transition("fall", lambda f,ctx: self.vel.y >= 0),
+                        Transition("ko", lambda f, ctx: not self.is_alive) ],
                 "fall":[ Transition("idle", lambda f,ctx: self.on_ground and self.vel.x == 0),
                          Transition("run", lambda f,ctx: self.on_ground and self.vel.x != 0),
-                         Transition("jump", lambda f, ctx: self.vel.y < 0) ],
+                         Transition("jump", lambda f, ctx: self.vel.y < 0),
+                         Transition("ko", lambda f, ctx: not self.is_alive) ],
                 "shield":[ Transition("idle", lambda f,ctx: not self.shielding) ],
+                "ko": [ Transition("idle", lambda f, ctx: self.is_alive)],
             },
         )
 
