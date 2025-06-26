@@ -31,7 +31,7 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: make shielding in the air do an air dodge instead of a shield bubble, and max sure to cap air dodges to once per jump/fall status entering (i.e. until the player lands (Q: or is hit?) they don't get another air dodge)
 #### TODO: implement ledge grabbing mechanics where the player can grab the ledge when falling off of a platform, and then can press up to get back on the platform, or down to drop down from the ledge, they get limited time invunerability while hanging on the ledge, and eventually fall off the ledge if they don't get back on the platform (Q: can thin platforms be grabbed as well as thick platforms?)
 
-import pygame
+import pygame # type: ignore
 import math
 from enum import Enum, auto
 from ..config import (

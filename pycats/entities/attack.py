@@ -19,7 +19,7 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement grab escape mechanics where the grabbed player can mash their inputs to escape sooner
 #### TODO: implement ability for some attacks to hit more than one opponent
 
-import pygame
+import pygame # type: ignore
 from ..config import (
     ATTACK_LIFETIME,
     ATTACK_SIZE,
