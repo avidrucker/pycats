@@ -6,8 +6,8 @@ import pygame as pg  # type: ignore
 @dataclass
 class InputFrame:
     held: set[int]  # keys held down this frame
-    pressed: set[int]  # keys that went down THIS frame
-    released: set[int]  # keys that were up THIS frame
+    pressed: set[int]  # keys that went down THIS frame, i.e. "just pressed"
+    released: set[int]  # keys that were up THIS frame, i.e. "just released"
 
 
 _currently_held: set[int] = set()

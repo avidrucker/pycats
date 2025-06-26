@@ -130,10 +130,12 @@ class Player(pygame.sprite.Sprite):
 
     # ============================================================== update
     def update(self, input_frame, platforms, attack_group):
-        keys = input_frame.held
-        prev_keys = (
-            input_frame.pressed
-        )  #### Q: should this be called pressed instead, why or why not?
+        held = input_frame.held
+        # note: currently unused, formerly called prev_keys
+        #       pressed means freshly pressed this frame
+        # pressed = (
+        #     input_frame.pressed
+        # )
 
         """Master per-frame update; handles KO/respawn before usual logic."""
         # ---------- dead / waiting to respawn ----------
@@ -149,7 +151,7 @@ class Player(pygame.sprite.Sprite):
             return
 
         # ---------- shield tick ----------
-        if self._pressed(keys, "shield") and self.state == PState.SHIELD:
+        if self._pressed(held, "shield") and self.state == PState.SHIELD:
             self.shielding = True
             self.shield_hp = round(max(self.shield_hp - 0.2, 0), 2)
         else:
@@ -167,11 +169,11 @@ class Player(pygame.sprite.Sprite):
         # input / movement / state logic --------------------------------------
         if self.state != PState.DODGE:
             self.handle_actions(input_frame, attack_group)
-            self.handle_move(keys)
+            self.handle_move(held)
 
         # physics ---------------------------------------------------
         self.apply_gravity()
-        self.vertical_collision(platforms, keys)
+        self.vertical_collision(platforms, held)
 
         # automatic state transitions ------------------------------
         if self.state not in (PState.SHIELD, PState.DODGE):
@@ -185,8 +187,8 @@ class Player(pygame.sprite.Sprite):
         """key_set is usually input_frame.held or .pressed."""
         return self.controls[name] in key_set
 
-    # input movement
-    def handle_move(self, keys):
+    # horizontal input movement
+    def handle_move(self, held_keys):
         if self.state == PState.SHIELD:
             self.vel.x = 0
             return
@@ -194,20 +196,20 @@ class Player(pygame.sprite.Sprite):
         #### TODO: implement per character friction
         #### TODO: implement platform type friction modifier
         self.vel.x = int(self.vel.x * 0.75)  # apply friction
-        if self._pressed(keys, "left"):
+        if self._pressed(held_keys, "left"):
             self.vel.x = -MOVE_SPEED
             self.facing_right = False
-        if self._pressed(keys, "right"):
+        if self._pressed(held_keys, "right"):
             self.vel.x = MOVE_SPEED
             self.facing_right = True
 
     # actions
     def handle_actions(self, input_frame, attack_group):
-        keys = input_frame.held
-        pressed = input_frame.pressed  # formerly prev_keys
+        held = input_frame.held
+        pressed = input_frame.pressed  # formerly prev_keys, refers to keys just freshly pressed this frame
 
         # ------- Shield -------------------------------------------
-        if self._pressed(keys, "shield"):
+        if self._pressed(held, "shield"):
             #### TODO: prevent entering of shield state when falling/jumping, when in hurt state, etc.
             if self.state != PState.SHIELD:
                 self.state = PState.SHIELD
@@ -217,7 +219,7 @@ class Player(pygame.sprite.Sprite):
 
         # ------- Dodge --------------------------------------------
         #### TODO: implement dodge as a combo press of directional + shield
-        # if (self._pressed(keys, "dodge") and not self._pressed(prev_keys, "dodge")
+        # if (self._pressed(pressed, "dodge") and not self._pressed(prev_keys, "dodge")
         #         and self.dodge_timer == 0 and self.state != PState.SHIELD):
         #     self.state = PState.DODGE
         #     self.dodge_timer = DODGE_FRAMES
@@ -239,6 +241,7 @@ class Player(pygame.sprite.Sprite):
             self.state = PState.JUMP
 
         # ------- Attack -------------------------------------------
+        #### TODO: implement attack buffering, that attacks can be chained
         atk_pressed = self._pressed(pressed, "attack")
         if atk_pressed and self.state not in (PState.SHIELD, PState.DODGE):
             attack_group.add(Attack(self, disappear_on_hit=False))
