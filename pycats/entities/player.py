@@ -31,28 +31,44 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: make shielding in the air do an air dodge instead of a shield bubble, and max sure to cap air dodges to once per jump/fall status entering (i.e. until the player lands (Q: or is hit?) they don't get another air dodge)
 #### TODO: implement ledge grabbing mechanics where the player can grab the ledge when falling off of a platform, and then can press up to get back on the platform, or down to drop down from the ledge, they get limited time invunerability while hanging on the ledge, and eventually fall off the ledge if they don't get back on the platform (Q: can thin platforms be grabbed as well as thick platforms?)
 
-import pygame, math
-from enum        import Enum, auto
-from ..config import (GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, DODGE_FRAMES, MAX_JUMPS, SCREEN_WIDTH, SCREEN_HEIGHT, PLAYER_SIZE, INITIAL_LIVES, MAX_SHIELD_RADIUS, SHIELD_MAX_HP, BLAST_PADDING, RESPAWN_DELAY_FRAMES)
-from .attack     import Attack
+import pygame
+import math
+from enum import Enum, auto
+from ..config import (
+    GRAVITY,
+    MAX_FALL_SPEED,
+    MOVE_SPEED,
+    JUMP_VEL,
+    MAX_JUMPS,
+    SCREEN_WIDTH,
+    SCREEN_HEIGHT,
+    PLAYER_SIZE,
+    INITIAL_LIVES,
+    SHIELD_MAX_HP,
+    BLAST_PADDING,
+    RESPAWN_DELAY_FRAMES,
+)
+from .attack import Attack
+
 
 class PState(Enum):
-    IDLE   = auto()
+    IDLE = auto()
     #### TODO: implement walk state
     #### TODO: implement crouch state
     #### TODO: implement double-tap LEFT/RIGHT keys to enter run state while on the ground
-    RUN    = auto()
+    RUN = auto()
     #### TODO: implement lunge attacks that start from run state
-    JUMP   = auto()
-    FALL   = auto()
+    JUMP = auto()
+    FALL = auto()
     #### TODO: implement squash and stretch when jumping and landing
     SHIELD = auto()
-    DODGE  = auto()
+    DODGE = auto()
     #### TODO: implement grabbed state
     #### TODO: implement grabbing state
     #### TODO: implement stunned state
     #### TODO: implement hurt state
     #### TODO: implement KO state
+
 
 class Player(pygame.sprite.Sprite):
     #### TODO: implement variable player sizes
@@ -66,14 +82,14 @@ class Player(pygame.sprite.Sprite):
         self.eye_color = eye_color
 
         # ---------- combat stats ----------
-        self.percent   = 0
+        self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
-        self.lives     = INITIAL_LIVES
+        self.lives = INITIAL_LIVES
 
-        # ---------- spawn / KO ----------        
+        # ---------- spawn / KO ----------
         self.spawn_point = pygame.Vector2(x, y)
-        self.is_alive    = True
-        self.respawn_timer = 0     # frames until next spawn
+        self.is_alive = True
+        self.respawn_timer = 0  # frames until next spawn
 
         # Input mapping
         self.controls = controls
@@ -83,11 +99,11 @@ class Player(pygame.sprite.Sprite):
         self.on_ground = False
 
         # Timers / counters
-        self.dodge_timer   = 0
+        self.dodge_timer = 0
         self.jumps_remaining = MAX_JUMPS
-        
+
         # shield visual helpers
-        self.shielding     = False
+        self.shielding = False
 
         # Platform drop-through reference
         self.drop_platform = None
@@ -98,7 +114,6 @@ class Player(pygame.sprite.Sprite):
         # Facing
         self.facing_right = facing_right
 
-
     # ----------- hit processing ------------
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""
@@ -108,26 +123,31 @@ class Player(pygame.sprite.Sprite):
             self.percent += atk.damage
             kb = atk.base_kb + atk.kb_scale * self.percent
             direction = 1 if atk.owner.facing_right else -1
-            radians   = math.radians(atk.angle)
+            radians = math.radians(atk.angle)
             self.vel.x = kb * math.cos(radians) * direction
             self.vel.y = kb * -math.sin(radians)  # up = negative y
             self.state = PState.FALL
 
     # ============================================================== update
-    def update(self, keys, prev_keys, platforms, attack_group):
+    def update(self, input_frame, platforms, attack_group):
+        keys = input_frame.held
+        prev_keys = (
+            input_frame.pressed
+        )  #### Q: should this be called pressed instead, why or why not?
+
         """Master per-frame update; handles KO/respawn before usual logic."""
         # ---------- dead / waiting to respawn ----------
         if not self.is_alive:
             self.respawn_timer -= 1
             if self.respawn_timer <= 0 and self.lives > 0:
                 self._respawn()
-            return                              # nothing else while dead
+            return  # nothing else while dead
 
         # ---------- blast-zone KO check ----------
         if self._outside_blast_zone():
             self._ko()
             return
-        
+
         # ---------- shield tick ----------
         if self._pressed(keys, "shield") and self.state == PState.SHIELD:
             self.shielding = True
@@ -137,14 +157,16 @@ class Player(pygame.sprite.Sprite):
             self.shield_hp = round(min(self.shield_hp + 0.2, SHIELD_MAX_HP), 2)
 
         # timers ----------------------------------------------------
-        if self.dodge_timer > 0: #### Q: is `if self.dodge_timer:` better or more performant?
+        if (
+            self.dodge_timer > 0
+        ):  #### Q: is `if self.dodge_timer:` better or more performant?
             self.dodge_timer -= 1
             if self.dodge_timer == 0 and self.state == PState.DODGE:
                 self.state = PState.FALL if not self.on_ground else PState.IDLE
 
         # input / movement / state logic --------------------------------------
         if self.state != PState.DODGE:
-            self.handle_actions(keys, prev_keys, attack_group)
+            self.handle_actions(input_frame, attack_group)
             self.handle_move(keys)
 
         # physics ---------------------------------------------------
@@ -159,8 +181,9 @@ class Player(pygame.sprite.Sprite):
                 self.state = PState.RUN if self.vel.x else PState.IDLE
 
     # ============================================================== helpers
-    def _pressed(self, snapshot, name):
-        return snapshot[self.controls[name]]
+    def _pressed(self, key_set: set[int], name):
+        """key_set is usually input_frame.held or .pressed."""
+        return self.controls[name] in key_set
 
     # input movement
     def handle_move(self, keys):
@@ -170,7 +193,7 @@ class Player(pygame.sprite.Sprite):
 
         #### TODO: implement per character friction
         #### TODO: implement platform type friction modifier
-        self.vel.x = int(self.vel.x*0.75)  # apply friction
+        self.vel.x = int(self.vel.x * 0.75)  # apply friction
         if self._pressed(keys, "left"):
             self.vel.x = -MOVE_SPEED
             self.facing_right = False
@@ -179,7 +202,10 @@ class Player(pygame.sprite.Sprite):
             self.facing_right = True
 
     # actions
-    def handle_actions(self, keys, prev_keys, attack_group):
+    def handle_actions(self, input_frame, attack_group):
+        keys = input_frame.held
+        pressed = input_frame.pressed  # formerly prev_keys
+
         # ------- Shield -------------------------------------------
         if self._pressed(keys, "shield"):
             #### TODO: prevent entering of shield state when falling/jumping, when in hurt state, etc.
@@ -201,17 +227,19 @@ class Player(pygame.sprite.Sprite):
         #     return
 
         # ------- Jump ---------------------------------------------
-        jump_pressed = (self._pressed(keys, "up")
-                        and not self._pressed(prev_keys, "up")
-                        and self.state != PState.SHIELD)
+        jump_pressed = self._pressed(pressed, "up")
         #### TODO: determine whether walking off of a ledge "consumes" a jump
-        if jump_pressed and self.jumps_remaining:
+        if (
+            jump_pressed
+            and self.jumps_remaining
+            and self.state in (PState.RUN, PState.IDLE, PState.FALL, PState.JUMP)
+        ):
             self.vel.y = JUMP_VEL
             self.jumps_remaining -= 1
             self.state = PState.JUMP
 
         # ------- Attack -------------------------------------------
-        atk_pressed = self._pressed(keys, "attack") and not self._pressed(prev_keys, "attack")
+        atk_pressed = self._pressed(pressed, "attack")
         if atk_pressed and self.state not in (PState.SHIELD, PState.DODGE):
             attack_group.add(Attack(self, disappear_on_hit=False))
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
@@ -241,14 +269,19 @@ class Player(pygame.sprite.Sprite):
                 continue
 
             overlap = self.rect.colliderect(p.rect)
-            flush   = (self.rect.bottom == p.rect.top and self.vel.y >= 0
-                       and x_overlap(self.rect, p.rect))
+            flush = (
+                self.rect.bottom == p.rect.top
+                and self.vel.y >= 0
+                and x_overlap(self.rect, p.rect)
+            )
 
             if not (overlap or flush):
                 continue
 
             if p.thin:
-                from_above = self.vel.y >= 0 and self.rect.bottom - self.vel.y <= p.rect.top
+                from_above = (
+                    self.vel.y >= 0 and self.rect.bottom - self.vel.y <= p.rect.top
+                )
                 if from_above and not self._pressed(keys, "down"):
                     landing = p
             else:
@@ -268,10 +301,12 @@ class Player(pygame.sprite.Sprite):
 
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
-        return (self.rect.right  < -BLAST_PADDING or
-                self.rect.left   > SCREEN_WIDTH + BLAST_PADDING or
-                self.rect.bottom < -BLAST_PADDING or
-                self.rect.top    > SCREEN_HEIGHT + BLAST_PADDING)
+        return (
+            self.rect.right < -BLAST_PADDING
+            or self.rect.left > SCREEN_WIDTH + BLAST_PADDING
+            or self.rect.bottom < -BLAST_PADDING
+            or self.rect.top > SCREEN_HEIGHT + BLAST_PADDING
+        )
 
     def _ko(self):
         self.lives -= 1
@@ -286,10 +321,10 @@ class Player(pygame.sprite.Sprite):
         #### TODO: implement spawning animation
         #### TODO: ensure that lives don't go negative
         #### TODO: implement respawn visible count-down
-        self.is_alive         = True
-        self.rect.midbottom   = self.spawn_point
+        self.is_alive = True
+        self.rect.midbottom = self.spawn_point
         self.vel.update(0, 0)
-        self.state            = PState.FALL   # will auto-snap to IDLE on landing
-        self.jumps_remaining  = MAX_JUMPS
-        self.percent          = 0
-        self.shield_hp        = SHIELD_MAX_HP
+        self.state = PState.FALL  # will auto-snap to IDLE on landing
+        self.jumps_remaining = MAX_JUMPS
+        self.percent = 0
+        self.shield_hp = SHIELD_MAX_HP
