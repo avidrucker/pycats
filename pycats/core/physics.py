@@ -1,4 +1,7 @@
 # pycats/core/physics.py
+
+#### TODO: prevent all collisions with thick platforms, including horizontal (from the side) and upwards vertical
+
 from __future__ import annotations
 
 from typing import Tuple, Optional
