@@ -2,13 +2,15 @@
 from dataclasses import dataclass, field
 from typing import Callable, Any, Dict, List
 
-StateFn   = Callable[['FSM', Any], None]
-GuardFn   = Callable[['FSM', Any], bool]
+StateFn = Callable[["FSM", Any], None]
+GuardFn = Callable[["FSM", Any], bool]
+
 
 @dataclass
 class Transition:
     to_state: str
-    guard: GuardFn                      # returns True if transition should fire
+    guard: GuardFn  # returns True if transition should fire
+
 
 @dataclass
 class FSM:
@@ -31,5 +33,5 @@ class FSM:
         if nxt == self.state:
             return
         if f := self.on_enter.get(nxt):
-            f(self, ctx)           # treat as 'on_enter'
+            f(self, ctx)  # treat as 'on_enter'
         self.state = nxt

@@ -122,8 +122,10 @@ class Player(pygame.sprite.Sprite):
         #### TODO: elif dodging
         else:
             self.percent += atk.damage
-            kb = atk.base_kb + atk.kb_scale * self.percent # knockback calculation
-            direction = 1 if atk.owner.facing_right else -1 # the direction of the attack
+            kb = atk.base_kb + atk.kb_scale * self.percent  # knockback calculation
+            direction = (
+                1 if atk.owner.facing_right else -1
+            )  # the direction of the attack
             radians = math.radians(atk.angle)
             self.vel.x = kb * math.cos(radians) * direction
             self.vel.y = kb * -math.sin(radians)  # up = negative y
@@ -203,7 +205,8 @@ class Player(pygame.sprite.Sprite):
             self.on_ground,
             self._pressed(keys, "left"),
             self._pressed(keys, "right"),
-            locked=self.fsm.state == "shield", # prevents moving while shielding, this may need to change when dodging is implemented
+            locked=self.fsm.state
+            == "shield",  # prevents moving while shielding, this may need to change when dodging is implemented
         )
 
     # actions
@@ -283,27 +286,40 @@ class Player(pygame.sprite.Sprite):
     # --------------------------------------------------- FSM scaffold (pass-A)
     def _build_fsm(self) -> FSM:
         return FSM(
-            state = "idle",
-            table = {
+            state="idle",
+            table={
                 "idle": [
-                    Transition("run",  lambda f, ctx: self.vel.x != 0 and self.on_ground),
+                    Transition(
+                        "run", lambda f, ctx: self.vel.x != 0 and self.on_ground
+                    ),
                     Transition("jump", lambda f, ctx: self.vel.y < 0),
-                    Transition("fall", lambda f, ctx: not self.on_ground and self.vel.y > 0),
-                    Transition("shield",lambda f,ctx: self.shielding),
+                    Transition(
+                        "fall", lambda f, ctx: not self.on_ground and self.vel.y > 0
+                    ),
+                    Transition("shield", lambda f, ctx: self.shielding),
                 ],
-                "run":  [
+                "run": [
                     Transition("idle", lambda f, ctx: self.vel.x == 0),
                     Transition("jump", lambda f, ctx: self.vel.y < 0),
-                    Transition("fall", lambda f, ctx: not self.on_ground and self.vel.y > 0),
+                    Transition(
+                        "fall", lambda f, ctx: not self.on_ground and self.vel.y > 0
+                    ),
                 ],
-                "jump":[ Transition("fall", lambda f,ctx: self.vel.y >= 0),
-                        Transition("ko", lambda f, ctx: not self.is_alive) ],
-                "fall":[ Transition("idle", lambda f,ctx: self.on_ground and self.vel.x == 0),
-                         Transition("run", lambda f,ctx: self.on_ground and self.vel.x != 0),
-                         Transition("jump", lambda f, ctx: self.vel.y < 0),
-                         Transition("ko", lambda f, ctx: not self.is_alive) ],
-                "shield":[ Transition("idle", lambda f,ctx: not self.shielding) ],
-                "ko": [ Transition("idle", lambda f, ctx: self.is_alive)],
+                "jump": [
+                    Transition("fall", lambda f, ctx: self.vel.y >= 0),
+                    Transition("ko", lambda f, ctx: not self.is_alive),
+                ],
+                "fall": [
+                    Transition(
+                        "idle", lambda f, ctx: self.on_ground and self.vel.x == 0
+                    ),
+                    Transition(
+                        "run", lambda f, ctx: self.on_ground and self.vel.x != 0
+                    ),
+                    Transition("jump", lambda f, ctx: self.vel.y < 0),
+                    Transition("ko", lambda f, ctx: not self.is_alive),
+                ],
+                "shield": [Transition("idle", lambda f, ctx: not self.shielding)],
+                "ko": [Transition("idle", lambda f, ctx: self.is_alive)],
             },
         )
-
