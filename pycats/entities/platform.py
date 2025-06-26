@@ -9,7 +9,7 @@ Contents:
 Use: Used to build the stage (collision platforms).
 """
 
-import pygame # type: ignore
+import pygame  # type: ignore
 
 
 class Platform(pygame.sprite.Sprite):

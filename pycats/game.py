@@ -22,7 +22,7 @@ Use: This is the entry point for running the game.
 #### TODO: implement player pushing & sliding where players can push each other left/right (if both players are pushing on each other, there is no horizontal movement, else, there is slowed movement in the pushed direction) and when one lands on the other they also get pushed apart and the bottom character gets their vertical velocity downward increased if they are both in the air and the top character gets their vertical velocity upward increased with a short hop/bounce up
 
 import sys
-import pygame # type: ignore
+import pygame  # type: ignore
 from .config import *  #### TODO: replace all global imports with specific imports from config.py (READY)
 from .entities import Platform, Player
 from .systems import combat

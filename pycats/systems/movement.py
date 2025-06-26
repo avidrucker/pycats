@@ -1,9 +1,10 @@
 # pycats/systems/movement.py
 from typing import Tuple
-import pygame as pg # type: ignore
+import pygame as pg  # type: ignore
 
 from ..config import MOVE_SPEED
 from ..core.physics import apply_horizontal_friction
+
 
 def step_horizontal(
     vel: pg.Vector2,

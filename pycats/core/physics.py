@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import Tuple, Optional
-import pygame as pg # type: ignore
+import pygame as pg  # type: ignore
 
 # Read tuning constants from config once
 from ..config import (
@@ -13,6 +13,7 @@ from ..config import (
 )
 
 # ------------------------------------------------------------------ vertical
+
 
 def apply_gravity(vel: pg.Vector2) -> pg.Vector2:
     """
@@ -57,7 +58,7 @@ def solve_vertical(
             continue
 
         overlap = actor.colliderect(p.rect)
-        flush   = actor.bottom == p.rect.top and vel.y >= 0 and x_overlap(actor, p.rect)
+        flush = actor.bottom == p.rect.top and vel.y >= 0 and x_overlap(actor, p.rect)
         if not (overlap or flush):
             continue
 
@@ -81,7 +82,9 @@ def solve_vertical(
 
     return vel, on_ground, new_drop
 
+
 # ----------------------------------------------------------------- horizontal
+
 
 def apply_horizontal_friction(
     vel: pg.Vector2, on_ground: bool, factor_ground: float = GROUND_FRICTION
