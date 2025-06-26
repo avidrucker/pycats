@@ -29,7 +29,7 @@ from .systems import combat
 from .core import input as inp
 
 pygame.init()
-pygame.display.set_caption("PyCats - Smash-Draft Rev 5 (stocks)")
+pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
 
 # Rect: (x, y, width, height)
 platforms = [
