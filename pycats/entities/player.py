@@ -48,6 +48,7 @@ from ..config import (
 from .attack import Attack
 from ..core.physics import apply_gravity, move_rect, solve_vertical
 from ..systems.movement import step_horizontal
+from ..systems.fsm import FSM, Transition
 
 
 class PState(Enum):
@@ -109,6 +110,7 @@ class Player(pygame.sprite.Sprite):
 
         # FSM current state
         self.state = PState.IDLE
+        self.fsm = self._build_fsm()
 
         # Facing
         self.facing_right = facing_right
@@ -195,6 +197,10 @@ class Player(pygame.sprite.Sprite):
                 self.state = PState.JUMP if self.vel.y < 0 else PState.FALL
             else:
                 self.state = PState.RUN if self.vel.x else PState.IDLE
+
+        # FSM state transitions -----------------------------------
+        self.fsm.update()
+        assert self.fsm.state.upper() == self.state.name, f"FSM desync detected: {self.fsm.state.upper()} != {self.state.name}"
 
     # ============================================================== helpers
     def _pressed(self, key_set: set[int], name):
@@ -344,3 +350,28 @@ class Player(pygame.sprite.Sprite):
         self.jumps_remaining = MAX_JUMPS
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
+
+    # --------------------------------------------------- FSM scaffold (pass-A)
+    def _build_fsm(self) -> FSM:
+        return FSM(
+            state = "idle",
+            table = {
+                "idle": [
+                    Transition("run",  lambda f, ctx: self.vel.x != 0 and self.on_ground),
+                    Transition("jump", lambda f, ctx: self.vel.y < 0),
+                    Transition("fall", lambda f, ctx: not self.on_ground and self.vel.y > 0),
+                    Transition("shield",lambda f,ctx: self.shielding),
+                ],
+                "run":  [
+                    Transition("idle", lambda f, ctx: self.vel.x == 0),
+                    Transition("jump", lambda f, ctx: self.vel.y < 0),
+                    Transition("fall", lambda f, ctx: not self.on_ground and self.vel.y > 0),
+                ],
+                "jump":[ Transition("fall", lambda f,ctx: self.vel.y >= 0) ],
+                "fall":[ Transition("idle", lambda f,ctx: self.on_ground and self.vel.x == 0),
+                         Transition("run", lambda f,ctx: self.on_ground and self.vel.x != 0),
+                         Transition("jump", lambda f, ctx: self.vel.y < 0) ],
+                "shield":[ Transition("idle", lambda f,ctx: not self.shielding) ],
+            },
+        )
+
