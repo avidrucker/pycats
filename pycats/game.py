@@ -117,15 +117,13 @@ def draw_eye(p: Player):
 #### TODO: split off damage % and stock lives rendering so that they are rendering last and at the bottom left and right corners of the screen
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
 def draw_hud(p: Player, label, topright=False):
-    # state = p.state.name.capitalize() # TODO: restore this after implementing KO state
-    state = (
-        "KO" if not p.is_alive else p.state.name.capitalize()
-    )  # TODO: remove this after implementing KO state
+    """Draws the HUD for a player, showing their state, jumps left, shield HP, lives, and damage percent."""
+    fsm = f"FSM: {p.fsm.state.capitalize()}"
     jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining != 1 else ''} left"
     shield = f"Shield HP: {p.shield_hp}"
     stocks = f"Lives: {p.lives}"
     percent = f"Damage: {int(p.percent)}%"
-    for i, txt in enumerate((label, state, jumps, shield, stocks, percent)):
+    for i, txt in enumerate((label, fsm, jumps, shield, stocks, percent)):
         surf = font.render(txt, True, WHITE)  # TODO: replace magic vals w/ named vars
         pos = (
             (
