@@ -113,6 +113,18 @@ BLACK = (0, 0, 0)  # black
 WHITE = (255, 255, 255)  # white
 RED = (255, 0, 0)  # red
 YELLOW = (255, 255, 0)  # yellow
+
+# ---------------- cat features -----------------
+EAR_WIDTH = 15
+EAR_HEIGHT = 20
+EAR_SPACING = -2
+EAR_PADDING = 5
+WHISKER_LENGTH = 18  # Increased from 12 for longer whiskers
+WHISKER_THICKNESS = 2
+WHISKER_SPACING = 4
+WHISKER_COUNT = 3
+WHISKER_ANGLE = 25  # Angle in degrees between whiskers
+
 #### TODO: implement player color (yellow, blue, red, green) which will affect the shield color
 #### TODO: implement parameterized shield color
 SHIELD_COLOR = (80, 180, 255)
