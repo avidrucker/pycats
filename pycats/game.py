@@ -121,9 +121,10 @@ def draw_hud(p: Player, label, topright=False):
     fsm = f"FSM: {p.fsm.state.capitalize()}"
     jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining != 1 else ''} left"
     shield = f"Shield HP: {p.shield_hp}"
+    shield_attempting = f"Shield Attempting: {'Yes' if p.shield_attempting else 'No'}"
     stocks = f"Lives: {p.lives}"
     percent = f"Damage: {int(p.percent)}%"
-    for i, txt in enumerate((label, fsm, jumps, shield, stocks, percent)):
+    for i, txt in enumerate((label, fsm, jumps, shield, shield_attempting, stocks, percent)):
         surf = font.render(txt, True, WHITE)  # TODO: replace magic vals w/ named vars
         pos = (
             (
@@ -148,6 +149,8 @@ while running:
     # ---- update
     for p in players:
         p.update(frame_input, platforms, attacks)
+    #### TODO: implement player push & slide
+    #### physics.resolve_player_push(list(player_group))
     attacks.update()
     combat.process_hits(players, attacks)
 
@@ -164,7 +167,7 @@ while running:
             continue
         screen.blit(p.image, p.rect)
         draw_eye(p)
-        if p.shielding:
+        if p.shield_attempting:
             #### TODO: convert shield radius magic nums to config constants (READY)
             ratio = p.shield_hp / SHIELD_MAX_HP
             shield_radius = int(MAX_SHIELD_RADIUS * ratio)
@@ -182,6 +185,17 @@ while running:
 
     draw_hud(player1, "P1")  # drawn by default in upper-left corner
     draw_hud(player2, "P2", topright=True)
+
+    # draw keys pressed for debugging
+    if frame_input:
+        # keys = ", ".join(
+        #     f"{k}: {v}" for k, v in frame_input.items() if v
+        # )
+        keys_surf = font.render(frame_input.__str__(), True, WHITE)
+        screen.blit(keys_surf, (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
+    # draw FPS
+    fps_surf = font.render(f"FPS: {clock.get_fps():.2f}", True, WHITE)
+    screen.blit(fps_surf, (SCREEN_WIDTH - fps_surf.get_width() - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
 
     pygame.display.flip()
 
