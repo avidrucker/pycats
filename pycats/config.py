@@ -34,13 +34,14 @@ AIR_FRICTION = 0.05
 
 # Timers (frames)
 HURT_TIME = 12
-STUN_TIME = 40
+STUN_TIME = 60
 DODGE_TIME = 14
 DODGE_SPEED = 28  # horizontal boost for a roll
 
 # ---------------- combat / attacks ----------------
 #### TODO: implement variable attack lifetimes, attack sizes, attack colors, and hit damage, save each attack into a dictionary with the attack name as the key
 ATTACK_LIFETIME = 12
+PLAYER_ATTACK_DURATION = 12 # this can be different than the lifetime of an attack, for example, a fireball could take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames
 ATTACK_SIZE = (30, 18)  # width, height
 HIT_DAMAGE = 10  # default damage per hit
 
