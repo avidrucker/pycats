@@ -27,6 +27,7 @@ from .config import *  #### TODO: replace all global imports with specific impor
 from .entities import Platform, Player
 from .systems import combat
 from .core import input as inp
+from .core.physics import resolve_player_push
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
@@ -153,8 +154,7 @@ while running:
     # ---- update
     for p in players:
         p.update(frame_input, platforms, attacks)
-    #### TODO: implement player push & slide
-    #### physics.resolve_player_push(list(player_group))
+    resolve_player_push(list(players))
     attacks.update()
     combat.process_hits(players, attacks)
 
