@@ -34,4 +34,6 @@ class FSM:
             return
         if f := self.on_enter.get(nxt):
             f(self, ctx)  # treat as 'on_enter'
+        # debugging output
+        # print(f"FSM: changing from '{self.state}' to '{nxt}'")
         self.state = nxt
