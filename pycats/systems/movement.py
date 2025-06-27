@@ -20,7 +20,7 @@ def step_horizontal(
     • Returns (new_vel, new_facing_right).
     """
     # 1) friction
-    apply_horizontal_friction(vel, on_ground)
+    vel = apply_horizontal_friction(vel, on_ground)
 
     # 2) cancel out opposite inputs
     if press_left and press_right:
