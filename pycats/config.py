@@ -32,6 +32,12 @@ MAX_JUMPS = 2  # single + double
 GROUND_FRICTION = 0.2
 AIR_FRICTION = 0.05
 
+# Timers (frames)
+HURT_TIME   = 12
+STUN_TIME   = 40
+DODGE_TIME  = 14
+DODGE_SPEED = 28      # horizontal boost for a roll
+
 # ---------------- combat / attacks ----------------
 #### TODO: implement variable attack lifetimes, attack sizes, attack colors, and hit damage, save each attack into a dictionary with the attack name as the key
 ATTACK_LIFETIME = 12
@@ -102,6 +108,8 @@ P1_COLOR = (255, 160, 64)  # orange
 P2_COLOR = (90, 90, 90)  # gray
 BLACK = (0, 0, 0)  # black
 WHITE = (255, 255, 255)  # white
+RED = (255, 0, 0)  # red
+YELLOW = (255, 255, 0)  # yellow
 #### TODO: implement player color (yellow, blue, red, green) which will affect the shield color
 #### TODO: implement parameterized shield color
 SHIELD_COLOR = (80, 180, 255)
