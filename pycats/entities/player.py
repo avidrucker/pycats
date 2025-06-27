@@ -11,22 +11,19 @@ Use: Core gameplay logic for player control and interaction.
 """
 
 #### MOST READY/PRIORITY TODOS
-#### TODO: squash bug where holding down shield while on the ground and pressing left/right should allow a single dodge roll or spot dodge, and then a re-entry into shield without allowing further dodges or entering into run state, but currently it allows entering of run state
 #### TODO: add thorough docstrings to all methods and classes
 #### TODO: implement friction and horizontal movement acceleration
 #### TODO: change private method func signatures to start with underscore, make sure to update all calls
-#### TODO: make shielding / entering shield state only possible when on the ground
-#### TODO: implement visual effects like flashing red on hit, white on dodge, etc.
 #### TODO: implement ground dodging will not take players off the ledge
 #### TODO: implement spot dodge where player can dodge in place without moving, and this does not move them below a thin ledge if they are holding shield and down
+#### TODO: fix bug where consecutive quick hits will quickly cause the defender to be projected off the stage
+#### TODO: implement prone status where player is knocked down and cannot move or attack for a short time, and then can get up by pressing a button
 
 #### LESS READY/LOW PRIORITY TODOS
 #### TODO: make player shielding ineffective against grabs
 #### TODO: implement grabs which are combo regular-attack + shield, and can be initiated from idle or shielding, and can be used against an opponent who is in idle, walking, running, or shielding state, and the grab will put the opponent into a grabbed state where they cannot move or attack, and the grabber can then throw them off the stage or do a follow-up attack
-#### TODO: implement dodges which are combo move + shield, and can be iniated from idle or walking
 #### TODO: research and implement move/input buffering
 #### TODO: implement fast fall by holding down which will cause the player to fall faster
-#### TODO: make shielding in the air do an air dodge instead of a shield bubble, and max sure to cap air dodges to once per jump/fall status entering (i.e. until the player lands (Q: or is hit?) they don't get another air dodge)
 #### TODO: implement ledge grabbing mechanics where the player can grab the ledge when falling off of a platform, and then can press up to get back on the platform, or down to drop down from the ledge, they get limited time invulnerability while hanging on the ledge, and eventually fall off the ledge if they don't get back on the platform (Q: can thin platforms be grabbed as well as thick platforms?)
 
 import pygame  # type: ignore
