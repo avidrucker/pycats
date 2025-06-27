@@ -18,8 +18,8 @@ def process_hits(players, attacks):
             continue
 
         for defender in players:
-            # Skip if defender is dead or is the owner of the attack
-            if not defender.is_alive or defender is atk.owner:  # no self-hit
+            # Skip if defender is invulnerable, is dead, or is the owner of the attack
+            if defender.invulnerable or not defender.is_alive or defender is atk.owner:  # no self-hit
                 continue
 
             if atk.rect.colliderect(defender.rect):
