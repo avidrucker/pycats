@@ -31,7 +31,7 @@ DODGE_FRAMES = 15
 MAX_JUMPS = 2  # single + double
 
 # ---------------- physics constants --------------
-GROUND_FRICTION = 0.9   # 1.0 = ice; 0.0 = instant stop
+GROUND_FRICTION = 0.5  # 1.0 = ice; 0.0 = instant stop
 AIR_FRICTION    = 0.85
 
 # Timers (frames)

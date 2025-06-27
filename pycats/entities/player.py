@@ -196,7 +196,6 @@ class Player(pygame.sprite.Sprite):
         if self.fsm.state not in ("dodge", "hurt", "stun"):
             self.handle_actions(input_frame, attack_group)
             self.handle_move(held)
-            apply_horizontal_friction(self.vel, self.on_ground)
 
 
         # physics ---------------------------------------------------
