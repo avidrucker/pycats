@@ -98,3 +98,44 @@ def apply_horizontal_friction(
     factor = factor_ground if on_ground else AIR_FRICTION
     vel.x = int(vel.x * factor)
     return vel
+
+# -------------------------------------------------- player-to-player collision
+def resolve_player_push(players: list["Player"]) -> None:
+    """
+    Separate overlapping player rects.
+    • If both are moving → split the overlap 50-50.
+    • If one is still    → push the still one the full distance.
+    • Works on both axes so you can slide around corners.
+    """
+    for i in range(len(players)):
+        for j in range(i + 1, len(players)):
+            a, b = players[i], players[j]
+            # Dodging players have no body
+            if a.fsm.state == "dodge" or b.fsm.state == "dodge":
+                continue
+            if not a.rect.colliderect(b.rect):
+                continue
+
+            # overlap on each axis
+            dx_left  = a.rect.right - b.rect.left
+            dx_right = b.rect.right - a.rect.left
+            dy_top   = a.rect.bottom - b.rect.top
+            dy_bot   = b.rect.bottom - a.rect.top
+
+            # smallest-magnitude resolution vector
+            push_x, push_y = 0, 0
+            if min(dx_left, dx_right) < min(dy_top, dy_bot):
+                push = dx_left if dx_left < dx_right else -dx_right
+                push_x = push
+            else:
+                push = dy_top if dy_top < dy_bot else -dy_bot
+                push_y = push
+
+            # share or assign the shove
+            if a.vel.length_squared() == 0 and b.vel.length_squared() != 0:
+                a.rect.move_ip(push_x, push_y)
+            elif b.vel.length_squared() == 0 and a.vel.length_squared() != 0:
+                b.rect.move_ip(-push_x, -push_y)
+            else:
+                a.rect.move_ip(push_x / 2, push_y / 2)
+                b.rect.move_ip(-push_x / 2, -push_y / 2)
