@@ -88,6 +88,7 @@ player1 = Player(
     P1_KEYS,
     P1_COLOR,
     eye_color=BLACK,
+    char_name="Player 1",
     facing_right=True,
 )
 player2 = Player(
@@ -96,6 +97,7 @@ player2 = Player(
     P2_KEYS,
     P2_COLOR,
     eye_color=WHITE,
+    char_name="Player 2",
     facing_right=False,
 )
 players = pygame.sprite.Group(player1, player2)
@@ -169,7 +171,7 @@ while running:
             continue
         screen.blit(p.image, p.rect)
         draw_eye(p)
-        if p.shield_attempting:
+        if p.fsm.state == "shield":
             #### TODO: convert shield radius magic nums to config constants (READY)
             ratio = p.shield_hp / SHIELD_MAX_HP
             shield_radius = int(MAX_SHIELD_RADIUS * ratio)
