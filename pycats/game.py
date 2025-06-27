@@ -124,7 +124,9 @@ def draw_hud(p: Player, label, topright=False):
     shield_attempting = f"Shield Attempting: {'Yes' if p.shield_attempting else 'No'}"
     stocks = f"Lives: {p.lives}"
     percent = f"Damage: {int(p.percent)}%"
-    for i, txt in enumerate((label, fsm, jumps, shield, shield_attempting, stocks, percent)):
+    for i, txt in enumerate(
+        (label, fsm, jumps, shield, shield_attempting, stocks, percent)
+    ):
         surf = font.render(txt, True, WHITE)  # TODO: replace magic vals w/ named vars
         pos = (
             (
@@ -195,7 +197,13 @@ while running:
         screen.blit(keys_surf, (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
     # draw FPS
     fps_surf = font.render(f"FPS: {clock.get_fps():.2f}", True, WHITE)
-    screen.blit(fps_surf, (SCREEN_WIDTH - fps_surf.get_width() - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
+    screen.blit(
+        fps_surf,
+        (
+            SCREEN_WIDTH - fps_surf.get_width() - HUD_PADDING,
+            SCREEN_HEIGHT - HUD_SPACING,
+        ),
+    )
 
     pygame.display.flip()
 

@@ -99,6 +99,7 @@ def apply_horizontal_friction(
     vel.x = int(vel.x * factor)
     return vel
 
+
 # -------------------------------------------------- player-to-player collision
 def resolve_player_push(players: list["Player"]) -> None:
     """
@@ -117,10 +118,10 @@ def resolve_player_push(players: list["Player"]) -> None:
                 continue
 
             # overlap on each axis
-            dx_left  = a.rect.right - b.rect.left
+            dx_left = a.rect.right - b.rect.left
             dx_right = b.rect.right - a.rect.left
-            dy_top   = a.rect.bottom - b.rect.top
-            dy_bot   = b.rect.bottom - a.rect.top
+            dy_top = a.rect.bottom - b.rect.top
+            dy_bot = b.rect.bottom - a.rect.top
 
             # smallest-magnitude resolution vector
             push_x, push_y = 0, 0
