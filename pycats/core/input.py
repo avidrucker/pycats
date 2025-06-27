@@ -13,6 +13,14 @@ class InputFrame:
     released: set[int]  # keys that were up THIS frame, i.e. "just released"
     # buffered: set[int]   # keys pressed in the last N frames
 
+    # to string method
+    def __str__(self) -> str:
+        return (
+            f"InputFrame(held={self.held}, "
+            f"pressed={self.pressed}, "
+            f"released={self.released})"
+        )
+
 
 _currently_held: set[int] = set()
 
