@@ -49,7 +49,7 @@ from ..config import (
     WHITE,
     RED,
     YELLOW,
-    PLAYER_ATTACK_DURATION
+    PLAYER_ATTACK_DURATION,
 )
 from .attack import Attack
 from ..core.physics import apply_gravity, move_rect, solve_vertical
@@ -82,7 +82,9 @@ class Player(pygame.sprite.Sprite):
     #### TODO: implement variable player sizes
     SIZE = PLAYER_SIZE
 
-    def __init__(self, x, y, controls: dict, color, eye_color, char_name, facing_right=True):
+    def __init__(
+        self, x, y, controls: dict, color, eye_color, char_name, facing_right=True
+    ):
         super().__init__()
         self.image = pygame.Surface(self.SIZE)
         self.char_color = color
@@ -414,7 +416,8 @@ class Player(pygame.sprite.Sprite):
                     ),
                     Transition("hurt", lambda f, ctx: self.hurt_timer > 0),
                     Transition(
-                        "shield", lambda f, ctx: self.shield_attempting and self.on_ground
+                        "shield",
+                        lambda f, ctx: self.shield_attempting and self.on_ground,
                     ),  # can enter shield state while running on the ground
                 ],
                 "jump": [
