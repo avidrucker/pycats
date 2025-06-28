@@ -28,7 +28,8 @@ from .config import *  #### TODO: replace all global imports with specific impor
 from .config import (
     EAR_WIDTH, EAR_HEIGHT, EAR_SPACING, EAR_PADDING, WHISKER_LENGTH, 
     WHISKER_THICKNESS, WHISKER_SPACING, WHISKER_COUNT, WHISKER_ANGLE,
-    TAIL_SEGMENTS, TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH
+    TAIL_SEGMENTS, TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH,
+    WHISKER_OFFSET_Y, WHISKER_OFFSET_X
 )
 from .entities import Platform, Player
 from .systems import combat
@@ -156,8 +157,8 @@ def draw_cat_features(p: Player):
     pygame.draw.polygon(screen, p.char_color, right_ear_points)
 
     # Draw whiskers (lines)
-    whisker_start_x = p.rect.right - EYE_OFFSET_X if p.facing_right else p.rect.left + EYE_OFFSET_X
-    whisker_start_y = p.rect.top + EYE_OFFSET_Y + EYE_RADIUS // 2
+    whisker_start_x = p.rect.right - WHISKER_OFFSET_X if p.facing_right else p.rect.left + WHISKER_OFFSET_X
+    whisker_start_y = p.rect.top + WHISKER_OFFSET_Y + EYE_RADIUS // 2
 
     # Direction of whiskers depends on facing direction
     direction = 1 if p.facing_right else -1
