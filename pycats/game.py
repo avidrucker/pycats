@@ -27,8 +27,7 @@ from .config import *  #### TODO: replace all global imports with specific impor
 # Also explicitly import the new cat feature constants
 from .config import (
     EAR_WIDTH, EAR_HEIGHT, EAR_SPACING, EAR_PADDING, WHISKER_LENGTH, 
-    WHISKER_THICKNESS, WHISKER_SPACING, WHISKER_COUNT, WHISKER_ANGLE,
-    TAIL_SEGMENTS, TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH,
+    WHISKER_THICKNESS, WHISKER_COUNT, WHISKER_ANGLE,
     WHISKER_OFFSET_Y, WHISKER_OFFSET_X
 )
 from .entities import Platform, Player
