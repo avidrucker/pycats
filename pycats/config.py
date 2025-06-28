@@ -125,6 +125,27 @@ WHISKER_SPACING = 4
 WHISKER_COUNT = 3
 WHISKER_ANGLE = 25  # Angle in degrees between whiskers
 
+# ---------------- tail features -----------------
+TAIL_SEGMENTS = 30  # Number of segments in the tail
+TAIL_SEGMENT_LENGTH = 3  # Length of each segment
+TAIL_SEGMENT_WIDTH = 15  # Width of each segment (tapers towards the tip)
+TAIL_BASE_OFFSET_X = 15  # Horizontal offset from player center to tail base
+TAIL_BASE_OFFSET_Y = 5  # Vertical offset from player bottom to tail base
+TAIL_WAVE_AMPLITUDE = 0.25  # Amplitude of the idle wave motion (radians)
+TAIL_WAVE_FREQUENCY = 0.05  # Much slower frequency for more graceful idle motion
+TAIL_FOLLOW_STRENGTH = 0.05  # Much lower for slower following
+TAIL_DAMPING = 0.92  # Higher damping for smoother motion
+TAIL_UPDATE_FREQUENCY = 1  # Update every frame for smoother motion
+TAIL_MIN_MOVEMENT_THRESHOLD = 0.05  # Lower threshold for more responsive small movements
+TAPER_MODIFER = 0.1  # Tapering effect for tail segments
+
+# New drag/trail constants for more graceful movement
+TAIL_DRAG_STRENGTH = 0.9      # Higher drag for more trailing effect
+TAIL_GRAVITY_EFFECT = 0.7     # Moderate gravity effect
+TAIL_MOMENTUM_DECAY = 0.95    # Higher momentum retention for flowing motion
+TAIL_MAX_BEND_ANGLE = 0.7     # Smaller max bend for more natural curves
+TAIL_VELOCITY_SENSITIVITY = 0.1  # Much lower sensitivity for gentler response
+
 #### TODO: implement player color (yellow, blue, red, green) which will affect the shield color
 #### TODO: implement parameterized shield color
 SHIELD_COLOR = (80, 180, 255)

@@ -132,6 +132,10 @@ class Player(pygame.sprite.Sprite):
         # Facing
         self.facing_right = facing_right
 
+        # Tail (initialize after facing_right is set)
+        from .tail import Tail
+        self.tail = Tail(self)
+
     # ----------- hit processing ------------
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""
@@ -230,6 +234,9 @@ class Player(pygame.sprite.Sprite):
             self.attack_timer -= 1
         if self.attack_timer == 0 and self.fsm.state == "attack":
             self.done_attacking = True
+
+        # Update tail physics
+        self.tail.update()
 
         # FSM state transitions -----------------------------------
         self.fsm.update()

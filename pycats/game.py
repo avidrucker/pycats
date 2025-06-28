@@ -27,7 +27,8 @@ from .config import *  #### TODO: replace all global imports with specific impor
 # Also explicitly import the new cat feature constants
 from .config import (
     EAR_WIDTH, EAR_HEIGHT, EAR_SPACING, EAR_PADDING, WHISKER_LENGTH, 
-    WHISKER_THICKNESS, WHISKER_SPACING, WHISKER_COUNT, WHISKER_ANGLE
+    WHISKER_THICKNESS, WHISKER_SPACING, WHISKER_COUNT, WHISKER_ANGLE,
+    TAIL_SEGMENTS, TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH
 )
 from .entities import Platform, Player
 from .systems import combat
@@ -235,6 +236,9 @@ while running:
             not p.is_alive
         ):  # TODO: replace this w/ KO state check after implementing KO state
             continue
+        # Draw tail first (behind player)
+        p.tail.draw(screen)
+        # Draw player body
         screen.blit(p.image, p.rect)
         draw_eye(p)
         draw_cat_features(p)  # Draw cat features (ears and whiskers)
