@@ -95,6 +95,14 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(midbottom=(x, y))
         self.eye_color = eye_color
 
+        # Secondary fur color for stripes
+        if color == (255, 160, 64):  # Orange player (P1_COLOR)
+            self.stripe_color = (204, 102, 0)  # Dark orange
+        elif color == (90, 90, 90):  # Gray player (P2_COLOR)
+            self.stripe_color = (0, 0, 0)  # Black
+        else:
+            self.stripe_color = color  # Default to same color if no match
+
         # ---------- combat stats ----------
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP

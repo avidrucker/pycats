@@ -37,6 +37,10 @@ from .config import (
     WHISKER_ANGLE,
     WHISKER_OFFSET_Y,
     WHISKER_OFFSET_X,
+    STRIPE_COUNT,
+    STRIPE_WIDTH,
+    STRIPE_HEIGHT,
+    STRIPE_SPACING,
 )
 from .entities import Platform, Player
 from .systems import combat
@@ -210,6 +214,40 @@ def draw_cat_features(p: Player):
         pygame.draw.line(screen, WHITE, start_pos, end_pos, WHISKER_THICKNESS)
 
 
+def draw_stripes(p: Player):
+    """Draws triangular stripes on the player's back for pattern."""
+    # Calculate stripe positions on the back of the player
+    back_center_x = p.rect.centerx + (-10 if p.facing_right else 10)
+    back_start_y = p.rect.top + 15  # Start stripes a bit down from the top
+    
+    for i in range(STRIPE_COUNT):
+        # Calculate vertical position for each stripe
+        stripe_y = back_start_y + i * STRIPE_SPACING
+        
+        # Make sure we don't draw stripes outside the player rectangle
+        if stripe_y + STRIPE_HEIGHT > p.rect.bottom:
+            break
+            
+        # Create triangular stripe points pointing toward the front of the cat
+        if p.facing_right:
+            # Right-facing cat: triangle points right, flat side on the left (back)
+            stripe_points = [
+                (back_center_x - STRIPE_WIDTH // 2, stripe_y),                    # Back top
+                (back_center_x - STRIPE_WIDTH // 2, stripe_y + STRIPE_HEIGHT),    # Back bottom
+                (back_center_x + STRIPE_WIDTH // 2, stripe_y + STRIPE_HEIGHT // 2), # Front point
+            ]
+        else:
+            # Left-facing cat: triangle points left, flat side on the right (back)
+            stripe_points = [
+                (back_center_x + STRIPE_WIDTH // 2, stripe_y),                    # Back top
+                (back_center_x + STRIPE_WIDTH // 2, stripe_y + STRIPE_HEIGHT),    # Back bottom
+                (back_center_x - STRIPE_WIDTH // 2, stripe_y + STRIPE_HEIGHT // 2), # Front point
+            ]
+        
+        # Draw the triangular stripe
+        pygame.draw.polygon(screen, p.stripe_color, stripe_points)
+
+
 #### TODO: split off damage % and stock lives rendering so that they are rendering last and at the bottom left and right corners of the screen
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
 def draw_hud(p: Player, label, topright=False):
@@ -302,9 +340,12 @@ while running:
         p.tail.draw(screen)
         # Draw player body
         screen.blit(p.image, p.rect)
+        # Draw stripes on the player's back
+        draw_stripes(p)
         draw_eye(p)
         draw_eye(p, eye=False)  # Draw a glint in the eye
         draw_cat_features(p)  # Draw cat features (ears and whiskers)
+        draw_stripes(p)  # Draw stripes on the player's back
         if p.fsm.state == "shield":
             #### TODO: convert shield radius magic nums to config constants (READY)
             ratio = p.shield_hp / SHIELD_MAX_HP

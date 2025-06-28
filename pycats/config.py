@@ -131,6 +131,12 @@ WHISKER_SPACING = 4
 WHISKER_COUNT = 3
 WHISKER_ANGLE = 25  # Angle in degrees between whiskers
 
+# Stripe pattern constants
+STRIPE_COUNT = 3
+STRIPE_WIDTH = 20
+STRIPE_HEIGHT = 8
+STRIPE_SPACING = 12  # Vertical spacing between stripes
+
 # ---------------- tail features -----------------
 TAIL_SEGMENTS = 30  # Number of segments in the tail
 TAIL_SEGMENT_LENGTH = 3  # Length of each segment
