@@ -14,8 +14,9 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: add thorough docstrings to all methods and classes
 #### TODO: change private method func signatures to start with underscore, make sure to update all calls
 #### DONE: implement ground dodging will not take players off the ledge
-#### TODO: implement spot dodge where player can dodge in place without moving, and this does not move them below a thin ledge if they are holding shield and down
+#### DONE: implement spot dodge where player can dodge in place without moving, and this does not move them below a thin ledge if they are holding shield and down
 #### TODO: fix bug where consecutive quick hits will quickly cause the defender to be projected off the stage
+#### TODO: fix bug where player stays red sometimes after being hit while moving or attacking
 #### TODO: implement prone status where player is knocked down and cannot move or attack for a short time, and then can get up by pressing a button
 
 #### LESS READY/LOW PRIORITY TODOS
@@ -142,6 +143,7 @@ class Player(pygame.sprite.Sprite):
         
         # Edge-aware dodge state
         self.dodge_blocked_by_edge = False  # Track if current dodge is blocked by edge
+        self.spot_dodge_shield_held = False  # Track if shield was held during spot dodge
 
         # FSM current state
         self.fsm = self._build_fsm()
@@ -234,7 +236,8 @@ class Player(pygame.sprite.Sprite):
                 # First, check if velocity would take us off edge
                 if self.vel.x != 0 and would_dodge_off_platform(self.rect, self.vel.x, current_platform):
                     # Stop horizontal movement to prevent falling off
-                    print(f"EDGE BLOCKED: {self.char_name} dodge movement stopped (vel was {self.vel.x}) at pos ({self.rect.centerx}, {self.rect.centery})")
+                    # debugging
+                    # print(f"EDGE BLOCKED: {self.char_name} dodge movement stopped (vel was {self.vel.x}) at pos ({self.rect.centerx}, {self.rect.centery})")
                     self.vel.x = 0
                     self.dodge_blocked_by_edge = True
                 
@@ -247,14 +250,16 @@ class Player(pygame.sprite.Sprite):
                     old_pos = self.rect.left
                     self.rect.left = platform_rect.left
                     self.vel.x = 0  # Stop any leftward movement
-                    print(f"CLAMPED LEFT: {self.char_name} from {old_pos} to {self.rect.left}")
+                    # debugging
+                    # print(f"CLAMPED LEFT: {self.char_name} from {old_pos} to {self.rect.left}")
                 
                 # Prevent right edge of player from going past right edge of platform
                 if self.rect.right > platform_rect.right:
                     old_pos = self.rect.right
                     self.rect.right = platform_rect.right
                     self.vel.x = 0  # Stop any rightward movement
-                    print(f"CLAMPED RIGHT: {self.char_name} from {old_pos} to {self.rect.right}")
+                    # debugging
+                    # print(f"CLAMPED RIGHT: {self.char_name} from {old_pos} to {self.rect.right}")
         
         # Apply movement - this must happen immediately after edge check
         move_rect(self.rect, self.vel)
@@ -267,20 +272,37 @@ class Player(pygame.sprite.Sprite):
                 
                 # Clamp position if player went off platform edges
                 if self.rect.left < platform_rect.left:
-                    print(f"POST-MOVE CLAMP LEFT: {self.char_name} moved to {self.rect.left}, clamping to {platform_rect.left}")
+                    # print(f"POST-MOVE CLAMP LEFT: {self.char_name} moved to {self.rect.left}, clamping to {platform_rect.left}")
                     self.rect.left = platform_rect.left
                     self.vel.x = 0
                 
                 if self.rect.right > platform_rect.right:
-                    print(f"POST-MOVE CLAMP RIGHT: {self.char_name} moved to {self.rect.right}, clamping to {platform_rect.right}")
+                    # print(f"POST-MOVE CLAMP RIGHT: {self.char_name} moved to {self.rect.right}, clamping to {platform_rect.right}")
                     self.rect.right = platform_rect.right
                     self.vel.x = 0
+        
+        # Special handling for spot dodge: prevent falling through thin platforms
+        # if shield is still held when dodge ends
+        should_prevent_drop_through = (
+            (self.fsm.state == "dodge" and 
+             self.spot_dodge_shield_held and 
+             self._pressed(held, "shield") and 
+             self._pressed(held, "down")) or
+            # Also prevent drop-through immediately after spot dodge if shield is held
+            (self.fsm.state == "shield" and 
+             self.shield_attempting and 
+             self._pressed(held, "down"))
+        )
+        
+        # debugging
+        # if should_prevent_drop_through:
+        #     print(f"DROP THROUGH BLOCKED: {self.char_name} prevented from dropping through thin platform (state: {self.fsm.state})")
         
         self.vel, self.on_ground, self.drop_platform = solve_vertical(
             self.rect,
             self.vel,
             platforms,
-            self._pressed(held, "down"),
+            self._pressed(held, "down") and not should_prevent_drop_through,  # Don't drop through if spot dodging with shield
             self.drop_platform,
         )
 
@@ -301,6 +323,15 @@ class Player(pygame.sprite.Sprite):
             self.invulnerable = False  # reset invulnerability after dodge ends
             self.image.fill(self.char_color)  # reset image color to normal
             self.vel.x = 0  # stop horizontal movement after dodge ends
+            
+            # Handle spot dodge transition
+            if self.spot_dodge_shield_held:
+                # print(f"SPOT DODGE END: {self.char_name} ending spot dodge, shield_held={self._pressed(held, 'shield')}")
+                if self._pressed(held, "shield"):
+                    # Force shield attempting to true for smooth transition
+                    self.shield_attempting = True
+                    # print(f"SPOT DODGE TRANSITION: {self.char_name} shield_attempting set to True")
+                self.spot_dodge_shield_held = False  # reset spot dodge flag
         if self.attack_timer > 0:
             self.attack_timer -= 1
         if self.attack_timer == 0 and self.fsm.state == "attack":
@@ -396,6 +427,11 @@ class Player(pygame.sprite.Sprite):
 
             if dir_x is not None:
                 if self.on_ground or self.air_dodge_ok:
+                    # Track if this is a spot dodge with shield held
+                    if dir_x == 0 and shield_down:
+                        self.spot_dodge_shield_held = True
+                        # print(f"SPOT DODGE: {self.char_name} initiated spot dodge with shield held")
+                    
                     self._start_dodge(dir_x)
                     if not self.on_ground:
                         self.air_dodge_ok = False
@@ -426,7 +462,8 @@ class Player(pygame.sprite.Sprite):
         )
 
     def _ko(self):
-        print(f"PLAYER KO: {self.char_name} fell off and lost a life! (lives: {self.lives-1})")
+        # debugging
+        # print(f"PLAYER KO: {self.char_name} fell off and lost a life! (lives: {self.lives-1})")
         self.lives -= 1
         self.is_alive = False
         self.respawn_timer = RESPAWN_DELAY_FRAMES
@@ -468,6 +505,10 @@ class Player(pygame.sprite.Sprite):
         
         # Set dodge velocity (friction will be applied, edge checking happens during physics)
         self.vel.update(dir_x * DODGE_SPEED, 0)
+        
+        # If this is not a spot dodge, reset the spot dodge flag
+        if dir_x != 0:
+            self.spot_dodge_shield_held = False
 
     # --------------------------------------------------- FSM scaffold (pass-A)
     def _build_fsm(self) -> FSM:
@@ -540,7 +581,8 @@ class Player(pygame.sprite.Sprite):
                         "idle",
                         lambda f, ctx: not self.shield_attempting
                         and self.dodge_timer <= 0
-                        and self.on_ground,
+                        and self.on_ground
+                        and not self.spot_dodge_shield_held,  # Don't go to idle if spot dodge shield is held
                     ),  #  and self.vel.x == 0
                     Transition(
                         "fall",
