@@ -32,7 +32,7 @@ MAX_JUMPS = 2  # single + double
 
 # ---------------- physics constants --------------
 GROUND_FRICTION = 0.5  # 1.0 = ice; 0.0 = instant stop
-AIR_FRICTION    = 0.85
+AIR_FRICTION = 0.85
 
 # Timers (frames)
 HURT_TIME = 12
@@ -138,14 +138,16 @@ TAIL_WAVE_FREQUENCY = 0.05  # Much slower frequency for more graceful idle motio
 TAIL_FOLLOW_STRENGTH = 0.05  # Much lower for slower following
 TAIL_DAMPING = 0.92  # Higher damping for smoother motion
 TAIL_UPDATE_FREQUENCY = 1  # Update every frame for smoother motion
-TAIL_MIN_MOVEMENT_THRESHOLD = 0.05  # Lower threshold for more responsive small movements
+TAIL_MIN_MOVEMENT_THRESHOLD = (
+    0.05  # Lower threshold for more responsive small movements
+)
 TAPER_MODIFER = 0.1  # Tapering effect for tail segments
 
 # New drag/trail constants for more graceful movement
-TAIL_DRAG_STRENGTH = 0.9      # Higher drag for more trailing effect
-TAIL_GRAVITY_EFFECT = 0.7     # Moderate gravity effect
-TAIL_MOMENTUM_DECAY = 0.95    # Higher momentum retention for flowing motion
-TAIL_MAX_BEND_ANGLE = 0.7     # Smaller max bend for more natural curves
+TAIL_DRAG_STRENGTH = 0.9  # Higher drag for more trailing effect
+TAIL_GRAVITY_EFFECT = 0.7  # Moderate gravity effect
+TAIL_MOMENTUM_DECAY = 0.95  # Higher momentum retention for flowing motion
+TAIL_MAX_BEND_ANGLE = 0.7  # Smaller max bend for more natural curves
 TAIL_VELOCITY_SENSITIVITY = 0.1  # Much lower sensitivity for gentler response
 
 #### TODO: implement player color (yellow, blue, red, green) which will affect the shield color

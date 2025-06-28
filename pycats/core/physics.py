@@ -96,8 +96,8 @@ def apply_horizontal_friction(
     Multiply vel.x by ground- or air-friction factor.
     """
     factor = factor_ground if on_ground else AIR_FRICTION
-    vel.x *= factor                # no rounding
-    if abs(vel.x) < 0.05:          # dead-zone
+    vel.x *= factor  # no rounding
+    if abs(vel.x) < 0.05:  # dead-zone
         vel.x = 0
     return vel
 
@@ -107,7 +107,7 @@ def resolve_player_push(players: list["Player"]) -> None:
     for i in range(len(players)):
         for j in range(i + 1, len(players)):
             a, b = players[i], players[j]
-            
+
             # Skip players in "dodge" state
             if a.fsm.state == "dodge" or b.fsm.state == "dodge":
                 continue
@@ -123,16 +123,16 @@ def resolve_player_push(players: list["Player"]) -> None:
             # Determine which axis has the smaller overlap
             dx = min(dx_left, dx_right)
             dy = min(dy_top, dy_bot)
-            
+
             if dx < dy:  # Resolve horizontally
                 # Calculate the overlap amount
                 if a.rect.centerx < b.rect.centerx:  # A is to the left of B
-                    overlap = (a.rect.right - b.rect.left)
+                    overlap = a.rect.right - b.rect.left
                     # Move both players away from each other equally
                     a.rect.x -= overlap // 2 + 1
                     b.rect.x += overlap // 2 + 1
                 else:  # B is to the left of A
-                    overlap = (b.rect.right - a.rect.left)
+                    overlap = b.rect.right - a.rect.left
                     a.rect.x += overlap // 2 + 1
                     b.rect.x -= overlap // 2 + 1
 
@@ -163,10 +163,10 @@ def resolve_player_push(players: list["Player"]) -> None:
                 # 1. For player jump-on-player, don't push them through platforms
                 a_on_ground = getattr(a, "on_ground", False)
                 b_on_ground = getattr(b, "on_ground", False)
-                
+
                 # If either player is on ground, don't move them down
                 if a.rect.centery < b.rect.centery:  # A is above B
-                    overlap = (a.rect.bottom - b.rect.top)
+                    overlap = a.rect.bottom - b.rect.top
                     # If B is on ground, only move A up
                     if b_on_ground:
                         a.rect.bottom = b.rect.top - 1
@@ -175,7 +175,7 @@ def resolve_player_push(players: list["Player"]) -> None:
                         a.rect.y -= overlap // 2 + 1
                         b.rect.y += overlap // 2 + 1
                 else:  # B is above A
-                    overlap = (b.rect.bottom - a.rect.top)
+                    overlap = b.rect.bottom - a.rect.top
                     # If A is on ground, only move B up
                     if a_on_ground:
                         b.rect.bottom = a.rect.top - 1

@@ -49,7 +49,12 @@ from ..config import (
     PLAYER_ATTACK_DURATION,
 )
 from .attack import Attack
-from ..core.physics import apply_gravity, move_rect, solve_vertical, apply_horizontal_friction
+from ..core.physics import (
+    apply_gravity,
+    move_rect,
+    solve_vertical,
+    apply_horizontal_friction,
+)
 from ..systems.movement import step_horizontal
 from ..systems.fsm import FSM, Transition
 
@@ -134,6 +139,7 @@ class Player(pygame.sprite.Sprite):
 
         # Tail (initialize after facing_right is set)
         from .tail import Tail
+
         self.tail = Tail(self)
 
     # ----------- hit processing ------------
@@ -200,7 +206,6 @@ class Player(pygame.sprite.Sprite):
         if self.fsm.state not in ("dodge", "hurt", "stun"):
             self.handle_actions(input_frame, attack_group)
             self.handle_move(held)
-
 
         # physics ---------------------------------------------------
         apply_gravity(self.vel)

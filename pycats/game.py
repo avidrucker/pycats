@@ -24,11 +24,19 @@ Use: This is the entry point for running the game.
 import sys
 import pygame  # type: ignore
 from .config import *  #### TODO: replace all global imports with specific imports from config.py (READY)
+
 # Also explicitly import the new cat feature constants
 from .config import (
-    EAR_WIDTH, EAR_HEIGHT, EAR_SPACING, EAR_PADDING, WHISKER_LENGTH, 
-    WHISKER_THICKNESS, WHISKER_COUNT, WHISKER_ANGLE,
-    WHISKER_OFFSET_Y, WHISKER_OFFSET_X
+    EAR_WIDTH,
+    EAR_HEIGHT,
+    EAR_SPACING,
+    EAR_PADDING,
+    WHISKER_LENGTH,
+    WHISKER_THICKNESS,
+    WHISKER_COUNT,
+    WHISKER_ANGLE,
+    WHISKER_OFFSET_Y,
+    WHISKER_OFFSET_X,
 )
 from .entities import Platform, Player
 from .systems import combat
@@ -133,14 +141,23 @@ def draw_cat_features(p: Player):
     left_ear_points = [
         (head_center_x - EAR_SPACING // 2, head_top_y),  # Bottom right point
         (head_center_x - EAR_SPACING // 2 - EAR_WIDTH, head_top_y),  # Bottom left point
-        (head_center_x - EAR_SPACING // 2 - EAR_WIDTH // 2, head_top_y - EAR_HEIGHT),  # Top point
+        (
+            head_center_x - EAR_SPACING // 2 - EAR_WIDTH // 2,
+            head_top_y - EAR_HEIGHT,
+        ),  # Top point
     ]
 
     # Right ear coordinates
     right_ear_points = [
         (head_center_x + EAR_SPACING // 2, head_top_y),  # Bottom left point
-        (head_center_x + EAR_SPACING // 2 + EAR_WIDTH, head_top_y),  # Bottom right point
-        (head_center_x + EAR_SPACING // 2 + EAR_WIDTH // 2, head_top_y - EAR_HEIGHT),  # Top point
+        (
+            head_center_x + EAR_SPACING // 2 + EAR_WIDTH,
+            head_top_y,
+        ),  # Bottom right point
+        (
+            head_center_x + EAR_SPACING // 2 + EAR_WIDTH // 2,
+            head_top_y - EAR_HEIGHT,
+        ),  # Top point
     ]
 
     # for both ears, if the player if facing right, move the ears to the left by PADDING, else, move the ears to the right by PADDING
@@ -156,30 +173,34 @@ def draw_cat_features(p: Player):
     pygame.draw.polygon(screen, p.char_color, right_ear_points)
 
     # Draw whiskers (lines)
-    whisker_start_x = p.rect.right - WHISKER_OFFSET_X if p.facing_right else p.rect.left + WHISKER_OFFSET_X
+    whisker_start_x = (
+        p.rect.right - WHISKER_OFFSET_X
+        if p.facing_right
+        else p.rect.left + WHISKER_OFFSET_X
+    )
     whisker_start_y = p.rect.top + WHISKER_OFFSET_Y + EYE_RADIUS // 2
 
     # Direction of whiskers depends on facing direction
     direction = 1 if p.facing_right else -1
-    
+
     # Draw multiple whisker lines in a fan pattern
     import math
-    
+
     # Draw middle whisker first (horizontal)
     middle_index = WHISKER_COUNT // 2
-    
+
     for i in range(WHISKER_COUNT):
         # Calculate angle for each whisker (-WHISKER_ANGLE for top, 0 for middle, WHISKER_ANGLE for bottom)
         angle_degrees = (i - middle_index) * WHISKER_ANGLE
         angle_radians = math.radians(angle_degrees)
-        
+
         # Calculate end point using trigonometry
         x_offset = direction * WHISKER_LENGTH * math.cos(angle_radians)
         y_offset = WHISKER_LENGTH * math.sin(angle_radians)
-        
+
         start_pos = (whisker_start_x, whisker_start_y)
         end_pos = (whisker_start_x + x_offset, whisker_start_y + y_offset)
-        
+
         # Use WHITE color for all whiskers instead of eye_color
         pygame.draw.line(screen, WHITE, start_pos, end_pos, WHISKER_THICKNESS)
 
