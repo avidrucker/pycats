@@ -111,7 +111,7 @@ player2 = Player(
     PLAYER2_START_Y,
     P2_KEYS,
     P2_COLOR,
-    eye_color=WHITE,
+    eye_color=BLUE,
     char_name="Player 2",
     facing_right=False,
 )
@@ -125,10 +125,15 @@ font = pygame.font.SysFont(None, 24)
 
 
 # ------------------------------------------------ helpers
-def draw_eye(p: Player):
-    x = p.rect.right - EYE_OFFSET_X if p.facing_right else p.rect.left + EYE_OFFSET_X
-    y = p.rect.top + EYE_OFFSET_Y
-    pygame.draw.circle(screen, p.eye_color, (x, y), EYE_RADIUS)
+def draw_eye(p: Player, eye=True):
+    if eye:
+        x = p.rect.right - EYE_OFFSET_X if p.facing_right else p.rect.left + EYE_OFFSET_X
+        y = p.rect.top + EYE_OFFSET_Y
+        pygame.draw.circle(screen, p.eye_color, (x, y), EYE_RADIUS)
+    else: # we will draw a glint instead of an eye
+        x = p.rect.right - GLINT_OFFSET_X if p.facing_right else p.rect.left + GLINT_OFFSET_X
+        y = p.rect.top + GLINT_OFFSET_Y
+        pygame.draw.circle(screen, WHITE, (x, y), GLINT_RADIUS)
 
 
 def draw_cat_features(p: Player):
@@ -298,6 +303,7 @@ while running:
         # Draw player body
         screen.blit(p.image, p.rect)
         draw_eye(p)
+        draw_eye(p, eye=False)  # Draw a glint in the eye
         draw_cat_features(p)  # Draw cat features (ears and whiskers)
         if p.fsm.state == "shield":
             #### TODO: convert shield radius magic nums to config constants (READY)

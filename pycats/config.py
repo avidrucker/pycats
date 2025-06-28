@@ -99,7 +99,10 @@ PLAYER2_START_Y = SCREEN_HEIGHT - PLAYER_SIZE[1] - GLOBAL_Y_OFF - THIN_PLAT_Y_OF
 
 EYE_OFFSET_X = 10
 EYE_OFFSET_Y = 12
-EYE_RADIUS = 10
+EYE_RADIUS = 8
+GLINT_OFFSET_X = 12
+GLINT_OFFSET_Y = 14
+GLINT_RADIUS = 4
 
 # ---------------- Other UI / visuals --------------------
 HUD_PADDING = 10
@@ -110,6 +113,7 @@ BG_COLOR = (60, 60, 70)
 P1_COLOR = (255, 160, 64)  # orange
 P2_COLOR = (90, 90, 90)  # gray
 BLACK = (0, 0, 0)  # black
+BLUE = (0, 0, 255)  # blue
 WHITE = (255, 255, 255)  # white
 RED = (255, 0, 0)  # red
 YELLOW = (255, 255, 0)  # yellow
