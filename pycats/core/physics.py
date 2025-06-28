@@ -140,7 +140,8 @@ def resolve_player_push(players: list["Player"]) -> None:
                 # Exactly match velocities and directions to prevent one side gaining advantage
                 if (a.vel.x > 0 and b.vel.x < 0) or (a.vel.x < 0 and b.vel.x > 0):
                     # They're pushing in opposite directions - completely cancel out
-                    print("cancel out")
+                    # debugging
+                    # print("cancel out")
                     a.vel.x = 0.0
                     b.vel.x = 0.0
                 # If only one is pushing, both move at half the pusher's speed
