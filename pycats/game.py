@@ -230,6 +230,42 @@ def draw_hud(p: Player, label, topright=False):
         screen.blit(surf, pos)
 
 
+def draw_controls(p: Player, label, topright=False):
+    """Draws the control scheme for a player below the HUD."""
+    # Convert pygame key constants to readable strings
+    key_names = {
+        pygame.K_a: "A", pygame.K_d: "D", pygame.K_w: "W", pygame.K_s: "S",
+        pygame.K_v: "V", pygame.K_c: "C", pygame.K_x: "X",
+        pygame.K_LEFT: "left arrow", pygame.K_RIGHT: "right arrow", pygame.K_UP: "up arrow", pygame.K_DOWN: "down arrow",
+        pygame.K_SLASH: "/", pygame.K_PERIOD: ".", pygame.K_COMMA: ","
+    }
+    
+    controls = [
+        f"{label} Controls:",
+        f"Move: {key_names.get(p.controls['left'], '?')}/{key_names.get(p.controls['right'], '?')}",
+        f"Jump: {key_names.get(p.controls['up'], '?')}",
+        f"Down: {key_names.get(p.controls['down'], '?')}",
+        f"Attack: {key_names.get(p.controls['attack'], '?')}",
+        f"Shield: {key_names.get(p.controls['shield'], '?')}",
+        f"Special: {key_names.get(p.controls['special'], '?')}"
+    ]
+    
+    # Start drawing below the HUD (7 lines of HUD + some spacing)
+    start_y = HUD_PADDING + 7 * HUD_SPACING + 20
+    
+    for i, txt in enumerate(controls):
+        surf = font.render(txt, True, WHITE)
+        pos = (
+            (
+                SCREEN_WIDTH - surf.get_width() - HUD_PADDING,
+                start_y + i * HUD_SPACING,
+            )
+            if topright
+            else (HUD_PADDING, start_y + i * HUD_SPACING)
+        )
+        screen.blit(surf, pos)
+
+
 # ------------------------------------------------ main loop
 running = True
 while running:
@@ -281,6 +317,10 @@ while running:
 
     draw_hud(player1, "P1")  # drawn by default in upper-left corner
     draw_hud(player2, "P2", topright=True)
+
+    # Draw player controls below the HUD
+    draw_controls(player1, "P1")  # drawn by default below P1 HUD
+    draw_controls(player2, "P2", topright=True)  # drawn below P2 HUD
 
     # draw keys pressed for debugging
     if frame_input:
