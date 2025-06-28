@@ -12,9 +12,8 @@ Use: Core gameplay logic for player control and interaction.
 
 #### MOST READY/PRIORITY TODOS
 #### TODO: add thorough docstrings to all methods and classes
-#### TODO: implement friction and horizontal movement acceleration
 #### TODO: change private method func signatures to start with underscore, make sure to update all calls
-#### TODO: implement ground dodging will not take players off the ledge
+#### DONE: implement ground dodging will not take players off the ledge
 #### TODO: implement spot dodge where player can dodge in place without moving, and this does not move them below a thin ledge if they are holding shield and down
 #### TODO: fix bug where consecutive quick hits will quickly cause the defender to be projected off the stage
 #### TODO: implement prone status where player is knocked down and cannot move or attack for a short time, and then can get up by pressing a button
@@ -54,6 +53,8 @@ from ..core.physics import (
     move_rect,
     solve_vertical,
     apply_horizontal_friction,
+    find_current_platform,
+    would_dodge_off_platform,
 )
 from ..systems.movement import step_horizontal
 from ..systems.fsm import FSM, Transition
@@ -138,6 +139,9 @@ class Player(pygame.sprite.Sprite):
 
         # Platform drop-through reference
         self.drop_platform = None
+        
+        # Edge-aware dodge state
+        self.dodge_blocked_by_edge = False  # Track if current dodge is blocked by edge
 
         # FSM current state
         self.fsm = self._build_fsm()
@@ -180,6 +184,9 @@ class Player(pygame.sprite.Sprite):
         # note: currently unused, formerly called prev_keys
         #       pressed means freshly pressed this frame
         pressed = input_frame.pressed
+        
+        # Store platforms for edge detection during dodge
+        self.platforms = platforms
 
         """Master per-frame update; handles KO/respawn before usual logic."""
         # ---------- dead / waiting to respawn ----------
@@ -217,7 +224,58 @@ class Player(pygame.sprite.Sprite):
 
         # physics ---------------------------------------------------
         apply_gravity(self.vel)
+        
+        # Edge-aware dodge: prevent horizontal movement if it would take player off platform
+        # This happens AFTER any friction is applied and immediately before movement
+        if (self.fsm.state == "dodge" and self.on_ground and hasattr(self, 'platforms')):
+            
+            current_platform = find_current_platform(self.rect, self.platforms)
+            if current_platform is not None:
+                # First, check if velocity would take us off edge
+                if self.vel.x != 0 and would_dodge_off_platform(self.rect, self.vel.x, current_platform):
+                    # Stop horizontal movement to prevent falling off
+                    print(f"EDGE BLOCKED: {self.char_name} dodge movement stopped (vel was {self.vel.x}) at pos ({self.rect.centerx}, {self.rect.centery})")
+                    self.vel.x = 0
+                    self.dodge_blocked_by_edge = True
+                
+                # Second, clamp position to ensure player never goes past platform edges
+                # This is a safety net in case any movement still occurs
+                platform_rect = current_platform.rect
+                
+                # Prevent left edge of player from going past left edge of platform
+                if self.rect.left < platform_rect.left:
+                    old_pos = self.rect.left
+                    self.rect.left = platform_rect.left
+                    self.vel.x = 0  # Stop any leftward movement
+                    print(f"CLAMPED LEFT: {self.char_name} from {old_pos} to {self.rect.left}")
+                
+                # Prevent right edge of player from going past right edge of platform
+                if self.rect.right > platform_rect.right:
+                    old_pos = self.rect.right
+                    self.rect.right = platform_rect.right
+                    self.vel.x = 0  # Stop any rightward movement
+                    print(f"CLAMPED RIGHT: {self.char_name} from {old_pos} to {self.rect.right}")
+        
+        # Apply movement - this must happen immediately after edge check
         move_rect(self.rect, self.vel)
+        
+        # Post-movement clamping: ensure dodge didn't move player off platform
+        if (self.fsm.state == "dodge" and self.on_ground and hasattr(self, 'platforms')):
+            current_platform = find_current_platform(self.rect, self.platforms)
+            if current_platform is not None:
+                platform_rect = current_platform.rect
+                
+                # Clamp position if player went off platform edges
+                if self.rect.left < platform_rect.left:
+                    print(f"POST-MOVE CLAMP LEFT: {self.char_name} moved to {self.rect.left}, clamping to {platform_rect.left}")
+                    self.rect.left = platform_rect.left
+                    self.vel.x = 0
+                
+                if self.rect.right > platform_rect.right:
+                    print(f"POST-MOVE CLAMP RIGHT: {self.char_name} moved to {self.rect.right}, clamping to {platform_rect.right}")
+                    self.rect.right = platform_rect.right
+                    self.vel.x = 0
+        
         self.vel, self.on_ground, self.drop_platform = solve_vertical(
             self.rect,
             self.vel,
@@ -368,6 +426,7 @@ class Player(pygame.sprite.Sprite):
         )
 
     def _ko(self):
+        print(f"PLAYER KO: {self.char_name} fell off and lost a life! (lives: {self.lives-1})")
         self.lives -= 1
         self.is_alive = False
         self.respawn_timer = RESPAWN_DELAY_FRAMES
@@ -405,6 +464,9 @@ class Player(pygame.sprite.Sprite):
         self.dodge_timer = DODGE_TIME
         self.invulnerable = True
         self.image.fill(WHITE)  # flash white
+        self.dodge_blocked_by_edge = False  # Reset edge blocking flag
+        
+        # Set dodge velocity (friction will be applied, edge checking happens during physics)
         self.vel.update(dir_x * DODGE_SPEED, 0)
 
     # --------------------------------------------------- FSM scaffold (pass-A)

@@ -213,3 +213,63 @@ def resolve_player_push(players: list["Player"]) -> None:
                         push_speed = b.vel.y * 0.5
                         a.vel.y = push_speed
                         b.vel.y = push_speed
+
+
+# ----------------------------------------------------------------- edge detection for dodging
+
+def find_current_platform(actor_rect: pg.Rect, platforms):
+    """
+    Find which platform the actor is currently standing on.
+    
+    Args:
+        actor_rect: Current position of the actor
+        platforms: List of all platforms
+    
+    Returns:
+        The platform the actor is standing on, or None if not on any platform
+    """
+    for platform in platforms:
+        platform_rect = platform.rect
+        # Check if actor is standing on this platform
+        # Allow small tolerance for floating point precision
+        bottom_tolerance = 2
+        if (abs(actor_rect.bottom - platform_rect.top) <= bottom_tolerance and 
+            actor_rect.right > platform_rect.left and 
+            actor_rect.left < platform_rect.right):
+            return platform
+    return None
+
+
+def would_dodge_off_platform(actor_rect: pg.Rect, dodge_velocity: float, current_platform) -> bool:
+    """
+    Check if a dodge with the given velocity would take the actor off their current platform.
+    
+    Args:
+        actor_rect: Current position of the actor
+        dodge_velocity: The horizontal velocity of the dodge (can be positive or negative)
+        current_platform: The platform the actor is standing on
+    
+    Returns:
+        True if the dodge would take the actor off the platform, False otherwise
+    """
+    if current_platform is None or dodge_velocity == 0:
+        return False
+    
+    platform_rect = current_platform.rect
+    
+    # Calculate where the actor would be after this frame's movement
+    future_rect = actor_rect.copy()
+    future_rect.x += dodge_velocity
+    
+    # We want to prevent the player from going completely off the platform
+    # Check if enough of the player would remain on the platform
+    min_overlap = 25  # Require at least 25 pixels of overlap to stay safe
+    
+    if dodge_velocity > 0:  # Moving right
+        # Check if there would still be enough overlap on the right side
+        overlap_after_move = platform_rect.right - future_rect.left
+        return overlap_after_move < min_overlap
+    else:  # Moving left (dodge_velocity < 0)
+        # Check if there would still be enough overlap on the left side
+        overlap_after_move = future_rect.right - platform_rect.left
+        return overlap_after_move < min_overlap
