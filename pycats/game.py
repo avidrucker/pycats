@@ -46,6 +46,7 @@ from .entities import Platform, Player
 from .systems import combat
 from .core import input as inp
 from .core.physics import resolve_player_push
+from . import stats_print
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
@@ -314,6 +315,9 @@ def draw_win_screen(winner, loser):
     """Draw the win screen with statistics"""
     screen.fill(WIN_SCREEN_BG_COLOR)
     
+    # Get formatted statistics
+    match_summary = stats_print.get_match_summary(winner, loser)
+    
     # Create fonts
     title_font = pygame.font.SysFont(None, WIN_SCREEN_TITLE_SIZE)
     stats_font = pygame.font.SysFont(None, WIN_SCREEN_STATS_SIZE)
@@ -322,13 +326,13 @@ def draw_win_screen(winner, loser):
     y_offset = WIN_SCREEN_PADDING
     
     # Winner announcement
-    winner_text = title_font.render(f"{winner.char_name} Wins!", True, WIN_SCREEN_TEXT_COLOR)
+    winner_text = title_font.render(match_summary['winner_announcement'], True, WIN_SCREEN_TEXT_COLOR)
     winner_rect = winner_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
     screen.blit(winner_text, winner_rect)
     y_offset += WIN_SCREEN_LINE_SPACING * 2
     
     # Final stock count
-    stocks_text = stats_font.render(f"Final Stocks: {winner.lives} - {loser.lives}", True, WIN_SCREEN_TEXT_COLOR)
+    stocks_text = stats_font.render(match_summary['final_stocks'], True, WIN_SCREEN_TEXT_COLOR)
     stocks_rect = stocks_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
     screen.blit(stocks_text, stocks_rect)
     y_offset += WIN_SCREEN_LINE_SPACING * 1.5
@@ -339,21 +343,8 @@ def draw_win_screen(winner, loser):
     screen.blit(stats_header, stats_rect)
     y_offset += WIN_SCREEN_LINE_SPACING
     
-    # Calculate accuracy for both players
-    winner_accuracy = (winner.hits_landed / max(winner.attacks_made, 1)) * 100
-    loser_accuracy = (loser.hits_landed / max(loser.attacks_made, 1)) * 100
-    
-    # Statistics table
-    stats_lines = [
-        f"{'Stat':<20} {winner.char_name:<15} {loser.char_name:<15}",
-        f"{'─'*20} {'─'*15} {'─'*15}",
-        f"{'Attacks Made':<20} {winner.attacks_made:<15} {loser.attacks_made:<15}",
-        f"{'Hits Landed':<20} {winner.hits_landed:<15} {loser.hits_landed:<15}",
-        f"{'Accuracy':<20} {winner_accuracy:<14.1f}% {loser_accuracy:<14.1f}%",
-        f"{'Suicides':<20} {winner.suicides:<15} {loser.suicides:<15}",
-    ]
-    
-    for line in stats_lines:
+    # Statistics table using properly formatted lines
+    for line in match_summary['stats_table']:
         line_surface = stats_font.render(line, True, WIN_SCREEN_TEXT_COLOR)
         line_rect = line_surface.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
         screen.blit(line_surface, line_rect)
@@ -361,9 +352,12 @@ def draw_win_screen(winner, loser):
     
     # Restart instruction
     y_offset += WIN_SCREEN_LINE_SPACING
-    restart_text = instruction_font.render("Press any key to restart", True, WIN_SCREEN_TEXT_COLOR)
+    restart_text = instruction_font.render(match_summary['restart_instruction'], True, WIN_SCREEN_TEXT_COLOR)
     restart_rect = restart_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
     screen.blit(restart_text, restart_rect)
+    
+    # Optional: Print to console for debugging
+    # stats_print.print_match_summary_to_console(winner, loser)
 
 
 def reset_game():
