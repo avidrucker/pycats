@@ -225,7 +225,14 @@ class Player(pygame.sprite.Sprite):
             self.handle_move(held)
 
         # physics ---------------------------------------------------
-        apply_gravity(self.vel)
+        # Apply gravity - but not for spot dodges to prevent falling through thin platforms
+        if not (self.fsm.state == "dodge" and self.spot_dodge_shield_held):
+            apply_gravity(self.vel)
+        else:
+            # For spot dodges, keep velocity minimal to prevent any fall-through
+            self.vel.y = 0
+            # debugging
+            # print(f"SPOT DODGE GRAVITY PREVENTION: {self.char_name} gravity blocked during spot dodge")
         
         # Edge-aware dodge: prevent horizontal movement if it would take player off platform
         # This happens AFTER any friction is applied and immediately before movement
@@ -305,6 +312,20 @@ class Player(pygame.sprite.Sprite):
             self._pressed(held, "down") and not should_prevent_drop_through,  # Don't drop through if spot dodging with shield
             self.drop_platform,
         )
+        
+        # Special case: maintain on_ground status during spot dodge to prevent unwanted fall transitions
+        if self.fsm.state == "dodge" and self.spot_dodge_shield_held:
+            # Force on_ground to remain True during spot dodge to prevent falling
+            if not self.on_ground:
+                # debugging
+                # print(f"SPOT DODGE GROUND FIX: {self.char_name} forced back to ground during spot dodge")
+                self.on_ground = True
+                # Also ensure the player stays at the exact platform level
+                current_platform = find_current_platform(self.rect, platforms)
+                if current_platform:
+                    self.rect.bottom = current_platform.rect.top
+                    # debugging
+                    # print(f"SPOT DODGE POSITION FIX: {self.char_name} position corrected to platform top")
 
         self._handle_landing(was_airborne)
 
@@ -382,41 +403,35 @@ class Player(pygame.sprite.Sprite):
             self.shield_attempting = False
             return
 
-        # ------- Shield -------------------------------------------
-        # 2.  Shield can **only** be (re)started while on ground and not airborne
-        grounded_can_shield = (
-            self.on_ground
-            and self.fsm.state in ("idle", "shield", "dodge", "run")
-            and self.dodge_timer == 0
-        )
-
-        if self._pressed(held, "shield") and grounded_can_shield:
-            #### TODO: prevent entering of shield state when falling/jumping, when in hurt state, etc.
-            self.shield_attempting = True
-        else:
-            self.shield_attempting = False
-
-        # ------- Dodge --------------------------------------------
+        # ------- Dodge Logic (check first to prevent shield conflicts) -------
         #### DONE: implement dodge as a combo press of directional + shield
         #### DONE: reset air_dodge_ok when landing
         #### TODO: implement directional flipping when ground dodging/rolling
         #### TODO: prevent repeated dodges by holding down shield and a directional, what happens instead is that the player will enter a shield state, and then can press a direction to dodge again
         #### DONE: make player rect flash semi-transparent white while in dodge state
         # Shield-plus-direction = dodge
-        # ------- Dodge --------------------------------------------
         can_dodge_state = self.fsm.state in ("idle", "jump", "fall", "shield")
         shield_down = self._pressed(held, "shield")
         shield_pressed = self._pressed(pressed, "shield")
+        dodge_initiated = False
 
         if can_dodge_state and self.dodge_timer == 0:
             dir_x = None
-            # Check if shield is *just* pressed for air dodge or momentum dodge
-            if shield_pressed:
+            
+            # Priority 1: Check for simultaneous shield + direction press (including spot dodge)
+            if shield_pressed and self._pressed(pressed, "down"):
+                dir_x = 0  # spot dodge
+            elif shield_pressed and self._pressed(pressed, "left"):
+                dir_x = -1  # left dodge
+            elif shield_pressed and self._pressed(pressed, "right"):
+                dir_x = 1  # right dodge
+            # Priority 2: Check if shield is *just* pressed for air dodge or momentum dodge
+            elif shield_pressed:
                 if not self.on_ground:
                     dir_x = 0  # air dodge without direction pressed
                 elif abs(self.vel.x) > 0.1:
                     dir_x = 1 if self.vel.x > 0 else -1
-            # Check if a direction is freshly pressed while shield is held (ground dodge)
+            # Priority 3: Check if a direction is freshly pressed while shield is held (ground dodge)
             elif shield_down:
                 if self._pressed(pressed, "down"):
                     dir_x = 0
@@ -427,17 +442,31 @@ class Player(pygame.sprite.Sprite):
 
             if dir_x is not None:
                 if self.on_ground or self.air_dodge_ok:
-                    # Track if this is a spot dodge with shield held
-                    if dir_x == 0 and shield_down:
-                        self.spot_dodge_shield_held = True
-                        # print(f"SPOT DODGE: {self.char_name} initiated spot dodge with shield held")
-                    
                     self._start_dodge(dir_x)
+                    dodge_initiated = True
                     if not self.on_ground:
                         self.air_dodge_ok = False
                 # debugging
                 # print("dodge handled")
                 return  # dodge handled, no further actions needed
+
+        # ------- Shield -------------------------------------------
+        # 2.  Shield can **only** be (re)started while on ground and not airborne
+        # Don't enter shield state if we just initiated a dodge
+        grounded_can_shield = (
+            self.on_ground
+            and self.fsm.state in ("idle", "shield", "dodge", "run")
+            and self.dodge_timer == 0
+            and not dodge_initiated  # Don't shield if we just started dodging
+        )
+
+        if self._pressed(held, "shield") and grounded_can_shield:
+            #### TODO: prevent entering of shield state when falling/jumping, when in hurt state, etc.
+            self.shield_attempting = True
+        else:
+            # Don't reset shield_attempting if we just initiated a dodge or are currently dodging
+            if not dodge_initiated and self.fsm.state != "dodge":
+                self.shield_attempting = False
 
         # ------- Attack -------------------------------------------
         #### TODO: implement attack buffering, that attacks can be chained
@@ -503,11 +532,15 @@ class Player(pygame.sprite.Sprite):
         self.image.fill(WHITE)  # flash white
         self.dodge_blocked_by_edge = False  # Reset edge blocking flag
         
-        # Set dodge velocity (friction will be applied, edge checking happens during physics)
-        self.vel.update(dir_x * DODGE_SPEED, 0)
-        
-        # If this is not a spot dodge, reset the spot dodge flag
-        if dir_x != 0:
+        # For spot dodges, don't set any velocity to prevent movement
+        if dir_x == 0:
+            self.vel.update(0, 0)  # No movement for spot dodge
+            self.spot_dodge_shield_held = True
+            # debugging
+            # print(f"SPOT DODGE START: {self.char_name} spot dodge initiated with zero velocity")
+        else:
+            # Set dodge velocity for directional dodges (friction will be applied, edge checking happens during physics)
+            self.vel.update(dir_x * DODGE_SPEED, 0)
             self.spot_dodge_shield_held = False
 
     # --------------------------------------------------- FSM scaffold (pass-A)
