@@ -38,7 +38,7 @@ AIR_FRICTION = 0.85
 HURT_TIME = 12
 STUN_TIME = 60
 DODGE_TIME = 14
-DODGE_SPEED = 22  # horizontal boost for a roll
+DODGE_SPEED = 14  # horizontal boost for a roll
 
 # ---------------- combat / attacks ----------------
 #### TODO: implement variable attack lifetimes, attack sizes, attack colors, and hit damage, save each attack into a dictionary with the attack name as the key
