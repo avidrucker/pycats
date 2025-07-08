@@ -1,0 +1,17 @@
+- [ ] remove player on player landing where if player A center X is greater than or equal to player B center X, and instead the players get pushed apart in the X direction until they both land, and ignore player to player collision in the Y axis
+- [ ] implement facing the opposite direction that ground dodge rolls go in
+- [ ] fix tail physics to snap nicely when cats turn left/right
+- [ ] fix tail physics to be affected by gravity and collisions with thick platforms
+- [ ] fix bug where, "jumping over other characters while starting flush against cause
+- [ ] implement win/loss screen that shows basic stats of the game and then has a single button press option to play again from initial setup
+- [ ] implement shield break stun w/ "dizzy" animation that plays above the cat's head and disables all player inputs for stunned character while in stunned state
+- [ ] fix bug where players can jump into the sides of the thick platform but shouldn't be able to do so
+- [ ] fix bug where holding down and then pressing shield doesn't trigger a spot dodge w/o regressing on default long press of shield/down and then the other key where dodge end status goes back into shield automatically
+- [ ] implement prone status where the only thing a player can do themselves is standup
+- [ ] implement ledge hanging status
+- [ ] fix buge where air dodging cancels vertical momentum, but first research if this is intended behavior
+- [ ] fix bug where character respawn facing direction isn't correctly reset to the correct initial facing direction
+
+
+
+"source specific multicast", networking, broadcasting vs multicasting (UDP), joining a multicast group, "source specific"
