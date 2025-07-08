@@ -156,6 +156,7 @@ class Player(pygame.sprite.Sprite):
 
         # Facing
         self.facing_right = facing_right
+        self.original_facing_right = facing_right  # Store original facing direction for respawn
 
         # Tail (initialize after facing_right is set)
         from .tail import Tail
@@ -556,6 +557,7 @@ class Player(pygame.sprite.Sprite):
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
         self.was_hit_before_ko = False  # Reset hit tracking for next life
+        self.facing_right = self.original_facing_right  # Restore original facing direction
 
     # state starters ----------------------------
     def _start_hurt(self) -> None:  # knockback: pygame.Vector2
