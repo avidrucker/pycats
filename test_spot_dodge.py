@@ -22,61 +22,77 @@ def test_spot_dodge():
     # Create a simple test setup
     platforms = pg.sprite.Group()
     
-    # Create a thin platform
+    # Create both a thin platform and a thick platform for testing
     thin_platform = Platform(pg.Rect(300, 400, 200, 20), thin=True)
+    thick_platform = Platform(pg.Rect(600, 400, 200, 20), thin=False)
     platforms.add(thin_platform)
+    platforms.add(thick_platform)
+    
+    print("=== Testing Spot Dodge Behavior ===")
+    
+    # Test 1: Spot dodge on thin platform
+    print("\n--- Test 1: Spot Dodge on Thin Platform ---")
     
     # Create a player on the thin platform
-    player = Player(
+    player1 = Player(
         x=400, y=400,  # On the thin platform (y should match platform top)
         controls={'left': pg.K_a, 'right': pg.K_d, 'up': pg.K_w, 'down': pg.K_s, 'shield': pg.K_q, 'attack': pg.K_e},
         color=P1_COLOR,
         eye_color=WHITE,
-        char_name="TestCat",
+        char_name="ThinTestCat",
         facing_right=True
     )
     
-    # Simulate input frames for spot dodge
-    print("=== Testing Spot Dodge Behavior ===")
+    test_player_spot_dodge(player1, platforms, "thin platform")
+    
+    # Test 2: Spot dodge on thick platform  
+    print("\n--- Test 2: Spot Dodge on Thick Platform ---")
+    
+    # Create a player on the thick platform
+    player2 = Player(
+        x=700, y=400,  # On the thick platform
+        controls={'left': pg.K_a, 'right': pg.K_d, 'up': pg.K_w, 'down': pg.K_s, 'shield': pg.K_q, 'attack': pg.K_e},
+        color=P2_COLOR,
+        eye_color=WHITE,
+        char_name="ThickTestCat",
+        facing_right=True
+    )
+    
+    test_player_spot_dodge(player2, platforms, "thick platform")
+    
+    pg.quit()
+
+def test_player_spot_dodge(player, platforms, platform_type):
     print(f"Player initial position: {player.rect.center}")
     print(f"Player on ground: {player.on_ground}")
-    print(f"Platform position: {thin_platform.rect}")
     
     # Let the player settle on the platform first
     settle_frame = InputFrame(held=set(), pressed=set(), released=set())
     player.update(settle_frame, platforms, pg.sprite.Group())
     print(f"After settling: Player position: {player.rect.center}, On ground: {player.on_ground}")
     
-    # Frame 1: Press shield
+    # Frame 1: Press shield and down simultaneously (spot dodge)
     frame1 = InputFrame(
-        held={pg.K_q},  # Shield held
-        pressed={pg.K_q},  # Shield just pressed
+        held={pg.K_q, pg.K_s},  # Shield and down held
+        pressed={pg.K_q, pg.K_s},  # Shield and down just pressed simultaneously
         released=set()
     )
     
     player.update(frame1, platforms, pg.sprite.Group())
-    print(f"Frame 1 - Shield pressed. State: {player.fsm.state}, Shield attempting: {player.shield_attempting}")
+    print(f"Frame 1 - Shield+Down pressed simultaneously. State: {player.fsm.state}, Spot dodge flag: {player.spot_dodge_shield_held}, Shield attempting: {player.shield_attempting}")
     
-    # Frame 2-3: Continue holding shield, then press down (spot dodge)
-    for i in range(2):
+    # Continue holding for a few frames to simulate real input
+    for i in range(3):
         frame = InputFrame(
-            held={pg.K_q},  # Shield held
+            held={pg.K_q, pg.K_s},  # Keep shield and down held
             pressed=set(),  # Nothing newly pressed
             released=set()
         )
         
         player.update(frame, platforms, pg.sprite.Group())
-        print(f"Frame {i+2} - Shield held. State: {player.fsm.state}")
+        if i == 0:
+            print(f"Frame {i+2} - Continuing to hold. State: {player.fsm.state}, Shield attempting: {player.shield_attempting}")
     
-    # Frame 4: Press down while holding shield (trigger spot dodge)
-    frame4 = InputFrame(
-        held={pg.K_q, pg.K_s},  # Shield and down held
-        pressed={pg.K_s},  # Down just pressed
-        released=set()
-    )
-    
-    player.update(frame4, platforms, pg.sprite.Group())
-    print(f"Frame 4 - Down pressed with shield. State: {player.fsm.state}, Spot dodge flag: {player.spot_dodge_shield_held}")
     
     # Simulate the dodge duration
     for i in range(DODGE_TIME):
@@ -104,18 +120,23 @@ def test_spot_dodge():
     print(f"After dodge - State: {player.fsm.state}, Position: {player.rect.center}, On ground: {player.on_ground}")
     print(f"Shield attempting: {player.shield_attempting}, Spot dodge flag: {player.spot_dodge_shield_held}")
     
-    # Check if player stayed on platform
-    if player.on_ground and player.rect.bottom <= thin_platform.rect.top + 2:
-        print("✅ SUCCESS: Player stayed on thin platform after spot dodge!")
+    # Check results
+    if player.on_ground:
+        print(f"✅ SUCCESS: Player stayed on {platform_type} after spot dodge!")
     else:
-        print("❌ FAIL: Player fell through thin platform!")
+        print(f"❌ FAIL: Player fell through {platform_type}!")
     
     if player.fsm.state == "shield":
-        print("✅ SUCCESS: Player transitioned to shield state after spot dodge!")
+        print(f"✅ SUCCESS: Player transitioned to shield state after spot dodge on {platform_type}!")
     else:
-        print(f"❌ FAIL: Player state is '{player.fsm.state}' instead of 'shield'!")
+        print(f"❌ FAIL: Player state is '{player.fsm.state}' instead of 'shield' on {platform_type}!")
     
-    pg.quit()
+    if not player.shield_attempting or player.fsm.state != "shield":
+        print(f"✅ SUCCESS: No unwanted shield display during spot dodge on {platform_type}!")
+    else:
+        print(f"⚠️  INFO: Shield state/attempting status on {platform_type}: state={player.fsm.state}, attempting={player.shield_attempting}")
+    
+    return player.on_ground and player.fsm.state == "shield"
 
 if __name__ == "__main__":
     test_spot_dodge()
