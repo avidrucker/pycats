@@ -11,7 +11,4 @@
 - [ ] implement ledge hanging status
 - [ ] fix buge where air dodging cancels vertical momentum, but first research if this is intended behavior
 - [ ] fix bug where character respawn facing direction isn't correctly reset to the correct initial facing direction
-
-
-
-"source specific multicast", networking, broadcasting vs multicasting (UDP), joining a multicast group, "source specific"
+- [ ] fix bug where momentum from attack knockback appears to be cancelled out 100% when defender is moving left/right, but not when defender is stationary, when instead, both should be factored in
