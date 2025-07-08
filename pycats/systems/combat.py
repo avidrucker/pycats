@@ -26,6 +26,7 @@ def process_hits(players, attacks):
 
             if atk.rect.colliderect(defender.rect):
                 defender.receive_hit(atk)
+                atk.owner.record_hit_landed()  # Track successful hit
                 if atk.disappear_on_hit:
                     atk.kill()
                 else:

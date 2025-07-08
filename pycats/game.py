@@ -309,82 +309,233 @@ def draw_controls(p: Player, label, topright=False):
         screen.blit(surf, pos)
 
 
+# ------------------------------------------------ win screen
+def draw_win_screen(winner, loser):
+    """Draw the win screen with statistics"""
+    screen.fill(WIN_SCREEN_BG_COLOR)
+    
+    # Create fonts
+    title_font = pygame.font.SysFont(None, WIN_SCREEN_TITLE_SIZE)
+    stats_font = pygame.font.SysFont(None, WIN_SCREEN_STATS_SIZE)
+    instruction_font = pygame.font.SysFont(None, WIN_SCREEN_INSTRUCTION_SIZE)
+    
+    y_offset = WIN_SCREEN_PADDING
+    
+    # Winner announcement
+    winner_text = title_font.render(f"{winner.char_name} Wins!", True, WIN_SCREEN_TEXT_COLOR)
+    winner_rect = winner_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
+    screen.blit(winner_text, winner_rect)
+    y_offset += WIN_SCREEN_LINE_SPACING * 2
+    
+    # Final stock count
+    stocks_text = stats_font.render(f"Final Stocks: {winner.lives} - {loser.lives}", True, WIN_SCREEN_TEXT_COLOR)
+    stocks_rect = stocks_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
+    screen.blit(stocks_text, stocks_rect)
+    y_offset += WIN_SCREEN_LINE_SPACING * 1.5
+    
+    # Game statistics header
+    stats_header = stats_font.render("Game Statistics", True, WIN_SCREEN_TEXT_COLOR)
+    stats_rect = stats_header.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
+    screen.blit(stats_header, stats_rect)
+    y_offset += WIN_SCREEN_LINE_SPACING
+    
+    # Calculate accuracy for both players
+    winner_accuracy = (winner.hits_landed / max(winner.attacks_made, 1)) * 100
+    loser_accuracy = (loser.hits_landed / max(loser.attacks_made, 1)) * 100
+    
+    # Statistics table
+    stats_lines = [
+        f"{'Stat':<20} {winner.char_name:<15} {loser.char_name:<15}",
+        f"{'─'*20} {'─'*15} {'─'*15}",
+        f"{'Attacks Made':<20} {winner.attacks_made:<15} {loser.attacks_made:<15}",
+        f"{'Hits Landed':<20} {winner.hits_landed:<15} {loser.hits_landed:<15}",
+        f"{'Accuracy':<20} {winner_accuracy:<14.1f}% {loser_accuracy:<14.1f}%",
+        f"{'Suicides':<20} {winner.suicides:<15} {loser.suicides:<15}",
+    ]
+    
+    for line in stats_lines:
+        line_surface = stats_font.render(line, True, WIN_SCREEN_TEXT_COLOR)
+        line_rect = line_surface.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
+        screen.blit(line_surface, line_rect)
+        y_offset += WIN_SCREEN_LINE_SPACING * 0.8
+    
+    # Restart instruction
+    y_offset += WIN_SCREEN_LINE_SPACING
+    restart_text = instruction_font.render("Press any key to restart", True, WIN_SCREEN_TEXT_COLOR)
+    restart_rect = restart_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
+    screen.blit(restart_text, restart_rect)
+
+
+def reset_game():
+    """Reset the game state for a new match"""
+    global player1, player2, players, attacks
+    
+    # Reset player 1
+    player1.rect.midbottom = (PLAYER1_START_X, PLAYER1_START_Y)
+    player1.vel.update(0, 0)
+    player1.lives = INITIAL_LIVES
+    player1.percent = 0
+    player1.shield_hp = SHIELD_MAX_HP
+    player1.is_alive = True
+    player1.fsm.state = "idle"
+    player1.on_ground = False
+    player1.jumps_remaining = MAX_JUMPS
+    player1.air_dodge_ok = True
+    player1.invulnerable = False
+    player1.shield_attempting = False
+    player1.facing_right = True
+    # Reset timers
+    player1.respawn_timer = 0
+    player1.dodge_timer = 0
+    player1.hurt_timer = 0
+    player1.stun_timer = 0
+    player1.attack_timer = 0
+    player1.invulnerable_timer = 0
+    player1.done_attacking = True
+    # Reset statistics
+    player1.attacks_made = 0
+    player1.hits_landed = 0
+    player1.suicides = 0
+    player1.was_hit_before_ko = False
+    
+    # Reset player 2
+    player2.rect.midbottom = (PLAYER2_START_X, PLAYER2_START_Y)
+    player2.vel.update(0, 0)
+    player2.lives = INITIAL_LIVES
+    player2.percent = 0
+    player2.shield_hp = SHIELD_MAX_HP
+    player2.is_alive = True
+    player2.fsm.state = "idle"
+    player2.on_ground = False
+    player2.jumps_remaining = MAX_JUMPS
+    player2.air_dodge_ok = True
+    player2.invulnerable = False
+    player2.shield_attempting = False
+    player2.facing_right = False
+    # Reset timers
+    player2.respawn_timer = 0
+    player2.dodge_timer = 0
+    player2.hurt_timer = 0
+    player2.stun_timer = 0
+    player2.attack_timer = 0
+    player2.invulnerable_timer = 0
+    player2.done_attacking = True
+    # Reset statistics
+    player2.attacks_made = 0
+    player2.hits_landed = 0
+    player2.suicides = 0
+    player2.was_hit_before_ko = False
+    
+    # Clear all attacks
+    attacks.empty()
+
+
+def check_win_condition():
+    """Check if either player has won the game"""
+    if player1.lives <= 0:
+        return player2, player1  # winner, loser
+    elif player2.lives <= 0:
+        return player1, player2  # winner, loser
+    return None, None  # no winner yet
+
+
 # ------------------------------------------------ main loop
 running = True
+game_state = "playing"  # "playing" or "win_screen"
+winner = None
+loser = None
+
 while running:
     dt = clock.tick(FPS)
     frame_input, events = inp.poll()
+    
     for ev in events:
         if ev.type == pygame.QUIT:
             running = False
+        elif ev.type == pygame.KEYDOWN and game_state == "win_screen":
+            # Any key pressed during win screen restarts the game
+            reset_game()
+            game_state = "playing"
+            winner = None
+            loser = None
 
-    # ---- update
-    for p in players:
-        p.update(frame_input, platforms, attacks)
-    resolve_player_push(list(players))
-    attacks.update()
-    combat.process_hits(players, attacks)
+    if game_state == "playing":
+        # ---- update
+        for p in players:
+            p.update(frame_input, platforms, attacks)
+        resolve_player_push(list(players))
+        attacks.update()
+        combat.process_hits(players, attacks)
 
-    # ---- render
-    screen.fill(BG_COLOR)
-    for pl in platforms:
-        screen.blit(pl.image, pl.rect)
+        # Check for win condition
+        winner, loser = check_win_condition()
+        if winner:
+            game_state = "win_screen"
 
-    # Draw alive players
-    for p in players:
-        if (
-            not p.is_alive
-        ):  # TODO: replace this w/ KO state check after implementing KO state
-            continue
-        # Draw tail first (behind player)
-        p.tail.draw(screen)
-        # Draw player body
-        screen.blit(p.image, p.rect)
-        # Draw stripes on the player's back
-        draw_stripes(p)
-        draw_eye(p)
-        draw_eye(p, eye=False)  # Draw a glint in the eye
-        draw_cat_features(p)  # Draw cat features (ears and whiskers)
-        draw_stripes(p)  # Draw stripes on the player's back
-        if p.fsm.state == "shield":
-            #### TODO: convert shield radius magic nums to config constants (READY)
-            ratio = p.shield_hp / SHIELD_MAX_HP
-            shield_radius = int(MAX_SHIELD_RADIUS * ratio)
-            r = max(MIN_SHIELD_RADIUS, shield_radius)
-            s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-            # s = surface, r = radius, (r,r) is for centering the circle on the player character
-            pygame.draw.circle(
-                s, (*SHIELD_COLOR, 100), (r, r), r
-            )  # *SHIELD_COLOR is a tuple unpacking technique to get the RGB values, 100 is the alpha value for transparency
-            # Draw shield bubble centered on player
-            screen.blit(s, (p.rect.centerx - r, p.rect.centery - r))
+        # ---- render
+        screen.fill(BG_COLOR)
+        for pl in platforms:
+            screen.blit(pl.image, pl.rect)
 
-    for a in attacks:
-        screen.blit(a.image, a.rect)
+        # Draw alive players
+        for p in players:
+            if (
+                not p.is_alive
+            ):  # TODO: replace this w/ KO state check after implementing KO state
+                continue
+            # Draw tail first (behind player)
+            p.tail.draw(screen)
+            # Draw player body
+            screen.blit(p.image, p.rect)
+            # Draw stripes on the player's back
+            draw_stripes(p)
+            draw_eye(p)
+            draw_eye(p, eye=False)  # Draw a glint in the eye
+            draw_cat_features(p)  # Draw cat features (ears and whiskers)
+            draw_stripes(p)  # Draw stripes on the player's back
+            if p.fsm.state == "shield":
+                #### TODO: convert shield radius magic nums to config constants (READY)
+                ratio = p.shield_hp / SHIELD_MAX_HP
+                shield_radius = int(MAX_SHIELD_RADIUS * ratio)
+                r = max(MIN_SHIELD_RADIUS, shield_radius)
+                s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+                # s = surface, r = radius, (r,r) is for centering the circle on the player character
+                pygame.draw.circle(
+                    s, (*SHIELD_COLOR, 100), (r, r), r
+                )  # *SHIELD_COLOR is a tuple unpacking technique to get the RGB values, 100 is the alpha value for transparency
+                # Draw shield bubble centered on player
+                screen.blit(s, (p.rect.centerx - r, p.rect.centery - r))
 
-    draw_hud(player1, "P1")  # drawn by default in upper-left corner
-    draw_hud(player2, "P2", topright=True)
+        for a in attacks:
+            screen.blit(a.image, a.rect)
 
-    # Draw player controls below the HUD
-    draw_controls(player1, "P1")  # drawn by default below P1 HUD
-    draw_controls(player2, "P2", topright=True)  # drawn below P2 HUD
+        draw_hud(player1, "P1")  # drawn by default in upper-left corner
+        draw_hud(player2, "P2", topright=True)
 
-    # draw keys pressed for debugging
-    if frame_input:
-        # keys = ", ".join(
-        #     f"{k}: {v}" for k, v in frame_input.items() if v
-        # )
-        keys_surf = font.render(frame_input.__str__(), True, WHITE)
-        screen.blit(keys_surf, (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
-    # draw FPS
-    fps_surf = font.render(f"FPS: {clock.get_fps():.2f}", True, WHITE)
-    screen.blit(
-        fps_surf,
-        (
-            SCREEN_WIDTH - fps_surf.get_width() - HUD_PADDING,
-            SCREEN_HEIGHT - HUD_SPACING,
-        ),
-    )
+        # Draw player controls below the HUD
+        draw_controls(player1, "P1")  # drawn by default below P1 HUD
+        draw_controls(player2, "P2", topright=True)  # drawn below P2 HUD
+
+        # draw keys pressed for debugging
+        if frame_input:
+            # keys = ", ".join(
+            #     f"{k}: {v}" for k, v in frame_input.items() if v
+            # )
+            keys_surf = font.render(frame_input.__str__(), True, WHITE)
+            screen.blit(keys_surf, (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
+        # draw FPS
+        fps_surf = font.render(f"FPS: {clock.get_fps():.2f}", True, WHITE)
+        screen.blit(
+            fps_surf,
+            (
+                SCREEN_WIDTH - fps_surf.get_width() - HUD_PADDING,
+                SCREEN_HEIGHT - HUD_SPACING,
+            ),
+        )
+    
+    elif game_state == "win_screen":
+        # Draw win screen
+        draw_win_screen(winner, loser)
 
     pygame.display.flip()
 

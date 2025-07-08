@@ -110,6 +110,12 @@ class Player(pygame.sprite.Sprite):
         self.shield_hp = SHIELD_MAX_HP
         self.lives = INITIAL_LIVES
 
+        # ---------- game statistics ----------
+        self.attacks_made = 0  # Total attacks initiated
+        self.hits_landed = 0   # Successful hits on opponent  
+        self.suicides = 0      # Deaths without being hit (self-inflicted)
+        self.was_hit_before_ko = False  # Track if last KO was from being hit
+
         # ---------- spawn / KO ----------
         self.spawn_point = pygame.Vector2(x, y)
         self.is_alive = True
@@ -159,6 +165,7 @@ class Player(pygame.sprite.Sprite):
     # ----------- hit processing ------------
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""
+        self.record_hit_received()  # Track that this player was hit
         if self.shield_attempting and self.shield_hp > 0:
             self.shield_hp = max(0, self.shield_hp - atk.damage)
             if self.shield_hp == 0:
@@ -502,6 +509,7 @@ class Player(pygame.sprite.Sprite):
         atk_pressed = self._pressed(pressed, "attack")
         if atk_pressed and self.fsm.state not in ("shield", "dodge"):
             attack_group.add(Attack(self, disappear_on_hit=False))
+            self.record_attack_made()  # Track attack statistics
             self.done_attacking = False  # set to false when attack starts, will be set to true when attack is done
             self.attack_timer = PLAYER_ATTACK_DURATION
             #### TODO: implement unique custom attacks for each player w/ variable damage, knockback, and angle, attack activation time, attack duration, etc.
@@ -522,6 +530,10 @@ class Player(pygame.sprite.Sprite):
         )
 
     def _ko(self):
+        # Track if this was a suicide (no hit received before KO)
+        if not self.was_hit_before_ko:
+            self.suicides += 1
+        
         # debugging
         # print(f"PLAYER KO: {self.char_name} fell off and lost a life! (lives: {self.lives-1})")
         self.lives -= 1
@@ -543,6 +555,7 @@ class Player(pygame.sprite.Sprite):
         self.jumps_remaining = MAX_JUMPS
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
+        self.was_hit_before_ko = False  # Reset hit tracking for next life
 
     # state starters ----------------------------
     def _start_hurt(self) -> None:  # knockback: pygame.Vector2
@@ -681,7 +694,7 @@ class Player(pygame.sprite.Sprite):
                     ),
                     Transition(
                         "fall",
-                        lambda f, ctx: self.stun_timer <= 0 and not self.on_ground,
+                        lambda f, ctx: self.stun_timer <= 0 and not self.on_ground
                     ),
                 ],
                 "attack": [
@@ -696,3 +709,15 @@ class Player(pygame.sprite.Sprite):
                 #### TODO: hang: hanging on the ledge
             },
         )
+
+    def record_attack_made(self):
+        """Record that this player initiated an attack"""
+        self.attacks_made += 1
+    
+    def record_hit_landed(self):
+        """Record that this player successfully hit an opponent"""
+        self.hits_landed += 1
+    
+    def record_hit_received(self):
+        """Record that this player was hit by an opponent"""
+        self.was_hit_before_ko = True
