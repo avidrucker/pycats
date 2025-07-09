@@ -10,7 +10,7 @@ This module handles:
 
 import pygame
 import math
-from ..pycats.config import (
+from .config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, FPS,
     CHAR_SELECT_BG_COLOR, CHAR_SELECT_TITLE_COLOR, CHAR_SELECT_TITLE_SIZE,
     CHAR_SELECT_INSTRUCTION_SIZE, CHAR_SELECT_PADDING, CHAR_SELECT_GRID_COLS,

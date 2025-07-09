@@ -48,7 +48,7 @@ from .systems import combat
 from .core import input as inp
 from .core.physics import resolve_player_push
 from . import stats_print
-from ..tests.char_select import CharacterSelector
+from .char_select import CharacterSelector
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
