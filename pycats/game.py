@@ -41,12 +41,14 @@ from .config import (
     STRIPE_WIDTH,
     STRIPE_HEIGHT,
     STRIPE_SPACING,
+    CAT_CHARACTERS,
 )
 from .entities import Platform, Player
 from .systems import combat
 from .core import input as inp
 from .core.physics import resolve_player_push
 from . import stats_print
+from ..tests.char_select import CharacterSelector
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
@@ -101,26 +103,10 @@ P2_KEYS = dict(
     shield=pygame.K_COMMA,
 )
 
-#### TODO: convert player start positions to config constants (READY)
-player1 = Player(
-    PLAYER1_START_X,
-    PLAYER1_START_Y,
-    P1_KEYS,
-    P1_COLOR,
-    eye_color=BLACK,
-    char_name="Player 1",
-    facing_right=True,
-)
-player2 = Player(
-    PLAYER2_START_X,
-    PLAYER2_START_Y,
-    P2_KEYS,
-    P2_COLOR,
-    eye_color=BLUE,
-    char_name="Player 2",
-    facing_right=False,
-)
-players = pygame.sprite.Group(player1, player2)
+# Players will be created after character selection
+player1 = None
+player2 = None
+players = pygame.sprite.Group()
 attacks = pygame.sprite.Group()
 
 # ------------------------------------------------ pygame set-up
@@ -364,65 +350,67 @@ def reset_game():
     """Reset the game state for a new match"""
     global player1, player2, players, attacks
     
-    # Reset player 1
-    player1.rect.midbottom = (PLAYER1_START_X, PLAYER1_START_Y)
-    player1.vel.update(0, 0)
-    player1.lives = INITIAL_LIVES
-    player1.percent = 0
-    player1.shield_hp = SHIELD_MAX_HP
-    player1.is_alive = True
-    player1.fsm.state = "idle"
-    player1.on_ground = False
-    player1.jumps_remaining = MAX_JUMPS
-    player1.air_dodge_ok = True
-    player1.invulnerable = False
-    player1.shield_attempting = False
-    player1.facing_right = True
-    # Reset visual appearance to original color
-    player1.reset_visual_state()
-    # Reset timers
-    player1.respawn_timer = 0
-    player1.dodge_timer = 0
-    player1.hurt_timer = 0
-    player1.stun_timer = 0
-    player1.attack_timer = 0
-    player1.invulnerable_timer = 0
-    player1.done_attacking = True
-    # Reset statistics
-    player1.attacks_made = 0
-    player1.hits_landed = 0
-    player1.suicides = 0
-    player1.was_hit_before_ko = False
-    
-    # Reset player 2
-    player2.rect.midbottom = (PLAYER2_START_X, PLAYER2_START_Y)
-    player2.vel.update(0, 0)
-    player2.lives = INITIAL_LIVES
-    player2.percent = 0
-    player2.shield_hp = SHIELD_MAX_HP
-    player2.is_alive = True
-    player2.fsm.state = "idle"
-    player2.on_ground = False
-    player2.jumps_remaining = MAX_JUMPS
-    player2.air_dodge_ok = True
-    player2.invulnerable = False
-    player2.shield_attempting = False
-    player2.facing_right = False
-    # Reset visual appearance to original color
-    player2.reset_visual_state()
-    # Reset timers
-    player2.respawn_timer = 0
-    player2.dodge_timer = 0
-    player2.hurt_timer = 0
-    player2.stun_timer = 0
-    player2.attack_timer = 0
-    player2.invulnerable_timer = 0
-    player2.done_attacking = True
-    # Reset statistics
-    player2.attacks_made = 0
-    player2.hits_landed = 0
-    player2.suicides = 0
-    player2.was_hit_before_ko = False
+    # Only reset if players exist (they may not exist if coming from character selection)
+    if player1 and player2:
+        # Reset player 1
+        player1.rect.midbottom = (PLAYER1_START_X, PLAYER1_START_Y)
+        player1.vel.update(0, 0)
+        player1.lives = INITIAL_LIVES
+        player1.percent = 0
+        player1.shield_hp = SHIELD_MAX_HP
+        player1.is_alive = True
+        player1.fsm.state = "idle"
+        player1.on_ground = False
+        player1.jumps_remaining = MAX_JUMPS
+        player1.air_dodge_ok = True
+        player1.invulnerable = False
+        player1.shield_attempting = False
+        player1.facing_right = True
+        # Reset visual appearance to original color
+        player1.reset_visual_state()
+        # Reset timers
+        player1.respawn_timer = 0
+        player1.dodge_timer = 0
+        player1.hurt_timer = 0
+        player1.stun_timer = 0
+        player1.attack_timer = 0
+        player1.invulnerable_timer = 0
+        player1.done_attacking = True
+        # Reset statistics
+        player1.attacks_made = 0
+        player1.hits_landed = 0
+        player1.suicides = 0
+        player1.was_hit_before_ko = False
+        
+        # Reset player 2
+        player2.rect.midbottom = (PLAYER2_START_X, PLAYER2_START_Y)
+        player2.vel.update(0, 0)
+        player2.lives = INITIAL_LIVES
+        player2.percent = 0
+        player2.shield_hp = SHIELD_MAX_HP
+        player2.is_alive = True
+        player2.fsm.state = "idle"
+        player2.on_ground = False
+        player2.jumps_remaining = MAX_JUMPS
+        player2.air_dodge_ok = True
+        player2.invulnerable = False
+        player2.shield_attempting = False
+        player2.facing_right = False
+        # Reset visual appearance to original color
+        player2.reset_visual_state()
+        # Reset timers
+        player2.respawn_timer = 0
+        player2.dodge_timer = 0
+        player2.hurt_timer = 0
+        player2.stun_timer = 0
+        player2.attack_timer = 0
+        player2.invulnerable_timer = 0
+        player2.done_attacking = True
+        # Reset statistics
+        player2.attacks_made = 0
+        player2.hits_landed = 0
+        player2.suicides = 0
+        player2.was_hit_before_ko = False
     
     # Clear all attacks
     attacks.empty()
@@ -430,6 +418,9 @@ def reset_game():
 
 def check_win_condition():
     """Check if either player has won the game"""
+    if not player1 or not player2:
+        return None, None  # Players not initialized yet
+    
     if player1.lives <= 0:
         return player2, player1  # winner, loser
     elif player2.lives <= 0:
@@ -439,9 +430,50 @@ def check_win_condition():
 
 # ------------------------------------------------ main loop
 running = True
-game_state = "playing"  # "playing" or "win_screen"
+game_state = "char_select"  # "char_select", "playing", or "win_screen"
 winner = None
 loser = None
+
+# Character selection
+char_selector = CharacterSelector(P1_KEYS, P2_KEYS)
+
+def create_players_from_selection():
+    """Create players based on character selection"""
+    global player1, player2, players
+    
+    p1_char, p2_char = char_selector.get_selected_characters()
+    
+    # Get character data from config
+    p1_data = CAT_CHARACTERS[p1_char]
+    p2_data = CAT_CHARACTERS[p2_char]
+    
+    # Create players with selected characters
+    player1 = Player(
+        PLAYER1_START_X,
+        PLAYER1_START_Y,
+        P1_KEYS,
+        p1_data['color'],
+        eye_color=p1_data['eye_color'],
+        char_name=p1_data['name'],
+        facing_right=True,
+    )
+    
+    player2 = Player(
+        PLAYER2_START_X,
+        PLAYER2_START_Y,
+        P2_KEYS,
+        p2_data['color'],
+        eye_color=p2_data['eye_color'],
+        char_name=p2_data['name'],
+        facing_right=False,
+    )
+    
+    # Update stripe colors based on character selection
+    player1.stripe_color = p1_data['stripe_color']
+    player2.stripe_color = p2_data['stripe_color']
+    
+    # Recreate player group
+    players = pygame.sprite.Group(player1, player2)
 
 while running:
     dt = clock.tick(FPS)
@@ -450,14 +482,24 @@ while running:
     for ev in events:
         if ev.type == pygame.QUIT:
             running = False
-        elif ev.type == pygame.KEYDOWN and game_state == "win_screen":
-            # Any key pressed during win screen restarts the game
-            reset_game()
-            game_state = "playing"
-            winner = None
-            loser = None
+        elif ev.type == pygame.KEYDOWN:
+            if game_state == "win_screen":
+                # Any key pressed during win screen restarts the game
+                reset_game()
+                game_state = "char_select"
+                winner = None
+                loser = None
+            elif game_state == "char_select" and char_selector.both_ready():
+                # Both players ready, start game
+                create_players_from_selection()
+                game_state = "playing"
 
-    if game_state == "playing":
+    if game_state == "char_select":
+        # Character selection screen
+        char_selector.update(frame_input.held)
+        char_selector.render(screen)
+        
+    elif game_state == "playing":
         # ---- update
         for p in players:
             p.update(frame_input, platforms, attacks)
@@ -507,12 +549,14 @@ while running:
         for a in attacks:
             screen.blit(a.image, a.rect)
 
-        draw_hud(player1, "P1")  # drawn by default in upper-left corner
-        draw_hud(player2, "P2", topright=True)
+        # Draw HUD only if players exist
+        if player1 and player2:
+            draw_hud(player1, "P1")  # drawn by default in upper-left corner
+            draw_hud(player2, "P2", topright=True)
 
-        # Draw player controls below the HUD
-        draw_controls(player1, "P1")  # drawn by default below P1 HUD
-        draw_controls(player2, "P2", topright=True)  # drawn below P2 HUD
+            # Draw player controls below the HUD
+            draw_controls(player1, "P1")  # drawn by default below P1 HUD
+            draw_controls(player2, "P2", topright=True)  # drawn below P2 HUD
 
         # draw keys pressed for debugging
         if frame_input:
