@@ -12,3 +12,6 @@
 - [ ] fix buge where air dodging cancels vertical momentum, but first research if this is intended behavior
 - [ ] fix bug where character respawn facing direction isn't correctly reset to the correct initial facing direction
 - [ ] fix bug where momentum from attack knockback appears to be cancelled out 100% when defender is moving left/right, but not when defender is stationary, when instead, both should be factored in
+- [ ] implement fullscreen display
+- [ ] fix bug where new rounds player rects still can be showing red damaged state but should be reset back to normal
+- [ ] make the win screen be non-responsive to clicks for 2 seconds initially, or press "space key" specifically to prevent accidental round starts
