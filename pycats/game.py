@@ -378,6 +378,8 @@ def reset_game():
     player1.invulnerable = False
     player1.shield_attempting = False
     player1.facing_right = True
+    # Reset visual appearance to original color
+    player1.reset_visual_state()
     # Reset timers
     player1.respawn_timer = 0
     player1.dodge_timer = 0
@@ -406,6 +408,8 @@ def reset_game():
     player2.invulnerable = False
     player2.shield_attempting = False
     player2.facing_right = False
+    # Reset visual appearance to original color
+    player2.reset_visual_state()
     # Reset timers
     player2.respawn_timer = 0
     player2.dodge_timer = 0

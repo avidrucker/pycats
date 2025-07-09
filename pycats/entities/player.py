@@ -558,6 +558,7 @@ class Player(pygame.sprite.Sprite):
         self.shield_hp = SHIELD_MAX_HP
         self.was_hit_before_ko = False  # Reset hit tracking for next life
         self.facing_right = self.original_facing_right  # Restore original facing direction
+        self.reset_visual_state()  # Reset visual appearance to original color
 
     # state starters ----------------------------
     def _start_hurt(self) -> None:  # knockback: pygame.Vector2
@@ -723,3 +724,7 @@ class Player(pygame.sprite.Sprite):
     def record_hit_received(self):
         """Record that this player was hit by an opponent"""
         self.was_hit_before_ko = True
+
+    def reset_visual_state(self):
+        """Reset player visual appearance to original color"""
+        self.image.fill(self.char_color)
