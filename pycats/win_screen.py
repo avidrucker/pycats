@@ -109,10 +109,19 @@ class WinScreenManager:
         # Get formatted statistics
         match_summary = stats_print.get_match_summary(self.winner, self.loser)
         
-        # Create fonts
-        title_font = pygame.font.SysFont(None, WIN_SCREEN_TITLE_SIZE)
-        stats_font = pygame.font.SysFont(None, WIN_SCREEN_STATS_SIZE)
-        instruction_font = pygame.font.SysFont(None, WIN_SCREEN_INSTRUCTION_SIZE)
+        # Create fonts - try to use a Unicode-compatible font
+        available_fonts = pygame.font.get_fonts()
+        unicode_font_name = None
+        
+        # Look for fonts that might support Unicode symbols
+        for font_name in ['noto']: # 'arial', 'dejavusans', 'liberation', 'segoe'
+            if font_name in available_fonts:
+                unicode_font_name = font_name
+                break
+        
+        title_font = pygame.font.SysFont(unicode_font_name, WIN_SCREEN_TITLE_SIZE)
+        stats_font = pygame.font.SysFont(unicode_font_name, WIN_SCREEN_STATS_SIZE)
+        instruction_font = pygame.font.SysFont(unicode_font_name, WIN_SCREEN_INSTRUCTION_SIZE)
         
         y_offset = WIN_SCREEN_PADDING
         
@@ -152,8 +161,16 @@ class WinScreenManager:
             y_offset += WIN_SCREEN_LINE_SPACING
             
             # Show individual player confirmation status
-            p1_status = "✓" if self.p1_confirmed else "..."
-            p2_status = "✓" if self.p2_confirmed else "..."
+            # Try Unicode checkmark first, fall back to ASCII if not supported
+            try:
+                p1_status = "[✓]" if self.p1_confirmed else "..."
+                p2_status = "[✓]" if self.p2_confirmed else "..."
+                # Test if the font can render the checkmark
+                test_surface = instruction_font.render("✓", True, WIN_SCREEN_TEXT_COLOR)
+            except:
+                # Fall back to ASCII alternatives
+                p1_status = "[OK]" if self.p1_confirmed else "..."
+                p2_status = "[OK]" if self.p2_confirmed else "..."
             
             status_text = instruction_font.render(f"P1: {p1_status}    P2: {p2_status}", True, WIN_SCREEN_TEXT_COLOR)
             status_rect = status_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)

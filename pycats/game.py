@@ -113,8 +113,18 @@ attacks = pygame.sprite.Group()
 # ------------------------------------------------ pygame set-up
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
-font = pygame.font.SysFont(None, 24)
 
+# Create fonts - try to use a Unicode-compatible font
+available_fonts = pygame.font.get_fonts()
+unicode_font_name = None
+
+# Look for fonts that might support Unicode symbols
+for font_name in ['noto']: # 'arial', 'dejavusans', 'liberation', 'segoe'
+    if font_name in available_fonts:
+        unicode_font_name = font_name
+        break
+
+font = pygame.font.SysFont(unicode_font_name, 24)
 
 # ------------------------------------------------ helpers
 def draw_eye(p: Player, eye=True):

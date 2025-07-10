@@ -259,15 +259,25 @@ class CharacterSelector:
         """Render the character selection screen."""
         # Clear screen
         screen.fill(CHAR_SELECT_BG_COLOR)
-        
+
+        # Create fonts - try to use a Unicode-compatible font
+        available_fonts = pygame.font.get_fonts()
+        unicode_font_name = None
+
+        # Look for fonts that might support Unicode symbols
+        for font_name in ['noto']: # 'arial', 'dejavusans', 'liberation', 'segoe'
+            if font_name in available_fonts:
+                unicode_font_name = font_name
+                break
+
         # Title
-        title_font = pygame.font.SysFont(None, CHAR_SELECT_TITLE_SIZE)
+        title_font = pygame.font.SysFont(unicode_font_name, CHAR_SELECT_TITLE_SIZE)
         title_text = title_font.render("Choose Your Cat!", True, CHAR_SELECT_TITLE_COLOR)
         title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, 50))
         screen.blit(title_text, title_rect)
         
         # Instructions
-        instruction_font = pygame.font.SysFont(None, CHAR_SELECT_INSTRUCTION_SIZE)
+        instruction_font = pygame.font.SysFont(unicode_font_name, CHAR_SELECT_INSTRUCTION_SIZE)
         instructions = [
             "Use arrow keys to move cursor",
             "Press A to confirm selection, B to cancel",
@@ -292,7 +302,7 @@ class CharacterSelector:
             self._draw_cat_preview(screen, char_key, x, y, CHAR_SELECT_TILE_SIZE)
             
             # Draw character name
-            name_font = pygame.font.SysFont(None, 18)
+            name_font = pygame.font.SysFont(unicode_font_name, 18)
             name_text = name_font.render(CAT_CHARACTERS[char_key]['name'], True, WHITE)
             name_rect = name_text.get_rect(center=(x + CHAR_SELECT_TILE_SIZE // 2,
                                                   y + CHAR_SELECT_TILE_SIZE + 10))
@@ -300,27 +310,27 @@ class CharacterSelector:
             
         # Draw cursors (only if not confirmed)
         if not self.p1_confirmed:
-            self._draw_cursor(screen, self.p1_cursor, (255, 100, 100), "P1", large=True)  # Red, large
+            self._draw_cursor(screen, self.p1_cursor, (255, 100, 100), "P1", unicode_font_name, large=True)  # Red, large
         if not self.p2_confirmed:
-            self._draw_cursor(screen, self.p2_cursor, (100, 100, 255), "P2", large=False)  # Blue, small
+            self._draw_cursor(screen, self.p2_cursor, (100, 100, 255), "P2", unicode_font_name, large=False)  # Blue, small
         
         # Draw selection confirmations
         if self.p1_confirmed and self.p1_selected:
             selected_idx = self.characters.index(self.p1_selected)
-            self._draw_confirmation(screen, selected_idx, (255, 100, 100), "P1 ✓")
+            self._draw_confirmation(screen, selected_idx, (255, 100, 100), "P1 ✓", unicode_font_name)
             
         if self.p2_confirmed and self.p2_selected:
             selected_idx = self.characters.index(self.p2_selected)
-            self._draw_confirmation(screen, selected_idx, (100, 100, 255), "P2 ✓")
+            self._draw_confirmation(screen, selected_idx, (100, 100, 255), "P2 ✓", unicode_font_name)
             
         # Control instructions at bottom
-        self._draw_control_instructions(screen)
+        self._draw_control_instructions(screen, unicode_font_name)
         
         # Start overlay (if both players are confirmed)
         if self.show_start_screen:
-            self._draw_start_overlay(screen)
+            self._draw_start_overlay(screen, unicode_font_name)
             
-    def _draw_cursor(self, screen, cursor_pos, color, label, large=True):
+    def _draw_cursor(self, screen, cursor_pos, color, label, font_name, large=True):
         """Draw a player's cursor around a tile."""
         x, y = self._grid_pos_to_screen_pos(cursor_pos)
         
@@ -335,13 +345,13 @@ class CharacterSelector:
         pygame.draw.rect(screen, color, cursor_rect, cursor_width)
         
         # Draw player label
-        label_font = pygame.font.SysFont(None, 16)
+        label_font = pygame.font.SysFont(font_name, 16)
         label_text = label_font.render(label, True, color)
         label_rect = label_text.get_rect(center=(x + CHAR_SELECT_TILE_SIZE // 2,
                                                 y - 15))
         screen.blit(label_text, label_rect)
         
-    def _draw_confirmation(self, screen, char_pos, color, label):
+    def _draw_confirmation(self, screen, char_pos, color, label, font_name):
         """Draw a confirmation checkmark on a selected character."""
         x, y = self._grid_pos_to_screen_pos(char_pos)
         
@@ -352,15 +362,15 @@ class CharacterSelector:
         pygame.draw.rect(screen, color, confirm_rect, 4)
         
         # Draw confirmation label
-        confirm_font = pygame.font.SysFont(None, 20)
+        confirm_font = pygame.font.SysFont(font_name, 20)
         confirm_text = confirm_font.render(label, True, color)
         confirm_rect = confirm_text.get_rect(center=(x + CHAR_SELECT_TILE_SIZE // 2,
                                                    y + CHAR_SELECT_TILE_SIZE + 30))
         screen.blit(confirm_text, confirm_rect)
         
-    def _draw_control_instructions(self, screen):
+    def _draw_control_instructions(self, screen, font_name):
         """Draw control instructions at the bottom of the screen."""
-        control_font = pygame.font.SysFont(None, 16)
+        control_font = pygame.font.SysFont(font_name, 16)
         
         # Convert key constants to readable strings
         key_names = {
@@ -390,7 +400,7 @@ class CharacterSelector:
         p2_rect = p2_surface.get_rect(center=(3 * SCREEN_WIDTH // 4, SCREEN_HEIGHT - 20))
         screen.blit(p2_surface, p2_rect)
 
-    def _draw_start_overlay(self, screen):
+    def _draw_start_overlay(self, screen, font_name):
         """Draw the start overlay that partially obscures the grid when both players are confirmed."""
         # Create a semi-transparent overlay
         overlay_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -410,13 +420,13 @@ class CharacterSelector:
         pygame.draw.rect(screen, (100, 255, 100), start_box, 3)
         
         # Draw "START" text
-        start_font = pygame.font.SysFont(None, 48)
+        start_font = pygame.font.SysFont(font_name, 48)
         start_text = start_font.render("START", True, (100, 255, 100))
         start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + 40))
         screen.blit(start_text, start_rect)
         
         # Draw instruction text
-        instruction_font = pygame.font.SysFont(None, 24)
+        instruction_font = pygame.font.SysFont(font_name, 24)
         instruction_text = instruction_font.render("Press A to start the match", True, WHITE)
         instruction_rect = instruction_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + 80))
         screen.blit(instruction_text, instruction_rect)
