@@ -15,5 +15,9 @@
 - [ ] implement fullscreen display
 - [ ] fix bug where new rounds player rects still can be showing red damaged state but should be reset back to normal
 - [ ] make the win screen be non-responsive to clicks for 2 seconds initially, or press "space key" specifically to prevent accidental round starts
-- [ ] implement character selection screen where players can select their character and then press a button to start the game
+- [x] implement character selection screen where players can select their character and then press a button to start the game
 - [ ] implement skin changing for characters (white ghost, orange tabby, gray tabby, black void, orange/black tiger, bengal white/black tiger)
+- [ ] apply working title: "Cat Fight" to start screen
+- [ ] implement screen system w/ a dedicated screen manager that handles the current screen and transitions between screens (character select, win screen, match screen, main menu)
+- [ ] implement capital "P" to pause
+- [ ] implement capital "Q" to quit game
