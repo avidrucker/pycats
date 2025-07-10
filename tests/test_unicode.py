@@ -1,38 +1,64 @@
 #!/usr/bin/env python3
 """
-Test script to check Unicode support in pygame fonts
+Simple test to verify Unicode rendering is working.
 """
+
 import pygame
+import sys
+import os
 
-pygame.init()
+# Add the pycats module to the path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'pycats'))
 
-# Check available fonts
-available_fonts = pygame.font.get_fonts()
-print("Available fonts:")
-for font in sorted(available_fonts):
-    print(f"  {font}")
+def test_unicode_rendering():
+    """Test Unicode character rendering."""
+    pygame.init()
+    
+    # Create a simple display
+    screen = pygame.display.set_mode((800, 600))
+    pygame.display.set_caption("Unicode Test")
+    
+    # Import our text renderer
+    from pycats.text_utils import text_renderer
+    
+    # Test characters
+    test_chars = ["►", "◄", "↑", "↓", "✓", "→", "←"]
+    
+    print(f"Unicode font name: {text_renderer.unicode_font_name}")
+    
+    # Clear screen
+    screen.fill((50, 50, 50))
+    
+    # Test render_text_mixed
+    y = 50
+    for char in test_chars:
+        text = f"Mixed render: {char} <- should be Unicode"
+        text_renderer.render_text_mixed(text, 24, (255, 255, 255), screen, (50, y))
+        y += 30
+    
+    # Test render_unicode_char
+    y += 30
+    for i, char in enumerate(test_chars):
+        text_renderer.render_unicode_char(char, 32, (255, 255, 0), screen, (50 + i * 40, y), center=True)
+    
+    # Add text
+    text_renderer.render_text_simple("Unicode chars above (yellow):", 20, (255, 255, 255), screen, (50, y + 40))
+    
+    pygame.display.flip()
+    
+    # Wait for a key press
+    print("Unicode test window opened. Check if Unicode characters are displayed properly.")
+    print("Press any key in the window to close, or close the window.")
+    
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                running = False
+    
+    pygame.quit()
 
-print("\nTesting Unicode support:")
-
-# Test various fonts with Unicode characters
-test_chars = ["✓", "✗", "→", "←", "↑", "↓", "★", "♥", "♦", "♣", "♠"]
-
-for font_name in [None, 'arial', 'dejavusans', 'liberation', 'noto']:
-    try:
-        if font_name:
-            font = pygame.font.SysFont(font_name, 24)
-            print(f"\nFont: {font_name}")
-        else:
-            font = pygame.font.SysFont(None, 24)
-            print(f"\nFont: default")
-        
-        for char in test_chars:
-            try:
-                surface = font.render(char, True, (255, 255, 255))
-                print(f"  {char} - OK")
-            except Exception as e:
-                print(f"  {char} - Failed: {e}")
-    except Exception as e:
-        print(f"Font {font_name} failed to load: {e}")
-
-pygame.quit()
+if __name__ == "__main__":
+    test_unicode_rendering()
