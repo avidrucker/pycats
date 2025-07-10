@@ -16,6 +16,7 @@ from .config import (
     WIN_SCREEN_TEXT_COLOR
 )
 from . import stats_print
+from . import text_utils
 
 
 class WinScreenManager:
@@ -109,79 +110,60 @@ class WinScreenManager:
         # Get formatted statistics
         match_summary = stats_print.get_match_summary(self.winner, self.loser)
         
-        # Create fonts - try to use a Unicode-compatible font
-        available_fonts = pygame.font.get_fonts()
-        unicode_font_name = None
-        
-        # Look for fonts that might support Unicode symbols
-        for font_name in ['noto']: # 'arial', 'dejavusans', 'liberation', 'segoe'
-            if font_name in available_fonts:
-                unicode_font_name = font_name
-                break
-        
-        title_font = pygame.font.SysFont(unicode_font_name, WIN_SCREEN_TITLE_SIZE)
-        stats_font = pygame.font.SysFont(unicode_font_name, WIN_SCREEN_STATS_SIZE)
-        instruction_font = pygame.font.SysFont(unicode_font_name, WIN_SCREEN_INSTRUCTION_SIZE)
-        
         y_offset = WIN_SCREEN_PADDING
         
         # Winner announcement
-        winner_text = title_font.render(match_summary['winner_announcement'], True, WIN_SCREEN_TEXT_COLOR)
-        winner_rect = winner_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-        screen.blit(winner_text, winner_rect)
+        text_utils.render_text(screen, match_summary['winner_announcement'], 
+                             (SCREEN_WIDTH // 2, y_offset), 
+                             WIN_SCREEN_TITLE_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
         y_offset += WIN_SCREEN_LINE_SPACING * 2
         
         # Final stock count
-        stocks_text = stats_font.render(match_summary['final_stocks'], True, WIN_SCREEN_TEXT_COLOR)
-        stocks_rect = stocks_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-        screen.blit(stocks_text, stocks_rect)
+        text_utils.render_text(screen, match_summary['final_stocks'], 
+                             (SCREEN_WIDTH // 2, y_offset), 
+                             WIN_SCREEN_STATS_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
         y_offset += WIN_SCREEN_LINE_SPACING * 1.5
         
         # Game statistics header
-        stats_header = stats_font.render("Game Statistics", True, WIN_SCREEN_TEXT_COLOR)
-        stats_rect = stats_header.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-        screen.blit(stats_header, stats_rect)
+        text_utils.render_text(screen, "Game Statistics", 
+                             (SCREEN_WIDTH // 2, y_offset), 
+                             WIN_SCREEN_STATS_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
         y_offset += WIN_SCREEN_LINE_SPACING
         
         # Render the stats table with pixel-perfect positioning
         stats_table_start_y = y_offset
-        y_offset = self._render_stats_table(screen, match_summary['stats_table'], stats_font, y_offset)
+        y_offset = self._render_stats_table(screen, match_summary['stats_table'], y_offset)
         
         # Draw confirmation boxes around player columns
-        self._draw_confirmation_boxes(screen, stats_table_start_y, y_offset, stats_font)
+        self._draw_confirmation_boxes(screen, stats_table_start_y, y_offset)
         
         # Instructions
         y_offset += WIN_SCREEN_LINE_SPACING * 2
         
         # Show different instructions based on confirmation status
         if not self.both_confirmed():
-            instruction_text = instruction_font.render("Press A to confirm viewing stats, B to cancel", True, WIN_SCREEN_TEXT_COLOR)
-            instruction_rect = instruction_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-            screen.blit(instruction_text, instruction_rect)
+            text_utils.render_text(screen, "Press A to confirm viewing stats, B to cancel", 
+                                 (SCREEN_WIDTH // 2, y_offset), 
+                                 WIN_SCREEN_INSTRUCTION_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
             y_offset += WIN_SCREEN_LINE_SPACING
             
-            # Show individual player confirmation status
-            # Try Unicode checkmark first, fall back to ASCII if not supported
-            try:
-                p1_status = "[✓]" if self.p1_confirmed else "..."
-                p2_status = "[✓]" if self.p2_confirmed else "..."
-                # Test if the font can render the checkmark
-                test_surface = instruction_font.render("✓", True, WIN_SCREEN_TEXT_COLOR)
-            except:
-                # Fall back to ASCII alternatives
-                p1_status = "[OK]" if self.p1_confirmed else "..."
-                p2_status = "[OK]" if self.p2_confirmed else "..."
+            # Show individual player confirmation status with Unicode/ASCII fallback
+            p1_status = "✓" if self.p1_confirmed else "..."
+            p2_status = "✓" if self.p2_confirmed else "..."
             
-            status_text = instruction_font.render(f"P1: {p1_status}    P2: {p2_status}", True, WIN_SCREEN_TEXT_COLOR)
-            status_rect = status_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-            screen.blit(status_text, status_rect)
+            # Use text_utils with Unicode support and ASCII fallback
+            status_text = f"P1: [{p1_status}]    P2: [{p2_status}]"
+            text_utils.text_renderer.render_text_mixed(
+                status_text, WIN_SCREEN_INSTRUCTION_SIZE, WIN_SCREEN_TEXT_COLOR, screen,
+                (SCREEN_WIDTH // 2, y_offset), center=True
+            )
         else:
             # Both confirmed, show return instruction
-            return_text = instruction_font.render("Both players ready - returning to character selection...", True, WIN_SCREEN_TEXT_COLOR)
-            return_rect = return_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-            screen.blit(return_text, return_rect)
+            text_utils.render_text(screen, "Both players ready - returning to character selection...", 
+                                 (SCREEN_WIDTH // 2, y_offset), 
+                                 WIN_SCREEN_INSTRUCTION_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
             
-    def _render_stats_table(self, screen, stats_table, font, start_y):
+    def _render_stats_table(self, screen, stats_table, start_y):
         """Render the stats table with pixel-perfect column alignment."""
         # Column widths in pixels
         stat_col_width = 180  # Width for stat names
@@ -214,19 +196,19 @@ class WinScreenManager:
         header = stats_table['header']
         
         # Stat label (right-aligned)
-        stat_label = font.render(header['stat_label'], True, WIN_SCREEN_TEXT_COLOR)
-        stat_rect = stat_label.get_rect(right=stat_col_x + stat_col_width, y=current_y)
-        screen.blit(stat_label, stat_rect)
+        text_utils.render_text(screen, header['stat_label'], 
+                             (stat_col_x + stat_col_width, current_y), 
+                             WIN_SCREEN_STATS_SIZE, WIN_SCREEN_TEXT_COLOR, right_align=True)
         
         # P1 label (center-aligned)
-        p1_label = font.render(header['p1_label'], True, WIN_SCREEN_TEXT_COLOR)
-        p1_rect = p1_label.get_rect(centerx=p1_col_x + player_col_width // 2, y=current_y)
-        screen.blit(p1_label, p1_rect)
+        text_utils.render_text(screen, header['p1_label'], 
+                             (p1_col_x + player_col_width // 2, current_y), 
+                             WIN_SCREEN_STATS_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
         
         # P2 label (center-aligned)
-        p2_label = font.render(header['p2_label'], True, WIN_SCREEN_TEXT_COLOR)
-        p2_rect = p2_label.get_rect(centerx=p2_col_x + player_col_width // 2, y=current_y)
-        screen.blit(p2_label, p2_rect)
+        text_utils.render_text(screen, header['p2_label'], 
+                             (p2_col_x + player_col_width // 2, current_y), 
+                             WIN_SCREEN_STATS_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
         
         current_y += WIN_SCREEN_LINE_SPACING
         
@@ -247,25 +229,25 @@ class WinScreenManager:
         # Render data rows
         for row in stats_table['rows']:
             # Stat name (right-aligned)
-            stat_text = font.render(row['stat_name'], True, WIN_SCREEN_TEXT_COLOR)
-            stat_rect = stat_text.get_rect(right=stat_col_x + stat_col_width, y=current_y)
-            screen.blit(stat_text, stat_rect)
+            text_utils.render_text(screen, row['stat_name'], 
+                                 (stat_col_x + stat_col_width, current_y), 
+                                 WIN_SCREEN_STATS_SIZE, WIN_SCREEN_TEXT_COLOR, right_align=True)
             
             # P1 value (center-aligned)
-            p1_text = font.render(row['p1_value'], True, WIN_SCREEN_TEXT_COLOR)
-            p1_rect = p1_text.get_rect(centerx=p1_col_x + player_col_width // 2, y=current_y)
-            screen.blit(p1_text, p1_rect)
+            text_utils.render_text(screen, row['p1_value'], 
+                                 (p1_col_x + player_col_width // 2, current_y), 
+                                 WIN_SCREEN_STATS_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
             
             # P2 value (center-aligned)
-            p2_text = font.render(row['p2_value'], True, WIN_SCREEN_TEXT_COLOR)
-            p2_rect = p2_text.get_rect(centerx=p2_col_x + player_col_width // 2, y=current_y)
-            screen.blit(p2_text, p2_rect)
+            text_utils.render_text(screen, row['p2_value'], 
+                                 (p2_col_x + player_col_width // 2, current_y), 
+                                 WIN_SCREEN_STATS_SIZE, WIN_SCREEN_TEXT_COLOR, center=True)
             
             current_y += WIN_SCREEN_LINE_SPACING * 0.8
         
         return current_y
             
-    def _draw_confirmation_boxes(self, screen, table_start_y, table_end_y, stats_font):
+    def _draw_confirmation_boxes(self, screen, table_start_y, table_end_y):
         """Draw colored boxes around player columns to show confirmation status."""
         # Use the stored column positions from _render_stats_table
         if not hasattr(self, 'table_columns'):

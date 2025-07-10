@@ -15,6 +15,7 @@ from .config import (
     MAIN_MENU_OPTION_SIZE, MAIN_MENU_OPTION_COLOR, MAIN_MENU_SELECTED_COLOR,
     MAIN_MENU_PADDING, MAIN_MENU_OPTION_SPACING
 )
+from .text_utils import text_renderer
 
 
 class MainMenuManager:
@@ -83,50 +84,59 @@ class MainMenuManager:
         # Clear screen
         surface.fill(MAIN_MENU_BG_COLOR)
         
-        # Create fonts - try to use a Unicode-compatible font
-        available_fonts = pygame.font.get_fonts()
-        unicode_font_name = None
-        
-        # Look for fonts that might support Unicode symbols
-        for font_name in ['noto']:  # 'arial', 'dejavusans', 'liberation', 'segoe'
-            if font_name in available_fonts:
-                unicode_font_name = font_name
-                break
-        
-        title_font = pygame.font.SysFont(unicode_font_name, MAIN_MENU_TITLE_SIZE)
-        option_font = pygame.font.SysFont(unicode_font_name, MAIN_MENU_OPTION_SIZE)
-        
         # Title
-        title_text = title_font.render("Cat Fight", True, MAIN_MENU_TITLE_COLOR)
-        title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE // 2))
-        surface.blit(title_text, title_rect)
+        text_renderer.render_text_simple(
+            "Cat Fight", 
+            MAIN_MENU_TITLE_SIZE, 
+            MAIN_MENU_TITLE_COLOR, 
+            surface, 
+            (SCREEN_WIDTH // 2, MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE // 2),
+            center=True
+        )
         
         # Menu options
-        start_y = title_rect.bottom + MAIN_MENU_PADDING
+        start_y = MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE + MAIN_MENU_PADDING
         
         for i, option in enumerate(self.options):
             # Choose color based on selection
             color = MAIN_MENU_SELECTED_COLOR if i == self.selected_option else MAIN_MENU_OPTION_COLOR
             
-            option_text = option_font.render(option, True, color)
-            option_rect = option_text.get_rect(center=(SCREEN_WIDTH // 2, start_y + i * MAIN_MENU_OPTION_SPACING))
-            surface.blit(option_text, option_rect)
+            option_y = start_y + i * MAIN_MENU_OPTION_SPACING
+            text_renderer.render_text_simple(
+                option, 
+                MAIN_MENU_OPTION_SIZE, 
+                color, 
+                surface, 
+                (SCREEN_WIDTH // 2, option_y),
+                center=True
+            )
             
-            # Draw selection indicator
+            # Draw selection indicator with unicode arrows
             if i == self.selected_option:
-                # Draw arrows on both sides
-                arrow_offset = option_text.get_width() // 2 + 20
-                left_arrow = option_font.render("►", True, MAIN_MENU_SELECTED_COLOR)
-                right_arrow = option_font.render("◄", True, MAIN_MENU_SELECTED_COLOR)
+                arrow_offset = pygame.font.SysFont(None, MAIN_MENU_OPTION_SIZE).size(option)[0] // 2 + 20
                 
-                left_pos = (option_rect.centerx - arrow_offset, option_rect.centery - left_arrow.get_height() // 2)
-                right_pos = (option_rect.centerx + arrow_offset - right_arrow.get_width(), option_rect.centery - right_arrow.get_height() // 2)
+                # Use specialized Unicode character rendering for better alignment
+                text_renderer.render_unicode_char(
+                    "►", 
+                    MAIN_MENU_OPTION_SIZE, 
+                    MAIN_MENU_SELECTED_COLOR, 
+                    surface, 
+                    (SCREEN_WIDTH // 2 - arrow_offset, option_y),
+                    center=True,
+                    fallback_char=">"
+                )
                 
-                surface.blit(left_arrow, left_pos)
-                surface.blit(right_arrow, right_pos)
+                text_renderer.render_unicode_char(
+                    "◄", 
+                    MAIN_MENU_OPTION_SIZE, 
+                    MAIN_MENU_SELECTED_COLOR, 
+                    surface, 
+                    (SCREEN_WIDTH // 2 + arrow_offset, option_y),
+                    center=True,
+                    fallback_char="<"
+                )
         
-        # Instructions
-        instruction_font = pygame.font.SysFont(unicode_font_name, 20)
+        # Instructions - use mixed rendering for the arrow symbols
         instructions = [
             "Use W/S or ↑/↓ to navigate",
             "Press A to select"
@@ -135,17 +145,21 @@ class MainMenuManager:
         instruction_start_y = SCREEN_HEIGHT - len(instructions) * 30 - MAIN_MENU_PADDING
         
         for i, instruction in enumerate(instructions):
-            instruction_text = instruction_font.render(instruction, True, WHITE)
-            instruction_rect = instruction_text.get_rect(center=(SCREEN_WIDTH // 2, instruction_start_y + i * 30))
-            surface.blit(instruction_text, instruction_rect)
+            instruction_y = instruction_start_y + i * 30
+            text_renderer.render_text_mixed(
+                instruction, 
+                20, 
+                WHITE, 
+                surface, 
+                (SCREEN_WIDTH // 2, instruction_y),
+                center=True
+            )
         
         # Draw fullscreen instructions
         fs_text = "F11: Toggle Fullscreen"
-        fs_surf = instruction_font.render(fs_text, True, WHITE)
+        fs_font = pygame.font.SysFont(None, 20)
+        fs_surf = fs_font.render(fs_text, True, WHITE)
         surface.blit(
             fs_surf,
-            (
-                SCREEN_WIDTH - fs_surf.get_width() - 10,
-                SCREEN_HEIGHT - 25,
-            ),
+            (SCREEN_WIDTH - fs_surf.get_width() - 10, SCREEN_HEIGHT - 25)
         )

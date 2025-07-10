@@ -49,6 +49,7 @@ from .core import input as inp
 from .core.physics import resolve_player_push
 from . import stats_print
 from .screen_manager import ScreenStateManager
+from . import text_utils
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
@@ -153,8 +154,18 @@ clock = pygame.time.Clock()
 available_fonts = pygame.font.get_fonts()
 unicode_font_name = None
 
+#### QUICK FONT TEST
+# cheese = True if 'cheese' not in locals() else False
+
+# if cheese:
+#     for font in available_fonts:
+#         if 'symbol' in font.lower():
+#             print(f"Found symbol font: {font}")
+#     cheese = False
+####
+
 # Look for fonts that might support Unicode symbols
-for font_name in ['noto']: # 'arial', 'dejavusans', 'liberation', 'segoe'
+for font_name in ['segoeuisymbol', 'fonts-seto', 'notosanssymbols']: # 'arial', 'dejavusans', 'liberation', 'segoe'
     if font_name in available_fonts:
         unicode_font_name = font_name
         break
@@ -294,25 +305,28 @@ def draw_hud(surface, p: Player, label, topright=False):
     for i, txt in enumerate(
         (label, fsm, jumps, shield, shield_attempting, stocks, percent)
     ):
-        surf = font.render(txt, True, WHITE)  # TODO: replace magic vals w/ named vars
-        pos = (
-            (
-                SCREEN_WIDTH - surf.get_width() - HUD_PADDING,
-                HUD_PADDING + i * HUD_SPACING,
-            )
+        x_pos = (
+            SCREEN_WIDTH - HUD_PADDING
             if topright
-            else (HUD_PADDING, HUD_PADDING + i * HUD_SPACING)
+            else HUD_PADDING
         )
-        surface.blit(surf, pos)
+        y_pos = HUD_PADDING + i * HUD_SPACING
+        
+        text_utils.render_text(
+            surface, txt, 
+            (x_pos, y_pos), 
+            24, WHITE, 
+            right_align=topright
+        )
 
 
 def draw_controls(surface, p: Player, label, topright=False):
     """Draws the control scheme for a player below the HUD."""
-    # Convert pygame key constants to readable strings
+    # Convert pygame key constants to readable strings with Unicode arrows where appropriate
     key_names = {
         pygame.K_a: "A", pygame.K_d: "D", pygame.K_w: "W", pygame.K_s: "S",
         pygame.K_v: "V", pygame.K_c: "C", pygame.K_x: "X",
-        pygame.K_LEFT: "left arrow", pygame.K_RIGHT: "right arrow", pygame.K_UP: "up arrow", pygame.K_DOWN: "down arrow",
+        pygame.K_LEFT: "←", pygame.K_RIGHT: "→", pygame.K_UP: "↑", pygame.K_DOWN: "↓",
         pygame.K_SLASH: "/", pygame.K_PERIOD: ".", pygame.K_COMMA: ","
     }
     
@@ -330,31 +344,41 @@ def draw_controls(surface, p: Player, label, topright=False):
     start_y = HUD_PADDING + 7 * HUD_SPACING + 20
     
     for i, txt in enumerate(controls):
-        surf = font.render(txt, True, WHITE)
-        pos = (
-            (
-                SCREEN_WIDTH - surf.get_width() - HUD_PADDING,
-                start_y + i * HUD_SPACING,
-            )
+        x_pos = (
+            SCREEN_WIDTH - HUD_PADDING
             if topright
-            else (HUD_PADDING, start_y + i * HUD_SPACING)
+            else HUD_PADDING
         )
-        surface.blit(surf, pos)
+        y_pos = start_y + i * HUD_SPACING
+        
+        # Use mixed text rendering for Unicode arrow support
+        if topright:
+            # For right-aligned text, we need to calculate positioning differently
+            text_width = text_utils.text_renderer._get_font(None, 24).size(txt)[0]
+            adjusted_x = x_pos - text_width
+            text_utils.text_renderer.render_text_mixed(
+                txt, 24, WHITE, surface, (adjusted_x, y_pos)
+            )
+        else:
+            text_utils.text_renderer.render_text_mixed(
+                txt, 24, WHITE, surface, (x_pos, y_pos)
+            )
 
 
 def draw_player_name(surface, p: Player):
     """Draw the player name above the cat."""
-    name_font = pygame.font.SysFont(None, 20)
-    
     # Choose color based on player name
     if p.char_name == "P1":
         color = (255, 100, 100)  # Red
     else:
         color = (100, 100, 255)  # Blue
     
-    name_text = name_font.render(p.char_name, True, color)
-    name_rect = name_text.get_rect(center=(p.rect.centerx, p.rect.top - 25))
-    surface.blit(name_text, name_rect)
+    text_utils.render_text(
+        surface, p.char_name, 
+        (p.rect.centerx, p.rect.top - 25), 
+        20, color, 
+        center=True
+    )
 
 
 def reset_game():
@@ -452,7 +476,7 @@ def toggle_fullscreen():
         offset_x = 0
         offset_y = 0
         is_fullscreen = False
-        print("Switched to windowed mode")
+        # print("Switched to windowed mode")
     else:
         # Switch to fullscreen mode
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -482,8 +506,8 @@ def toggle_fullscreen():
         offset_y = (screen_height - scaled_height) // 2
         
         is_fullscreen = True
-        print(f"Switched to fullscreen mode: {screen_width}x{screen_height}, scale: {scale_factor:.2f}")
-        print(f"Using {'integer' if scale_factor == int(scale_factor) else 'fractional'} scaling")
+        # print(f"Switched to fullscreen mode: {screen_width}x{screen_height}, scale: {scale_factor:.2f}")
+        # print(f"Using {'integer' if scale_factor == int(scale_factor) else 'fractional'} scaling")
 
 
 def get_render_surface():
@@ -606,24 +630,18 @@ while running:
         
         # Draw fullscreen instructions on character select screen
         fs_text = "F11: Toggle Fullscreen" + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
-        fs_surf = font.render(fs_text, True, WHITE)
-        get_render_surface().blit(
-            fs_surf,
-            (
-                SCREEN_WIDTH - fs_surf.get_width() - HUD_PADDING,
-                SCREEN_HEIGHT - HUD_SPACING,
-            ),
+        text_utils.render_text(
+            get_render_surface(), fs_text,
+            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+            24, WHITE, right_align=True
         )
         
         # Draw back to menu instruction
         back_text = "Hold B for 1 second to return to main menu"
-        back_surf = font.render(back_text, True, WHITE)
-        get_render_surface().blit(
-            back_surf,
-            (
-                HUD_PADDING,
-                SCREEN_HEIGHT - HUD_SPACING,
-            ),
+        text_utils.render_text(
+            get_render_surface(), back_text,
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+            24, WHITE
         )
         
     elif current_state == "playing":
@@ -697,27 +715,24 @@ while running:
             # keys = ", ".join(
             #     f"{k}: {v}" for k, v in frame_input.items() if v
             # )
-            keys_surf = font.render(frame_input.__str__(), True, WHITE)
-            render_surface.blit(keys_surf, (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
+            text_utils.render_text(
+                render_surface, frame_input.__str__(),
+                (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+                24, WHITE
+            )
         # draw FPS and fullscreen instructions
-        fps_surf = font.render(f"FPS: {clock.get_fps():.2f}", True, WHITE)
-        render_surface.blit(
-            fps_surf,
-            (
-                SCREEN_WIDTH - fps_surf.get_width() - HUD_PADDING,
-                SCREEN_HEIGHT - HUD_SPACING,
-            ),
+        text_utils.render_text(
+            render_surface, f"FPS: {clock.get_fps():.2f}",
+            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+            24, WHITE, right_align=True
         )
         
         # Draw fullscreen instructions
         fs_text = "F11: Toggle Fullscreen" + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
-        fs_surf = font.render(fs_text, True, WHITE)
-        render_surface.blit(
-            fs_surf,
-            (
-                SCREEN_WIDTH - fs_surf.get_width() - HUD_PADDING,
-                SCREEN_HEIGHT - HUD_SPACING * 2,
-            ),
+        text_utils.render_text(
+            render_surface, fs_text,
+            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+            24, WHITE, right_align=True
         )
     
     elif current_state == "win_screen":
