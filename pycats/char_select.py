@@ -60,7 +60,7 @@ class CharacterSelector:
         # Grid layout
         self.grid_start_x = (SCREEN_WIDTH - (CHAR_SELECT_GRID_COLS * CHAR_SELECT_TILE_SIZE + 
                                             (CHAR_SELECT_GRID_COLS - 1) * CHAR_SELECT_TILE_SPACING)) // 2
-        self.grid_start_y = 150  # Below title
+        self.grid_start_y = 170  # Below title
         
     def reset(self):
         """Reset the character selector to initial state."""
@@ -297,7 +297,7 @@ class CharacterSelector:
         
         for i, instruction in enumerate(instructions):
             text_utils.render_text(screen, instruction, 
-                                 (SCREEN_WIDTH // 2, 100 + i * 20), 
+                                 (SCREEN_WIDTH // 2, 90 + i * 20), 
                                  CHAR_SELECT_INSTRUCTION_SIZE, CHAR_SELECT_TITLE_COLOR, center=True)
         
         # Character grid
