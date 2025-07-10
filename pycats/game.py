@@ -118,12 +118,12 @@ if start_fullscreen:
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     display_surface = screen
     game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    
+
     # Calculate scaling for fullscreen
     screen_width, screen_height = screen.get_size()
     scale_x = screen_width / SCREEN_WIDTH
     scale_y = screen_height / SCREEN_HEIGHT
-    
+
     # For crisp scaling, prefer integer scale factors when possible
     max_integer_scale = min(int(scale_x), int(scale_y))
     if max_integer_scale >= 1:
@@ -132,12 +132,12 @@ if start_fullscreen:
     else:
         # If screen is smaller than game resolution, use fractional scaling
         scale_factor = min(scale_x, scale_y)
-    
+
     scaled_width = int(SCREEN_WIDTH * scale_factor)
     scaled_height = int(SCREEN_HEIGHT * scale_factor)
     offset_x = (screen_width - scaled_width) // 2
     offset_y = (screen_height - scaled_height) // 2
-    
+
     is_fullscreen = True
 else:
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -165,21 +165,34 @@ unicode_font_name = None
 ####
 
 # Look for fonts that might support Unicode symbols
-for font_name in ['segoeuisymbol', 'fonts-seto', 'notosanssymbols']: # 'arial', 'dejavusans', 'liberation', 'segoe'
+for font_name in [
+    "segoeuisymbol",
+    "fonts-seto",
+    "notosanssymbols",
+]:  # 'arial', 'dejavusans', 'liberation', 'segoe'
     if font_name in available_fonts:
         unicode_font_name = font_name
         break
 
 font = pygame.font.SysFont(unicode_font_name, 24)
 
+
 # ------------------------------------------------ helpers
 def draw_eye(surface, p: Player, eye=True):
     if eye:
-        x = p.rect.right - EYE_OFFSET_X if p.facing_right else p.rect.left + EYE_OFFSET_X
+        x = (
+            p.rect.right - EYE_OFFSET_X
+            if p.facing_right
+            else p.rect.left + EYE_OFFSET_X
+        )
         y = p.rect.top + EYE_OFFSET_Y
         pygame.draw.circle(surface, p.eye_color, (x, y), EYE_RADIUS)
-    else: # we will draw a glint instead of an eye
-        x = p.rect.right - GLINT_OFFSET_X if p.facing_right else p.rect.left + GLINT_OFFSET_X
+    else:  # we will draw a glint instead of an eye
+        x = (
+            p.rect.right - GLINT_OFFSET_X
+            if p.facing_right
+            else p.rect.left + GLINT_OFFSET_X
+        )
         y = p.rect.top + GLINT_OFFSET_Y
         pygame.draw.circle(surface, WHITE, (x, y), GLINT_RADIUS)
 
@@ -263,31 +276,43 @@ def draw_stripes(surface, p: Player):
     # Calculate stripe positions on the back of the player
     back_center_x = p.rect.centerx + (-10 if p.facing_right else 10)
     back_start_y = p.rect.top + 15  # Start stripes a bit down from the top
-    
+
     for i in range(STRIPE_COUNT):
         # Calculate vertical position for each stripe
         stripe_y = back_start_y + i * STRIPE_SPACING
-        
+
         # Make sure we don't draw stripes outside the player rectangle
         if stripe_y + STRIPE_HEIGHT > p.rect.bottom:
             break
-            
+
         # Create triangular stripe points pointing toward the front of the cat
         if p.facing_right:
             # Right-facing cat: triangle points right, flat side on the left (back)
             stripe_points = [
-                (back_center_x - STRIPE_WIDTH // 2, stripe_y),                    # Back top
-                (back_center_x - STRIPE_WIDTH // 2, stripe_y + STRIPE_HEIGHT),    # Back bottom
-                (back_center_x + STRIPE_WIDTH // 2, stripe_y + STRIPE_HEIGHT // 2), # Front point
+                (back_center_x - STRIPE_WIDTH // 2, stripe_y),  # Back top
+                (
+                    back_center_x - STRIPE_WIDTH // 2,
+                    stripe_y + STRIPE_HEIGHT,
+                ),  # Back bottom
+                (
+                    back_center_x + STRIPE_WIDTH // 2,
+                    stripe_y + STRIPE_HEIGHT // 2,
+                ),  # Front point
             ]
         else:
             # Left-facing cat: triangle points left, flat side on the right (back)
             stripe_points = [
-                (back_center_x + STRIPE_WIDTH // 2, stripe_y),                    # Back top
-                (back_center_x + STRIPE_WIDTH // 2, stripe_y + STRIPE_HEIGHT),    # Back bottom
-                (back_center_x - STRIPE_WIDTH // 2, stripe_y + STRIPE_HEIGHT // 2), # Front point
+                (back_center_x + STRIPE_WIDTH // 2, stripe_y),  # Back top
+                (
+                    back_center_x + STRIPE_WIDTH // 2,
+                    stripe_y + STRIPE_HEIGHT,
+                ),  # Back bottom
+                (
+                    back_center_x - STRIPE_WIDTH // 2,
+                    stripe_y + STRIPE_HEIGHT // 2,
+                ),  # Front point
             ]
-        
+
         # Draw the triangular stripe
         pygame.draw.polygon(surface, p.stripe_color, stripe_points)
 
@@ -305,18 +330,11 @@ def draw_hud(surface, p: Player, label, topright=False):
     for i, txt in enumerate(
         (label, fsm, jumps, shield, shield_attempting, stocks, percent)
     ):
-        x_pos = (
-            SCREEN_WIDTH - HUD_PADDING
-            if topright
-            else HUD_PADDING
-        )
+        x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
         y_pos = HUD_PADDING + i * HUD_SPACING
-        
+
         text_utils.render_text(
-            surface, txt, 
-            (x_pos, y_pos), 
-            24, WHITE, 
-            right_align=topright
+            surface, txt, (x_pos, y_pos), 24, WHITE, right_align=topright
         )
 
 
@@ -324,12 +342,22 @@ def draw_controls(surface, p: Player, label, topright=False):
     """Draws the control scheme for a player below the HUD."""
     # Convert pygame key constants to readable strings with Unicode arrows where appropriate
     key_names = {
-        pygame.K_a: "A", pygame.K_d: "D", pygame.K_w: "W", pygame.K_s: "S",
-        pygame.K_v: "V", pygame.K_c: "C", pygame.K_x: "X",
-        pygame.K_LEFT: "←", pygame.K_RIGHT: "→", pygame.K_UP: "↑", pygame.K_DOWN: "↓",
-        pygame.K_SLASH: "/", pygame.K_PERIOD: ".", pygame.K_COMMA: ","
+        pygame.K_a: "A",
+        pygame.K_d: "D",
+        pygame.K_w: "W",
+        pygame.K_s: "S",
+        pygame.K_v: "V",
+        pygame.K_c: "C",
+        pygame.K_x: "X",
+        pygame.K_LEFT: "←",
+        pygame.K_RIGHT: "→",
+        pygame.K_UP: "↑",
+        pygame.K_DOWN: "↓",
+        pygame.K_SLASH: "/",
+        pygame.K_PERIOD: ".",
+        pygame.K_COMMA: ",",
     }
-    
+
     controls = [
         f"{label} Controls:",
         f"Move: {key_names.get(p.controls['left'], '?')}/{key_names.get(p.controls['right'], '?')}",
@@ -337,20 +365,16 @@ def draw_controls(surface, p: Player, label, topright=False):
         f"Down: {key_names.get(p.controls['down'], '?')}",
         f"Attack: {key_names.get(p.controls['attack'], '?')}",
         f"Shield: {key_names.get(p.controls['shield'], '?')}",
-        f"Special: {key_names.get(p.controls['special'], '?')}"
+        f"Special: {key_names.get(p.controls['special'], '?')}",
     ]
-    
+
     # Start drawing below the HUD (7 lines of HUD + some spacing)
     start_y = HUD_PADDING + 7 * HUD_SPACING + 20
-    
+
     for i, txt in enumerate(controls):
-        x_pos = (
-            SCREEN_WIDTH - HUD_PADDING
-            if topright
-            else HUD_PADDING
-        )
+        x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
         y_pos = start_y + i * HUD_SPACING
-        
+
         # Use mixed text rendering for Unicode arrow support
         if topright:
             # For right-aligned text, we need to calculate positioning differently
@@ -372,19 +396,16 @@ def draw_player_name(surface, p: Player):
         color = (255, 100, 100)  # Red
     else:
         color = (100, 100, 255)  # Blue
-    
+
     text_utils.render_text(
-        surface, p.char_name, 
-        (p.rect.centerx, p.rect.top - 25), 
-        20, color, 
-        center=True
+        surface, p.char_name, (p.rect.centerx, p.rect.top - 25), 20, color, center=True
     )
 
 
 def reset_game():
     """Reset the game state for a new match"""
     global player1, player2, players, attacks
-    
+
     # Only reset if players exist (they may not exist if coming from character selection)
     if player1 and player2:
         # Reset player 1
@@ -416,7 +437,7 @@ def reset_game():
         player1.hits_landed = 0
         player1.suicides = 0
         player1.was_hit_before_ko = False
-        
+
         # Reset player 2
         player2.rect.midbottom = (PLAYER2_START_X, PLAYER2_START_Y)
         player2.vel.update(0, 0)
@@ -446,7 +467,7 @@ def reset_game():
         player2.hits_landed = 0
         player2.suicides = 0
         player2.was_hit_before_ko = False
-    
+
     # Clear all attacks
     attacks.empty()
 
@@ -455,7 +476,7 @@ def check_win_condition():
     """Check if either player has won the game"""
     if not player1 or not player2:
         return None, None  # Players not initialized yet
-    
+
     if player1.lives <= 0:
         return player2, player1  # winner, loser
     elif player2.lives <= 0:
@@ -466,7 +487,7 @@ def check_win_condition():
 def toggle_fullscreen():
     """Toggle between fullscreen and windowed mode."""
     global screen, is_fullscreen, display_surface, game_surface, scale_factor, offset_x, offset_y
-    
+
     if is_fullscreen:
         # Switch to windowed mode
         screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -481,15 +502,15 @@ def toggle_fullscreen():
         # Switch to fullscreen mode
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         display_surface = screen
-        
+
         # Create a surface for rendering the game at original resolution
         game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        
+
         # Calculate scaling to fit the screen while maintaining aspect ratio
         screen_width, screen_height = screen.get_size()
         scale_x = screen_width / SCREEN_WIDTH
         scale_y = screen_height / SCREEN_HEIGHT
-        
+
         # For crisp scaling, prefer integer scale factors when possible
         max_integer_scale = min(int(scale_x), int(scale_y))
         if max_integer_scale >= 1:
@@ -498,13 +519,13 @@ def toggle_fullscreen():
         else:
             # If screen is smaller than game resolution, use fractional scaling
             scale_factor = min(scale_x, scale_y)
-        
+
         # Calculate offset to center the scaled image
         scaled_width = int(SCREEN_WIDTH * scale_factor)
         scaled_height = int(SCREEN_HEIGHT * scale_factor)
         offset_x = (screen_width - scaled_width) // 2
         offset_y = (screen_height - scaled_height) // 2
-        
+
         is_fullscreen = True
         # print(f"Switched to fullscreen mode: {screen_width}x{screen_height}, scale: {scale_factor:.2f}")
         # print(f"Using {'integer' if scale_factor == int(scale_factor) else 'fractional'} scaling")
@@ -520,27 +541,33 @@ def present_frame():
     if is_fullscreen:
         # Clear the display surface
         display_surface.fill((0, 0, 0))
-        
+
         # Scale and blit the game surface to the display using nearest-neighbor for crisp scaling
         scaled_width = int(SCREEN_WIDTH * scale_factor)
         scaled_height = int(SCREEN_HEIGHT * scale_factor)
-        
+
         # For crisp pixel art scaling, we want to use integer scaling when possible
         # and avoid sub-pixel positioning
         if scale_factor >= 2.0 and scale_factor == int(scale_factor):
             # Perfect integer scaling - use scale_by for best results
             try:
-                scaled_surface = pygame.transform.scale_by(game_surface, int(scale_factor))
+                scaled_surface = pygame.transform.scale_by(
+                    game_surface, int(scale_factor)
+                )
             except AttributeError:
                 # Fallback for older pygame versions
-                scaled_surface = pygame.transform.scale(game_surface, (scaled_width, scaled_height))
+                scaled_surface = pygame.transform.scale(
+                    game_surface, (scaled_width, scaled_height)
+                )
         else:
             # For non-integer scaling, still use regular scale but with size adjustment
             # to maintain crisp pixels as much as possible
-            scaled_surface = pygame.transform.scale(game_surface, (scaled_width, scaled_height))
-        
+            scaled_surface = pygame.transform.scale(
+                game_surface, (scaled_width, scaled_height)
+            )
+
         display_surface.blit(scaled_surface, (offset_x, offset_y))
-    
+
     pygame.display.flip()
 
 
@@ -554,48 +581,50 @@ screen_manager = ScreenStateManager(P1_KEYS, P2_KEYS)
 winner = None
 loser = None
 
+
 def create_players_from_selection():
     """Create players based on character selection"""
     global player1, player2, players
-    
+
     p1_char, p2_char = screen_manager.get_selected_characters()
-    
+
     # Get character data from config
     p1_data = CAT_CHARACTERS[p1_char]
     p2_data = CAT_CHARACTERS[p2_char]
-    
+
     # Create players with selected characters
     player1 = Player(
         PLAYER1_START_X,
         PLAYER1_START_Y,
         P1_KEYS,
-        p1_data['color'],
-        eye_color=p1_data['eye_color'],
+        p1_data["color"],
+        eye_color=p1_data["eye_color"],
         char_name="P1",  # Use player ID instead of character name
         facing_right=True,
     )
-    
+
     player2 = Player(
         PLAYER2_START_X,
         PLAYER2_START_Y,
         P2_KEYS,
-        p2_data['color'],
-        eye_color=p2_data['eye_color'],
+        p2_data["color"],
+        eye_color=p2_data["eye_color"],
         char_name="P2",  # Use player ID instead of character name
         facing_right=False,
     )
-    
+
     # Update stripe colors based on character selection
-    player1.stripe_color = p1_data['stripe_color']
-    player2.stripe_color = p2_data['stripe_color']
-    
+    player1.stripe_color = p1_data["stripe_color"]
+    player2.stripe_color = p2_data["stripe_color"]
+
     # Recreate player group
     players = pygame.sprite.Group(player1, player2)
+
 
 while running:
     dt = clock.tick(FPS)
     frame_input, events = inp.poll()
-    
+
     for ev in events:
         if ev.type == pygame.QUIT:
             running = False
@@ -605,50 +634,57 @@ while running:
             elif ev.key == pygame.K_ESCAPE and is_fullscreen:
                 # Allow ESC to exit fullscreen
                 toggle_fullscreen()
-    
+
     # Update screen state manager
     screen_manager.update(frame_input)
-    
+
     # Check if we should quit
     if screen_manager.should_quit_game():
         running = False
         continue
-    
+
     current_state = screen_manager.get_state()
-    
+
     if current_state == "main_menu":
         # Render main menu
         screen_manager.render(get_render_surface())
-        
+
     elif current_state == "char_select":
         # Check if we need to reset the game (coming from win screen)
         if screen_manager.should_reset_game():
             reset_game()
-        
+
         # Render character selection
         screen_manager.render(get_render_surface())
-        
+
         # Draw fullscreen instructions on character select screen
-        fs_text = "F11: Toggle Fullscreen" + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
-        text_utils.render_text(
-            get_render_surface(), fs_text,
-            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-            24, WHITE, right_align=True
+        fs_text = "F11: Toggle Fullscreen" + (
+            " | ESC: Exit Fullscreen" if is_fullscreen else ""
         )
-        
+        text_utils.render_text(
+            get_render_surface(),
+            fs_text,
+            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+            24,
+            WHITE,
+            right_align=True,
+        )
+
         # Draw back to menu instruction
         back_text = "Hold B for 1 second to return to main menu"
         text_utils.render_text(
-            get_render_surface(), back_text,
+            get_render_surface(),
+            back_text,
             (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-            24, WHITE
+            24,
+            WHITE,
         )
-        
+
     elif current_state == "playing":
         # Check if we need to create players (first time entering playing state)
         if player1 is None or player2 is None:
             create_players_from_selection()
-        
+
         # ---- update
         for p in players:
             p.update(frame_input, platforms, attacks)
@@ -681,7 +717,9 @@ while running:
             draw_stripes(render_surface, p)
             draw_eye(render_surface, p)
             draw_eye(render_surface, p, eye=False)  # Draw a glint in the eye
-            draw_cat_features(render_surface, p)  # Draw cat features (ears and whiskers)
+            draw_cat_features(
+                render_surface, p
+            )  # Draw cat features (ears and whiskers)
             draw_stripes(render_surface, p)  # Draw stripes on the player's back
             # Draw player name above cat
             draw_player_name(render_surface, p)
@@ -703,12 +741,18 @@ while running:
 
         # Draw HUD only if players exist
         if player1 and player2:
-            draw_hud(render_surface, player1, "P1")  # drawn by default in upper-left corner
+            draw_hud(
+                render_surface, player1, "P1"
+            )  # drawn by default in upper-left corner
             draw_hud(render_surface, player2, "P2", topright=True)
 
             # Draw player controls below the HUD
-            draw_controls(render_surface, player1, "P1")  # drawn by default below P1 HUD
-            draw_controls(render_surface, player2, "P2", topright=True)  # drawn below P2 HUD
+            draw_controls(
+                render_surface, player1, "P1"
+            )  # drawn by default below P1 HUD
+            draw_controls(
+                render_surface, player2, "P2", topright=True
+            )  # drawn below P2 HUD
 
         # draw keys pressed for debugging
         if frame_input:
@@ -716,25 +760,35 @@ while running:
             #     f"{k}: {v}" for k, v in frame_input.items() if v
             # )
             text_utils.render_text(
-                render_surface, frame_input.__str__(),
+                render_surface,
+                frame_input.__str__(),
                 (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-                24, WHITE
+                24,
+                WHITE,
             )
         # draw FPS and fullscreen instructions
         text_utils.render_text(
-            render_surface, f"FPS: {clock.get_fps():.2f}",
+            render_surface,
+            f"FPS: {clock.get_fps():.2f}",
             (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-            24, WHITE, right_align=True
+            24,
+            WHITE,
+            right_align=True,
         )
-        
+
         # Draw fullscreen instructions
-        fs_text = "F11: Toggle Fullscreen" + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
-        text_utils.render_text(
-            render_surface, fs_text,
-            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
-            24, WHITE, right_align=True
+        fs_text = "F11: Toggle Fullscreen" + (
+            " | ESC: Exit Fullscreen" if is_fullscreen else ""
         )
-    
+        text_utils.render_text(
+            render_surface,
+            fs_text,
+            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+            24,
+            WHITE,
+            right_align=True,
+        )
+
     elif current_state == "win_screen":
         # Render win screen
         screen_manager.render(get_render_surface())
