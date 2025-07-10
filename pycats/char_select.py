@@ -387,7 +387,7 @@ class CharacterSelector:
         
         p1_text = f"P1: Move({p1_move_keys}) Confirm({p1_attack_key}) Cancel({p1_special_key})"
         p1_surface = control_font.render(p1_text, True, (255, 100, 100))
-        p1_rect = p1_surface.get_rect(center=(SCREEN_WIDTH // 4, SCREEN_HEIGHT - 20))
+        p1_rect = p1_surface.get_rect(center=(SCREEN_WIDTH // 4, SCREEN_HEIGHT - 40))
         screen.blit(p1_surface, p1_rect)
         
         # P2 controls
@@ -397,7 +397,7 @@ class CharacterSelector:
         
         p2_text = f"P2: Move({p2_move_keys}) Confirm({p2_attack_key}) Cancel({p2_special_key})"
         p2_surface = control_font.render(p2_text, True, (100, 100, 255))
-        p2_rect = p2_surface.get_rect(center=(3 * SCREEN_WIDTH // 4, SCREEN_HEIGHT - 20))
+        p2_rect = p2_surface.get_rect(center=(3 * SCREEN_WIDTH // 4, SCREEN_HEIGHT - 40))
         screen.blit(p2_surface, p2_rect)
 
     def _draw_start_overlay(self, screen, font_name):
