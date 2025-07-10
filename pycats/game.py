@@ -48,8 +48,7 @@ from .systems import combat
 from .core import input as inp
 from .core.physics import resolve_player_push
 from . import stats_print
-from .char_select import CharacterSelector
-from .win_screen import WinScreenManager
+from .screen_manager import ScreenStateManager
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
@@ -523,21 +522,19 @@ def present_frame():
 
 # ------------------------------------------------ main loop
 running = True
-game_state = "char_select"  # "char_select", "playing", or "win_screen"
+
+# Screen state manager
+screen_manager = ScreenStateManager(P1_KEYS, P2_KEYS)
+
+# Game state
 winner = None
 loser = None
-
-# Character selection
-char_selector = CharacterSelector(P1_KEYS, P2_KEYS)
-
-# Win screen manager
-win_screen_manager = WinScreenManager(P1_KEYS, P2_KEYS)
 
 def create_players_from_selection():
     """Create players based on character selection"""
     global player1, player2, players
     
-    p1_char, p2_char = char_selector.get_selected_characters()
+    p1_char, p2_char = screen_manager.get_selected_characters()
     
     # Get character data from config
     p1_data = CAT_CHARACTERS[p1_char]
@@ -584,18 +581,28 @@ while running:
             elif ev.key == pygame.K_ESCAPE and is_fullscreen:
                 # Allow ESC to exit fullscreen
                 toggle_fullscreen()
-        # Remove the old win screen key handling since we now use the win screen manager
-
-    if game_state == "char_select":
-        # Character selection screen
-        char_selector.update(frame_input.held, frame_input.pressed)
+    
+    # Update screen state manager
+    screen_manager.update(frame_input)
+    
+    # Check if we should quit
+    if screen_manager.should_quit_game():
+        running = False
+        continue
+    
+    current_state = screen_manager.get_state()
+    
+    if current_state == "main_menu":
+        # Render main menu
+        screen_manager.render(get_render_surface())
         
-        # Check if ready to start game (only when start overlay is shown and A is pressed)
-        if char_selector.show_start_screen and char_selector.ready_to_start(frame_input.pressed):
-            create_players_from_selection()
-            game_state = "playing"
-            
-        char_selector.render(get_render_surface())
+    elif current_state == "char_select":
+        # Check if we need to reset the game (coming from win screen)
+        if screen_manager.should_reset_game():
+            reset_game()
+        
+        # Render character selection
+        screen_manager.render(get_render_surface())
         
         # Draw fullscreen instructions on character select screen
         fs_text = "F11: Toggle Fullscreen" + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
@@ -608,7 +615,22 @@ while running:
             ),
         )
         
-    elif game_state == "playing":
+        # Draw back to menu instruction
+        back_text = "Hold B for 1 second to return to main menu"
+        back_surf = font.render(back_text, True, WHITE)
+        get_render_surface().blit(
+            back_surf,
+            (
+                HUD_PADDING,
+                SCREEN_HEIGHT - HUD_SPACING,
+            ),
+        )
+        
+    elif current_state == "playing":
+        # Check if we need to create players (first time entering playing state)
+        if player1 is None or player2 is None:
+            create_players_from_selection()
+        
         # ---- update
         for p in players:
             p.update(frame_input, platforms, attacks)
@@ -619,9 +641,7 @@ while running:
         # Check for win condition
         winner, loser = check_win_condition()
         if winner:
-            game_state = "win_screen"
-            # Set the match data for the win screen manager
-            win_screen_manager.set_match_data(winner, loser)
+            screen_manager.set_winner(winner, loser)
 
         # ---- render
         render_surface = get_render_surface()
@@ -700,20 +720,9 @@ while running:
             ),
         )
     
-    elif game_state == "win_screen":
-        # Win screen with confirmation system
-        win_screen_manager.update(frame_input.pressed)
-        
-        # Check if both players have confirmed viewing stats and delay has passed
-        if win_screen_manager.ready_to_return():
-            # Both players ready and delay complete - return to character selection
-            reset_game()
-            game_state = "char_select"
-            winner = None
-            loser = None
-        
+    elif current_state == "win_screen":
         # Render win screen
-        win_screen_manager.render(get_render_surface())
+        screen_manager.render(get_render_surface())
 
     present_frame()
 

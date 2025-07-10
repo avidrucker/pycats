@@ -61,6 +61,28 @@ class CharacterSelector:
                                             (CHAR_SELECT_GRID_COLS - 1) * CHAR_SELECT_TILE_SPACING)) // 2
         self.grid_start_y = 150  # Below title
         
+    def reset(self):
+        """Reset the character selector to initial state."""
+        # Reset cursors
+        self.p1_cursor = 0
+        self.p2_cursor = 1
+        
+        # Reset selections
+        self.p1_selected = None
+        self.p2_selected = None
+        
+        # Reset confirmations
+        self.p1_confirmed = False
+        self.p2_confirmed = False
+        
+        # Reset start screen
+        self.show_start_screen = False
+        self.start_screen_delay = 0
+        
+        # Reset input cooldowns
+        self.p1_input_cooldown = 0
+        self.p2_input_cooldown = 0
+        
     def update(self, held_keys, pressed_keys=None):
         """Update character selection based on player input."""
         # If pressed_keys is not provided, fall back to held_keys for backward compatibility
