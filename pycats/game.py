@@ -111,7 +111,43 @@ players = pygame.sprite.Group()
 attacks = pygame.sprite.Group()
 
 # ------------------------------------------------ pygame set-up
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+# Start in windowed mode by default (change to True for fullscreen by default)
+start_fullscreen = False
+
+if start_fullscreen:
+    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+    display_surface = screen
+    game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    
+    # Calculate scaling for fullscreen
+    screen_width, screen_height = screen.get_size()
+    scale_x = screen_width / SCREEN_WIDTH
+    scale_y = screen_height / SCREEN_HEIGHT
+    
+    # For crisp scaling, prefer integer scale factors when possible
+    max_integer_scale = min(int(scale_x), int(scale_y))
+    if max_integer_scale >= 1:
+        # Use integer scaling for crisp pixels
+        scale_factor = float(max_integer_scale)
+    else:
+        # If screen is smaller than game resolution, use fractional scaling
+        scale_factor = min(scale_x, scale_y)
+    
+    scaled_width = int(SCREEN_WIDTH * scale_factor)
+    scaled_height = int(SCREEN_HEIGHT * scale_factor)
+    offset_x = (screen_width - scaled_width) // 2
+    offset_y = (screen_height - scaled_height) // 2
+    
+    is_fullscreen = True
+else:
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    display_surface = screen
+    game_surface = screen
+    scale_factor = 1.0
+    offset_x = 0
+    offset_y = 0
+    is_fullscreen = False
+
 clock = pygame.time.Clock()
 
 # Create fonts - try to use a Unicode-compatible font
@@ -127,18 +163,18 @@ for font_name in ['noto']: # 'arial', 'dejavusans', 'liberation', 'segoe'
 font = pygame.font.SysFont(unicode_font_name, 24)
 
 # ------------------------------------------------ helpers
-def draw_eye(p: Player, eye=True):
+def draw_eye(surface, p: Player, eye=True):
     if eye:
         x = p.rect.right - EYE_OFFSET_X if p.facing_right else p.rect.left + EYE_OFFSET_X
         y = p.rect.top + EYE_OFFSET_Y
-        pygame.draw.circle(screen, p.eye_color, (x, y), EYE_RADIUS)
+        pygame.draw.circle(surface, p.eye_color, (x, y), EYE_RADIUS)
     else: # we will draw a glint instead of an eye
         x = p.rect.right - GLINT_OFFSET_X if p.facing_right else p.rect.left + GLINT_OFFSET_X
         y = p.rect.top + GLINT_OFFSET_Y
-        pygame.draw.circle(screen, WHITE, (x, y), GLINT_RADIUS)
+        pygame.draw.circle(surface, WHITE, (x, y), GLINT_RADIUS)
 
 
-def draw_cat_features(p: Player):
+def draw_cat_features(surface, p: Player):
     """Draws cat ears and whiskers on the player. These are purely cosmetic and don't affect collision."""
     # Draw cat ears (triangles)
     head_center_x = p.rect.centerx
@@ -176,8 +212,8 @@ def draw_cat_features(p: Player):
         right_ear_points = [(x + EAR_PADDING, y) for x, y in right_ear_points]
 
     # Draw ears
-    pygame.draw.polygon(screen, p.char_color, left_ear_points)
-    pygame.draw.polygon(screen, p.char_color, right_ear_points)
+    pygame.draw.polygon(surface, p.char_color, left_ear_points)
+    pygame.draw.polygon(surface, p.char_color, right_ear_points)
 
     # Draw whiskers (lines)
     whisker_start_x = (
@@ -209,10 +245,10 @@ def draw_cat_features(p: Player):
         end_pos = (whisker_start_x + x_offset, whisker_start_y + y_offset)
 
         # Use WHITE color for all whiskers instead of eye_color
-        pygame.draw.line(screen, WHITE, start_pos, end_pos, WHISKER_THICKNESS)
+        pygame.draw.line(surface, WHITE, start_pos, end_pos, WHISKER_THICKNESS)
 
 
-def draw_stripes(p: Player):
+def draw_stripes(surface, p: Player):
     """Draws triangular stripes on the player's back for pattern."""
     # Calculate stripe positions on the back of the player
     back_center_x = p.rect.centerx + (-10 if p.facing_right else 10)
@@ -243,12 +279,12 @@ def draw_stripes(p: Player):
             ]
         
         # Draw the triangular stripe
-        pygame.draw.polygon(screen, p.stripe_color, stripe_points)
+        pygame.draw.polygon(surface, p.stripe_color, stripe_points)
 
 
 #### TODO: split off damage % and stock lives rendering so that they are rendering last and at the bottom left and right corners of the screen
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
-def draw_hud(p: Player, label, topright=False):
+def draw_hud(surface, p: Player, label, topright=False):
     """Draws the HUD for a player, showing their state, jumps left, shield HP, lives, and damage percent."""
     fsm = f"FSM: {p.fsm.state.capitalize()}"
     jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining != 1 else ''} left"
@@ -268,10 +304,10 @@ def draw_hud(p: Player, label, topright=False):
             if topright
             else (HUD_PADDING, HUD_PADDING + i * HUD_SPACING)
         )
-        screen.blit(surf, pos)
+        surface.blit(surf, pos)
 
 
-def draw_controls(p: Player, label, topright=False):
+def draw_controls(surface, p: Player, label, topright=False):
     """Draws the control scheme for a player below the HUD."""
     # Convert pygame key constants to readable strings
     key_names = {
@@ -304,10 +340,10 @@ def draw_controls(p: Player, label, topright=False):
             if topright
             else (HUD_PADDING, start_y + i * HUD_SPACING)
         )
-        screen.blit(surf, pos)
+        surface.blit(surf, pos)
 
 
-def draw_player_name(p: Player):
+def draw_player_name(surface, p: Player):
     """Draw the player name above the cat."""
     name_font = pygame.font.SysFont(None, 20)
     
@@ -319,7 +355,7 @@ def draw_player_name(p: Player):
     
     name_text = name_font.render(p.char_name, True, color)
     name_rect = name_text.get_rect(center=(p.rect.centerx, p.rect.top - 25))
-    screen.blit(name_text, name_rect)
+    surface.blit(name_text, name_rect)
 
 
 def reset_game():
@@ -404,6 +440,87 @@ def check_win_condition():
     return None, None  # no winner yet
 
 
+def toggle_fullscreen():
+    """Toggle between fullscreen and windowed mode."""
+    global screen, is_fullscreen, display_surface, game_surface, scale_factor, offset_x, offset_y
+    
+    if is_fullscreen:
+        # Switch to windowed mode
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        display_surface = screen
+        game_surface = screen
+        scale_factor = 1.0
+        offset_x = 0
+        offset_y = 0
+        is_fullscreen = False
+        print("Switched to windowed mode")
+    else:
+        # Switch to fullscreen mode
+        screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        display_surface = screen
+        
+        # Create a surface for rendering the game at original resolution
+        game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        
+        # Calculate scaling to fit the screen while maintaining aspect ratio
+        screen_width, screen_height = screen.get_size()
+        scale_x = screen_width / SCREEN_WIDTH
+        scale_y = screen_height / SCREEN_HEIGHT
+        
+        # For crisp scaling, prefer integer scale factors when possible
+        max_integer_scale = min(int(scale_x), int(scale_y))
+        if max_integer_scale >= 1:
+            # Use integer scaling for crisp pixels
+            scale_factor = float(max_integer_scale)
+        else:
+            # If screen is smaller than game resolution, use fractional scaling
+            scale_factor = min(scale_x, scale_y)
+        
+        # Calculate offset to center the scaled image
+        scaled_width = int(SCREEN_WIDTH * scale_factor)
+        scaled_height = int(SCREEN_HEIGHT * scale_factor)
+        offset_x = (screen_width - scaled_width) // 2
+        offset_y = (screen_height - scaled_height) // 2
+        
+        is_fullscreen = True
+        print(f"Switched to fullscreen mode: {screen_width}x{screen_height}, scale: {scale_factor:.2f}")
+        print(f"Using {'integer' if scale_factor == int(scale_factor) else 'fractional'} scaling")
+
+
+def get_render_surface():
+    """Get the surface to render the game onto."""
+    return game_surface if is_fullscreen else screen
+
+
+def present_frame():
+    """Present the rendered frame to the display."""
+    if is_fullscreen:
+        # Clear the display surface
+        display_surface.fill((0, 0, 0))
+        
+        # Scale and blit the game surface to the display using nearest-neighbor for crisp scaling
+        scaled_width = int(SCREEN_WIDTH * scale_factor)
+        scaled_height = int(SCREEN_HEIGHT * scale_factor)
+        
+        # For crisp pixel art scaling, we want to use integer scaling when possible
+        # and avoid sub-pixel positioning
+        if scale_factor >= 2.0 and scale_factor == int(scale_factor):
+            # Perfect integer scaling - use scale_by for best results
+            try:
+                scaled_surface = pygame.transform.scale_by(game_surface, int(scale_factor))
+            except AttributeError:
+                # Fallback for older pygame versions
+                scaled_surface = pygame.transform.scale(game_surface, (scaled_width, scaled_height))
+        else:
+            # For non-integer scaling, still use regular scale but with size adjustment
+            # to maintain crisp pixels as much as possible
+            scaled_surface = pygame.transform.scale(game_surface, (scaled_width, scaled_height))
+        
+        display_surface.blit(scaled_surface, (offset_x, offset_y))
+    
+    pygame.display.flip()
+
+
 # ------------------------------------------------ main loop
 running = True
 game_state = "char_select"  # "char_select", "playing", or "win_screen"
@@ -461,6 +578,12 @@ while running:
     for ev in events:
         if ev.type == pygame.QUIT:
             running = False
+        elif ev.type == pygame.KEYDOWN:
+            if ev.key == pygame.K_F11:
+                toggle_fullscreen()
+            elif ev.key == pygame.K_ESCAPE and is_fullscreen:
+                # Allow ESC to exit fullscreen
+                toggle_fullscreen()
         # Remove the old win screen key handling since we now use the win screen manager
 
     if game_state == "char_select":
@@ -472,7 +595,18 @@ while running:
             create_players_from_selection()
             game_state = "playing"
             
-        char_selector.render(screen)
+        char_selector.render(get_render_surface())
+        
+        # Draw fullscreen instructions on character select screen
+        fs_text = "F11: Toggle Fullscreen" + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
+        fs_surf = font.render(fs_text, True, WHITE)
+        get_render_surface().blit(
+            fs_surf,
+            (
+                SCREEN_WIDTH - fs_surf.get_width() - HUD_PADDING,
+                SCREEN_HEIGHT - HUD_SPACING,
+            ),
+        )
         
     elif game_state == "playing":
         # ---- update
@@ -490,9 +624,10 @@ while running:
             win_screen_manager.set_match_data(winner, loser)
 
         # ---- render
-        screen.fill(BG_COLOR)
+        render_surface = get_render_surface()
+        render_surface.fill(BG_COLOR)
         for pl in platforms:
-            screen.blit(pl.image, pl.rect)
+            render_surface.blit(pl.image, pl.rect)
 
         # Draw alive players
         for p in players:
@@ -501,17 +636,17 @@ while running:
             ):  # TODO: replace this w/ KO state check after implementing KO state
                 continue
             # Draw tail first (behind player)
-            p.tail.draw(screen)
+            p.tail.draw(render_surface)
             # Draw player body
-            screen.blit(p.image, p.rect)
+            render_surface.blit(p.image, p.rect)
             # Draw stripes on the player's back
-            draw_stripes(p)
-            draw_eye(p)
-            draw_eye(p, eye=False)  # Draw a glint in the eye
-            draw_cat_features(p)  # Draw cat features (ears and whiskers)
-            draw_stripes(p)  # Draw stripes on the player's back
+            draw_stripes(render_surface, p)
+            draw_eye(render_surface, p)
+            draw_eye(render_surface, p, eye=False)  # Draw a glint in the eye
+            draw_cat_features(render_surface, p)  # Draw cat features (ears and whiskers)
+            draw_stripes(render_surface, p)  # Draw stripes on the player's back
             # Draw player name above cat
-            draw_player_name(p)
+            draw_player_name(render_surface, p)
             if p.fsm.state == "shield":
                 #### TODO: convert shield radius magic nums to config constants (READY)
                 ratio = p.shield_hp / SHIELD_MAX_HP
@@ -523,19 +658,19 @@ while running:
                     s, (*SHIELD_COLOR, 100), (r, r), r
                 )  # *SHIELD_COLOR is a tuple unpacking technique to get the RGB values, 100 is the alpha value for transparency
                 # Draw shield bubble centered on player
-                screen.blit(s, (p.rect.centerx - r, p.rect.centery - r))
+                render_surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
 
         for a in attacks:
-            screen.blit(a.image, a.rect)
+            render_surface.blit(a.image, a.rect)
 
         # Draw HUD only if players exist
         if player1 and player2:
-            draw_hud(player1, "P1")  # drawn by default in upper-left corner
-            draw_hud(player2, "P2", topright=True)
+            draw_hud(render_surface, player1, "P1")  # drawn by default in upper-left corner
+            draw_hud(render_surface, player2, "P2", topright=True)
 
             # Draw player controls below the HUD
-            draw_controls(player1, "P1")  # drawn by default below P1 HUD
-            draw_controls(player2, "P2", topright=True)  # drawn below P2 HUD
+            draw_controls(render_surface, player1, "P1")  # drawn by default below P1 HUD
+            draw_controls(render_surface, player2, "P2", topright=True)  # drawn below P2 HUD
 
         # draw keys pressed for debugging
         if frame_input:
@@ -543,14 +678,25 @@ while running:
             #     f"{k}: {v}" for k, v in frame_input.items() if v
             # )
             keys_surf = font.render(frame_input.__str__(), True, WHITE)
-            screen.blit(keys_surf, (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
-        # draw FPS
+            render_surface.blit(keys_surf, (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING))
+        # draw FPS and fullscreen instructions
         fps_surf = font.render(f"FPS: {clock.get_fps():.2f}", True, WHITE)
-        screen.blit(
+        render_surface.blit(
             fps_surf,
             (
                 SCREEN_WIDTH - fps_surf.get_width() - HUD_PADDING,
                 SCREEN_HEIGHT - HUD_SPACING,
+            ),
+        )
+        
+        # Draw fullscreen instructions
+        fs_text = "F11: Toggle Fullscreen" + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
+        fs_surf = font.render(fs_text, True, WHITE)
+        render_surface.blit(
+            fs_surf,
+            (
+                SCREEN_WIDTH - fs_surf.get_width() - HUD_PADDING,
+                SCREEN_HEIGHT - HUD_SPACING * 2,
             ),
         )
     
@@ -567,9 +713,9 @@ while running:
             loser = None
         
         # Render win screen
-        win_screen_manager.render(screen)
+        win_screen_manager.render(get_render_surface())
 
-    pygame.display.flip()
+    present_frame()
 
 pygame.quit()
 sys.exit()
