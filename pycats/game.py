@@ -504,14 +504,16 @@ while running:
                 game_state = "char_select"
                 winner = None
                 loser = None
-            elif game_state == "char_select" and char_selector.both_ready():
-                # Both players ready, start game
-                create_players_from_selection()
-                game_state = "playing"
 
     if game_state == "char_select":
         # Character selection screen
-        char_selector.update(frame_input.held)
+        char_selector.update(frame_input.held, frame_input.pressed)
+        
+        # Check if ready to start game (only when start overlay is shown and A is pressed)
+        if char_selector.show_start_screen and char_selector.ready_to_start(frame_input.pressed):
+            create_players_from_selection()
+            game_state = "playing"
+            
         char_selector.render(screen)
         
     elif game_state == "playing":

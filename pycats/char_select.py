@@ -36,9 +36,17 @@ class CharacterSelector:
         self.p1_cursor = 0  # grid index
         self.p2_cursor = 1  # grid index
         
-        # Player tokens (which character they've selected, None if not selected)
-        self.p1_token = None
-        self.p2_token = None
+        # Player character selection (which character they've selected, None if not selected)
+        self.p1_selected = None
+        self.p2_selected = None
+        
+        # Player confirmation status
+        self.p1_confirmed = False
+        self.p2_confirmed = False
+        
+        # Game ready to start (after both confirmed)
+        self.show_start_screen = False
+        self.start_screen_delay = 0  # Frames to wait before allowing start input
         
         # Player controls
         self.p1_controls = p1_controls
@@ -53,83 +61,141 @@ class CharacterSelector:
                                             (CHAR_SELECT_GRID_COLS - 1) * CHAR_SELECT_TILE_SPACING)) // 2
         self.grid_start_y = 150  # Below title
         
-    def update(self, held_keys):
+    def update(self, held_keys, pressed_keys=None):
         """Update character selection based on player input."""
+        # If pressed_keys is not provided, fall back to held_keys for backward compatibility
+        if pressed_keys is None:
+            pressed_keys = held_keys
+            
         # Decrease input cooldowns
         if self.p1_input_cooldown > 0:
             self.p1_input_cooldown -= 1
         if self.p2_input_cooldown > 0:
             self.p2_input_cooldown -= 1
+        
+        # Check if we should show start screen
+        if self.both_confirmed() and not self.show_start_screen:
+            self.show_start_screen = True
+            self.start_screen_delay = 5  # Wait 5 frames before allowing start input
+            # Reset input cooldowns when showing start screen to allow immediate input
+            self.p1_input_cooldown = 0
+            self.p2_input_cooldown = 0
             
-        # Handle P1 input
+        # Decrease start screen delay
+        if self.start_screen_delay > 0:
+            self.start_screen_delay -= 1
+            
+        # Handle start screen input
+        if self.show_start_screen:
+            if self.p1_input_cooldown == 0:
+                if self.p1_controls['special'] in pressed_keys:
+                    # Go back - unconfirm this player but keep selection
+                    self.p1_confirmed = False
+                    self.show_start_screen = False
+                    self.start_screen_delay = 0
+                    self.p1_input_cooldown = 15
+                    
+            if self.p2_input_cooldown == 0:
+                if self.p2_controls['special'] in pressed_keys:
+                    # Go back - unconfirm this player but keep selection
+                    self.p2_confirmed = False
+                    self.show_start_screen = False
+                    self.start_screen_delay = 0
+                    self.p2_input_cooldown = 15
+            # Don't return here - let the main game loop handle A presses for starting
+            return
+            
+        # Handle P1 input (character selection)
         if self.p1_input_cooldown == 0:
-            if self.p1_controls['left'] in held_keys:
-                self.p1_cursor = max(0, self.p1_cursor - 1)
-                self.p1_input_cooldown = 10
-            elif self.p1_controls['right'] in held_keys:
-                self.p1_cursor = min(len(self.characters) - 1, self.p1_cursor + 1)
-                self.p1_input_cooldown = 10
-            elif self.p1_controls['up'] in held_keys:
-                new_cursor = self.p1_cursor - CHAR_SELECT_GRID_COLS
-                if new_cursor >= 0:
-                    self.p1_cursor = new_cursor
-                self.p1_input_cooldown = 10
-            elif self.p1_controls['down'] in held_keys:
-                new_cursor = self.p1_cursor + CHAR_SELECT_GRID_COLS
-                if new_cursor < len(self.characters):
-                    self.p1_cursor = new_cursor
-                self.p1_input_cooldown = 10
-            elif self.p1_controls['attack'] in held_keys:
-                self._handle_p1_token_action()
-                self.p1_input_cooldown = 15
+            # Movement (only if not confirmed)
+            if not self.p1_confirmed:
+                if self.p1_controls['left'] in pressed_keys:
+                    self.p1_cursor = max(0, self.p1_cursor - 1)
+                    self.p1_input_cooldown = 10
+                elif self.p1_controls['right'] in pressed_keys:
+                    self.p1_cursor = min(len(self.characters) - 1, self.p1_cursor + 1)
+                    self.p1_input_cooldown = 10
+                elif self.p1_controls['up'] in pressed_keys:
+                    new_cursor = self.p1_cursor - CHAR_SELECT_GRID_COLS
+                    if new_cursor >= 0:
+                        self.p1_cursor = new_cursor
+                    self.p1_input_cooldown = 10
+                elif self.p1_controls['down'] in pressed_keys:
+                    new_cursor = self.p1_cursor + CHAR_SELECT_GRID_COLS
+                    if new_cursor < len(self.characters):
+                        self.p1_cursor = new_cursor
+                    self.p1_input_cooldown = 10
+                elif self.p1_controls['attack'] in pressed_keys:
+                    # Confirm selection
+                    self.p1_selected = self.characters[self.p1_cursor]
+                    self.p1_confirmed = True
+                    self.p1_input_cooldown = 15
+            else:
+                # If confirmed, B (special) cancels selection
+                if self.p1_controls['special'] in pressed_keys:
+                    self.p1_confirmed = False
+                    self.p1_selected = None
+                    self.p1_input_cooldown = 15
                 
-        # Handle P2 input
+        # Handle P2 input (character selection)
         if self.p2_input_cooldown == 0:
-            if self.p2_controls['left'] in held_keys:
-                self.p2_cursor = max(0, self.p2_cursor - 1)
-                self.p2_input_cooldown = 10
-            elif self.p2_controls['right'] in held_keys:
-                self.p2_cursor = min(len(self.characters) - 1, self.p2_cursor + 1)
-                self.p2_input_cooldown = 10
-            elif self.p2_controls['up'] in held_keys:
-                new_cursor = self.p2_cursor - CHAR_SELECT_GRID_COLS
-                if new_cursor >= 0:
-                    self.p2_cursor = new_cursor
-                self.p2_input_cooldown = 10
-            elif self.p2_controls['down'] in held_keys:
-                new_cursor = self.p2_cursor + CHAR_SELECT_GRID_COLS
-                if new_cursor < len(self.characters):
-                    self.p2_cursor = new_cursor
-                self.p2_input_cooldown = 10
-            elif self.p2_controls['attack'] in held_keys:
-                self._handle_p2_token_action()
-                self.p2_input_cooldown = 15
+            # Movement (only if not confirmed)
+            if not self.p2_confirmed:
+                if self.p2_controls['left'] in pressed_keys:
+                    self.p2_cursor = max(0, self.p2_cursor - 1)
+                    self.p2_input_cooldown = 10
+                elif self.p2_controls['right'] in pressed_keys:
+                    self.p2_cursor = min(len(self.characters) - 1, self.p2_cursor + 1)
+                    self.p2_input_cooldown = 10
+                elif self.p2_controls['up'] in pressed_keys:
+                    new_cursor = self.p2_cursor - CHAR_SELECT_GRID_COLS
+                    if new_cursor >= 0:
+                        self.p2_cursor = new_cursor
+                    self.p2_input_cooldown = 10
+                elif self.p2_controls['down'] in pressed_keys:
+                    new_cursor = self.p2_cursor + CHAR_SELECT_GRID_COLS
+                    if new_cursor < len(self.characters):
+                        self.p2_cursor = new_cursor
+                    self.p2_input_cooldown = 10
+                elif self.p2_controls['attack'] in pressed_keys:
+                    # Confirm selection
+                    self.p2_selected = self.characters[self.p2_cursor]
+                    self.p2_confirmed = True
+                    self.p2_input_cooldown = 15
+            else:
+                # If confirmed, B (special) cancels selection
+                if self.p2_controls['special'] in pressed_keys:
+                    self.p2_confirmed = False
+                    self.p2_selected = None
+                    self.p2_input_cooldown = 15
                 
-    def _handle_p1_token_action(self):
-        """Handle P1 token pickup/drop."""
-        if self.p1_token is None:
-            # Pick up token at current cursor
-            self.p1_token = self.characters[self.p1_cursor]
-        else:
-            # Drop token at current cursor
-            self.p1_token = None
-            
-    def _handle_p2_token_action(self):
-        """Handle P2 token pickup/drop."""
-        if self.p2_token is None:
-            # Pick up token at current cursor
-            self.p2_token = self.characters[self.p2_cursor]
-        else:
-            # Drop token at current cursor
-            self.p2_token = None
-            
-    def both_ready(self):
-        """Check if both players have selected characters."""
-        return self.p1_token is not None and self.p2_token is not None
+    def both_confirmed(self):
+        """Check if both players have confirmed their character selection."""
+        return self.p1_confirmed and self.p2_confirmed
         
     def get_selected_characters(self):
         """Get the selected characters for both players."""
-        return self.p1_token, self.p2_token
+        return self.p1_selected, self.p2_selected
+        
+    def can_start_game(self):
+        """Check if the game can start (both players confirmed)."""
+        return self.both_confirmed()
+        
+    def ready_to_start(self, pressed_keys):
+        """Check if either player pressed A to start the game (only when start screen is shown)."""
+        if not self.show_start_screen or self.start_screen_delay > 0:
+            return False
+        
+        # Only start if attack key is pressed (fresh press) AND input cooldown is 0
+        can_start = False
+        if self.p1_input_cooldown == 0 and self.p1_controls['attack'] in pressed_keys:
+            can_start = True
+            self.p1_input_cooldown = 15  # Prevent multiple presses
+        elif self.p2_input_cooldown == 0 and self.p2_controls['attack'] in pressed_keys:
+            can_start = True
+            self.p2_input_cooldown = 15  # Prevent multiple presses
+            
+        return can_start
         
     def _grid_pos_to_screen_pos(self, grid_index):
         """Convert grid index to screen position."""
@@ -204,8 +270,8 @@ class CharacterSelector:
         instruction_font = pygame.font.SysFont(None, CHAR_SELECT_INSTRUCTION_SIZE)
         instructions = [
             "Use arrow keys to move cursor",
-            "Press attack button to pick up/drop token",
-            "Both players must select a character to continue"
+            "Press A to confirm selection, B to cancel",
+            "When both players are ready, either can press A to start"
         ]
         
         for i, instruction in enumerate(instructions):
@@ -232,37 +298,41 @@ class CharacterSelector:
                                                   y + CHAR_SELECT_TILE_SIZE + 10))
             screen.blit(name_text, name_rect)
             
-        # Draw cursors
-        self._draw_cursor(screen, self.p1_cursor, (255, 100, 100), "P1")  # Red
-        self._draw_cursor(screen, self.p2_cursor, (100, 100, 255), "P2")  # Blue
+        # Draw cursors (only if not confirmed)
+        if not self.p1_confirmed:
+            self._draw_cursor(screen, self.p1_cursor, (255, 100, 100), "P1", large=True)  # Red, large
+        if not self.p2_confirmed:
+            self._draw_cursor(screen, self.p2_cursor, (100, 100, 255), "P2", large=False)  # Blue, small
         
-        # Draw tokens
-        if self.p1_token is not None:
-            token_char_idx = self.characters.index(self.p1_token)
-            self._draw_token(screen, token_char_idx, (255, 100, 100), "P1")
+        # Draw selection confirmations
+        if self.p1_confirmed and self.p1_selected:
+            selected_idx = self.characters.index(self.p1_selected)
+            self._draw_confirmation(screen, selected_idx, (255, 100, 100), "P1 ✓")
             
-        if self.p2_token is not None:
-            token_char_idx = self.characters.index(self.p2_token)
-            self._draw_token(screen, token_char_idx, (100, 100, 255), "P2")
+        if self.p2_confirmed and self.p2_selected:
+            selected_idx = self.characters.index(self.p2_selected)
+            self._draw_confirmation(screen, selected_idx, (100, 100, 255), "P2 ✓")
             
-        # Ready indicator
-        if self.both_ready():
-            ready_font = pygame.font.SysFont(None, 32)
-            ready_text = ready_font.render("Both players ready! Press any key to start...", 
-                                         True, (100, 255, 100))
-            ready_rect = ready_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 30))
-            screen.blit(ready_text, ready_rect)
+        # Control instructions at bottom
+        self._draw_control_instructions(screen)
+        
+        # Start overlay (if both players are confirmed)
+        if self.show_start_screen:
+            self._draw_start_overlay(screen)
             
-    def _draw_cursor(self, screen, cursor_pos, color, label):
+    def _draw_cursor(self, screen, cursor_pos, color, label, large=True):
         """Draw a player's cursor around a tile."""
         x, y = self._grid_pos_to_screen_pos(cursor_pos)
         
+        # Different cursor widths based on player
+        cursor_width = CHAR_SELECT_CURSOR_WIDTH if large else CHAR_SELECT_CURSOR_WIDTH - 1
+        
         # Draw cursor border
-        cursor_rect = pygame.Rect(x - CHAR_SELECT_CURSOR_WIDTH, 
-                                 y - CHAR_SELECT_CURSOR_WIDTH,
-                                 CHAR_SELECT_TILE_SIZE + 2 * CHAR_SELECT_CURSOR_WIDTH,
-                                 CHAR_SELECT_TILE_SIZE + 2 * CHAR_SELECT_CURSOR_WIDTH)
-        pygame.draw.rect(screen, color, cursor_rect, CHAR_SELECT_CURSOR_WIDTH)
+        cursor_rect = pygame.Rect(x - cursor_width, 
+                                 y - cursor_width,
+                                 CHAR_SELECT_TILE_SIZE + 2 * cursor_width,
+                                 CHAR_SELECT_TILE_SIZE + 2 * cursor_width)
+        pygame.draw.rect(screen, color, cursor_rect, cursor_width)
         
         # Draw player label
         label_font = pygame.font.SysFont(None, 16)
@@ -271,20 +341,87 @@ class CharacterSelector:
                                                 y - 15))
         screen.blit(label_text, label_rect)
         
-    def _draw_token(self, screen, token_pos, color, label):
-        """Draw a player's token on a tile."""
-        x, y = self._grid_pos_to_screen_pos(token_pos)
+    def _draw_confirmation(self, screen, char_pos, color, label):
+        """Draw a confirmation checkmark on a selected character."""
+        x, y = self._grid_pos_to_screen_pos(char_pos)
         
-        # Draw token as a circle in the corner
-        token_x = x + CHAR_SELECT_TILE_SIZE - CHAR_SELECT_TOKEN_SIZE - 5
-        token_y = y + 5
+        # Draw thick border to show selection
+        confirm_rect = pygame.Rect(x - 2, y - 2,
+                                  CHAR_SELECT_TILE_SIZE + 4,
+                                  CHAR_SELECT_TILE_SIZE + 4)
+        pygame.draw.rect(screen, color, confirm_rect, 4)
         
-        pygame.draw.circle(screen, color, (token_x, token_y), CHAR_SELECT_TOKEN_SIZE)
-        pygame.draw.circle(screen, WHITE, (token_x, token_y), CHAR_SELECT_TOKEN_SIZE, 
-                          CHAR_SELECT_TOKEN_BORDER_WIDTH)
+        # Draw confirmation label
+        confirm_font = pygame.font.SysFont(None, 20)
+        confirm_text = confirm_font.render(label, True, color)
+        confirm_rect = confirm_text.get_rect(center=(x + CHAR_SELECT_TILE_SIZE // 2,
+                                                   y + CHAR_SELECT_TILE_SIZE + 30))
+        screen.blit(confirm_text, confirm_rect)
         
-        # Draw label inside token
-        token_font = pygame.font.SysFont(None, 12)
-        token_text = token_font.render(label, True, WHITE)
-        token_text_rect = token_text.get_rect(center=(token_x, token_y))
-        screen.blit(token_text, token_text_rect)
+    def _draw_control_instructions(self, screen):
+        """Draw control instructions at the bottom of the screen."""
+        control_font = pygame.font.SysFont(None, 16)
+        
+        # Convert key constants to readable strings
+        key_names = {
+            pygame.K_a: "A", pygame.K_d: "D", pygame.K_w: "W", pygame.K_s: "S",
+            pygame.K_v: "V", pygame.K_c: "C", pygame.K_x: "X",
+            pygame.K_LEFT: "←", pygame.K_RIGHT: "→", pygame.K_UP: "↑", pygame.K_DOWN: "↓",
+            pygame.K_SLASH: "/", pygame.K_PERIOD: ".", pygame.K_COMMA: ","
+        }
+        
+        # P1 controls
+        p1_move_keys = f"{key_names.get(self.p1_controls['left'], '?')}{key_names.get(self.p1_controls['right'], '?')}{key_names.get(self.p1_controls['up'], '?')}{key_names.get(self.p1_controls['down'], '?')}"
+        p1_attack_key = key_names.get(self.p1_controls['attack'], '?')
+        p1_special_key = key_names.get(self.p1_controls['special'], '?')
+        
+        p1_text = f"P1: Move({p1_move_keys}) Confirm({p1_attack_key}) Cancel({p1_special_key})"
+        p1_surface = control_font.render(p1_text, True, (255, 100, 100))
+        p1_rect = p1_surface.get_rect(center=(SCREEN_WIDTH // 4, SCREEN_HEIGHT - 20))
+        screen.blit(p1_surface, p1_rect)
+        
+        # P2 controls
+        p2_move_keys = f"{key_names.get(self.p2_controls['left'], '?')}{key_names.get(self.p2_controls['right'], '?')}{key_names.get(self.p2_controls['up'], '?')}{key_names.get(self.p2_controls['down'], '?')}"
+        p2_attack_key = key_names.get(self.p2_controls['attack'], '?')
+        p2_special_key = key_names.get(self.p2_controls['special'], '?')
+        
+        p2_text = f"P2: Move({p2_move_keys}) Confirm({p2_attack_key}) Cancel({p2_special_key})"
+        p2_surface = control_font.render(p2_text, True, (100, 100, 255))
+        p2_rect = p2_surface.get_rect(center=(3 * SCREEN_WIDTH // 4, SCREEN_HEIGHT - 20))
+        screen.blit(p2_surface, p2_rect)
+
+    def _draw_start_overlay(self, screen):
+        """Draw the start overlay that partially obscures the grid when both players are confirmed."""
+        # Create a semi-transparent overlay
+        overlay_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay_surface.set_alpha(128)  # 50% transparency
+        overlay_surface.fill((0, 0, 0))
+        screen.blit(overlay_surface, (0, 0))
+        
+        # Calculate center position for the start box
+        box_width = 400
+        box_height = 150
+        box_x = (SCREEN_WIDTH - box_width) // 2
+        box_y = (SCREEN_HEIGHT - box_height) // 2
+        
+        # Draw the start box background
+        start_box = pygame.Rect(box_x, box_y, box_width, box_height)
+        pygame.draw.rect(screen, (40, 40, 50), start_box)
+        pygame.draw.rect(screen, (100, 255, 100), start_box, 3)
+        
+        # Draw "START" text
+        start_font = pygame.font.SysFont(None, 48)
+        start_text = start_font.render("START", True, (100, 255, 100))
+        start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + 40))
+        screen.blit(start_text, start_rect)
+        
+        # Draw instruction text
+        instruction_font = pygame.font.SysFont(None, 24)
+        instruction_text = instruction_font.render("Press A to start the match", True, WHITE)
+        instruction_rect = instruction_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + 80))
+        screen.blit(instruction_text, instruction_rect)
+        
+        # Draw cancel instruction
+        cancel_text = instruction_font.render("Press B to go back", True, WHITE)
+        cancel_rect = cancel_text.get_rect(center=(SCREEN_WIDTH // 2, box_y + 110))
+        screen.blit(cancel_text, cancel_rect)
