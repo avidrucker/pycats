@@ -139,7 +139,7 @@ class MainMenuManager:
         # Instructions - use mixed rendering for the arrow symbols
         instructions = [
             "Use W/S or ↑/↓ to navigate",
-            "Press A to select"
+            "Press A (/ or V) to select"
         ]
         
         instruction_start_y = SCREEN_HEIGHT - len(instructions) * 30 - MAIN_MENU_PADDING
