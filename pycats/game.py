@@ -49,6 +49,7 @@ from .core import input as inp
 from .core.physics import resolve_player_push
 from . import stats_print
 from .char_select import CharacterSelector
+from .win_screen import WinScreenManager
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
@@ -311,56 +312,6 @@ def draw_player_name(p: Player):
     screen.blit(name_text, name_rect)
 
 
-# ------------------------------------------------ win screen
-def draw_win_screen(winner, loser):
-    """Draw the win screen with statistics"""
-    screen.fill(WIN_SCREEN_BG_COLOR)
-    
-    # Get formatted statistics
-    match_summary = stats_print.get_match_summary(winner, loser)
-    
-    # Create fonts
-    title_font = pygame.font.SysFont(None, WIN_SCREEN_TITLE_SIZE)
-    stats_font = pygame.font.SysFont(None, WIN_SCREEN_STATS_SIZE)
-    instruction_font = pygame.font.SysFont(None, WIN_SCREEN_INSTRUCTION_SIZE)
-    
-    y_offset = WIN_SCREEN_PADDING
-    
-    # Winner announcement
-    winner_text = title_font.render(match_summary['winner_announcement'], True, WIN_SCREEN_TEXT_COLOR)
-    winner_rect = winner_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-    screen.blit(winner_text, winner_rect)
-    y_offset += WIN_SCREEN_LINE_SPACING * 2
-    
-    # Final stock count
-    stocks_text = stats_font.render(match_summary['final_stocks'], True, WIN_SCREEN_TEXT_COLOR)
-    stocks_rect = stocks_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-    screen.blit(stocks_text, stocks_rect)
-    y_offset += WIN_SCREEN_LINE_SPACING * 1.5
-    
-    # Game statistics header
-    stats_header = stats_font.render("Game Statistics", True, WIN_SCREEN_TEXT_COLOR)
-    stats_rect = stats_header.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-    screen.blit(stats_header, stats_rect)
-    y_offset += WIN_SCREEN_LINE_SPACING
-    
-    # Statistics table using properly formatted lines
-    for line in match_summary['stats_table']:
-        line_surface = stats_font.render(line, True, WIN_SCREEN_TEXT_COLOR)
-        line_rect = line_surface.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-        screen.blit(line_surface, line_rect)
-        y_offset += WIN_SCREEN_LINE_SPACING * 0.8
-    
-    # Restart instruction
-    y_offset += WIN_SCREEN_LINE_SPACING
-    restart_text = instruction_font.render(match_summary['restart_instruction'], True, WIN_SCREEN_TEXT_COLOR)
-    restart_rect = restart_text.get_rect(centerx=SCREEN_WIDTH // 2, y=y_offset)
-    screen.blit(restart_text, restart_rect)
-    
-    # Optional: Print to console for debugging
-    # stats_print.print_match_summary_to_console(winner, loser)
-
-
 def reset_game():
     """Reset the game state for a new match"""
     global player1, player2, players, attacks
@@ -452,6 +403,9 @@ loser = None
 # Character selection
 char_selector = CharacterSelector(P1_KEYS, P2_KEYS)
 
+# Win screen manager
+win_screen_manager = WinScreenManager(P1_KEYS, P2_KEYS)
+
 def create_players_from_selection():
     """Create players based on character selection"""
     global player1, player2, players
@@ -497,13 +451,7 @@ while running:
     for ev in events:
         if ev.type == pygame.QUIT:
             running = False
-        elif ev.type == pygame.KEYDOWN:
-            if game_state == "win_screen":
-                # Any key pressed during win screen restarts the game
-                reset_game()
-                game_state = "char_select"
-                winner = None
-                loser = None
+        # Remove the old win screen key handling since we now use the win screen manager
 
     if game_state == "char_select":
         # Character selection screen
@@ -528,6 +476,8 @@ while running:
         winner, loser = check_win_condition()
         if winner:
             game_state = "win_screen"
+            # Set the match data for the win screen manager
+            win_screen_manager.set_match_data(winner, loser)
 
         # ---- render
         screen.fill(BG_COLOR)
@@ -595,8 +545,19 @@ while running:
         )
     
     elif game_state == "win_screen":
-        # Draw win screen
-        draw_win_screen(winner, loser)
+        # Win screen with confirmation system
+        win_screen_manager.update(frame_input.pressed)
+        
+        # Check if both players have confirmed viewing stats and delay has passed
+        if win_screen_manager.ready_to_return():
+            # Both players ready and delay complete - return to character selection
+            reset_game()
+            game_state = "char_select"
+            winner = None
+            loser = None
+        
+        # Render win screen
+        win_screen_manager.render(screen)
 
     pygame.display.flip()
 
