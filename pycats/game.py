@@ -296,6 +296,21 @@ def draw_controls(p: Player, label, topright=False):
         screen.blit(surf, pos)
 
 
+def draw_player_name(p: Player):
+    """Draw the player name above the cat."""
+    name_font = pygame.font.SysFont(None, 20)
+    
+    # Choose color based on player name
+    if p.char_name == "P1":
+        color = (255, 100, 100)  # Red
+    else:
+        color = (100, 100, 255)  # Blue
+    
+    name_text = name_font.render(p.char_name, True, color)
+    name_rect = name_text.get_rect(center=(p.rect.centerx, p.rect.top - 25))
+    screen.blit(name_text, name_rect)
+
+
 # ------------------------------------------------ win screen
 def draw_win_screen(winner, loser):
     """Draw the win screen with statistics"""
@@ -454,7 +469,7 @@ def create_players_from_selection():
         P1_KEYS,
         p1_data['color'],
         eye_color=p1_data['eye_color'],
-        char_name=p1_data['name'],
+        char_name="P1",  # Use player ID instead of character name
         facing_right=True,
     )
     
@@ -464,7 +479,7 @@ def create_players_from_selection():
         P2_KEYS,
         p2_data['color'],
         eye_color=p2_data['eye_color'],
-        char_name=p2_data['name'],
+        char_name="P2",  # Use player ID instead of character name
         facing_right=False,
     )
     
@@ -533,6 +548,8 @@ while running:
             draw_eye(p, eye=False)  # Draw a glint in the eye
             draw_cat_features(p)  # Draw cat features (ears and whiskers)
             draw_stripes(p)  # Draw stripes on the player's back
+            # Draw player name above cat
+            draw_player_name(p)
             if p.fsm.state == "shield":
                 #### TODO: convert shield radius magic nums to config constants (READY)
                 ratio = p.shield_hp / SHIELD_MAX_HP
