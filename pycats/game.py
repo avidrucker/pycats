@@ -10,12 +10,13 @@ Contents:
 Use: This is the entry point for running the game.
 """
 
-#### TODO: implement game pause w/ P key press (READY)
-#### TODO: implement win screen when one player runs out of stocks
+#### DONE: implement game pause w/ P key press (IMPLEMENTED - pause with P, resume with P/V/)
+#### DONE: implement win screen when one player runs out of stocks
 #### TODO: implement menu options for pause screen such as restart, quit, etc.
 #### TODO: increase player jump height, and increase thin platforms height
 #### TODO: implement hurt state where, if a player is hit with an attack and they recieve damage, that they flash red, and cannot attack or jump for a short duration (e.g. 0.5 seconds), and then return to normal state
 #### TODO: implement coyote time where players can, for a single frame after leaving the ledge, still have 2 jumps
+#### TODO: fix bug where players can jump sideways through the thick platform
 
 # ------------------------------------------------ stage & sprites
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
@@ -787,6 +788,81 @@ while running:
             24,
             WHITE,
             right_align=True,
+        )
+
+        # Draw pause instruction
+        text_utils.render_text(
+            render_surface,
+            "P: Pause Game",
+            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3),
+            24,
+            WHITE,
+            right_align=True,
+        )
+
+    elif current_state == "pause":
+        # Game is paused - don't update game objects, just render the pause screen
+        render_surface = get_render_surface()
+        render_surface.fill(BG_COLOR)
+        
+        # Draw the game state (frozen)
+        for pl in platforms:
+            render_surface.blit(pl.image, pl.rect)
+
+        # Draw alive players
+        for p in players:
+            if not p.is_alive:
+                continue
+            # Draw tail first (behind player)
+            p.tail.draw(render_surface)
+            # Draw player body
+            render_surface.blit(p.image, p.rect)
+            # Draw stripes on the player's back
+            draw_stripes(render_surface, p)
+            draw_eye(render_surface, p)
+            draw_eye(render_surface, p, eye=False)  # Draw a glint in the eye
+            draw_cat_features(render_surface, p)  # Draw cat features (ears and whiskers)
+            draw_stripes(render_surface, p)  # Draw stripes on the player's back
+            # Draw player name above cat
+            draw_player_name(render_surface, p)
+            if p.fsm.state == "shield":
+                ratio = p.shield_hp / SHIELD_MAX_HP
+                shield_radius = int(MAX_SHIELD_RADIUS * ratio)
+                r = max(MIN_SHIELD_RADIUS, shield_radius)
+                s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+                pygame.draw.circle(s, (*SHIELD_COLOR, 100), (r, r), r)
+                render_surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
+
+        for a in attacks:
+            render_surface.blit(a.image, a.rect)
+
+        # Draw HUD (frozen state)
+        if player1 and player2:
+            draw_hud(render_surface, player1, "P1")
+            draw_hud(render_surface, player2, "P2", topright=True)
+
+        # Draw semi-transparent overlay to indicate pause
+        pause_overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        pause_overlay.fill((0, 0, 0, 128))  # Black with 50% transparency
+        render_surface.blit(pause_overlay, (0, 0))
+
+        # Draw pause text
+        text_utils.render_text(
+            render_surface,
+            "GAME PAUSED",
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40),
+            48,
+            WHITE,
+            center=True,
+        )
+
+        text_utils.render_text(
+            render_surface,
+            "Press P, /, or V to Resume",
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20),
+            32,
+            WHITE,
+            center=True,
         )
 
     elif current_state == "win_screen":

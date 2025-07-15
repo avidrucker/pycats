@@ -7,6 +7,7 @@ This module handles:
 - Input handling for screen transitions
 """
 
+import pygame  # type: ignore
 from .systems.fsm import FSM, Transition
 from .main_menu import MainMenuManager
 from .char_select import CharacterSelector
@@ -37,12 +38,14 @@ class ScreenStateManager:
                 "main_menu": self._on_enter_main_menu,
                 "char_select": self._on_enter_char_select,
                 "playing": self._on_enter_playing,
+                "pause": self._on_enter_pause,
                 "win_screen": self._on_enter_win_screen,
             },
             on_update={
                 "main_menu": self._update_main_menu,
                 "char_select": self._update_char_select,
                 "playing": self._update_playing,
+                "pause": self._update_pause,
                 "win_screen": self._update_win_screen,
             },
             table={
@@ -54,7 +57,11 @@ class ScreenStateManager:
                     Transition("main_menu", self._guard_char_select_to_main_menu),
                 ],
                 "playing": [
+                    Transition("pause", self._guard_playing_to_pause),
                     Transition("win_screen", self._guard_playing_to_win_screen),
+                ],
+                "pause": [
+                    Transition("playing", self._guard_pause_to_playing),
                 ],
                 "win_screen": [
                     Transition("char_select", self._guard_win_screen_to_char_select),
@@ -80,6 +87,9 @@ class ScreenStateManager:
             self.char_selector.render(surface)
         elif self.fsm.state == "win_screen":
             self.win_screen_manager.render(surface)
+        elif self.fsm.state == "pause":
+            # Pause state rendering is handled by the main game loop
+            pass
         # Note: "playing" state is handled by the main game loop
 
     def get_state(self):
@@ -125,6 +135,11 @@ class ScreenStateManager:
         # Game loop will handle this state
         pass
 
+    def _on_enter_pause(self, fsm, ctx):
+        """Called when entering pause state."""
+        # Game is paused, no special setup needed
+        pass
+
     def _on_enter_win_screen(self, fsm, ctx):
         """Called when entering win screen state."""
         if self.winner and self.loser:
@@ -153,6 +168,11 @@ class ScreenStateManager:
     def _update_playing(self, fsm, ctx):
         """Update playing state."""
         # The main game loop handles this state
+        pass
+
+    def _update_pause(self, fsm, ctx):
+        """Update pause state."""
+        # Pause state is handled by the main game loop
         pass
 
     def _update_win_screen(self, fsm, ctx):
@@ -193,6 +213,19 @@ class ScreenStateManager:
     def _guard_char_select_to_main_menu(self, fsm, ctx):
         """Check if should go back to main menu from character select."""
         return self.back_timer >= self.back_hold_frames
+
+    def _guard_playing_to_pause(self, fsm, ctx):
+        """Check if should transition from playing to pause."""
+        frame_input = ctx["frame_input"]
+        # Check if P key is pressed
+        return pygame.K_p in frame_input.pressed
+
+    def _guard_pause_to_playing(self, fsm, ctx):
+        """Check if should transition from pause to playing."""
+        frame_input = ctx["frame_input"]
+        # Check if P, /, or V keys are pressed
+        resume_keys = {pygame.K_p, pygame.K_SLASH, pygame.K_v}
+        return any(key in frame_input.pressed for key in resume_keys)
 
     def _guard_playing_to_win_screen(self, fsm, ctx):
         """Check if should transition from playing to win screen."""
