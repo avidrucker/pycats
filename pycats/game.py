@@ -645,6 +645,18 @@ while running:
         continue
 
     current_state = screen_manager.get_state()
+    
+    # Track previous state to detect transitions
+    if 'previous_state' not in locals():
+        previous_state = current_state
+    
+    # Handle state transitions
+    if previous_state == "pause" and current_state == "win_screen":
+        # Transitioning from pause to win screen (stats view)
+        if player1 and player2:
+            screen_manager.set_stats_data(player1, player2)
+    
+    previous_state = current_state
 
     if current_state == "main_menu":
         # Render main menu
@@ -801,69 +813,52 @@ while running:
         )
 
     elif current_state == "pause":
-        # Game is paused - don't update game objects, just render the pause screen
+        # Game is paused - render the pause menu with frozen game background
         render_surface = get_render_surface()
-        render_surface.fill(BG_COLOR)
         
-        # Draw the game state (frozen)
+        # Create background surface with frozen game state
+        background_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        background_surface.fill(BG_COLOR)
+        
+        # Draw the game state (frozen) to background
         for pl in platforms:
-            render_surface.blit(pl.image, pl.rect)
+            background_surface.blit(pl.image, pl.rect)
 
         # Draw alive players
         for p in players:
             if not p.is_alive:
                 continue
             # Draw tail first (behind player)
-            p.tail.draw(render_surface)
+            p.tail.draw(background_surface)
             # Draw player body
-            render_surface.blit(p.image, p.rect)
+            background_surface.blit(p.image, p.rect)
             # Draw stripes on the player's back
-            draw_stripes(render_surface, p)
-            draw_eye(render_surface, p)
-            draw_eye(render_surface, p, eye=False)  # Draw a glint in the eye
-            draw_cat_features(render_surface, p)  # Draw cat features (ears and whiskers)
-            draw_stripes(render_surface, p)  # Draw stripes on the player's back
+            draw_stripes(background_surface, p)
+            draw_eye(background_surface, p)
+            draw_eye(background_surface, p, eye=False)  # Draw a glint in the eye
+            draw_cat_features(background_surface, p)  # Draw cat features (ears and whiskers)
+            draw_stripes(background_surface, p)  # Draw stripes on the player's back
             # Draw player name above cat
-            draw_player_name(render_surface, p)
+            draw_player_name(background_surface, p)
             if p.fsm.state == "shield":
                 ratio = p.shield_hp / SHIELD_MAX_HP
                 shield_radius = int(MAX_SHIELD_RADIUS * ratio)
                 r = max(MIN_SHIELD_RADIUS, shield_radius)
                 s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
                 pygame.draw.circle(s, (*SHIELD_COLOR, 100), (r, r), r)
-                render_surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
+                background_surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
 
         for a in attacks:
-            render_surface.blit(a.image, a.rect)
+            background_surface.blit(a.image, a.rect)
 
         # Draw HUD (frozen state)
         if player1 and player2:
-            draw_hud(render_surface, player1, "P1")
-            draw_hud(render_surface, player2, "P2", topright=True)
+            draw_hud(background_surface, player1, "P1")
+            draw_hud(background_surface, player2, "P2", topright=True)
 
-        # Draw semi-transparent overlay to indicate pause
-        pause_overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        pause_overlay.fill((0, 0, 0, 128))  # Black with 50% transparency
-        render_surface.blit(pause_overlay, (0, 0))
-
-        # Draw pause text
-        text_utils.render_text(
-            render_surface,
-            "GAME PAUSED",
-            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 40),
-            48,
-            WHITE,
-            center=True,
-        )
-
-        text_utils.render_text(
-            render_surface,
-            "Press P, /, or V to Resume",
-            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20),
-            32,
-            WHITE,
-            center=True,
-        )
+        # Render pause menu with background
+        pause_menu = screen_manager.get_pause_menu()
+        pause_menu.render(render_surface, background_surface)
 
     elif current_state == "win_screen":
         # Render win screen

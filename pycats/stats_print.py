@@ -75,47 +75,52 @@ def format_final_stocks(winner, loser):
     return f"Final Stocks: {winner.lives} - {loser.lives}"
 
 
-def format_winner_announcement(winner):
+def format_winner_announcement(winner, from_pause=False):
     """
     Format the winner announcement.
 
     Args:
         winner: Player object of the winner
+        from_pause: If True, display "No contest" instead of winner
 
     Returns:
         Formatted string for winner announcement
     """
+    if from_pause:
+        return "No Contest"
     return f"{winner.char_name} Wins!"
 
 
-def get_match_summary(winner, loser):
+def get_match_summary(winner, loser, from_pause=False):
     """
     Get a comprehensive match summary with all formatted statistics.
 
     Args:
         winner: Player object of the winner
         loser: Player object of the loser
+        from_pause: If True, this is being called from pause menu
 
     Returns:
         Dictionary containing all formatted display strings
     """
     return {
-        "winner_announcement": format_winner_announcement(winner),
+        "winner_announcement": format_winner_announcement(winner, from_pause),
         "final_stocks": format_final_stocks(winner, loser),
         "stats_table": format_stats_table(winner, loser),  # Now returns structured data
         "restart_instruction": "Press any key to restart",
     }
 
 
-def print_match_summary_to_console(winner, loser):
+def print_match_summary_to_console(winner, loser, from_pause=False):
     """
     Print a formatted match summary to the console for debugging/logging.
 
     Args:
         winner: Player object of the winner
         loser: Player object of the loser
+        from_pause: If True, this is being called from pause menu
     """
-    summary = get_match_summary(winner, loser)
+    summary = get_match_summary(winner, loser, from_pause)
 
     print("\n" + "=" * 50)
     print(summary["winner_announcement"])

@@ -8,7 +8,7 @@ This module handles:
 - Handling input for stats screen progression
 """
 
-import pygame
+import pygame  # type: ignore
 from .config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
@@ -48,11 +48,13 @@ class WinScreenManager:
         # Match data
         self.winner = None
         self.loser = None
+        self.from_pause = False  # Track if we came from pause menu
 
-    def set_match_data(self, winner, loser):
+    def set_match_data(self, winner, loser, from_pause=False):
         """Set the match data for display."""
         self.winner = winner
         self.loser = loser
+        self.from_pause = from_pause  # Track if we came from pause menu
         # Reset confirmation status for new match
         self.p1_confirmed = False
         self.p2_confirmed = False
@@ -115,7 +117,7 @@ class WinScreenManager:
         screen.fill(WIN_SCREEN_BG_COLOR)
 
         # Get formatted statistics
-        match_summary = stats_print.get_match_summary(self.winner, self.loser)
+        match_summary = stats_print.get_match_summary(self.winner, self.loser, self.from_pause)
 
         y_offset = WIN_SCREEN_PADDING
 

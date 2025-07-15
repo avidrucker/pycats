@@ -12,6 +12,7 @@ from .systems.fsm import FSM, Transition
 from .main_menu import MainMenuManager
 from .char_select import CharacterSelector
 from .win_screen import WinScreenManager
+from .pause_menu import PauseMenuManager
 
 
 class ScreenStateManager:
@@ -26,6 +27,7 @@ class ScreenStateManager:
         self.main_menu = MainMenuManager(p1_controls, p2_controls)
         self.char_selector = CharacterSelector(p1_controls, p2_controls)
         self.win_screen_manager = WinScreenManager(p1_controls, p2_controls)
+        self.pause_menu = PauseMenuManager(p1_controls, p2_controls)
 
         # Back to menu timer for character select
         self.back_timer = 0
@@ -62,6 +64,8 @@ class ScreenStateManager:
                 ],
                 "pause": [
                     Transition("playing", self._guard_pause_to_playing),
+                    Transition("win_screen", self._guard_pause_to_stats),
+                    Transition("main_menu", self._guard_pause_to_main_menu),
                 ],
                 "win_screen": [
                     Transition("char_select", self._guard_win_screen_to_char_select),
@@ -88,7 +92,7 @@ class ScreenStateManager:
         elif self.fsm.state == "win_screen":
             self.win_screen_manager.render(surface)
         elif self.fsm.state == "pause":
-            # Pause state rendering is handled by the main game loop
+            # Pause menu rendering is handled by the main game loop
             pass
         # Note: "playing" state is handled by the main game loop
 
@@ -104,6 +108,16 @@ class ScreenStateManager:
     def get_selected_characters(self):
         """Get the selected characters from character selection."""
         return self.char_selector.get_selected_characters()
+
+    def set_stats_data(self, player1, player2):
+        """Set stats data for viewing current match stats from pause."""
+        # Set both players as winner/loser for stats display
+        # The win screen will handle this appropriately
+        self.win_screen_manager.set_match_data(player1, player2, from_pause=True)
+
+    def get_pause_menu(self):
+        """Get the pause menu manager."""
+        return self.pause_menu
 
     def should_quit_game(self):
         """Check if the game should quit."""
@@ -137,13 +151,20 @@ class ScreenStateManager:
 
     def _on_enter_pause(self, fsm, ctx):
         """Called when entering pause state."""
-        # Game is paused, no special setup needed
-        pass
+        # Reset pause menu state
+        self.pause_menu.reset()
 
     def _on_enter_win_screen(self, fsm, ctx):
         """Called when entering win screen state."""
         if self.winner and self.loser:
+            # Normal win condition
             self.win_screen_manager.set_match_data(self.winner, self.loser)
+        else:
+            # Coming from pause menu - show stats for current match
+            # We need to get the current players from the game context
+            screen_manager = ctx.get("screen_manager", self)
+            # The game.py will need to provide player data, for now just set dummy data
+            # This will be handled by the game loop providing the current players
 
     # FSM State Update Handlers
     def _update_main_menu(self, fsm, ctx):
@@ -172,8 +193,8 @@ class ScreenStateManager:
 
     def _update_pause(self, fsm, ctx):
         """Update pause state."""
-        # Pause state is handled by the main game loop
-        pass
+        frame_input = ctx["frame_input"]
+        self.pause_menu.update(frame_input.pressed)
 
     def _update_win_screen(self, fsm, ctx):
         """Update win screen state."""
@@ -222,10 +243,42 @@ class ScreenStateManager:
 
     def _guard_pause_to_playing(self, fsm, ctx):
         """Check if should transition from pause to playing."""
-        frame_input = ctx["frame_input"]
-        # Check if P, /, or V keys are pressed
-        resume_keys = {pygame.K_p, pygame.K_SLASH, pygame.K_v}
-        return any(key in frame_input.pressed for key in resume_keys)
+        # Check if pause menu has a resume action (only through menu selection now)
+        if (
+            hasattr(self.pause_menu, "action_requested")
+            and self.pause_menu.action_requested == "resume"
+        ):
+            # Clear the action so it doesn't get processed again
+            self.pause_menu.action_requested = None
+            return True
+        return False
+
+    def _guard_pause_to_stats(self, fsm, ctx):
+        """Check if should transition from pause to stats (win screen for stats)."""
+        if (
+            hasattr(self.pause_menu, "action_requested")
+            and self.pause_menu.action_requested == "end_match"
+        ):
+            # Clear the action and trigger stats display
+            self.pause_menu.action_requested = None
+            # Set up win screen to show current stats without declaring a winner
+            # We'll use a special mode where both players are alive but we show stats
+            return True
+        return False
+
+    def _guard_pause_to_main_menu(self, fsm, ctx):
+        """Check if should transition from pause to main menu."""
+        if (
+            hasattr(self.pause_menu, "action_requested")
+            and self.pause_menu.action_requested == "return_to_menu"
+        ):
+            # Clear the action and reset game state
+            self.pause_menu.action_requested = None
+            # Reset winner/loser to clean state
+            self.winner = None
+            self.loser = None
+            return True
+        return False
 
     def _guard_playing_to_win_screen(self, fsm, ctx):
         """Check if should transition from playing to win screen."""
