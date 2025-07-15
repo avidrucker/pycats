@@ -19,7 +19,7 @@
 - [ ] implement skin changing for characters (white ghost, orange tabby, gray tabby, black void, orange/black tiger, bengal white/black tiger)
 - [ ] apply working title: "Cat Fight" to start screen
 - [ ] implement screen system w/ a dedicated screen manager that handles the current screen and transitions between screens (character select, win screen, match screen, main menu)
-- [ ] implement "p" to pause (press p again or "A" to resume)
+- [x] implement "p" to pause
 - [ ] implement Esc to quit match and return to main menu w/ confirmation yes/no buttons
 - [ ] implement circular indicator in upper left corner of the screen that fills up to indicate how much longer the player must hold down the B button to return to the main menu
 - [ ] implement visual/auditory feedback for button presses (e.g. button highlights, sounds)
