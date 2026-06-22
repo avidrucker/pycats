@@ -39,8 +39,10 @@ Run tests:        .venv/bin/python -m pytest tests/test_smoke.py tests/test_stat
                       tests/test_match_engine.py tests/test_runner.py tests/test_parity.py \
                       tests/test_benchmark.py tests/test_render_battle.py
 Run benchmark:    .venv/bin/python bench.py
+Store results:    .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
 Watch a replay:   .venv/bin/python watch.py --backend statechart
-Record a video:   .venv/bin/python watch.py --backend statechart --video battle.mp4
+Watch full match: .venv/bin/python watch.py --match            # P1 defeats P2 (3 stocks)
+Record a video:   .venv/bin/python watch.py --match --video media/full_battle.mp4
                       # video needs: .venv/bin/python -m pip install imageio imageio-ffmpeg
 
 (The benchmark suite is the test_*.py list above. Bare `pytest` also picks up
