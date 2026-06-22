@@ -39,6 +39,7 @@ from pycats.entities.attack import Attack  # noqa: E402
 from pycats.render_battle import (  # noqa: E402
     render_battle, render_attacks, draw_stripes, draw_eye,
     draw_cat_features, draw_player_name,
+    _cat_body_surface, _BODY_PAD_X, _BODY_PAD_TOP,
 )
 
 BUDGET_US = 1_000_000 / 60  # 16,667 us/frame at 60 FPS
@@ -93,7 +94,14 @@ def main():
         for p in players:
             p.tail.draw(surface)
 
-    def only_bodies():
+    def only_bodies_cached():
+        # What render_battle actually does now: one cached composite blit/cat.
+        for p in players:
+            body = _cat_body_surface(p)
+            surface.blit(body, (p.rect.x - _BODY_PAD_X, p.rect.y - _BODY_PAD_TOP))
+
+    def only_bodies_uncached():
+        # Reference: the pre-cache per-frame draw (for the cache speedup ratio).
         for p in players:
             surface.blit(p.image, p.rect)
             draw_stripes(surface, p)
@@ -105,11 +113,14 @@ def main():
     def only_attacks():
         render_attacks(surface, attacks)
 
+    only_bodies_cached()  # warm the body cache before timing
+
     buckets = [
         ("FULL render_battle+attacks", full),
         ("  platforms", only_platforms),
-        ("  tails (2x30 segs)", only_tails),
-        ("  cat bodies (stripes/eyes/ears/name)", only_bodies),
+        ("  tails (2x30 segs, cached)", only_tails),
+        ("  cat bodies (cached composite)", only_bodies_cached),
+        ("  cat bodies (uncached ref)", only_bodies_uncached),
         ("  attacks", only_attacks),
     ]
 

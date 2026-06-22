@@ -10,7 +10,7 @@ from .config import (
     WHISKER_LENGTH, WHISKER_THICKNESS, WHISKER_COUNT, WHISKER_ANGLE,
     WHISKER_OFFSET_Y, WHISKER_OFFSET_X, STRIPE_COUNT, STRIPE_WIDTH,
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
-    MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE,
+    MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, PLAYER_SIZE,
 )
 from . import text_utils
 from .entities import Player
@@ -170,6 +170,62 @@ def draw_player_name(surface, p: Player):
     )
 
 
+# --- cat-body composite cache -------------------------------------------------
+# A fighter's body (rect fill + stripes + eyes + glint + ears + whiskers + name)
+# is fully determined by its colours, facing, name, and current tint (the body
+# fill, which flips to RED/WHITE/YELLOW while hurt/dodging/stunned). We render
+# that composite once per distinct look and blit it each frame. The composite is
+# pixel-identical to the per-call draw: every shape is opaque and font.render
+# already yields alpha-antialiased text, so baking it into a transparent surface
+# and re-blitting reproduces the same pixels.
+_BODY_PAD_X = 48
+_BODY_PAD_TOP = 56
+_BODY_PAD_BOT = 12
+_body_cache: dict = {}
+
+
+class _CatShim:
+    """Minimal stand-in exposing the attributes the draw_* helpers read, with a
+    virtual rect positioned inside the composite surface."""
+    __slots__ = ("rect", "facing_right", "char_color", "eye_color",
+                 "stripe_color", "char_name")
+
+    def __init__(self, rect, facing_right, char_color, eye_color, stripe_color,
+                 char_name):
+        self.rect = rect
+        self.facing_right = facing_right
+        self.char_color = char_color
+        self.eye_color = eye_color
+        self.stripe_color = stripe_color
+        self.char_name = char_name
+
+
+def _cat_body_surface(p):
+    """Return the cached body composite for player `p` (built on first use)."""
+    w, h = PLAYER_SIZE
+    tint = tuple(p.image.get_at((w // 2, h // 2)))
+    key = (tuple(p.char_color), tuple(p.stripe_color), tuple(p.eye_color),
+           p.char_name, p.facing_right, tint)
+    surf = _body_cache.get(key)
+    if surf is None:
+        cw = w + 2 * _BODY_PAD_X
+        ch = _BODY_PAD_TOP + h + _BODY_PAD_BOT
+        surf = pygame.Surface((cw, ch), pygame.SRCALPHA)
+        vrect = pygame.Rect(_BODY_PAD_X, _BODY_PAD_TOP, w, h)
+        shim = _CatShim(vrect, p.facing_right, p.char_color, p.eye_color,
+                        p.stripe_color, p.char_name)
+        body = pygame.Surface((w, h))
+        body.fill(tint)
+        surf.blit(body, vrect)
+        draw_stripes(surf, shim)
+        draw_eye(surf, shim)
+        draw_eye(surf, shim, eye=False)
+        draw_cat_features(surf, shim)
+        draw_player_name(surf, shim)
+        _body_cache[key] = surf
+    return surf
+
+
 def render_battle(surface, players, platforms):
     """Draw platforms, alive fighters, and their attacks onto `surface`.
     Mirrors game.py's playing-branch draw block (no HUD/controls/FPS text)."""
@@ -179,12 +235,9 @@ def render_battle(surface, players, platforms):
         if not p.is_alive:
             continue
         p.tail.draw(surface)
-        surface.blit(p.image, p.rect)
-        draw_stripes(surface, p)
-        draw_eye(surface, p)
-        draw_eye(surface, p, eye=False)
-        draw_cat_features(surface, p)
-        draw_player_name(surface, p)
+        # Body composite (rect + stripes + eyes + ears + whiskers + name).
+        body = _cat_body_surface(p)
+        surface.blit(body, (p.rect.x - _BODY_PAD_X, p.rect.y - _BODY_PAD_TOP))
         if p.state == "shield":
             ratio = p.shield_hp / SHIELD_MAX_HP
             shield_radius = int(MAX_SHIELD_RADIUS * ratio)
