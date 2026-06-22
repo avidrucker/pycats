@@ -101,25 +101,59 @@ def bucketed(backend, frames=10_000):
     }
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--frames", type=int, default=20_000)
-    args = ap.parse_args()
+def collect(frames):
+    """Run both backends and return a single results dict (also what --json writes)."""
+    rows = {b: benchmark(b, frames) for b in ("legacy", "statechart")}
+    delta = rows["statechart"]["mean_us"] - rows["legacy"]["mean_us"]
+    return {
+        "frames": frames,
+        "budget_us_per_frame": BUDGET_US,
+        "backends": rows,
+        "statechart_minus_legacy_us": delta,
+        "statechart_overhead_pct_of_budget": delta / BUDGET_US * 100,
+        "buckets_statechart_us": bucketed("statechart", frames),
+    }
 
-    rows = {b: benchmark(b, args.frames) for b in ("legacy", "statechart")}
-    print(f"\nBattle benchmark — {args.frames} frames\n" + "=" * 56)
-    hdr = f"{'metric':<14}{'legacy':>14}{'statechart':>16}"
-    print(hdr)
+
+def print_report(results):
+    frames = results["frames"]
+    rows = results["backends"]
+    print(f"\nBattle benchmark — {frames} frames\n" + "=" * 56)
+    print(f"{'metric':<14}{'legacy':>14}{'statechart':>16}")
     print("-" * 56)
     for k in ("mean_us", "median_us", "p95_us", "p99_us", "fps"):
         print(f"{k:<14}{rows['legacy'][k]:>14.2f}{rows['statechart'][k]:>16.2f}")
-    delta = rows["statechart"]["mean_us"] - rows["legacy"]["mean_us"]
     print("-" * 56)
-    print(f"statechart - legacy: {delta:+.2f} us/frame "
-          f"({delta / BUDGET_US * 100:+.3f}% of 16.67ms budget)")
+    print(f"statechart - legacy: {results['statechart_minus_legacy_us']:+.2f} us/frame "
+          f"({results['statechart_overhead_pct_of_budget']:+.3f}% of 16.67ms budget)")
     print("\nper-bucket mean us/frame (statechart):")
-    for k, v in bucketed("statechart", args.frames).items():
+    for k, v in results["buckets_statechart_us"].items():
         print(f"  {k:<12}{v:>10.2f}")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--frames", type=int, default=20_000)
+    ap.add_argument("--json", default=None,
+                    help="write results to this JSON path (timestamped) and print")
+    args = ap.parse_args()
+
+    results = collect(args.frames)
+    print_report(results)
+
+    if args.json:
+        import json
+        import datetime
+        import platform
+        results = dict(results)  # shallow copy + add run metadata
+        results["meta"] = {
+            "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+        }
+        with open(args.json, "w") as fh:
+            json.dump(results, fh, indent=2)
+        print(f"\nwrote {args.json}")
 
 
 if __name__ == "__main__":
