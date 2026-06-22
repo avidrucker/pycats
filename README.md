@@ -42,8 +42,12 @@ Run benchmark:    .venv/bin/python bench.py
 Store results:    .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
 Watch a replay:   .venv/bin/python watch.py --backend statechart
 Watch full match: .venv/bin/python watch.py --match            # P1 defeats P2 (3 stocks)
+  ...uncapped:    .venv/bin/python watch.py --match --uncapped  # FPS readout = true rate
 Record a video:   .venv/bin/python watch.py --match --video media/full_battle.mp4
                       # video needs: .venv/bin/python -m pip install imageio imageio-ffmpeg
+
+The live window shows an FPS counter + each fighter's stocks/damage (hide with
+--no-overlay). It paces to 60 FPS by default; --uncapped shows the true rate.
 
 (The benchmark suite is the test_*.py list above. Bare `pytest` also picks up
 pre-existing legacy debug scripts in tests/ that have unrelated collection issues.)

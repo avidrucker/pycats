@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import pygame
 
-from ..config import SCREEN_WIDTH, SCREEN_HEIGHT, BG_COLOR, FPS
+from ..config import SCREEN_WIDTH, SCREEN_HEIGHT, BG_COLOR, FPS, WHITE, HUD_PADDING
 from ..render_battle import render_battle, render_attacks
+from .. import text_utils
 
 
 class HeadlessPresenter:
@@ -14,9 +15,14 @@ class HeadlessPresenter:
 
 
 class LivePresenter:
-    """Opens a real window and renders the replay at 60 FPS."""
+    """Opens a real window and renders the replay.
 
-    def __init__(self, caption="PyCats replay"):
+    `cap_fps=True` paces the window to 60 FPS (so the on-screen FPS reads ~60
+    when the renderer is keeping up). `cap_fps=False` runs uncapped, so the FPS
+    readout shows the true achievable rate. `overlay=True` draws an FPS counter
+    plus each fighter's stocks/damage."""
+
+    def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True):
         import os
         os.environ.pop("SDL_VIDEODRIVER", None)
         pygame.display.quit()
@@ -24,6 +30,19 @@ class LivePresenter:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption(caption)
         self.clock = pygame.time.Clock()
+        self.cap_fps = cap_fps
+        self.overlay = overlay
+
+    def _draw_overlay(self, players):
+        cap = "capped@60" if self.cap_fps else "uncapped"
+        text_utils.render_text(
+            self.screen, f"FPS: {self.clock.get_fps():.1f} ({cap})",
+            (SCREEN_WIDTH - HUD_PADDING, HUD_PADDING), 24, WHITE, right_align=True)
+        for i, p in enumerate(players):
+            text_utils.render_text(
+                self.screen,
+                f"{p.char_name}: {p.lives} stocks  {int(p.percent)}%  [{p.state}]",
+                (HUD_PADDING, HUD_PADDING + i * 22), 22, WHITE)
 
     def show(self, platforms, players, attacks, frame):
         for ev in pygame.event.get():
@@ -32,8 +51,10 @@ class LivePresenter:
         self.screen.fill(BG_COLOR)
         render_battle(self.screen, players, platforms)
         render_attacks(self.screen, attacks)
+        if self.overlay:
+            self._draw_overlay(players)
         pygame.display.flip()
-        self.clock.tick(FPS)
+        self.clock.tick(FPS) if self.cap_fps else self.clock.tick()
 
     def close(self):
         pygame.display.quit()
