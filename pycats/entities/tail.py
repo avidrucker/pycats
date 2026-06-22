@@ -4,6 +4,7 @@ import math
 from typing import List, Tuple
 import pygame as pg  # type: ignore
 from ..config import (
+    FPS,
     TAIL_SEGMENTS,
     TAIL_SEGMENT_LENGTH,
     TAIL_SEGMENT_WIDTH,
@@ -14,6 +15,7 @@ from ..config import (
     TAIL_FOLLOW_STRENGTH,
     TAIL_DAMPING,
     TAIL_UPDATE_FREQUENCY,
+    TAIL_SHAPE_UPDATE_HZ,
     TAIL_MIN_MOVEMENT_THRESHOLD,
     TAIL_DRAG_STRENGTH,
     TAIL_GRAVITY_EFFECT,
@@ -151,6 +153,14 @@ class Tail:
         self.time = 0.0  # For wave animation
         self.frame_counter = 0
 
+        # Shape (physics) is recomputed at TAIL_SHAPE_UPDATE_HZ; between those
+        # frames the whole tail is translated to follow the player every frame.
+        self._shape_interval = max(1, round(FPS / TAIL_SHAPE_UPDATE_HZ))
+        self._last_base: Tuple[float, float] | None = None
+        # Cache of rotated segment surfaces, keyed by (width, angle_degrees).
+        # char_color is constant per player, so colour is not part of the key.
+        self._seg_cache: dict = {}
+
         # Initialize segments
         for i in range(TAIL_SEGMENTS):
             # Start with segments pointing horizontally backward
@@ -159,26 +169,36 @@ class Tail:
             self.segments.append(segment)
 
     def update(self, dt: float = 1.0):
-        """Update tail physics and animation."""
+        """Update tail physics and animation.
+
+        The expensive inverse-kinematics/wave recompute runs only every
+        ``_shape_interval`` frames (TAIL_SHAPE_UPDATE_HZ times per second). On
+        the in-between frames the tail still tracks the player: every segment is
+        translated by the player's base-point movement, so it stays attached at
+        the full frame rate without rerunning any physics.
+        """
         self.time += dt * 0.5  # Slower time progression for gentler animation
         self.frame_counter += 1
-
-        # Update every frame for smooth motion
-        if self.frame_counter % TAIL_UPDATE_FREQUENCY != 0:
-            return
 
         # Get player base position for tail attachment
         base_x, base_y = self._get_tail_base_position()
 
-        # Update first segment to follow player movement
-        self._update_root_segment(base_x, base_y)
+        if self._last_base is None or self.frame_counter % self._shape_interval == 0:
+            # Full shape recompute (root + IK + apply), at TAIL_SHAPE_UPDATE_HZ.
+            self._update_root_segment(base_x, base_y)
+            for i in range(1, len(self.segments)):
+                self._update_segment(i)
+            self._apply_positions(base_x, base_y)
+        else:
+            # Cheap follow: rigidly translate the frozen shape with the player.
+            dx = base_x - self._last_base[0]
+            dy = base_y - self._last_base[1]
+            if dx or dy:
+                for seg in self.segments:
+                    seg.x += dx
+                    seg.y += dy
 
-        # Update remaining segments with inverse kinematics
-        for i in range(1, len(self.segments)):
-            self._update_segment(i)
-
-        # Apply positions based on angles
-        self._apply_positions(base_x, base_y)
+        self._last_base = (base_x, base_y)
 
     def _get_tail_base_position(self) -> Tuple[float, float]:
         """Get the attachment point of the tail on the player."""
@@ -358,25 +378,29 @@ class Tail:
                 self.segments[0].target_angle = 0
 
     def draw(self, screen):
-        """Draw the tail segments as rectangles."""
+        """Draw the tail segments as rectangles.
+
+        Rotated segment surfaces are cached by (width, integer angle°). Only a
+        handful of distinct widths exist (the taper is small), so after warm-up
+        this is almost entirely cache hits + blits, avoiding a per-segment
+        Surface allocation and transform.rotate every frame.
+        """
+        cache = self._seg_cache
+        color = self.player.char_color
+        length = TAIL_SEGMENT_LENGTH
+        n = len(self.segments)
+        blit = screen.blit
         for i, segment in enumerate(self.segments):
             # Taper the width towards the tip
-            width_factor = (
-                1.0 - (i / len(self.segments)) * TAPER_MODIFER
-            )  # Taper to 40% of original width
-            width = int(TAIL_SEGMENT_WIDTH * width_factor)
-            length = TAIL_SEGMENT_LENGTH
-
-            # Create rectangle for segment
-            rect_surf = pg.Surface((length, width), pg.SRCALPHA)
-            rect_surf.fill(self.player.char_color)
-
-            # Rotate the rectangle based on segment angle
-            rotated_surf = pg.transform.rotate(rect_surf, -math.degrees(segment.angle))
-
-            # Get the center position for blitting
-            rotated_rect = rotated_surf.get_rect()
-            rotated_rect.center = (int(segment.x), int(segment.y))
-
-            # Draw the segment
-            screen.blit(rotated_surf, rotated_rect)
+            width = int(TAIL_SEGMENT_WIDTH * (1.0 - (i / n) * TAPER_MODIFER))
+            deg = int(round(-math.degrees(segment.angle))) % 360
+            key = (width, deg)
+            surf = cache.get(key)
+            if surf is None:
+                base = pg.Surface((length, width), pg.SRCALPHA)
+                base.fill(color)
+                surf = pg.transform.rotate(base, deg)
+                cache[key] = surf
+            rect = surf.get_rect()
+            rect.center = (int(segment.x), int(segment.y))
+            blit(surf, rect)

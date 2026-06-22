@@ -148,6 +148,8 @@ TAIL_WAVE_FREQUENCY = 0.05  # Much slower frequency for more graceful idle motio
 TAIL_FOLLOW_STRENGTH = 0.05  # Much lower for slower following
 TAIL_DAMPING = 0.92  # Higher damping for smoother motion
 TAIL_UPDATE_FREQUENCY = 1  # Update every frame for smoother motion
+TAIL_SHAPE_UPDATE_HZ = 12  # tail re-computes its shape this many times/sec
+# (between shape updates it still follows the player every frame; see Tail.update)
 TAIL_MIN_MOVEMENT_THRESHOLD = (
     0.05  # Lower threshold for more responsive small movements
 )
