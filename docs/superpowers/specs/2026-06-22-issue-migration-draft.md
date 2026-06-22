@@ -142,7 +142,24 @@ Four open threads from `docs/research/BACKLOG.md` (could be one issue with a che
 
 ---
 
-## Open questions for you
+## ✅ FINAL PLAN (decisions applied 2026-06-22)
+
+Supersedes the table above. **24 issues created now**; the 4 Brawl research threads are deferred (lazy, one-at-a-time under an umbrella).
+
+**Bugs — `bug` + `severity:*` (10):** #1 push-apart (med), #2 dodge-roll facing (low), #3 tail snap (low), #4 tail gravity/collision (low), #8 jump-into-platform-sides (med), #9 down+shield spot-dodge (med), #13 respawn facing reset (med), #14 knockback momentum zeroed (med), #16 new-round red state (med), #17 win-screen clicks-too-early (med; depends on win-screen #6).
+
+**Features — `enhancement`, NO severity (11):** #6 win screen, #7 shield-break dizzy, #10 prone, #11 ledge-hang, #15 fullscreen, #18 skins, #19 title, **#20 screen manager (spine)**, #21 esc-to-menu, #22 hold-B indicator, #23 button feedback. #20's body lists candidate dependents (#6/#21/#23) to confirm at implementation; hard `blocked` labels deferred (avoid asserting unverified code deps + over-serializing fleet work).
+
+**Research — `research` (3 now):**
+- **#5 → research:** reproduce & spec the jump-over-flush-adjacent-character bug, *then* file the DEV bug. (Was an under-specified bug.)
+- **#12 → research:** determine whether air-dodge cancelling vertical momentum is intended; then file a bug or close `wontfix`.
+- **Umbrella research tracker — "Brawl/PM fighter-state mechanics"** listing the 4 threads (a: state-graph, b: shield formulas, c: PM deviations, d: collision algorithm). Children filed **one at a time**, each finished before the next (lazy decomposition).
+
+**TODOS.md:** deleted after creation (preserved in git history). **BACKLOG.md:** its 4 threads move into the umbrella issue body; replace BACKLOG.md's thread list with a pointer to the umbrella issue (keep `brawl-projectm-fighter-states.md` as reference).
+
+**Conventions encoded** (so this isn't a one-off): `RULES.md`, `CLAUDE.md`, `scripts/create-standard-labels.sh` header, and the skill's `orchestrate-config.md`.
+
+## ~~Open questions for you~~ (resolved — see Final Plan)
 1. **Severity-as-priority on features** — OK, or keep features severity-less (they'd rank as ⚪ untriaged)?
 2. **Research item** — one issue with a 4-item checklist, or four separate `research` issues?
 3. **Item #5** — the original TODO line was truncated ("jumping over other characters while starting flush against cause"); confirm the intended symptom.
