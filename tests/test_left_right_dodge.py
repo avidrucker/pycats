@@ -46,7 +46,7 @@ def test_dodge_direction(direction_name, direction_key, dir_x):
 
     player.update(dodge_frame, platforms, pg.sprite.Group())
     print(
-        f"After dodge trigger: state={player.fsm.state}, vel={player.vel}, dodge_timer={player.dodge_timer}"
+        f"After dodge trigger: state={player.state}, vel={player.vel}, dodge_timer={player.dodge_timer}"
     )
 
     # Track movement for several frames
@@ -63,7 +63,7 @@ def test_dodge_direction(direction_name, direction_key, dir_x):
 
         if frame <= 3 or frame >= 12:  # Show early and late frames
             print(
-                f"Frame {frame}: x={current_x}, vel={player.vel}, state={player.fsm.state}, timer={player.dodge_timer}"
+                f"Frame {frame}: x={current_x}, vel={player.vel}, state={player.state}, timer={player.dodge_timer}"
             )
 
     final_pos = player.rect.center[0]

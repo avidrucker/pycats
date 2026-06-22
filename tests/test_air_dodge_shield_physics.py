@@ -49,7 +49,7 @@ air_dodge_shield_frame = InputFrame(
 
 player.update(air_dodge_shield_frame, platforms, pg.sprite.Group())
 print(
-    f"After air dodge + shield: state={player.fsm.state}, spot_dodge_flag={player.spot_dodge_shield_held}, vel={player.vel}"
+    f"After air dodge + shield: state={player.state}, spot_dodge_flag={player.spot_dodge_shield_held}, vel={player.vel}"
 )
 
 # Step 3: Continue holding shield for several frames to see physics behavior
@@ -65,13 +65,13 @@ for frame in range(1, 8):
     player.update(continue_shield_frame, platforms, pg.sprite.Group())
 
     print(
-        f"Frame {frame}: state={player.fsm.state}, pos={player.rect.center}, vel={player.vel}, gravity_change={player.vel.y - prev_vel.y:.1f}"
+        f"Frame {frame}: state={player.state}, pos={player.rect.center}, vel={player.vel}, gravity_change={player.vel.y - prev_vel.y:.1f}"
     )
 
     # Check if gravity is being applied (velocity should increase by ~1 each frame)
     gravity_applied = abs(player.vel.y - prev_vel.y) > 0.5
 
-    if not gravity_applied and player.fsm.state == "dodge":
+    if not gravity_applied and player.state == "dodge":
         print(
             f"  ⚠️  WARNING: Gravity not being applied! This suggests air dodge is using spot dodge physics."
         )
@@ -100,7 +100,7 @@ ground_spot_frame = InputFrame(
 
 player2.update(ground_spot_frame, platforms, pg.sprite.Group())
 print(
-    f"After ground spot dodge: state={player2.fsm.state}, spot_dodge_flag={player2.spot_dodge_shield_held}"
+    f"After ground spot dodge: state={player2.state}, spot_dodge_flag={player2.spot_dodge_shield_held}"
 )
 
 for frame in range(1, 4):
