@@ -64,3 +64,34 @@ DEFAULT_SCRIPT = [
 
 def default_timeline(keymaps):
     return compile_timeline(DEFAULT_SCRIPT, keymaps)
+
+
+# A scripted battle that exercises the hurt and ko states.
+#
+# Setup: the DEFAULT_SCRIPT already moves both players onto the thick main
+# platform and leaves them ~48 px apart (P1 centre≈424, P2 centre≈472) from
+# frames 120-149.  After P1's shield drops at frame 140, P1 is idle and P2 is
+# idle — perfect for a grounded hit chain.
+#
+# Frame 141: P1 attacks P2 → P2 enters "hurt" (hurt_timer=12).
+# Frames 142-164: P1 chases right to stay in range.
+# Frames 165, 185, 210, 240: P1 lands additional hits, each raising P2's
+# percent by 10 and increasing knockback velocity.  After ~4-5 hits P2's
+# cumulative knockback is strong enough to carry it past the right blast zone
+# (SCREEN_WIDTH + BLAST_PADDING = 1010 px), triggering "ko".
+# P2 then respawns after RESPAWN_DELAY_FRAMES (120 frames) and transitions
+# back to "idle", completing the ko→idle arc.
+#
+# Timer reference (config.py): HURT_TIME=12, PLAYER_ATTACK_DURATION=12,
+# ATTACK_LIFETIME=12, RESPAWN_DELAY_FRAMES=120.
+COMBAT_SCRIPT = list(DEFAULT_SCRIPT) + [
+    InputSpan(141, 142, 1, "attack"),   # P1 hits P2 on the ground → P2 hurt
+    InputSpan(142, 165, 1, "right"),    # P1 chases P2 rightward
+    InputSpan(165, 166, 1, "attack"),   # second hit (P2 percent 20)
+    InputSpan(166, 185, 1, "right"),    # keep chasing
+    InputSpan(185, 186, 1, "attack"),   # third hit (P2 percent 30)
+    InputSpan(186, 210, 1, "right"),    # keep chasing
+    InputSpan(210, 211, 1, "attack"),   # fourth hit (P2 percent 40)
+    InputSpan(211, 240, 1, "right"),    # keep chasing
+    InputSpan(240, 241, 1, "attack"),   # fifth hit → enough knockback to KO P2
+]
