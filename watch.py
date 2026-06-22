@@ -1,7 +1,7 @@
 # watch.py
 """Watch or record a deterministic battle replay.
-  python watch.py --backend statechart                 # scripted replay, live window
-  python watch.py --backend legacy --video out.mp4     # write video
+  python watch.py                                      # scripted replay, live window (statechart default)
+  python watch.py --backend legacy --video out.mp4     # frozen classic baseline, write video
   python watch.py --match                               # full battle to defeat (chase bot)
   python watch.py --match --video full_battle.mp4      # ...recorded to video
 """
