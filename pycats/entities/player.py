@@ -174,6 +174,13 @@ class Player(pygame.sprite.Sprite):
         """Current action-state label, via the active state engine."""
         return self.engine.state
 
+    @property
+    def defensive_status(self) -> str:
+        """Defensive-status label, computed directly from the authoritative
+        invulnerability flag (backend-agnostic; the statechart engine mirrors
+        this same flag in its orthogonal defensive_status region)."""
+        return "intangible" if self.invulnerable else "vulnerable"
+
     # ----------- hit processing ------------
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""

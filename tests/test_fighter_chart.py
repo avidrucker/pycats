@@ -48,6 +48,56 @@ def test_force_ko_and_recover():
     assert p.state == "idle"
 
 
+def test_in_state_nested_and_container_ids():
+    # in_state is True for the active leaf AND its compound/parallel ancestors.
+    p = _mk_player("statechart")
+    sess = p.engine._session
+    for sid in ("root", "action", "actionable", "grounded", "idle"):
+        assert sess.in_state(sid), sid
+    # Sibling containers that aren't on the active path are False.
+    assert not sess.in_state("airborne")
+    assert not sess.in_state("run")
+
+
+def test_both_regions_active_simultaneously():
+    # The parallel root enters both regions: an action leaf + a defensive leaf.
+    p = _mk_player("statechart")
+    cfg = p.engine._session.configuration
+    # action region leaf present
+    assert "idle" in cfg
+    # defensive_status region leaf present
+    assert "vulnerable" in cfg
+    assert p.engine._session.in_state("action")
+    assert p.engine._session.in_state("defensive_status")
+
+
+def test_defensive_status_tracks_invulnerable():
+    p = _mk_player("statechart")
+    assert p.engine.defensive_status == "vulnerable"
+    assert p.defensive_status == "vulnerable"
+    # vulnerable -> intangible when p.invulnerable, on tick.
+    p.invulnerable = True
+    p.engine.tick(None)
+    assert p.engine.defensive_status == "intangible"
+    assert p.engine._session.in_state("intangible")
+    # action region unaffected by the defensive tick (orthogonal).
+    assert p.state == "idle"
+    # intangible -> vulnerable when no longer invulnerable.
+    p.invulnerable = False
+    p.engine.tick(None)
+    assert p.engine.defensive_status == "vulnerable"
+
+
+def test_player_defensive_status_is_direct_from_flag():
+    # Player.defensive_status is computed from the flag (backend-agnostic),
+    # for both backends, without ticking.
+    for backend in ("legacy", "statechart"):
+        p = _mk_player(backend)
+        assert p.defensive_status == "vulnerable"
+        p.invulnerable = True
+        assert p.defensive_status == "intangible"
+
+
 def test_matches_legacy_across_scenarios():
     # Drive identical attribute snapshots through both engines, compare labels.
     scenarios = [
@@ -57,6 +107,7 @@ def test_matches_legacy_across_scenarios():
         dict(shield_attempting=True, on_ground=True),     # -> shield
         dict(hurt_timer=5),                               # -> hurt
         dict(attack_timer=5),                             # -> attack
+        dict(dodge_timer=5),                              # -> dodge
     ]
     for sc in scenarios:
         legacy = _mk_player("legacy")
@@ -68,5 +119,25 @@ def test_matches_legacy_across_scenarios():
             p.shield_attempting = sc.get("shield_attempting", False)
             p.hurt_timer = sc.get("hurt_timer", 0)
             p.attack_timer = sc.get("attack_timer", 0)
+            p.dodge_timer = sc.get("dodge_timer", 0)
             p.engine.tick(None)
         assert legacy.state == sch.state, (sc, legacy.state, sch.state)
+
+
+def test_matches_legacy_run_to_idle_and_ko():
+    # Multi-step paths exercising leaf-specific (non-hoisted) transitions and
+    # the hoisted force_ko on the action parent.
+    for backend in ("legacy", "statechart"):
+        p = _mk_player(backend)
+        p.vel.x, p.on_ground = 5, True
+        p.engine.tick(None)
+        assert p.state == "run"
+        p.vel.x = 0
+        p.engine.tick(None)
+        assert p.state == "idle"
+        # force_ko (hoisted to action parent) then recover.
+        p.engine.force("ko")
+        assert p.state == "ko"
+        p.is_alive = True
+        p.engine.tick(None)
+        assert p.state == "idle"

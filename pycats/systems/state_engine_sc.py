@@ -18,6 +18,10 @@ class StatechartEngine:
                 return label
         raise RuntimeError("statechart in no known fighter state")
 
+    @property
+    def defensive_status(self) -> str:
+        return "intangible" if self._session.in_state("intangible") else "vulnerable"
+
     def tick(self, ctx: Any = None) -> None:
         self._session.send("tick")
 

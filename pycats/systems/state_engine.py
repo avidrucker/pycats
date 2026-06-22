@@ -13,6 +13,11 @@ from typing import Any, Protocol, runtime_checkable
 @runtime_checkable
 class StateEngine(Protocol):
     state: str
+    # Defensive-status region label ("vulnerable" | "intangible"). The
+    # statechart backend mirrors this in an orthogonal region; the
+    # authoritative value used elsewhere is Player.defensive_status, computed
+    # directly from Player.invulnerable.
+    defensive_status: str
 
     def tick(self, ctx: Any) -> None: ...
 
@@ -28,6 +33,14 @@ class LegacyEngine:
     @property
     def state(self) -> str:
         return self._fsm.state
+
+    @property
+    def defensive_status(self) -> str:
+        # The legacy FSM has no defensive-status region. This satisfies the
+        # StateEngine Protocol; the authoritative value lives on
+        # Player.defensive_status (derived from Player.invulnerable), so the
+        # legacy engine does not depend on the Player here.
+        return "vulnerable"
 
     def tick(self, ctx: Any = None) -> None:
         self._fsm.update(ctx)
