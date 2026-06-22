@@ -42,6 +42,7 @@ class Attack(pygame.sprite.Sprite):
         base_kb=KNOCKBACK_BASE,
         kb_scale=KNOCKBACK_SCALE,
         angle=0,
+        lifetime: int = ATTACK_LIFETIME,
     ):
         super().__init__()
         self.owner = owner
@@ -49,7 +50,9 @@ class Attack(pygame.sprite.Sprite):
         self.disappear_on_hit = disappear_on_hit
         self.active = True
 
-        self.frames_left = ATTACK_LIFETIME
+        # lifetime: how many frames the hit-box persists. Task 4 spawns the
+        # hit-box during a move's active window with lifetime == move.active.
+        self.frames_left = lifetime
 
         offset_x = owner.rect.width // 2 + 4
         x = owner.rect.centerx + (offset_x if owner.facing_right else -offset_x)

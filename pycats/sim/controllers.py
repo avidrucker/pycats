@@ -18,7 +18,7 @@ class ChaseController:
     jump/attack are pulsed (one frame) so the game sees fresh key presses.
     """
 
-    def __init__(self, attacker_num=1, attack_period=18, standoff=40,
+    def __init__(self, attacker_num=1, attack_period=12, standoff=40,
                  attack_range=58, safe_x=(110, 820)):
         # attacker_num is 1 or 2; the other player is the (idle) target. Player
         # refs are resolved per-frame from the (p1, p2) passed to __call__, so a
@@ -63,10 +63,16 @@ class ChaseController:
                 held.add(move)
             # Jump toward an elevated target, but only when roughly underneath it
             # (else jumping straight up never reaches the platform -> bounce loop).
-            if dy < -30 and a.on_ground and adx < 90:
+            # The horizontal window is wide enough to chase a target knocked onto
+            # a neighbouring platform (Task 4's data-driven attack times can leave
+            # the target on a different level after knockback).
+            if dy < -30 and a.on_ground and adx < 120:
                 held.add(keys["up"])
-            # Attack on a cadence when at standoff range and roughly level.
-            in_range = (self.standoff - 18) <= adx <= self.attack_range and abs(dy) < 45
+            # Attack on a cadence when at standoff range and roughly level. The
+            # vertical tolerance is wide enough to keep engaging after knockback
+            # nudges the target a platform up/down, avoiding a positional
+            # deadlock under the post-startup hitbox timing.
+            in_range = (self.standoff - 18) <= adx <= self.attack_range and abs(dy) < 60
             if in_range and (self._f - self._last_attack) >= self.attack_period:
                 held.add(keys["attack"])
                 self._last_attack = self._f

@@ -3,8 +3,11 @@ from __future__ import annotations
 
 from typing import Any
 
+# Flat labels whose chart leaf id equals the label. "attack" is NOT here: the
+# attacking region was split into startup/active/recovery sub-phases (Task 4),
+# so it is mapped separately via in_state("attacking") -> "attack".
 LABELS = ("idle", "run", "jump", "fall", "shield", "dodge", "ko", "hurt",
-          "stun", "attack")
+          "stun")
 
 
 class StatechartEngine:
@@ -13,6 +16,11 @@ class StatechartEngine:
 
     @property
     def state(self) -> str:
+        # The attacking region (startup/active/recovery sub-phases) collapses to
+        # the single flat label "attack" so player.state is unchanged across the
+        # whole move (Task 4).
+        if self._session.in_state("attacking"):
+            return "attack"
         for label in LABELS:
             if self._session.in_state(label):
                 return label

@@ -13,8 +13,10 @@ Structure (Task 3 of PM Phase 0):
     │   │   └── airborne  (compound, initial=jump)
     │   │       ├── jump    (leaf)
     │   │       └── fall    (leaf)
-    │   ├── attacking  (compound, initial=attack)
-    │   │   └── attack   (leaf)            <- SINGLE leaf in Task 3 (split in Task 4)
+    │   ├── attacking  (compound, initial=startup)   <- split in Task 4
+    │   │   ├── startup  (leaf)
+    │   │   ├── active   (leaf)
+    │   │   └── recovery (leaf)            <- all map to flat label "attack"
     │   ├── dodging    (compound, initial=dodge)
     │   │   └── dodge    (leaf)
     │   ├── hitstun    (compound, initial=hurt)
@@ -26,7 +28,10 @@ Structure (Task 3 of PM Phase 0):
         └── intangible   (leaf)
 
 LEAF ids equal the flat labels (idle, run, jump, fall, shield, dodge, ko, hurt,
-stun, attack) so in_state("idle") etc. keep working. Compound/grouping ids
+stun) so in_state("idle") etc. keep working. The attacking sub-phase leaves
+(startup, active, recovery) do NOT match a flat label individually; instead
+StatechartEngine.state maps in_state("attacking") -> "attack", so the flat
+label stays "attack" across all three sub-phases. Compound/grouping ids
 (action, actionable, grounded, airborne, attacking, dodging, hitstun, root,
 defensive_status) are distinct and never collide with leaf labels.
 
@@ -61,7 +66,7 @@ def build_fighter_chart(p):
         {"id": "grounded", "initial": "idle"},
         state(
             {"id": "idle"},
-            _tick(lambda e, d: p.attack_timer > 0, "attack"),
+            _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
             _tick(lambda e, d: p.vel.x != 0 and p.on_ground, "run"),
             _tick(lambda e, d: p.vel.y < 0, "jump"),
@@ -71,7 +76,7 @@ def build_fighter_chart(p):
         ),
         state(
             {"id": "run"},
-            _tick(lambda e, d: p.attack_timer > 0, "attack"),
+            _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
             _tick(lambda e, d: p.vel.x == 0, "idle"),
             _tick(lambda e, d: p.vel.y < 0, "jump"),
@@ -91,7 +96,7 @@ def build_fighter_chart(p):
         {"id": "airborne", "initial": "jump"},
         state(
             {"id": "jump"},
-            _tick(lambda e, d: p.attack_timer > 0, "attack"),
+            _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.vel.y >= 0, "fall"),
             _tick(lambda e, d: not p.is_alive, "ko"),
             _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
@@ -99,7 +104,7 @@ def build_fighter_chart(p):
         ),
         state(
             {"id": "fall"},
-            _tick(lambda e, d: p.attack_timer > 0, "attack"),
+            _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.on_ground and p.vel.x == 0, "idle"),
             _tick(lambda e, d: p.on_ground and p.vel.x != 0, "run"),
             _tick(lambda e, d: p.vel.y < 0, "jump"),
@@ -115,10 +120,45 @@ def build_fighter_chart(p):
         airborne,
     )
 
+    # Task 4: the single `attack` leaf is split into startup/active/recovery
+    # sub-phases. The flat label "attack" is recovered in StatechartEngine.state
+    # via in_state("attacking"), so player.state reads "attack" throughout.
+    #
+    # Phase progression mirrors the player's move clock (post-increment, so the
+    # first update after the press is move_frame == 1):
+    #   startup  -> active   when move_frame > current_move.startup
+    #   active   -> recovery when move_frame > startup + active
+    # The active window is therefore startup < move_frame <= startup+active,
+    # identical to where the player spawns the hitbox.
+    #
+    # The EXIT (-> idle / -> fall) stays on p.done_attacking, exactly as the
+    # legacy FSM. It is placed on each phase leaf (first, so it has priority and
+    # can fire from whichever phase is active when attack_timer hits 0). Because
+    # the total move duration == startup+active+recovery == attack_timer, the
+    # exit fires on the same frame for both backends, preserving parity.
+    #
+    # Each guard reading current_move first checks for None to avoid
+    # AttributeError when no move is live.
+    def _mf_gt(thresh):
+        return lambda e, d: (p.current_move is not None
+                             and p.move_frame > thresh(p.current_move))
+
     attacking = state(
-        {"id": "attacking", "initial": "attack"},
+        {"id": "attacking", "initial": "startup"},
         state(
-            {"id": "attack"},
+            {"id": "startup"},
+            _tick(lambda e, d: p.done_attacking and p.on_ground, "idle"),
+            _tick(lambda e, d: p.done_attacking and not p.on_ground, "fall"),
+            _tick(_mf_gt(lambda m: m.startup), "active"),
+        ),
+        state(
+            {"id": "active"},
+            _tick(lambda e, d: p.done_attacking and p.on_ground, "idle"),
+            _tick(lambda e, d: p.done_attacking and not p.on_ground, "fall"),
+            _tick(_mf_gt(lambda m: m.startup + m.active), "recovery"),
+        ),
+        state(
+            {"id": "recovery"},
             _tick(lambda e, d: p.done_attacking and p.on_ground, "idle"),
             _tick(lambda e, d: p.done_attacking and not p.on_ground, "fall"),
         ),
