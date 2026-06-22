@@ -5,6 +5,12 @@
 # be IDENTICAL across every project (a shared convention, not per-project config).
 # Run this verbatim in any repo so the taxonomy stays in lockstep.
 #
+# SEMANTIC RULE (do not drift): `severity:*` is for DEFECTS ONLY (bugs) — it
+# describes the impact of a defect. Features/enhancements get `enhancement` and
+# NO severity (they rank below triaged bugs by design). Use `blocked` for real
+# dependencies; never fake severity to express feature priority. See a project's
+# RULES.md.
+#
 # Usage:
 #   scripts/create-standard-labels.sh                 # current repo (gh default)
 #   scripts/create-standard-labels.sh owner/name      # an explicit repo
