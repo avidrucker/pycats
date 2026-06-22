@@ -426,8 +426,9 @@ class Player(pygame.sprite.Sprite):
             if (active_start < self.move_frame <= active_end
                     and not self._move_hitbox_spawned):
                 hb = move.hitboxes[0]
+                # Task 5: pass the full Hitbox so Attack can resolve its circle.
                 attack_group.add(
-                    Attack(self, damage=hb.damage, angle=hb.angle,
+                    Attack(self, hitbox=hb,
                            disappear_on_hit=False, lifetime=move.active)
                 )
                 self._move_hitbox_spawned = True

@@ -27,16 +27,26 @@ from ..config import (
     KNOCKBACK_BASE,
     KNOCKBACK_SCALE,
 )
+from ..combat.geometry import resolve_circle
 
 
 class Attack(pygame.sprite.Sprite):
-    """Simple rectangular hit-box that disappears after N frames, and that can either vanish on hit or persist visually."""
+    """Simple rectangular hit-box that disappears after N frames, and that can either vanish on hit or persist visually.
+
+    Task 5: Attack now carries an absolute hitbox circle (hit_cx, hit_cy, hit_r)
+    resolved from the move's Hitbox.circle at spawn time using the owner's
+    rect top-left as origin and their facing direction.  This circle is fixed at
+    spawn (Phase 0: static hitbox — it does not follow the owner once launched).
+    combat.process_hits uses this circle for hit detection instead of the rect.
+    The rect is kept for rendering only, centered on the circle.
+    """
 
     COLOR = (255, 60, 60, 180)  # semi-transparent red
 
     def __init__(
         self,
         owner,
+        hitbox=None,        # Hitbox dataclass (circle, damage, angle); preferred
         damage: int = HIT_DAMAGE,
         disappear_on_hit=False,
         base_kb=KNOCKBACK_BASE,
@@ -46,7 +56,6 @@ class Attack(pygame.sprite.Sprite):
     ):
         super().__init__()
         self.owner = owner
-        self.damage = damage
         self.disappear_on_hit = disappear_on_hit
         self.active = True
 
@@ -54,17 +63,43 @@ class Attack(pygame.sprite.Sprite):
         # hit-box during a move's active window with lifetime == move.active.
         self.frames_left = lifetime
 
-        offset_x = owner.rect.width // 2 + 4
-        x = owner.rect.centerx + (offset_x if owner.facing_right else -offset_x)
-        y = owner.rect.centery - ATTACK_SIZE[1] // 2
+        # ---------- hitbox circle (Task 5) ----------
+        # Resolve the move's facing-relative circle to an absolute center ONCE at
+        # spawn from the owner's current position (Phase 0: static hitbox).
+        # Origin convention: owner.rect top-left (rect.x, rect.y).
+        if hitbox is not None:
+            self.damage = hitbox.damage
+            self.angle = hitbox.angle
+            hit_cx, hit_cy, hit_r = resolve_circle(
+                hitbox.circle,
+                owner.rect.x,
+                owner.rect.y,
+                owner.facing_right,
+            )
+        else:
+            # Fallback: no Hitbox provided — derive a circle from the legacy
+            # rect offset so older call-sites still work.
+            self.damage = damage
+            self.angle = angle
+            offset_x = owner.rect.width // 2 + 4
+            raw_dx = offset_x if owner.facing_right else -offset_x
+            hit_cx = owner.rect.x + raw_dx + ATTACK_SIZE[0] // 2
+            hit_cy = owner.rect.y + owner.rect.height // 2
+            hit_r = min(ATTACK_SIZE) // 2
 
+        self.hit_cx: float = hit_cx
+        self.hit_cy: float = hit_cy
+        self.hit_r: float = hit_r
+
+        # ---------- rendering rect (kept for visuals only) ----------
+        # Centre the rect on the resolved circle so the drawn box tracks the
+        # hitbox position, regardless of how it was constructed.
         self.image = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
         self.image.fill(self.COLOR)
-        self.rect = self.image.get_rect(center=(x, y))
+        self.rect = self.image.get_rect(center=(int(hit_cx), int(hit_cy)))
 
         self.base_kb = base_kb
         self.kb_scale = kb_scale
-        self.angle = angle
 
     # called every frame by sprite.Group.update()
     def update(self):

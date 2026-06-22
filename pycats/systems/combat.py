@@ -1,6 +1,16 @@
 """
 Collision & hit-resolution system.
+
+Task 5: hit detection uses circle geometry.
+  - Each Attack carries an absolute hitbox circle (hit_cx, hit_cy, hit_r),
+    resolved from the move's Hitbox.circle at spawn time.
+  - Each defender's Hurtbox.circles are resolved to absolute coordinates via
+    resolve_circle() using the defender's rect top-left as origin and their
+    facing direction.
+  - circles_overlap() tests the hitbox circle against all resolved hurtbox
+    circles.  All other guards (invulnerable, is_alive, self-hit) are unchanged.
 """
+from pycats.combat.geometry import circles_overlap, resolve_circle
 
 
 def process_hits(players, attacks):
@@ -9,6 +19,8 @@ def process_hits(players, attacks):
 
     • Attack never hurts its owner.
     • Dead / respawning players are ignored.
+    • Hit detection: circle geometry (atk.hit_cx/hit_cy/hit_r vs resolved
+      defender hurtbox circles — NOT rect overlap).
     • If attack hits:
         - If disappear_on_hit: kill()
         - Else: deactivate, but keep visible
@@ -24,7 +36,15 @@ def process_hits(players, attacks):
             ):  # no self-hit
                 continue
 
-            if atk.rect.colliderect(defender.rect):
+            # Resolve defender hurtbox circles to absolute coordinates.
+            # Origin convention: rect top-left (rect.x, rect.y).
+            resolved_hurtbox = [
+                resolve_circle(c, defender.rect.x, defender.rect.y,
+                               defender.facing_right)
+                for c in defender.fighter_data.hurtbox.circles
+            ]
+
+            if circles_overlap(atk.hit_cx, atk.hit_cy, atk.hit_r, resolved_hurtbox):
                 defender.receive_hit(atk)
                 atk.owner.record_hit_landed()  # Track successful hit
                 if atk.disappear_on_hit:

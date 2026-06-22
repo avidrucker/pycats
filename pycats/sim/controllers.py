@@ -18,8 +18,8 @@ class ChaseController:
     jump/attack are pulsed (one frame) so the game sees fresh key presses.
     """
 
-    def __init__(self, attacker_num=1, attack_period=12, standoff=40,
-                 attack_range=58, safe_x=(110, 820)):
+    def __init__(self, attacker_num=1, attack_period=12, standoff=30,
+                 attack_range=45, safe_x=(110, 770), drop_threshold=20):
         # attacker_num is 1 or 2; the other player is the (idle) target. Player
         # refs are resolved per-frame from the (p1, p2) passed to __call__, so a
         # ChaseController can be built before run_battle creates the players.
@@ -28,6 +28,11 @@ class ChaseController:
         self.standoff = standoff          # desired horizontal gap (stand beside, not on top of)
         self.attack_range = attack_range
         self.safe_x = safe_x
+        # Task 5 retune: drop_threshold — if attacker is grounded and target is
+        # this many pixels *below* (positive dy), hold 'down' to drop through any
+        # thin platform the attacker is standing on so they reach the target's
+        # level.  Purely a policy parameter; 0 disables the behaviour.
+        self.drop_threshold = drop_threshold
         self._prev = set()
         self._last_attack = -10_000
         self._f = 0
@@ -68,6 +73,13 @@ class ChaseController:
             # the target on a different level after knockback).
             if dy < -30 and a.on_ground and adx < 120:
                 held.add(keys["up"])
+            # Drop through thin platforms when target is below.  Pressing 'down'
+            # while grounded on a thin platform causes solve_vertical to let the
+            # player fall through it, putting them on the same y-level as the
+            # target.  Only activate when dy exceeds the policy threshold so the
+            # bot doesn't perpetually fall through the main platform.
+            if self.drop_threshold > 0 and dy > self.drop_threshold and a.on_ground:
+                held.add(keys["down"])
             # Attack on a cadence when at standoff range and roughly level. The
             # vertical tolerance is wide enough to keep engaging after knockback
             # nudges the target a platform up/down, avoiding a positional
