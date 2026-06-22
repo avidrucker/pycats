@@ -109,7 +109,7 @@ def resolve_player_push(players: list["Player"]) -> None:
             a, b = players[i], players[j]
 
             # Skip players in "dodge" state
-            if a.fsm.state == "dodge" or b.fsm.state == "dodge":
+            if a.state == "dodge" or b.state == "dodge":
                 continue
             if not a.rect.colliderect(b.rect):
                 continue

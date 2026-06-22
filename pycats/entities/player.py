@@ -59,6 +59,7 @@ from ..core.physics import (
 )
 from ..systems.movement import step_horizontal
 from ..systems.fsm import FSM, Transition
+from ..systems.state_engine import make_state_engine
 
 
 class PState(Enum):
@@ -87,7 +88,8 @@ class Player(pygame.sprite.Sprite):
     SIZE = PLAYER_SIZE
 
     def __init__(
-        self, x, y, controls: dict, color, eye_color, char_name, facing_right=True
+        self, x, y, controls: dict, color, eye_color, char_name, facing_right=True,
+        state_backend: str = "legacy",
     ):
         super().__init__()
         self.image = pygame.Surface(self.SIZE)
@@ -153,8 +155,8 @@ class Player(pygame.sprite.Sprite):
             False  # Track if shield was held during spot dodge
         )
 
-        # FSM current state
-        self.fsm = self._build_fsm()
+        # Action-state engine (legacy FSM or statechart; legacy by default)
+        self.engine = make_state_engine(self, state_backend)
 
         # Facing
         self.facing_right = facing_right
@@ -166,6 +168,11 @@ class Player(pygame.sprite.Sprite):
         from .tail import Tail
 
         self.tail = Tail(self)
+
+    @property
+    def state(self) -> str:
+        """Current action-state label, via the active state engine."""
+        return self.engine.state
 
     # ----------- hit processing ------------
     def receive_hit(self, atk):
@@ -217,7 +224,7 @@ class Player(pygame.sprite.Sprite):
 
         # ---------- shield tick ----------
         # if shielding, then shield HP goes down, otherwise it goes up
-        if self.fsm.state == "shield":
+        if self.state == "shield":
             self.shield_hp = round(max(self.shield_hp - 0.2, 0), 2)
         else:
             self.shield_hp = round(min(self.shield_hp + 0.2, SHIELD_MAX_HP), 2)
@@ -233,7 +240,7 @@ class Player(pygame.sprite.Sprite):
 
         # input / movement / state logic --------------------------------------
         dodge_initiated = False
-        if self.fsm.state not in ("dodge", "hurt", "stun"):
+        if self.state not in ("dodge", "hurt", "stun"):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
@@ -243,7 +250,7 @@ class Player(pygame.sprite.Sprite):
         # Apply gravity - but not for ground-based spot dodges to prevent falling through thin platforms
         # Air dodges should still have normal gravity
         is_ground_spot_dodge = (
-            self.fsm.state == "dodge" and self.spot_dodge_shield_held and self.on_ground
+            self.state == "dodge" and self.spot_dodge_shield_held and self.on_ground
         )
 
         if not is_ground_spot_dodge:
@@ -256,7 +263,7 @@ class Player(pygame.sprite.Sprite):
 
         # Edge-aware dodge: prevent horizontal movement if it would take player off platform
         # This happens AFTER any friction is applied and immediately before movement
-        if self.fsm.state == "dodge" and self.on_ground and hasattr(self, "platforms"):
+        if self.state == "dodge" and self.on_ground and hasattr(self, "platforms"):
             current_platform = find_current_platform(self.rect, self.platforms)
             if current_platform is not None:
                 # First, check if velocity would take us off edge
@@ -294,7 +301,7 @@ class Player(pygame.sprite.Sprite):
         move_rect(self.rect, self.vel)
 
         # Post-movement clamping: ensure dodge didn't move player off platform
-        if self.fsm.state == "dodge" and self.on_ground and hasattr(self, "platforms"):
+        if self.state == "dodge" and self.on_ground and hasattr(self, "platforms"):
             current_platform = find_current_platform(self.rect, self.platforms)
             if current_platform is not None:
                 platform_rect = current_platform.rect
@@ -317,15 +324,15 @@ class Player(pygame.sprite.Sprite):
         )
         should_prevent_drop_through = (
             # During ground spot dodge (only, not air dodge)
-            (self.fsm.state == "dodge" and self.spot_dodge_shield_held)
+            (self.state == "dodge" and self.spot_dodge_shield_held)
             or
             # In shield state with down held (after spot dodge or manual shielding)
-            (self.fsm.state == "shield" and is_shield_down_held)
+            (self.state == "shield" and is_shield_down_held)
         )
 
         # debugging
         # if should_prevent_drop_through:
-        #     print(f"DROP THROUGH BLOCKED: {self.char_name} prevented from dropping through thin platform (state: {self.fsm.state})")
+        #     print(f"DROP THROUGH BLOCKED: {self.char_name} prevented from dropping through thin platform (state: {self.state})")
 
         self.vel, self.on_ground, self.drop_platform = solve_vertical(
             self.rect,
@@ -337,7 +344,7 @@ class Player(pygame.sprite.Sprite):
         )
 
         # Special case: maintain on_ground status during ground spot dodge to prevent unwanted fall transitions
-        if self.fsm.state == "dodge" and self.spot_dodge_shield_held:
+        if self.state == "dodge" and self.spot_dodge_shield_held:
             # Force on_ground to remain True during ground spot dodge to prevent falling
             if not self.on_ground:
                 # debugging
@@ -355,15 +362,15 @@ class Player(pygame.sprite.Sprite):
         # Non-shield timers tick
         if self.hurt_timer > 0:
             self.hurt_timer -= 1
-        if self.hurt_timer == 0 and self.fsm.state == "hurt":
+        if self.hurt_timer == 0 and self.state == "hurt":
             self.image.fill(self.char_color)  # reset image color to normal
         if self.stun_timer > 0:
             self.stun_timer -= 1
-        if self.stun_timer == 0 and self.fsm.state == "stun":
+        if self.stun_timer == 0 and self.state == "stun":
             self.image.fill(self.char_color)  # reset image color to normal
         if self.dodge_timer > 0:
             self.dodge_timer -= 1
-        if self.dodge_timer == 0 and self.fsm.state == "dodge":
+        if self.dodge_timer == 0 and self.state == "dodge":
             self.invulnerable = False  # reset invulnerability after dodge ends
             self.image.fill(self.char_color)  # reset image color to normal
             self.vel.x = 0  # stop horizontal movement after dodge ends
@@ -378,14 +385,14 @@ class Player(pygame.sprite.Sprite):
                 self.spot_dodge_shield_held = False  # reset spot dodge flag
         if self.attack_timer > 0:
             self.attack_timer -= 1
-        if self.attack_timer == 0 and self.fsm.state == "attack":
+        if self.attack_timer == 0 and self.state == "attack":
             self.done_attacking = True
 
         # Update tail physics
         self.tail.update()
 
         # FSM state transitions -----------------------------------
-        self.fsm.update()
+        self.engine.tick(None)
 
     # ============================================================== helpers
     def _pressed(self, key_set: set[int], name):
@@ -402,7 +409,7 @@ class Player(pygame.sprite.Sprite):
             self.on_ground,
             self._pressed(keys, "left"),
             self._pressed(keys, "right"),
-            locked=self.fsm.state
+            locked=self.state
             == "shield",  # prevents moving while shielding, this may need to change when dodging is implemented
         )
 
@@ -419,7 +426,7 @@ class Player(pygame.sprite.Sprite):
         if (
             jump_pressed
             and self.jumps_remaining
-            and self.fsm.state not in ("dodge", "hurt", "stun")
+            and self.state not in ("dodge", "hurt", "stun")
         ):
             self.vel.y = JUMP_VEL
             self.jumps_remaining -= 1
@@ -433,18 +440,18 @@ class Player(pygame.sprite.Sprite):
         #### TODO: prevent repeated dodges by holding down shield and a directional, what happens instead is that the player will enter a shield state, and then can press a direction to dodge again
         #### DONE: make player rect flash semi-transparent white while in dodge state
         # Shield-plus-direction = dodge
-        can_dodge_state = self.fsm.state in ("idle", "jump", "fall", "shield")
+        can_dodge_state = self.state in ("idle", "jump", "fall", "shield")
         # Special case: allow adding direction to neutral air dodges
         can_modify_air_dodge = (
-            self.fsm.state == "dodge"
+            self.state == "dodge"
             and not self.on_ground
             and abs(self.vel.x) < 0.1  # Currently has no horizontal velocity
             and self.dodge_timer > 0  # Still dodging
         )
 
-        if self.fsm.state == "dodge" and not self.on_ground:
+        if self.state == "dodge" and not self.on_ground:
             print(
-                f"DEBUG: Air dodge check for {self.char_name}: state={self.fsm.state}, on_ground={self.on_ground}, vel.x={self.vel.x}, abs(vel.x)={abs(self.vel.x)}, dodge_timer={self.dodge_timer}, can_modify={can_modify_air_dodge}"
+                f"DEBUG: Air dodge check for {self.char_name}: state={self.state}, on_ground={self.on_ground}, vel.x={self.vel.x}, abs(vel.x)={abs(self.vel.x)}, dodge_timer={self.dodge_timer}, can_modify={can_modify_air_dodge}"
             )
 
         if can_modify_air_dodge:
@@ -505,7 +512,7 @@ class Player(pygame.sprite.Sprite):
         # Don't enter shield state if we just initiated a dodge
         grounded_can_shield = (
             self.on_ground
-            and self.fsm.state in ("idle", "shield", "dodge", "run")
+            and self.state in ("idle", "shield", "dodge", "run")
             and self.dodge_timer == 0
             and not dodge_initiated  # Don't shield if we just started dodging
         )
@@ -515,13 +522,13 @@ class Player(pygame.sprite.Sprite):
             self.shield_attempting = True
         else:
             # Don't reset shield_attempting if we just initiated a dodge or are currently dodging
-            if not dodge_initiated and self.fsm.state != "dodge":
+            if not dodge_initiated and self.state != "dodge":
                 self.shield_attempting = False
 
         # ------- Attack -------------------------------------------
         #### TODO: implement attack buffering, that attacks can be chained
         atk_pressed = self._pressed(pressed, "attack")
-        if atk_pressed and self.fsm.state not in ("shield", "dodge"):
+        if atk_pressed and self.state not in ("shield", "dodge"):
             attack_group.add(Attack(self, disappear_on_hit=False))
             self.record_attack_made()  # Track attack statistics
             self.done_attacking = False  # set to false when attack starts, will be set to true when attack is done
@@ -556,7 +563,7 @@ class Player(pygame.sprite.Sprite):
         # hide sprite off-screen
         self.rect.center = (-1000, -1000)
         self.vel.update(0, 0)
-        self.fsm.state = "ko"
+        self.engine.force("ko")
 
     def _respawn(self):
         #### TODO: implement temporary respawn invulnerability
@@ -577,13 +584,13 @@ class Player(pygame.sprite.Sprite):
 
     # state starters ----------------------------
     def _start_hurt(self) -> None:  # knockback: pygame.Vector2
-        # self.fsm.state = "hurt"
+        # self.state = "hurt"
         self.hurt_timer = HURT_TIME
         # self.vel.update(knockback) # this already handled in receive_hit
         self.image.fill(RED)  # red-flash tint
 
     def _start_stun(self) -> None:
-        # self.fsm.state = "stun"
+        # self.state = "stun"
         self.stun_timer = STUN_TIME
         self.image.fill(YELLOW)  # yellow-flash tint
         self.vel.update(0, 0)

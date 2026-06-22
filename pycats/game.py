@@ -322,7 +322,7 @@ def draw_stripes(surface, p: Player):
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
 def draw_hud(surface, p: Player, label, topright=False):
     """Draws the HUD for a player, showing their state, jumps left, shield HP, lives, and damage percent."""
-    fsm = f"FSM: {p.fsm.state.capitalize()}"
+    fsm = f"FSM: {p.state.capitalize()}"
     jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining != 1 else ''} left"
     shield = f"Shield HP: {p.shield_hp}"
     shield_attempting = f"Shield Attempting: {'Yes' if p.shield_attempting else 'No'}"
@@ -416,7 +416,7 @@ def reset_game():
         player1.percent = 0
         player1.shield_hp = SHIELD_MAX_HP
         player1.is_alive = True
-        player1.fsm.state = "idle"
+        player1.engine.force("idle")
         player1.on_ground = False
         player1.jumps_remaining = MAX_JUMPS
         player1.air_dodge_ok = True
@@ -446,7 +446,7 @@ def reset_game():
         player2.percent = 0
         player2.shield_hp = SHIELD_MAX_HP
         player2.is_alive = True
-        player2.fsm.state = "idle"
+        player2.engine.force("idle")
         player2.on_ground = False
         player2.jumps_remaining = MAX_JUMPS
         player2.air_dodge_ok = True
@@ -736,7 +736,7 @@ while running:
             draw_stripes(render_surface, p)  # Draw stripes on the player's back
             # Draw player name above cat
             draw_player_name(render_surface, p)
-            if p.fsm.state == "shield":
+            if p.state == "shield":
                 #### TODO: convert shield radius magic nums to config constants (READY)
                 ratio = p.shield_hp / SHIELD_MAX_HP
                 shield_radius = int(MAX_SHIELD_RADIUS * ratio)
@@ -840,7 +840,7 @@ while running:
             draw_stripes(background_surface, p)  # Draw stripes on the player's back
             # Draw player name above cat
             draw_player_name(background_surface, p)
-            if p.fsm.state == "shield":
+            if p.state == "shield":
                 ratio = p.shield_hp / SHIELD_MAX_HP
                 shield_radius = int(MAX_SHIELD_RADIUS * ratio)
                 r = max(MIN_SHIELD_RADIUS, shield_radius)

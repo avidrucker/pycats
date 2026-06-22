@@ -217,21 +217,21 @@ class Tail:
 
         # Add state-specific behaviors with much gentler effects
         state_influence = 0
-        if self.player.fsm.state == "jump":
+        if self.player.state == "jump":
             # Very subtle upward curve during jump
             state_influence = -0.1 if self.player.facing_right else 0.1
-        elif self.player.fsm.state == "fall":
+        elif self.player.state == "fall":
             # Gentle trailing during fall with gravity effect
             gravity_pull = 0.15
             horizontal_drag = 0.1 if self.player.facing_right else -0.1
             state_influence = gravity_pull + horizontal_drag
-        elif self.player.fsm.state == "dodge":
+        elif self.player.state == "dodge":
             # More pronounced movement during dodge but still controlled
             movement_influence *= 1.5
 
         # Enhanced idle wave motion for more lifelike movement
         wave_offset = 0
-        if self.player.fsm.state == "idle" or (
+        if self.player.state == "idle" or (
             self.player.on_ground and abs(self.player.vel.x) < 0.5
         ):
             # Multiple wave components for more natural motion
