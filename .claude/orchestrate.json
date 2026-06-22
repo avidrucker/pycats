@@ -1,8 +1,16 @@
 {
   "host": "github",
   "languages": ["python"],
-  "mode": "solo",
+  "mode": "fleet",
   "issueLimit": 50,
+  "roster": ["APPLE", "BANANA", "CHERRY", "DRAGONFRUIT", "ELDERBERRY", "FIG", "GRAPE", "HONEYDEW"],
+  "worktreeBranchPattern": "^(?<agent>[a-z]+)/issue-(?<issue>\\d+)",
+  "defaultBase": "origin/main",
+  "paths": { "worktreeDir": ".claude/worktrees" },
   "pmtools": { "home": "~/code/pmtools", "port": "py" },
-  "enrichment": { "statusCommand": null, "claimCommand": null, "preflightCommand": null }
+  "enrichment": {
+    "statusCommand": "python3 ~/code/pmtools/py/status.py",
+    "claimCommand": "python3 ~/code/pmtools/py/claim.py",
+    "preflightCommand": "python3 ~/code/pmtools/py/preflight.py"
+  }
 }
