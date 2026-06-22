@@ -48,7 +48,7 @@ BUDGET_US = 1_000_000 / 60  # 16,667 us/frame at 60 FPS
 def _build_scene():
     """A representative frame: tails in motion, one shielding cat, a live attack."""
     platforms = build_stage()
-    p1, p2, players = build_players("legacy")
+    p1, p2, players = build_players("statechart")
     attacks = pygame.sprite.Group()
     # Move a few frames so the tails have settled into a real curved pose.
     right = InputFrame(held={p1.controls["right"]}, pressed=set(), released=set())

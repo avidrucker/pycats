@@ -16,7 +16,7 @@ from pycats.sim.controllers import ChaseController
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backend", choices=["legacy", "statechart"], default="legacy")
+    ap.add_argument("--backend", choices=["legacy", "statechart"], default="statechart")
     ap.add_argument("--frames", type=int, default=300)
     ap.add_argument("--video", default=None, help="output path; omit for live window")
     ap.add_argument("--match", action="store_true",

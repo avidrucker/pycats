@@ -34,13 +34,24 @@ use a project virtualenv:
     .venv/bin/python -m pip install pytest pygame-ce
     .venv/bin/python -m pip install -e ../statecharts-py   # sibling repo
 
+**The statechart engine is now the default** for the live game, `watch.py`, and
+`bench_render.py`. Pass `--backend legacy` (or set `PYCATS_STATE_BACKEND=legacy`)
+to run the frozen classic baseline instead.
+
+Phase-0 introduced a **data-driven attack system** with circle hitboxes (see
+`pycats/combat/` and `pycats/characters/`). Golden snapshots in `tests/golden/`
+are the regression oracle — regenerate them with `PYCATS_UPDATE_GOLDENS=1`.
+
 Run tests:        .venv/bin/python -m pytest tests/test_smoke.py tests/test_state_engine.py \
                       tests/test_player_seam.py tests/test_input_script.py tests/test_fighter_chart.py \
                       tests/test_match_engine.py tests/test_runner.py tests/test_parity.py \
-                      tests/test_benchmark.py tests/test_render_battle.py
-Run benchmark:    .venv/bin/python bench.py
-Store results:    .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
-Watch a replay:   .venv/bin/python watch.py --backend statechart
+                      tests/test_full_match.py tests/test_render_battle.py tests/test_render_cache.py \
+                      tests/test_benchmark.py tests/test_combat_data.py tests/test_geometry.py \
+                      tests/test_player_move.py tests/test_combat.py tests/test_golden.py
+Run benchmark:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py
+Store results:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
+Watch a replay:   .venv/bin/python watch.py                    # statechart (default)
+  ...legacy:      .venv/bin/python watch.py --backend legacy   # frozen classic baseline
 Watch full match: .venv/bin/python watch.py --match            # P1 defeats P2 (3 stocks)
   ...uncapped:    .venv/bin/python watch.py --match --uncapped  # FPS readout = true rate
 Record a video:   .venv/bin/python watch.py --match --video media/full_battle.mp4
