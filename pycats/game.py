@@ -51,6 +51,7 @@ from .core.physics import resolve_player_push
 from . import stats_print
 from .screen_manager import ScreenStateManager
 from . import text_utils
+from .render_battle import render_battle, render_attacks
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
@@ -179,143 +180,10 @@ font = pygame.font.SysFont(unicode_font_name, 24)
 
 
 # ------------------------------------------------ helpers
-def draw_eye(surface, p: Player, eye=True):
-    if eye:
-        x = (
-            p.rect.right - EYE_OFFSET_X
-            if p.facing_right
-            else p.rect.left + EYE_OFFSET_X
-        )
-        y = p.rect.top + EYE_OFFSET_Y
-        pygame.draw.circle(surface, p.eye_color, (x, y), EYE_RADIUS)
-    else:  # we will draw a glint instead of an eye
-        x = (
-            p.rect.right - GLINT_OFFSET_X
-            if p.facing_right
-            else p.rect.left + GLINT_OFFSET_X
-        )
-        y = p.rect.top + GLINT_OFFSET_Y
-        pygame.draw.circle(surface, WHITE, (x, y), GLINT_RADIUS)
-
-
-def draw_cat_features(surface, p: Player):
-    """Draws cat ears and whiskers on the player. These are purely cosmetic and don't affect collision."""
-    # Draw cat ears (triangles)
-    head_center_x = p.rect.centerx
-    head_top_y = p.rect.top
-
-    # Left ear coordinates
-    left_ear_points = [
-        (head_center_x - EAR_SPACING // 2, head_top_y),  # Bottom right point
-        (head_center_x - EAR_SPACING // 2 - EAR_WIDTH, head_top_y),  # Bottom left point
-        (
-            head_center_x - EAR_SPACING // 2 - EAR_WIDTH // 2,
-            head_top_y - EAR_HEIGHT,
-        ),  # Top point
-    ]
-
-    # Right ear coordinates
-    right_ear_points = [
-        (head_center_x + EAR_SPACING // 2, head_top_y),  # Bottom left point
-        (
-            head_center_x + EAR_SPACING // 2 + EAR_WIDTH,
-            head_top_y,
-        ),  # Bottom right point
-        (
-            head_center_x + EAR_SPACING // 2 + EAR_WIDTH // 2,
-            head_top_y - EAR_HEIGHT,
-        ),  # Top point
-    ]
-
-    # for both ears, if the player if facing right, move the ears to the left by PADDING, else, move the ears to the right by PADDING
-    if p.facing_right:
-        left_ear_points = [(x - EAR_PADDING, y) for x, y in left_ear_points]
-        right_ear_points = [(x - EAR_PADDING, y) for x, y in right_ear_points]
-    else:
-        left_ear_points = [(x + EAR_PADDING, y) for x, y in left_ear_points]
-        right_ear_points = [(x + EAR_PADDING, y) for x, y in right_ear_points]
-
-    # Draw ears
-    pygame.draw.polygon(surface, p.char_color, left_ear_points)
-    pygame.draw.polygon(surface, p.char_color, right_ear_points)
-
-    # Draw whiskers (lines)
-    whisker_start_x = (
-        p.rect.right - WHISKER_OFFSET_X
-        if p.facing_right
-        else p.rect.left + WHISKER_OFFSET_X
-    )
-    whisker_start_y = p.rect.top + WHISKER_OFFSET_Y + EYE_RADIUS // 2
-
-    # Direction of whiskers depends on facing direction
-    direction = 1 if p.facing_right else -1
-
-    # Draw multiple whisker lines in a fan pattern
-    import math
-
-    # Draw middle whisker first (horizontal)
-    middle_index = WHISKER_COUNT // 2
-
-    for i in range(WHISKER_COUNT):
-        # Calculate angle for each whisker (-WHISKER_ANGLE for top, 0 for middle, WHISKER_ANGLE for bottom)
-        angle_degrees = (i - middle_index) * WHISKER_ANGLE
-        angle_radians = math.radians(angle_degrees)
-
-        # Calculate end point using trigonometry
-        x_offset = direction * WHISKER_LENGTH * math.cos(angle_radians)
-        y_offset = WHISKER_LENGTH * math.sin(angle_radians)
-
-        start_pos = (whisker_start_x, whisker_start_y)
-        end_pos = (whisker_start_x + x_offset, whisker_start_y + y_offset)
-
-        # Use WHITE color for all whiskers instead of eye_color
-        pygame.draw.line(surface, WHITE, start_pos, end_pos, WHISKER_THICKNESS)
-
-
-def draw_stripes(surface, p: Player):
-    """Draws triangular stripes on the player's back for pattern."""
-    # Calculate stripe positions on the back of the player
-    back_center_x = p.rect.centerx + (-10 if p.facing_right else 10)
-    back_start_y = p.rect.top + 15  # Start stripes a bit down from the top
-
-    for i in range(STRIPE_COUNT):
-        # Calculate vertical position for each stripe
-        stripe_y = back_start_y + i * STRIPE_SPACING
-
-        # Make sure we don't draw stripes outside the player rectangle
-        if stripe_y + STRIPE_HEIGHT > p.rect.bottom:
-            break
-
-        # Create triangular stripe points pointing toward the front of the cat
-        if p.facing_right:
-            # Right-facing cat: triangle points right, flat side on the left (back)
-            stripe_points = [
-                (back_center_x - STRIPE_WIDTH // 2, stripe_y),  # Back top
-                (
-                    back_center_x - STRIPE_WIDTH // 2,
-                    stripe_y + STRIPE_HEIGHT,
-                ),  # Back bottom
-                (
-                    back_center_x + STRIPE_WIDTH // 2,
-                    stripe_y + STRIPE_HEIGHT // 2,
-                ),  # Front point
-            ]
-        else:
-            # Left-facing cat: triangle points left, flat side on the right (back)
-            stripe_points = [
-                (back_center_x + STRIPE_WIDTH // 2, stripe_y),  # Back top
-                (
-                    back_center_x + STRIPE_WIDTH // 2,
-                    stripe_y + STRIPE_HEIGHT,
-                ),  # Back bottom
-                (
-                    back_center_x - STRIPE_WIDTH // 2,
-                    stripe_y + STRIPE_HEIGHT // 2,
-                ),  # Front point
-            ]
-
-        # Draw the triangular stripe
-        pygame.draw.polygon(surface, p.stripe_color, stripe_points)
+# Battle draw helpers (draw_eye, draw_cat_features, draw_stripes,
+# draw_player_name) and render_battle/render_attacks now live in
+# pycats/render_battle.py so the live game, pause screen, and sim presenters
+# share one renderer.
 
 
 #### TODO: split off damage % and stock lives rendering so that they are rendering last and at the bottom left and right corners of the screen
@@ -388,19 +256,6 @@ def draw_controls(surface, p: Player, label, topright=False):
             text_utils.text_renderer.render_text_mixed(
                 txt, 24, WHITE, surface, (x_pos, y_pos)
             )
-
-
-def draw_player_name(surface, p: Player):
-    """Draw the player name above the cat."""
-    # Choose color based on player name
-    if p.char_name == "P1":
-        color = (255, 100, 100)  # Red
-    else:
-        color = (100, 100, 255)  # Blue
-
-    text_utils.render_text(
-        surface, p.char_name, (p.rect.centerx, p.rect.top - 25), 20, color, center=True
-    )
 
 
 def reset_game():
@@ -713,44 +568,8 @@ while running:
         # ---- render
         render_surface = get_render_surface()
         render_surface.fill(BG_COLOR)
-        for pl in platforms:
-            render_surface.blit(pl.image, pl.rect)
-
-        # Draw alive players
-        for p in players:
-            if (
-                not p.is_alive
-            ):  # TODO: replace this w/ KO state check after implementing KO state
-                continue
-            # Draw tail first (behind player)
-            p.tail.draw(render_surface)
-            # Draw player body
-            render_surface.blit(p.image, p.rect)
-            # Draw stripes on the player's back
-            draw_stripes(render_surface, p)
-            draw_eye(render_surface, p)
-            draw_eye(render_surface, p, eye=False)  # Draw a glint in the eye
-            draw_cat_features(
-                render_surface, p
-            )  # Draw cat features (ears and whiskers)
-            draw_stripes(render_surface, p)  # Draw stripes on the player's back
-            # Draw player name above cat
-            draw_player_name(render_surface, p)
-            if p.state == "shield":
-                #### TODO: convert shield radius magic nums to config constants (READY)
-                ratio = p.shield_hp / SHIELD_MAX_HP
-                shield_radius = int(MAX_SHIELD_RADIUS * ratio)
-                r = max(MIN_SHIELD_RADIUS, shield_radius)
-                s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-                # s = surface, r = radius, (r,r) is for centering the circle on the player character
-                pygame.draw.circle(
-                    s, (*SHIELD_COLOR, 100), (r, r), r
-                )  # *SHIELD_COLOR is a tuple unpacking technique to get the RGB values, 100 is the alpha value for transparency
-                # Draw shield bubble centered on player
-                render_surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
-
-        for a in attacks:
-            render_surface.blit(a.image, a.rect)
+        render_battle(render_surface, players, platforms)
+        render_attacks(render_surface, attacks)
 
         # Draw HUD only if players exist
         if player1 and player2:
@@ -821,35 +640,8 @@ while running:
         background_surface.fill(BG_COLOR)
         
         # Draw the game state (frozen) to background
-        for pl in platforms:
-            background_surface.blit(pl.image, pl.rect)
-
-        # Draw alive players
-        for p in players:
-            if not p.is_alive:
-                continue
-            # Draw tail first (behind player)
-            p.tail.draw(background_surface)
-            # Draw player body
-            background_surface.blit(p.image, p.rect)
-            # Draw stripes on the player's back
-            draw_stripes(background_surface, p)
-            draw_eye(background_surface, p)
-            draw_eye(background_surface, p, eye=False)  # Draw a glint in the eye
-            draw_cat_features(background_surface, p)  # Draw cat features (ears and whiskers)
-            draw_stripes(background_surface, p)  # Draw stripes on the player's back
-            # Draw player name above cat
-            draw_player_name(background_surface, p)
-            if p.state == "shield":
-                ratio = p.shield_hp / SHIELD_MAX_HP
-                shield_radius = int(MAX_SHIELD_RADIUS * ratio)
-                r = max(MIN_SHIELD_RADIUS, shield_radius)
-                s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-                pygame.draw.circle(s, (*SHIELD_COLOR, 100), (r, r), r)
-                background_surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
-
-        for a in attacks:
-            background_surface.blit(a.image, a.rect)
+        render_battle(background_surface, players, platforms)
+        render_attacks(background_surface, attacks)
 
         # Draw HUD (frozen state)
         if player1 and player2:
