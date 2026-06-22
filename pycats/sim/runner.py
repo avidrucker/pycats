@@ -75,11 +75,20 @@ def snapshot(players, attacks, match):
     return (tuple(parts), atk, match.phase, match.winner)
 
 
-def run_battle(backend="legacy", frames=None, frame_inputs=None, presenter=None):
-    if frame_inputs is None:
+def run_battle(backend="legacy", frames=None, frame_inputs=None, presenter=None,
+               controller=None, stop_on_match_over=False):
+    """Run the headless battle.
+
+    Inputs come from `controller(p1, p2, frame) -> InputFrame` when given,
+    otherwise from `frame_inputs` (defaulting to the scripted DEFAULT timeline).
+    A controller is for live/generated battles (e.g. a chase bot); capture its
+    emitted frames to freeze a deterministic input list for parity tests.
+    `stop_on_match_over=True` ends the run the frame the match resolves.
+    """
+    if controller is None and frame_inputs is None:
         frame_inputs = default_timeline(KEYMAPS)
     if frames is None:
-        frames = len(frame_inputs)
+        frames = len(frame_inputs) if frame_inputs is not None else 0
 
     platforms = build_stage()
     p1, p2, players = build_players(backend)
@@ -88,7 +97,10 @@ def run_battle(backend="legacy", frames=None, frame_inputs=None, presenter=None)
 
     snaps = []
     for f in range(frames):
-        fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
+        if controller is not None:
+            fi = controller(p1, p2, f)
+        else:
+            fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
         for p in players:
             p.update(fi, platforms, attacks)
         resolve_player_push(list(players))
@@ -98,6 +110,8 @@ def run_battle(backend="legacy", frames=None, frame_inputs=None, presenter=None)
         snaps.append(snapshot(players, attacks, match))
         if presenter is not None:
             presenter.show(platforms, players, attacks, f)
+        if stop_on_match_over and match.phase == "match_over":
+            break
     if presenter is not None:
         presenter.close()
     return snaps

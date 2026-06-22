@@ -6,3 +6,5 @@ scratch.py
 .pytest_cache/
 *.egg-info/
 .superpowers/
+media/
+*.mp4
