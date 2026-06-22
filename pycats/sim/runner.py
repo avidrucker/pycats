@@ -44,7 +44,7 @@ def build_stage():
     ]
 
 
-def build_players(backend):
+def build_players(backend="statechart"):
     c1 = CAT_CHARACTERS["calico"]
     c2 = CAT_CHARACTERS["tabby"]
     p1 = Player(PLAYER1_START_X, PLAYER1_START_Y, P1_KEYS, c1["color"],
@@ -67,15 +67,19 @@ def snapshot(players, attacks, match):
             round(p.percent, 6), round(p.shield_hp, 6), p.lives, p.is_alive,
             p.jumps_remaining, p.dodge_timer, p.hurt_timer, p.stun_timer,
             p.attack_timer, p.invulnerable_timer, p.facing_right, p.invulnerable,
+            # Task 6: new observable state fields (appended to preserve existing indices)
+            p.defensive_status,
+            p.move_frame,
         ))
     atk = tuple(sorted(
-        (a.rect.x, a.rect.y, a.frames_left, a.owner.char_name, a.active)
+        (a.rect.x, a.rect.y, a.frames_left, a.owner.char_name, a.active,
+         round(a.hit_cx, 6), round(a.hit_cy, 6), round(a.hit_r, 6))
         for a in attacks
     ))
     return (tuple(parts), atk, match.phase, match.winner)
 
 
-def run_battle(backend="legacy", frames=None, frame_inputs=None, presenter=None,
+def run_battle(backend="statechart", frames=None, frame_inputs=None, presenter=None,
                controller=None, stop_on_match_over=False):
     """Run the headless battle.
 
