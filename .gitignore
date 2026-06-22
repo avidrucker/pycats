@@ -2,3 +2,7 @@
 *.pyc
 pycats.zip
 scratch.py
+.venv/
+.pytest_cache/
+*.egg-info/
+.superpowers/
