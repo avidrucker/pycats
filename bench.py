@@ -64,7 +64,7 @@ def benchmark(backend, frames=10_000):
 def bucketed(backend, frames=10_000):
     inputs = default_timeline(KEYMAPS)
     n = len(inputs)
-    eng, phys, comb = [], [], []
+    phys, push, comb = [], [], []
     platforms = build_stage()
     p1, p2, players = build_players(backend)
     import pygame
@@ -73,10 +73,13 @@ def bucketed(backend, frames=10_000):
     plist = list(players)
     for f in range(frames):
         fi = inputs[f % n]
-        # physics + engine are fused inside Player.update; time the whole update
-        # as "physics", then time the engine tick separately is not possible
-        # post-hoc, so we time update() (physics+engine) and the standalone
-        # systems below.
+        # The state engine's tick() is fused inside Player.update, so it cannot
+        # be timed separately post-hoc. We therefore bucket the frame as:
+        #   physics_us = Player.update (physics + the engine tick, both backends)
+        #   push_us    = resolve_player_push (identical across backends)
+        #   combat_us  = attacks.update + process_hits + match.tick
+        # The engine's true cost is isolated by the mean_us delta between
+        # backends in benchmark(), where everything but the engine is identical.
         t0 = time.perf_counter()
         for p in players:
             p.update(fi, platforms, attacks)
@@ -88,12 +91,12 @@ def bucketed(backend, frames=10_000):
         match.tick()
         t3 = time.perf_counter()
         phys.append((t1 - t0) * 1e6)
-        eng.append((t2 - t1) * 1e6)   # player-push bucket (shared)
+        push.append((t2 - t1) * 1e6)
         comb.append((t3 - t2) * 1e6)
     import statistics as st
     return {
         "physics_us": st.mean(phys),
-        "engine_us": st.mean(eng),
+        "push_us": st.mean(push),
         "combat_us": st.mean(comb),
     }
 

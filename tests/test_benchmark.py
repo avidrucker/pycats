@@ -14,5 +14,5 @@ def test_benchmark_keys():
 @pytest.mark.slow
 def test_bucketed_keys():
     r = bucketed("statechart", frames=300)
-    for k in ("engine_us", "physics_us", "combat_us"):
+    for k in ("push_us", "physics_us", "combat_us"):
         assert k in r

@@ -184,7 +184,6 @@ def render_battle(surface, players, platforms):
         draw_eye(surface, p)
         draw_eye(surface, p, eye=False)
         draw_cat_features(surface, p)
-        draw_stripes(surface, p)
         draw_player_name(surface, p)
         if p.state == "shield":
             ratio = p.shield_hp / SHIELD_MAX_HP
