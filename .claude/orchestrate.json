@@ -1,0 +1,8 @@
+{
+  "host": "github",
+  "languages": ["python"],
+  "mode": "solo",
+  "issueLimit": 50,
+  "pmtools": { "home": "~/code/pmtools", "port": "py" },
+  "enrichment": { "statusCommand": null, "claimCommand": null, "preflightCommand": null }
+}
