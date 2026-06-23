@@ -53,6 +53,7 @@ from ..core.physics import (
     apply_gravity,
     move_rect,
     solve_vertical,
+    solve_horizontal,
     apply_horizontal_friction,
     find_current_platform,
     would_dodge_off_platform,
@@ -363,6 +364,11 @@ class Player(pygame.sprite.Sprite):
             and not should_prevent_drop_through,  # Don't drop through if conditions met
             self.drop_platform,
         )
+
+        # Issue #5: block the SIDE faces of solid (thick) platforms. Runs after
+        # solve_vertical so a top-landing is resolved first and is not mistaken
+        # for a side entry.
+        self.vel = solve_horizontal(self.rect, self.vel, platforms)
 
         # Special case: maintain on_ground status during ground spot dodge to prevent unwanted fall transitions
         if self.state == "dodge" and self.spot_dodge_shield_held:

@@ -86,6 +86,33 @@ def solve_vertical(
     return vel, on_ground, new_drop
 
 
+def solve_horizontal(actor: pg.Rect, vel: pg.Vector2, platforms) -> pg.Vector2:
+    """Resolve horizontal collisions against the SIDE faces of solid platforms.
+
+    Issue #5 / Project M fidelity: a *thick* platform is solid on all sides, so
+    a side face blocks entry; a *thin* platform is a one-way floor you pass
+    through from the sides (and from below), so it is skipped here.
+
+    Disambiguates a genuine side entry from a top-landing using the pre-move
+    horizontal edge (`actor.right - vel.x`), mirroring how `solve_vertical`
+    uses `actor.bottom - vel.y`. Mutates `actor` in place; returns `vel`.
+    """
+    for p in platforms:
+        if p.thin:
+            continue  # soft platforms stay pass-through on their sides
+        if not actor.colliderect(p.rect):
+            continue
+        if vel.x > 0 and actor.right - vel.x <= p.rect.left:
+            # moving right, was clear of the left face before the move
+            actor.right = p.rect.left
+            vel.x = 0
+        elif vel.x < 0 and actor.left - vel.x >= p.rect.right:
+            # moving left, was clear of the right face before the move
+            actor.left = p.rect.right
+            vel.x = 0
+    return vel
+
+
 # ----------------------------------------------------------------- horizontal
 
 
