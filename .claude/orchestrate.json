@@ -12,5 +12,10 @@
     "statusCommand": "pmtools status",
     "claimCommand": "pmtools claim",
     "preflightCommand": "pmtools preflight"
+  },
+  "storage": {
+    "dbPath": null,
+    "velocity": { "enabled": false },
+    "errors": { "enabled": true, "csvMirror": null, "logCommand": "pmtools error log" }
   }
 }
