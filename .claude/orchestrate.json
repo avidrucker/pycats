@@ -11,7 +11,8 @@
   "enrichment": {
     "statusCommand": "pmtools status",
     "claimCommand": "pmtools claim",
-    "preflightCommand": "pmtools preflight"
+    "preflightCommand": "pmtools preflight",
+    "closeCommand": "pmtools close"
   },
   "storage": {
     "dbPath": null,
