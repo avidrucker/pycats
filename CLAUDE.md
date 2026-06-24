@@ -12,7 +12,11 @@ Critical rules:
   reproduce/spec it before a DEV ticket.
 - **Research epics:** one umbrella `research` tracker; file child threads one at a
   time, finishing each before filing the next.
-- pycats runs **fleet** mode (`.claude/orchestrate.json`); claim work via `pmtools`
-  (`python3 ~/code/pmtools/py/claim.py <issue> --as <fruit>`).
+- pycats runs **fleet** mode (`.claude/orchestrate.json`); claim work via
+  `pmtools claim <issue> --as <fruit>`.
+- **Closing work:** commit with **`Closes #N` in the body**, then close via
+  **`pmtools close <N>`** from the worktree. Never `git push` to `main` or
+  `git merge` your branch into `main` by hand — the tool owns the race-safe push
+  + teardown. See [RULES.md](./RULES.md) → "Closing work".
 
 Run & test: see [README.md](./README.md).
