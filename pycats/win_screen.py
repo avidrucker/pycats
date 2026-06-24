@@ -10,6 +10,7 @@ This module handles:
 
 import pygame  # type: ignore
 from .config import (
+    FPS,
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     WHITE,
@@ -28,6 +29,12 @@ from . import text_utils
 
 class WinScreenManager:
     """Handles win screen display and confirmation logic for both players."""
+
+    # Ignore confirm/cancel input for this many frames after the win screen
+    # first appears. The attack key that landed the killing blow is often still
+    # being mashed; without this grace window it confirms instantly and bounces
+    # players back to character select before they can read the stats (#10).
+    INITIAL_INPUT_GRACE_FRAMES = 2 * FPS  # ~2 seconds at 60 FPS
 
     def __init__(self, p1_controls, p2_controls):
         # Player controls
@@ -58,8 +65,13 @@ class WinScreenManager:
         # Reset confirmation status for new match
         self.p1_confirmed = False
         self.p2_confirmed = False
-        self.p1_input_cooldown = 0
-        self.p2_input_cooldown = 0
+        # Seed the cooldowns with the initial grace window so the screen ignores
+        # input it just inherited from gameplay (the killing-blow attack key) for
+        # ~2s before it will accept a confirmation (#10). The cooldown is consumed
+        # on the same tick it reaches zero (decrement-then-check in update()), so
+        # seed one extra frame to cover the full grace window.
+        self.p1_input_cooldown = self.INITIAL_INPUT_GRACE_FRAMES + 1
+        self.p2_input_cooldown = self.INITIAL_INPUT_GRACE_FRAMES + 1
         self.return_delay = 0
 
     def update(self, pressed_keys):
