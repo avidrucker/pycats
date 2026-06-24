@@ -1,7 +1,7 @@
-"""Unit tests for the authentic Brawl/PM knockback + hitstun formula (#40)."""
+"""Unit tests for the authentic Brawl/PM knockback + hitstun formula (#40, #44)."""
 import pytest
 
-from pycats.combat.knockback import knockback, hitstun_frames
+from pycats.combat.knockback import knockback, hitstun_frames, decay_velocity
 from pycats.config import HITSTUN_FLOOR
 
 
@@ -40,3 +40,28 @@ def test_hitstun_never_below_floor():
 
 def test_hitstun_monotonic_in_knockback():
     assert hitstun_frames(50.0) <= hitstun_frames(100.0) <= hitstun_frames(200.0)
+
+
+# ---- knockback decay (#44) -------------------------------------------------
+
+def test_decay_reduces_positive_velocity_toward_zero():
+    assert decay_velocity(5.0, 0.145) == pytest.approx(4.855)
+
+
+def test_decay_reduces_negative_velocity_toward_zero():
+    assert decay_velocity(-5.0, 0.145) == pytest.approx(-4.855)
+
+
+def test_decay_never_overshoots_zero():
+    assert decay_velocity(0.1, 0.145) == 0.0
+    assert decay_velocity(-0.1, 0.145) == 0.0
+    assert decay_velocity(0.0, 0.145) == 0.0
+
+
+def test_decay_preserves_sign_until_zero():
+    v = 1.0
+    for _ in range(100):
+        nv = decay_velocity(v, 0.145)
+        assert nv >= 0.0 and nv <= v       # monotonic toward 0, never flips sign
+        v = nv
+    assert v == 0.0                         # eventually fully stops

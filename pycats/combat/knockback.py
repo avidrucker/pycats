@@ -20,3 +20,17 @@ def knockback(percent: float, damage: float, weight: int,
 def hitstun_frames(kb: float) -> int:
     """Whole frames of hitstun for a knockback magnitude (floored, min HITSTUN_FLOOR)."""
     return max(HITSTUN_FLOOR, math.floor(kb * HITSTUN_MULTIPLIER))
+
+
+def decay_velocity(vx: float, decay: float) -> float:
+    """Reduce a horizontal launch velocity toward 0 by `decay` per frame.
+
+    Mirrors Smash's per-frame knockback decay (#43): a launched fighter bleeds
+    momentum every frame rather than sliding at constant speed. Never overshoots
+    or flips sign — once it reaches 0 it stays 0.
+    """
+    if vx > 0.0:
+        return max(0.0, vx - decay)
+    if vx < 0.0:
+        return min(0.0, vx + decay)
+    return 0.0
