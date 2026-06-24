@@ -20,6 +20,7 @@ from ..config import (
     TAIL_MIN_MOVEMENT_THRESHOLD,
     TAIL_DRAG_STRENGTH,
     TAIL_GRAVITY_EFFECT,
+    TAIL_GRAVITY_DROOP,
     TAIL_MOMENTUM_DECAY,
     TAIL_MAX_BEND_ANGLE,
     TAIL_VELOCITY_SENSITIVITY,
@@ -207,6 +208,10 @@ class Tail:
                     seg.x += dx
                     seg.y += dy
 
+        # Issue #4: keep the (now gravity-drooping) tail out of solid platforms.
+        # Runs on both paths and is cheap (segments x platforms).
+        self._resolve_platform_collisions()
+
         self._last_base = (base_x, base_y)
 
     def _get_tail_base_position(self) -> Tuple[float, float]:
@@ -334,6 +339,17 @@ class Tail:
         if distance > TAIL_MIN_MOVEMENT_THRESHOLD:
             current.target_angle = math.atan2(dy, dx)
 
+        # Issue #4: gravity droop. Pull this segment's target angle toward
+        # straight down (+y is down in screen space), progressively stronger
+        # toward the tip, so the tail hangs and settles under gravity instead of
+        # sticking straight out / curling up. The angle_velocity smoothing below
+        # makes this ease in gradually (natural settling).
+        gravity_angle = math.pi / 2
+        gravity_influence = TAIL_GRAVITY_DROOP * (index / len(self.segments))
+        current.target_angle = current.lerp_angle(
+            current.target_angle, gravity_angle, gravity_influence
+        )
+
         # Add progressive lag - segments further down move more slowly
         lag_factor = 1.0 - (index / len(self.segments)) * 0.5  # Progressively more lag
         follow_strength = (
@@ -388,6 +404,40 @@ class Tail:
             parent = self.segments[i - 1]
             current = self.segments[i]
             current.update_position(parent.x, parent.y, TAIL_SEGMENT_LENGTH)
+
+    def _resolve_platform_collisions(self):
+        """Issue #4: push tail segments out of SOLID (thick) platforms.
+
+        The tail now droops under gravity, so it would otherwise sink through the
+        ground it rests on. Thin platforms are pass-through (like the player), so
+        only thick platforms collide. Each penetrating segment is pushed to the
+        nearest platform edge (shallowest-penetration axis) — for a tail drooping
+        onto a floor that is the top surface, so the tail rests on the platform.
+        """
+        platforms = getattr(self.player, "platforms", None)
+        if not platforms:
+            return
+        for plat in platforms:
+            if getattr(plat, "thin", False):
+                continue  # tail passes through thin platforms
+            r = plat.rect
+            left, right, top, bottom = r.left, r.right, r.top, r.bottom
+            for seg in self.segments:
+                if left <= seg.x <= right and top <= seg.y <= bottom:
+                    # inside the solid rect — exit along the shallowest axis
+                    d_top = seg.y - top
+                    d_bottom = bottom - seg.y
+                    d_left = seg.x - left
+                    d_right = right - seg.x
+                    m = min(d_top, d_bottom, d_left, d_right)
+                    if m == d_top:
+                        seg.y = top
+                    elif m == d_bottom:
+                        seg.y = bottom
+                    elif m == d_left:
+                        seg.x = left
+                    else:
+                        seg.x = right
 
     def draw(self, screen):
         """Draw the tail segments as rectangles.

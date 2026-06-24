@@ -161,6 +161,9 @@ TAPER_MODIFER = 0.1  # Tapering effect for tail segments
 # New drag/trail constants for more graceful movement
 TAIL_DRAG_STRENGTH = 0.9  # Higher drag for more trailing effect
 TAIL_GRAVITY_EFFECT = 0.7  # Moderate gravity effect
+TAIL_GRAVITY_DROOP = 0.6  # (#4) how strongly gravity pulls each tail segment's
+# target angle toward straight-down; scaled by segment index so the tip droops
+# most and the tail hangs/settles instead of sticking out or curling up.
 TAIL_MOMENTUM_DECAY = 0.95  # Higher momentum retention for flowing motion
 TAIL_MAX_BEND_ANGLE = 0.7  # Smaller max bend for more natural curves
 TAIL_VELOCITY_SENSITIVITY = 0.1  # Much lower sensitivity for gentler response
