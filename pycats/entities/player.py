@@ -691,6 +691,12 @@ class Player(pygame.sprite.Sprite):
         self.move_frame = 0
         self.done_attacking = True
         self.reset_visual_state()  # Reset visual appearance to original color
+        # Issue #41: re-initialize the tail to its rest layout at the spawn point.
+        # The Verlet tail keeps live position/velocity and freezes (tail.update is
+        # skipped while dead) wherever the cat flew off-screen; without this the
+        # hip anchor teleports to spawn and the chain whips across that distance.
+        # facing_right and rect are already restored above, so the layout is correct.
+        self.tail.reset()
 
     # state starters ----------------------------
     def _start_hurt(self) -> None:  # visual flash only

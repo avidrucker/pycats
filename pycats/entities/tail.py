@@ -58,12 +58,18 @@ class Tail:
 
     def __init__(self, player_ref):
         self.player = player_ref
-        self.segments: List[TailSegment] = []
+        self.segments: List[TailSegment] = [
+            TailSegment(0.0, 0.0) for _ in range(TAIL_SEGMENTS)
+        ]
         self._seg_cache: dict = {}  # (width, angle°) -> rotated surface
+        self.reset()
 
-        # Eased horizontal anchor offset (#3): tracks the facing-based target but
-        # moves at most TAIL_ANCHOR_FLIP_STEP px/frame, so a facing flip slides
-        # the tail base to the other hip instead of teleporting 2*offset px.
+    def reset(self):
+        """Initialize the tail to its rest layout at the current hip position with
+        zero velocity. Called on first load AND on every respawn (#41), so a
+        respawn appears exactly like a first load instead of whipping the live
+        Verlet chain in from wherever it froze at KO."""
+        # Eased horizontal anchor offset (#3): set straight to the facing target.
         self._anchor_offset_x = (
             -TAIL_BASE_OFFSET_X if self.player.facing_right else TAIL_BASE_OFFSET_X
         )
@@ -72,12 +78,15 @@ class Tail:
         self._base_back = -1.0 if self.player.facing_right else 1.0
 
         # Lay the chain out horizontally backward from the hip with zero velocity
-        # so the first frame settles smoothly instead of snapping in from (0,0).
+        # (prev == pos) so it settles smoothly instead of snapping/whipping in.
         base_x, base_y = self._get_tail_base_position()
-        back = -1.0 if self.player.facing_right else 1.0
-        for i in range(TAIL_SEGMENTS):
-            x = base_x + back * TAIL_SEGMENT_LENGTH * i
-            self.segments.append(TailSegment(x, base_y, math.pi if back < 0 else 0.0))
+        back = self._base_back
+        ang = math.pi if back < 0 else 0.0
+        for i, seg in enumerate(self.segments):
+            seg.x = base_x + back * TAIL_SEGMENT_LENGTH * i
+            seg.y = base_y
+            seg.prev_x, seg.prev_y = seg.x, seg.y
+            seg.angle = ang
 
     # ---------------------------------------------------------------- update
     def update(self, dt: float = 1.0):
