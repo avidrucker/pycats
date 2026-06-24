@@ -10,6 +10,9 @@ Critical rules:
   feature priority — assign features directly instead.
 - **Repro/spec-first:** if a bug's symptom isn't crisp, file a `research` ticket to
   reproduce/spec it before a DEV ticket.
+- **Every bugfix lands a regression test in the same commit**, and that test must
+  be **able to fail** (red without the fix, green with it — revert-the-fix check).
+  See [RULES.md](./RULES.md) → "Fixing bugs".
 - **Research epics:** one umbrella `research` tracker; file child threads one at a
   time, finishing each before filing the next.
 - pycats runs **fleet** mode (`.claude/orchestrate.json`); claim work via

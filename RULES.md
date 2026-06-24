@@ -39,6 +39,23 @@
   thread **one at a time**, finishing it before filing the next sibling. This
   avoids premature decomposition (yegor: only decompose when about to start work).
 
+## Fixing bugs
+
+- **Every bugfix lands a regression test in the same commit.** A fix without a
+  test is not done — the test is what stops the bug from coming back (and from
+  being *re-filed*: #7's original fix `b480ae0` shipped with no test, so the
+  behavior looked broken a year later and was re-filed and re-investigated from
+  scratch). This is the repo's expression of yegor-bdd (a bug is a failing test).
+- **The test must be able to fail.** Before claiming the fix works, confirm the
+  new test is **red without the fix and green with it** — revert the fix (or stub
+  it), watch the test fail, then restore. A test that has never been red proves
+  nothing (it may assert the wrong thing or never reach the branch). See
+  `docs/learnings/today-i-learned-2026-06-23-dragonfruit.md` §1 & §4.
+- **Already-fixed / non-reproducing bug?** If a reported bug does not reproduce on
+  current `main`, the deliverable is still the *missing* regression test (find the
+  commit that fixed it, add the can-fail guard), not a no-op close. Surface the
+  contradiction to the reporter before an outward-facing close.
+
 ## Closing work
 
 The fleet closes via **`pmtools close`**, which owns the racy push to `main` and
