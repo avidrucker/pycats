@@ -39,14 +39,18 @@ def test_tail_droops_under_gravity_on_ground():
     assert tip.y - base.y > 3.0   # tip hangs BELOW the base (was ~-21 before)
 
 
-def test_tail_droops_under_gravity_in_air():
+def test_tail_trails_upward_while_falling():
+    """#37 (Verlet model): in the air the tail has inertia, so while the cat is
+    ACCELERATING downward the tail lags behind — its tip sits ABOVE the base
+    (secondary motion / drag), rather than statically drooping below it. The
+    stationary in-air hang is covered by test_tail_gravity_naturalness.py."""
     plat = Platform(pg.Rect(200, 560, 600, 20), thin=False)  # far below
     p, plats = _player(120, plat)
     empty = pg.sprite.Group()
     for _ in range(20):
-        p.update(_empty(), plats, empty)
+        p.update(_empty(), plats, empty)  # falling
     base, tip = p.tail.segments[0], p.tail.segments[-1]
-    assert tip.y - base.y > 3.0
+    assert tip.y < base.y          # trails UP behind the downward motion
 
 
 def test_tail_rests_on_thick_platform_without_penetrating():

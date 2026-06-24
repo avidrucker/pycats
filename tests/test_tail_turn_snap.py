@@ -58,11 +58,10 @@ def _max_step_over(p, plats, empty, frames):
 
 def test_facing_flip_does_not_snap_tail():
     p, plats, empty = _settled_player()
-    baseline = _max_step_over(p, plats, empty, 15)   # idle wave only
     p.facing_right = not p.facing_right              # cat turns around
     flip_max = _max_step_over(p, plats, empty, 15)
-    # The pre-fix snap is ~2*TAIL_BASE_OFFSET_X (30px) in one frame. After the
-    # fix the flip must stay well under that — within a small multiple of the
-    # idle baseline, and below the single-offset bound.
+    # The pre-fix bug teleported the whole tail ~2*TAIL_BASE_OFFSET_X (30px) in a
+    # SINGLE frame. The eased anchor + base orientation keep any single-frame move
+    # well under one offset; with the #37 Verlet model the turn is a smooth multi-
+    # frame SWING (~5px/frame), which is correct dynamic motion, not a snap.
     assert flip_max < TAIL_BASE_OFFSET_X
-    assert flip_max <= baseline + 5.0

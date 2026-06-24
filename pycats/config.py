@@ -152,27 +152,15 @@ TAIL_BASE_OFFSET_Y = 5  # Vertical offset from player bottom to tail base
 TAIL_ANCHOR_FLIP_STEP = 3  # px/frame the tail-base anchor eases across a facing
 # flip (#3): caps the per-frame anchor move so a turn slides the base to the
 # other hip over ~2*offset/step frames instead of teleporting in one frame.
-TAIL_WAVE_AMPLITUDE = 0.25  # Amplitude of the idle wave motion (radians)
-TAIL_WAVE_FREQUENCY = 0.05  # Much slower frequency for more graceful idle motion
-TAIL_FOLLOW_STRENGTH = 0.05  # Much lower for slower following
-TAIL_DAMPING = 0.92  # Higher damping for smoother motion
-TAIL_UPDATE_FREQUENCY = 1  # Update every frame for smoother motion
-TAIL_SHAPE_UPDATE_HZ = 12  # tail re-computes its shape this many times/sec
-# (between shape updates it still follows the player every frame; see Tail.update)
-TAIL_MIN_MOVEMENT_THRESHOLD = (
-    0.05  # Lower threshold for more responsive small movements
-)
 TAPER_MODIFER = 0.1  # Tapering effect for tail segments
 
-# New drag/trail constants for more graceful movement
-TAIL_DRAG_STRENGTH = 0.9  # Higher drag for more trailing effect
-TAIL_GRAVITY_EFFECT = 0.7  # Moderate gravity effect
-TAIL_GRAVITY_DROOP = 0.6  # (#4) how strongly gravity pulls each tail segment's
-# target angle toward straight-down; scaled by segment index so the tip droops
-# most and the tail hangs/settles instead of sticking out or curling up.
-TAIL_MOMENTUM_DECAY = 0.95  # Higher momentum retention for flowing motion
-TAIL_MAX_BEND_ANGLE = 0.7  # Smaller max bend for more natural curves
-TAIL_VELOCITY_SENSITIVITY = 0.1  # Much lower sensitivity for gentler response
+# (#37) Verlet tail physics — secondary motion (trail / drag / whip / settle).
+# The tail is a Verlet point chain pinned at the hip; inertia is implicit in
+# (pos - prev_pos), so these few knobs are the whole feel:
+TAIL_GRAVITY = 0.30  # downward accel per frame — weight / how hard it hangs.
+TAIL_AIR_DRAG = 0.91  # velocity retained per frame (<1). LOWER = more damped /
+# less springy (settles faster); HIGHER = floppier, more trailing/whip. Main knob.
+TAIL_CONSTRAINT_ITERS = 34  # relaxation passes/frame — higher = stiffer/less stretch.
 
 #### TODO: implement player color (yellow, blue, red, green) which will affect the shield color
 #### TODO: implement parameterized shield color
