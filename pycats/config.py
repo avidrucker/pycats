@@ -52,9 +52,15 @@ SHIELD_MAX_HP = 50  # fresh shield bubble hit points
 MAX_SHIELD_RADIUS = 40
 MIN_SHIELD_RADIUS = 10
 
-# ---------------- knockback ----------------
-KNOCKBACK_SCALE = 0.5
-KNOCKBACK_BASE = 5
+# ---------------- knockback / hitstun ----------------
+# Authentic Brawl/PM knockback feeds these. The formula lives in
+# pycats/combat/knockback.py; per-hitbox BKB/KBG and fighter weight are the
+# per-move/character inputs.
+HITSTUN_MULTIPLIER = 0.4   # hitstun_frames = floor(KB * this). ⚠ verify (Brawl/PM ~0.4).
+HITSTUN_FLOOR = 1          # minimum hitstun frames for any clean hit. ⚠ tuning, not sourced.
+# Authentic KB is on the Smash magnitude scale (tens-to-hundreds); this maps it
+# onto pycats pixel/frame launch velocity. ⚠ tuning — playtest and adjust.
+KNOCKBACK_VELOCITY_SCALE = 0.4
 
 # ---------------- platform constants ------------
 # note: 300 is good for a 540 width map
