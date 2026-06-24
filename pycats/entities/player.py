@@ -213,7 +213,14 @@ class Player(pygame.sprite.Sprite):
                 1 if atk.owner.facing_right else -1
             )  # the direction of the attack
             radians = math.radians(atk.angle)
-            self.vel.x = kb * math.cos(radians) * direction
+            # Issue #8: COMBINE the defender's existing horizontal momentum with
+            # the incoming knockback instead of overwriting it — a running
+            # defender must not have its left/right momentum zeroed on hit. The
+            # vertical component stays an override (`=`): knockback launches set
+            # the launch arc rather than adding to fall speed. (The exact PM
+            # knockback magnitude is open research under #24; this only changes
+            # combine-vs-zero, not the coefficient.)
+            self.vel.x += kb * math.cos(radians) * direction
             self.vel.y = kb * -math.sin(radians)  # up = negative y
 
     def _handle_landing(self, was_airborne: bool):
@@ -261,8 +268,15 @@ class Player(pygame.sprite.Sprite):
         was_airborne = not self.on_ground
 
         # input / movement / state logic --------------------------------------
+        # Issue #8: hits are resolved AFTER this frame's engine.tick (game.py
+        # runs process_hits after player.update), so hurt_timer/stun_timer are
+        # set one frame before the FSM label flips to "hurt"/"stun". Gate input
+        # on the timers too, not just the lagging state label, so the post-hit
+        # frame does not run handle_move and clobber the knockback with walk
+        # speed when a direction is held.
+        in_hitstun = self.hurt_timer > 0 or self.stun_timer > 0
         dodge_initiated = False
-        if self.state not in ("dodge", "hurt", "stun"):
+        if not in_hitstun and self.state not in ("dodge", "hurt", "stun"):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
