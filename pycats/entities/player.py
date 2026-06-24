@@ -518,7 +518,13 @@ class Player(pygame.sprite.Sprite):
             dir_x = None
 
             # Priority 1: Check for simultaneous shield + direction press (including spot dodge)
-            if shield_pressed and self._pressed(pressed, "down"):
+            # Issue #6: the spot-dodge direction may be *held* from an earlier
+            # frame, not only freshly pressed — so pressing shield while down is
+            # already held still spot-dodges (symmetric with the shield-held-then-
+            # down path handled by Priority 3). Held left/right stay momentum/air
+            # dodges via Priority 2; only the neutral spot dodge reads held-down.
+            if shield_pressed and (self._pressed(pressed, "down")
+                                   or self._pressed(held, "down")):
                 dir_x = 0  # spot dodge
             elif shield_pressed and self._pressed(pressed, "left"):
                 dir_x = -1  # left dodge
