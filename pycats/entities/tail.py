@@ -10,6 +10,7 @@ from ..config import (
     TAIL_SEGMENT_WIDTH,
     TAIL_BASE_OFFSET_X,
     TAIL_BASE_OFFSET_Y,
+    TAIL_ANCHOR_FLIP_STEP,
     TAIL_WAVE_AMPLITUDE,
     TAIL_WAVE_FREQUENCY,
     TAIL_FOLLOW_STRENGTH,
@@ -157,6 +158,14 @@ class Tail:
         # frames the whole tail is translated to follow the player every frame.
         self._shape_interval = max(1, round(FPS / TAIL_SHAPE_UPDATE_HZ))
         self._last_base: Tuple[float, float] | None = None
+        # Eased horizontal anchor offset (#3): tracks the facing-based target
+        # offset but moves at most TAIL_ANCHOR_FLIP_STEP px/frame, so a facing
+        # flip slides the tail base to the other hip instead of teleporting
+        # 2*TAIL_BASE_OFFSET_X in a single frame (which the cheap-follow path
+        # would otherwise propagate to the whole tail as a snap).
+        self._anchor_offset_x = (
+            -TAIL_BASE_OFFSET_X if self.player.facing_right else TAIL_BASE_OFFSET_X
+        )
         # Cache of rotated segment surfaces, keyed by (width, angle_degrees).
         # char_color is constant per player, so colour is not part of the key.
         self._seg_cache: dict = {}
@@ -201,11 +210,23 @@ class Tail:
         self._last_base = (base_x, base_y)
 
     def _get_tail_base_position(self) -> Tuple[float, float]:
-        """Get the attachment point of the tail on the player."""
-        offset_x = (
+        """Get the attachment point of the tail on the player.
+
+        Issue #3: the target offset flips sign with facing, but we ease the
+        actual anchor toward it at TAIL_ANCHOR_FLIP_STEP px/frame so a turn does
+        not teleport the base (and, via the cheap-follow path, the whole tail)
+        2*TAIL_BASE_OFFSET_X px in one frame.
+        """
+        target_offset = (
             TAIL_BASE_OFFSET_X if not self.player.facing_right else -TAIL_BASE_OFFSET_X
         )
-        base_x = self.player.rect.centerx + offset_x
+        delta = target_offset - self._anchor_offset_x
+        if delta > TAIL_ANCHOR_FLIP_STEP:
+            delta = TAIL_ANCHOR_FLIP_STEP
+        elif delta < -TAIL_ANCHOR_FLIP_STEP:
+            delta = -TAIL_ANCHOR_FLIP_STEP
+        self._anchor_offset_x += delta
+        base_x = self.player.rect.centerx + self._anchor_offset_x
         base_y = self.player.rect.bottom - TAIL_BASE_OFFSET_Y
         return base_x, base_y
 
@@ -367,15 +388,6 @@ class Tail:
             parent = self.segments[i - 1]
             current = self.segments[i]
             current.update_position(parent.x, parent.y, TAIL_SEGMENT_LENGTH)
-
-    def set_facing_direction(self, facing_right: bool):
-        """Update tail when player changes facing direction."""
-        if facing_right != self.player.facing_right:
-            # When direction changes, adjust root segment angle smoothly
-            if facing_right:
-                self.segments[0].target_angle = math.pi
-            else:
-                self.segments[0].target_angle = 0
 
     def draw(self, screen):
         """Draw the tail segments as rectangles.

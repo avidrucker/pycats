@@ -143,6 +143,9 @@ TAIL_SEGMENT_LENGTH = 3  # Length of each segment
 TAIL_SEGMENT_WIDTH = 15  # Width of each segment (tapers towards the tip)
 TAIL_BASE_OFFSET_X = 15  # Horizontal offset from player center to tail base
 TAIL_BASE_OFFSET_Y = 5  # Vertical offset from player bottom to tail base
+TAIL_ANCHOR_FLIP_STEP = 3  # px/frame the tail-base anchor eases across a facing
+# flip (#3): caps the per-frame anchor move so a turn slides the base to the
+# other hip over ~2*offset/step frames instead of teleporting in one frame.
 TAIL_WAVE_AMPLITUDE = 0.25  # Amplitude of the idle wave motion (radians)
 TAIL_WAVE_FREQUENCY = 0.05  # Much slower frequency for more graceful idle motion
 TAIL_FOLLOW_STRENGTH = 0.05  # Much lower for slower following
