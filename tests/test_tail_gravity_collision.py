@@ -7,11 +7,21 @@ platforms so it rests on the surface instead of clipping through. Thin platforms
 remain pass-through.
 """
 import pygame as pg
+import pytest
 
 from pycats.entities.player import Player
 from pycats.entities.platform import Platform
 from pycats.core.input import InputFrame
 from pycats.config import P1_COLOR, WHITE
+import pycats.entities.tail as _tail
+
+
+@pytest.fixture(autouse=True)
+def _physics_only(monkeypatch):
+    # These tests verify the PHYSICS layer (gravity / collision / trailing). The
+    # #42 curl/undulation are separate expression layers that re-pose the resting
+    # tail; disable them here so the asserts isolate the physics rest pose.
+    monkeypatch.setattr(_tail, "TAIL_CURL_STRENGTH", 0)
 
 C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
      "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}

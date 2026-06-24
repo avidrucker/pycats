@@ -166,6 +166,14 @@ TAIL_AIR_DRAG = 0.91  # velocity retained per frame (<1). LOWER = more damped /
 # less springy (settles faster); HIGHER = floppier, more trailing/whip. Main knob.
 TAIL_CONSTRAINT_ITERS = 34  # relaxation passes/frame — higher = stiffer/less stretch.
 
+# (#42) Cat-tail curl/expression layered on top of the passive chain: each frame
+# the free points are nudged toward a gently up-curling rest arc in the cat's
+# frame, so the tail holds a cat-like curl while gravity/inertia still dominate
+# (trailing on the move, settling at rest).
+TAIL_CURL = 0.06  # rad of upward curl per segment in the rest pose (0 = straight).
+TAIL_CURL_STRENGTH = 0.04  # how strongly the tail seeks that curl each frame
+# (0 = off / pure passive physics; higher = holds the curl more, flops less).
+
 #### TODO: implement player color (yellow, blue, red, green) which will affect the shield color
 #### TODO: implement parameterized shield color
 SHIELD_COLOR = (80, 180, 255)

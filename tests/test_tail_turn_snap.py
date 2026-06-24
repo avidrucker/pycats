@@ -12,11 +12,20 @@ after a facing flip (player otherwise stationary) must stay well under the
 import math
 
 import pygame as pg
+import pytest
 
 from pycats.entities.player import Player
 from pycats.entities.platform import Platform
 from pycats.core.input import InputFrame
 from pycats.config import P1_COLOR, WHITE, TAIL_BASE_OFFSET_X
+import pycats.entities.tail as _tail
+
+
+@pytest.fixture(autouse=True)
+def _physics_only(monkeypatch):
+    # The no-snap-on-turn guarantee is a PHYSICS property; the #42 curl/undulation
+    # expression layers add their own motion and are disabled here to isolate it.
+    monkeypatch.setattr(_tail, "TAIL_CURL_STRENGTH", 0)
 
 C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
      "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}

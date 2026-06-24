@@ -29,6 +29,8 @@ from ..config import (
     TAIL_GRAVITY,
     TAIL_AIR_DRAG,
     TAIL_CONSTRAINT_ITERS,
+    TAIL_CURL,
+    TAIL_CURL_STRENGTH,
     TAPER_MODIFER,
 )
 
@@ -120,6 +122,24 @@ class Tail:
             s.prev_x, s.prev_y = s.x, s.y
             s.x += vx
             s.y += vy + TAIL_GRAVITY
+
+        # 2b) Curl / expression (#42): nudge the free points toward a gently
+        #     up-curling rest arc built in the cat's frame from the (eased) base
+        #     direction, so the tail holds a cat-like curl on top of the passive
+        #     physics. Gentle by default, so gravity/inertia still dominate
+        #     (it trails on the move and settles at rest). Skipped when off.
+        if TAIL_CURL_STRENGTH and TAIL_CURL:
+            ang0 = math.pi if self._base_back < 0 else 0.0
+            rx, ry = base_x, base_y
+            k = TAIL_CURL_STRENGTH
+            for i in range(1, n):
+                ang0 -= self._base_back * TAIL_CURL   # accumulate the per-link curl
+                rx += math.cos(ang0) * L
+                ry += math.sin(ang0) * L
+                if i >= _PINNED:
+                    s = segs[i]
+                    s.x += (rx - s.x) * k
+                    s.y += (ry - s.y) * k
 
         # 3) Jakobsen constraint relaxation: keep adjacent points one link apart.
         #    Pinned points act as infinite mass (never moved).
