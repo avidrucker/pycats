@@ -709,6 +709,14 @@ class Player(pygame.sprite.Sprite):
             # Directional dodge (ground roll) - set horizontal velocity, preserve or reset Y
             if self.on_ground:
                 self.vel.update(dir_x * DODGE_SPEED, 0)  # Ground roll
+                # Issue #2: a ground roll ends facing OPPOSITE to its travel
+                # direction (Project M). Per SmashWiki (Roll), a forward roll
+                # turns the character around and a back roll keeps facing — both
+                # of which collapse to "face opposite the travel direction". So
+                # roll left (dir_x < 0) -> face right; roll right -> face left.
+                # (Air directional dodges are out of scope here — see air-dodge
+                # research #23 — so only the grounded branch sets facing.)
+                self.facing_right = dir_x < 0
             else:
                 self.vel.x = (
                     dir_x * DODGE_SPEED + self.vel.x
