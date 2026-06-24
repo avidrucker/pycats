@@ -42,14 +42,15 @@ from ..config import (
     STUN_TIME,
     DODGE_TIME,
     DODGE_SPEED,
-    KNOCKBACK_VELOCITY_SCALE,
+    KNOCKBACK_LAUNCH_FACTOR,
+    KNOCKBACK_DECAY,
     WHITE,
     RED,
     YELLOW,
 )
 from .attack import Attack
 from ..combat.data import load_fighter_data
-from ..combat.knockback import knockback, hitstun_frames
+from ..combat.knockback import knockback, hitstun_frames, decay_velocity
 from ..core.physics import (
     apply_gravity,
     move_rect,
@@ -218,11 +219,13 @@ class Player(pygame.sprite.Sprite):
                 1 if atk.owner.facing_right else -1
             )  # the direction of the attack
             radians = math.radians(atk.angle)
-            # Authentic KB is on the Smash magnitude scale; map it onto pycats
-            # launch velocity. Issue #8: COMBINE the defender's existing
-            # horizontal momentum (`+=`) instead of overwriting it; vertical
-            # stays an override (`=`) so a launch sets the arc, not adds to fall.
-            launch = kb * KNOCKBACK_VELOCITY_SCALE
+            # Initial launch velocity (#44): KB * launch factor. It then bleeds
+            # off via decay_velocity each hitstun frame in update() — Smash-style
+            # ease-out rather than a constant slide (#43). Issue #8: COMBINE the
+            # defender's existing horizontal momentum (`+=`) instead of
+            # overwriting it; vertical stays an override (`=`) so a launch sets the
+            # arc rather than adding to fall speed.
+            launch = kb * KNOCKBACK_LAUNCH_FACTOR
             self.vel.x += launch * math.cos(radians) * direction
             self.vel.y = launch * -math.sin(radians)  # up = negative y
 
@@ -284,6 +287,13 @@ class Player(pygame.sprite.Sprite):
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
                 self.handle_move(held)
+        elif in_hitstun:
+            # #44: bleed off the launch velocity each hitstun frame (Smash-style
+            # knockback decay) so a hit eases out instead of sliding at constant
+            # speed (#43). handle_move/friction is skipped during hitstun, so this
+            # is the only horizontal decel here; normal friction resumes once
+            # hitstun ends. (Gravity still acts on vel.y below.)
+            self.vel.x = decay_velocity(self.vel.x, KNOCKBACK_DECAY)
 
         # physics ---------------------------------------------------
         # Apply gravity - but not for ground-based spot dodges to prevent falling through thin platforms

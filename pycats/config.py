@@ -58,9 +58,13 @@ MIN_SHIELD_RADIUS = 10
 # per-move/character inputs.
 HITSTUN_MULTIPLIER = 0.4   # hitstun_frames = floor(KB * this). ⚠ verify (Brawl/PM ~0.4).
 HITSTUN_FLOOR = 1          # minimum hitstun frames for any clean hit. ⚠ tuning, not sourced.
-# Authentic KB is on the Smash magnitude scale (tens-to-hundreds); this maps it
-# onto pycats pixel/frame launch velocity. ⚠ tuning — playtest and adjust.
-KNOCKBACK_VELOCITY_SCALE = 0.4
+# Knockback decay model (#44, from #43 research). A hit sets an initial launch
+# velocity of KB * KNOCKBACK_LAUNCH_FACTOR (px/frame), which then bleeds off by
+# KNOCKBACK_DECAY (px/frame) every frame during hitstun — mirroring Smash's
+# launch_speed = KB*0.03 / decay 0.051/frame, scaled to pycats' 960px stage while
+# preserving the 1.7 decay/launch ratio. ⚠ tuning — playtest and adjust.
+KNOCKBACK_LAUNCH_FACTOR = 0.085
+KNOCKBACK_DECAY = 0.145
 
 # ---------------- platform constants ------------
 # note: 300 is good for a 540 width map

@@ -23,7 +23,7 @@ from pycats.entities.attack import Attack
 from pycats.core.input import InputFrame
 from pycats.combat.knockback import knockback
 from pycats.config import (P1_COLOR, P2_COLOR, WHITE, MOVE_SPEED,
-                           KNOCKBACK_VELOCITY_SCALE, HIT_DAMAGE)
+                           KNOCKBACK_LAUNCH_FACTOR, HIT_DAMAGE)
 
 # The default cat jab's knockback fields (see characters/default_cat.py). These
 # tests build a fallback Attack (no Hitbox), so set them explicitly to exercise a
@@ -56,9 +56,9 @@ def _setup(defender_vel_x=0.0):
 
 
 def _expected_launch(defender):
-    # Launch applied to vel.x: authentic KB * velocity scale (angle 0 -> all horizontal).
+    # Initial launch applied to vel.x: authentic KB * launch factor (angle 0 -> horizontal).
     kb = knockback(defender.percent, HIT_DAMAGE, defender.weight, _JAB_BKB, _JAB_KBG)
-    return kb * KNOCKBACK_VELOCITY_SCALE
+    return kb * KNOCKBACK_LAUNCH_FACTOR
 
 
 def _jab(attacker):
@@ -107,3 +107,21 @@ def test_moving_knockback_not_clobbered_by_input():
     # frame after the hit, direction still held
     defender.update(_frame(held), plats, empty)
     assert defender.vel.x > MOVE_SPEED + 0.5  # knockback survived, not clobbered
+
+
+def test_launch_decays_each_hitstun_frame_not_constant():
+    """#44: the launch must EASE OUT — vel.x strictly decreases every hitstun
+    frame — instead of sliding at constant speed (the #43 'too hot' bug)."""
+    from pycats.config import KNOCKBACK_DECAY
+    attacker, defender, plats, empty = _setup(defender_vel_x=0.0)
+    defender.platforms = plats
+    defender.receive_hit(_jab(attacker))
+    v0 = defender.vel.x
+    assert v0 > 0
+    prev = v0
+    for _ in range(5):
+        defender.update(_frame([]), plats, empty)
+        # within hitstun, only knockback decay touches vel.x (friction is skipped)
+        assert defender.vel.x == pytest.approx(max(0.0, prev - KNOCKBACK_DECAY))
+        assert defender.vel.x < prev           # strictly eases out, not constant
+        prev = defender.vel.x

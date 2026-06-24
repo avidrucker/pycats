@@ -67,7 +67,7 @@ _ATTACK_HITBOX = Hitbox(
     circle=Circle(dx=27, dy=30, r=12),
     damage=10.0,
     angle=0,
-    base_knockback=30.0,    # ⚠ initial tuning — a light jab; playtest with KNOCKBACK_VELOCITY_SCALE
+    base_knockback=30.0,    # ⚠ initial tuning — a light jab; playtest with KNOCKBACK_LAUNCH_FACTOR/DECAY
     knockback_growth=100.0,
 )
 
