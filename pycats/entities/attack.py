@@ -24,8 +24,6 @@ from ..config import (
     ATTACK_LIFETIME,
     ATTACK_SIZE,
     HIT_DAMAGE,
-    KNOCKBACK_BASE,
-    KNOCKBACK_SCALE,
 )
 from ..combat.geometry import resolve_circle
 
@@ -49,8 +47,6 @@ class Attack(pygame.sprite.Sprite):
         hitbox=None,        # Hitbox dataclass (circle, damage, angle); preferred
         damage: int = HIT_DAMAGE,
         disappear_on_hit=False,
-        base_kb=KNOCKBACK_BASE,
-        kb_scale=KNOCKBACK_SCALE,
         angle=0,
         lifetime: int = ATTACK_LIFETIME,
     ):
@@ -70,6 +66,8 @@ class Attack(pygame.sprite.Sprite):
         if hitbox is not None:
             self.damage = hitbox.damage
             self.angle = hitbox.angle
+            self.base_knockback = hitbox.base_knockback
+            self.knockback_growth = hitbox.knockback_growth
             hit_cx, hit_cy, hit_r = resolve_circle(
                 hitbox.circle,
                 owner.rect.x,
@@ -81,6 +79,8 @@ class Attack(pygame.sprite.Sprite):
             # rect offset so older call-sites still work.
             self.damage = damage
             self.angle = angle
+            self.base_knockback = 0.0
+            self.knockback_growth = 0.0
             offset_x = owner.rect.width // 2 + 4
             raw_dx = offset_x if owner.facing_right else -offset_x
             hit_cx = owner.rect.x + raw_dx + ATTACK_SIZE[0] // 2
@@ -97,9 +97,6 @@ class Attack(pygame.sprite.Sprite):
         self.image = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
         self.image.fill(self.COLOR)
         self.rect = self.image.get_rect(center=(int(hit_cx), int(hit_cy)))
-
-        self.base_kb = base_kb
-        self.kb_scale = kb_scale
 
     # called every frame by sprite.Group.update()
     def update(self):

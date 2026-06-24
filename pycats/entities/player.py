@@ -39,16 +39,17 @@ from ..config import (
     SHIELD_MAX_HP,
     BLAST_PADDING,
     RESPAWN_DELAY_FRAMES,
-    HURT_TIME,
     STUN_TIME,
     DODGE_TIME,
     DODGE_SPEED,
+    KNOCKBACK_VELOCITY_SCALE,
     WHITE,
     RED,
     YELLOW,
 )
 from .attack import Attack
 from ..combat.data import load_fighter_data
+from ..combat.knockback import knockback, hitstun_frames
 from ..core.physics import (
     apply_gravity,
     move_rect,
@@ -90,9 +91,10 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(
         self, x, y, controls: dict, color, eye_color, char_name, facing_right=True,
-        state_backend: str = "legacy",
+        state_backend: str = "legacy", weight: int = 100,
     ):
         super().__init__()
+        self.weight = weight  # fighter weight; feeds the knockback formula (#40)
         self.image = pygame.Surface(self.SIZE)
         self.char_color = color
         self.char_name = char_name
@@ -206,22 +208,23 @@ class Player(pygame.sprite.Sprite):
                 self._start_stun()
         #### TODO: elif dodging
         else:
-            self._start_hurt()
+            # Phase 1 (#40): authentic Brawl/PM knockback + hitstun-from-knockback.
             self.percent += atk.damage
-            kb = atk.base_kb + atk.kb_scale * self.percent  # knockback calculation
+            kb = knockback(self.percent, atk.damage, self.weight,
+                           atk.base_knockback, atk.knockback_growth)
+            self.hurt_timer = hitstun_frames(kb)
+            self._start_hurt()  # visual flash only; caller set the timer above
             direction = (
                 1 if atk.owner.facing_right else -1
             )  # the direction of the attack
             radians = math.radians(atk.angle)
-            # Issue #8: COMBINE the defender's existing horizontal momentum with
-            # the incoming knockback instead of overwriting it — a running
-            # defender must not have its left/right momentum zeroed on hit. The
-            # vertical component stays an override (`=`): knockback launches set
-            # the launch arc rather than adding to fall speed. (The exact PM
-            # knockback magnitude is open research under #24; this only changes
-            # combine-vs-zero, not the coefficient.)
-            self.vel.x += kb * math.cos(radians) * direction
-            self.vel.y = kb * -math.sin(radians)  # up = negative y
+            # Authentic KB is on the Smash magnitude scale; map it onto pycats
+            # launch velocity. Issue #8: COMBINE the defender's existing
+            # horizontal momentum (`+=`) instead of overwriting it; vertical
+            # stays an override (`=`) so a launch sets the arc, not adds to fall.
+            launch = kb * KNOCKBACK_VELOCITY_SCALE
+            self.vel.x += launch * math.cos(radians) * direction
+            self.vel.y = launch * -math.sin(radians)  # up = negative y
 
     def _handle_landing(self, was_airborne: bool):
         if self.on_ground and was_airborne:
@@ -690,10 +693,9 @@ class Player(pygame.sprite.Sprite):
         self.reset_visual_state()  # Reset visual appearance to original color
 
     # state starters ----------------------------
-    def _start_hurt(self) -> None:  # knockback: pygame.Vector2
-        # self.state = "hurt"
-        self.hurt_timer = HURT_TIME
-        # self.vel.update(knockback) # this already handled in receive_hit
+    def _start_hurt(self) -> None:  # visual flash only
+        # hurt_timer is set by the caller (receive_hit) from computed hitstun (#40);
+        # this used to hard-code HURT_TIME, which would clobber the computed value.
         self.image.fill(RED)  # red-flash tint
 
     def _start_stun(self) -> None:

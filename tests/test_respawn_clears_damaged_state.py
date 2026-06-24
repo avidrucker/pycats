@@ -36,7 +36,12 @@ def _ko_while_damaged_then_respawn(kind):
         victim.update(_empty(), plats, empty)
 
     if kind == "hurt":
-        victim.receive_hit(Attack(owner=attacker, damage=10, angle=0))
+        # Give the hit real knockback so computed hitstun (#40) exceeds 1 frame;
+        # a fallback Attack has zero BKB/KBG -> only the HITSTUN_FLOOR, which one
+        # update() would consume before the assertion below.
+        atk = Attack(owner=attacker, damage=10, angle=0)
+        atk.base_knockback, atk.knockback_growth = 30.0, 100.0
+        victim.receive_hit(atk)
     else:  # stun
         victim._start_stun()
     victim.update(_empty(), plats, empty)

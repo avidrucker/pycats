@@ -46,15 +46,17 @@ class Hitbox:
     """One active hitbox for a move.
 
     Fields:
-        circle  — position and size (facing-right coords)
-        damage  — percentage damage dealt on hit
-        angle   — launch angle in degrees (0 = directly right, 90 = straight up)
-
-    Phase 0 only: base_knockback and knockback_growth are Phase 1 fields.
+        circle           — position and size (facing-right coords)
+        damage           — percentage damage dealt on hit
+        angle            — launch angle in degrees (0 = directly right, 90 = up)
+        base_knockback   — BKB: knockback at 0% (Phase 1)
+        knockback_growth — KBG: how knockback scales with percent (Phase 1)
     """
     circle: Circle
     damage: float
     angle: int
+    base_knockback: float = 0.0
+    knockback_growth: float = 0.0
 
 
 @dataclass(frozen=True)

@@ -8,7 +8,7 @@ Test strategy:
       player: invulnerable, is_alive, rect (for hurtbox origin), facing_right,
               fighter_data.hurtbox.circles, receive_hit(), record_hit_landed()
       attack: active, owner, disappear_on_hit, hit_cx, hit_cy, hit_r,
-              damage, angle, base_kb, kb_scale
+              damage, angle, base_knockback, knockback_growth
   - Geometric values are chosen explicitly so tests are self-documenting.
 
 Origin convention (from default_cat.py, confirmed in task-5-brief.md):
@@ -66,7 +66,7 @@ def _make_player(rect, *, hurtbox_circles, facing_right=True,
 
 def _make_attack(owner, *, hit_cx, hit_cy, hit_r,
                  damage=10.0, angle=0, active=True,
-                 disappear_on_hit=False, base_kb=0, kb_scale=0):
+                 disappear_on_hit=False, base_knockback=0.0, knockback_growth=0.0):
     """Return a lightweight namespace that satisfies combat's attack contract."""
     atk = types.SimpleNamespace(
         owner=owner,
@@ -75,8 +75,8 @@ def _make_attack(owner, *, hit_cx, hit_cy, hit_r,
         hit_r=hit_r,
         damage=damage,
         angle=angle,
-        base_kb=base_kb,
-        kb_scale=kb_scale,
+        base_knockback=base_knockback,
+        knockback_growth=knockback_growth,
         active=active,
         disappear_on_hit=disappear_on_hit,
         _killed=False,

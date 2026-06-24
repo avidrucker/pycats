@@ -16,6 +16,13 @@ from pycats.combat.data import (
 )
 
 
+def test_hitbox_carries_knockback_fields():
+    hb = Hitbox(circle=Circle(dx=1, dy=2, r=3), damage=10.0, angle=0,
+                base_knockback=30.0, knockback_growth=100.0)
+    assert hb.base_knockback == 30.0
+    assert hb.knockback_growth == 100.0
+
+
 # ---------------------------------------------------------------------------
 # load_fighter_data returns FighterData for every CAT_CHARACTERS key
 # ---------------------------------------------------------------------------
