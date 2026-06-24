@@ -671,6 +671,22 @@ class Player(pygame.sprite.Sprite):
         # per-life respawn must match it.
         self.hurt_timer = 0
         self.stun_timer = 0
+        # Issue #31: clear the remaining transient action state too. _ko's early
+        # return freezes these mid-dodge/mid-attack (they never tick down during
+        # death), so without this a player KO'd while dodging or attacking carries
+        # the timers/flags into its next life — e.g. a frozen dodge_timer, or a
+        # leaked invulnerable=True (line ~415 only clears it while in the dodge
+        # state, which respawn exits) leaving the new life permanently intangible.
+        # Mirrors reset_game()'s full-match reset (game.py:283-290).
+        self.dodge_timer = 0
+        self.attack_timer = 0
+        self.invulnerable_timer = 0
+        self.invulnerable = False
+        self.spot_dodge_shield_held = False
+        self.dodge_blocked_by_edge = False
+        self.current_move = None
+        self.move_frame = 0
+        self.done_attacking = True
         self.reset_visual_state()  # Reset visual appearance to original color
 
     # state starters ----------------------------
