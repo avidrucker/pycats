@@ -662,6 +662,15 @@ class Player(pygame.sprite.Sprite):
         self.facing_right = (
             self.original_facing_right
         )  # Restore original facing direction
+        # Issue #9: clear the transient "damaged" timers so a player KO'd while
+        # hurt/stunned does not carry that state into its next life. _ko's early
+        # return freezes these (they never tick down during death), and
+        # reset_visual_state only fixes the colour — leaving hurt_timer/stun_timer
+        # set would re-enter the hurt/stun FSM state (frozen in_hitstun) at round
+        # start. reset_game() already zeroes these for the full-match reset; the
+        # per-life respawn must match it.
+        self.hurt_timer = 0
+        self.stun_timer = 0
         self.reset_visual_state()  # Reset visual appearance to original color
 
     # state starters ----------------------------
