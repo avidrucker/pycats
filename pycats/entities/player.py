@@ -650,38 +650,37 @@ class Player(pygame.sprite.Sprite):
         self.vel.update(0, 0)
         self.engine.force("ko")
 
-    def _respawn(self):
-        #### TODO: implement temporary respawn invulnerability
-        #### TODO: implement spawning animation
-        #### TODO: ensure that lives don't go negative
-        #### TODO: implement respawn visible count-down
+    def reset_to_spawn(self):
+        """Authoritative per-life reset to a clean spawn state (#34).
+
+        Both the per-life respawn (`_respawn`) and the new-match reset
+        (`game.reset_game`) call this, so the two cannot silently drift. It
+        resets only per-life/spawn state; it does NOT touch match-scoped fields
+        (`lives`, the `attacks_made`/`hits_landed`/`suicides` stats) or force the
+        FSM state — callers own those. Facing is derived from
+        `original_facing_right`, not hardcoded, so it stays correct if a player
+        is ever constructed facing a non-default direction (e.g. #16 skins).
+        """
         self.is_alive = True
         self.rect.midbottom = self.spawn_point
         self.vel.update(0, 0)
+        self.on_ground = False
+        self.facing_right = self.original_facing_right
         self.jumps_remaining = MAX_JUMPS
+        self.air_dodge_ok = True
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
-        self.was_hit_before_ko = False  # Reset hit tracking for next life
-        self.facing_right = (
-            self.original_facing_right
-        )  # Restore original facing direction
-        # Issue #9: clear the transient "damaged" timers so a player KO'd while
-        # hurt/stunned does not carry that state into its next life. _ko's early
-        # return freezes these (they never tick down during death), and
-        # reset_visual_state only fixes the colour — leaving hurt_timer/stun_timer
-        # set would re-enter the hurt/stun FSM state (frozen in_hitstun) at round
-        # start. reset_game() already zeroes these for the full-match reset; the
-        # per-life respawn must match it.
+        self.shield_attempting = False
+        self.was_hit_before_ko = False  # reset hit tracking for the next life
+        # Transient hitstun / action timers + flags. _ko early-returns from
+        # update(), so these never tick down during death; clearing them here is
+        # what keeps a player KO'd mid-hurt/stun (#9) or mid-dodge/attack (#31)
+        # from carrying that state into its next life (a frozen dodge_timer, a
+        # leaked invulnerable=True, etc.).
+        self.respawn_timer = 0
+        self.dodge_timer = 0
         self.hurt_timer = 0
         self.stun_timer = 0
-        # Issue #31: clear the remaining transient action state too. _ko's early
-        # return freezes these mid-dodge/mid-attack (they never tick down during
-        # death), so without this a player KO'd while dodging or attacking carries
-        # the timers/flags into its next life — e.g. a frozen dodge_timer, or a
-        # leaked invulnerable=True (line ~415 only clears it while in the dodge
-        # state, which respawn exits) leaving the new life permanently intangible.
-        # Mirrors reset_game()'s full-match reset (game.py:283-290).
-        self.dodge_timer = 0
         self.attack_timer = 0
         self.invulnerable_timer = 0
         self.invulnerable = False
@@ -690,13 +689,19 @@ class Player(pygame.sprite.Sprite):
         self.current_move = None
         self.move_frame = 0
         self.done_attacking = True
-        self.reset_visual_state()  # Reset visual appearance to original color
-        # Issue #41: re-initialize the tail to its rest layout at the spawn point.
-        # The Verlet tail keeps live position/velocity and freezes (tail.update is
-        # skipped while dead) wherever the cat flew off-screen; without this the
-        # hip anchor teleports to spawn and the chain whips across that distance.
-        # facing_right and rect are already restored above, so the layout is correct.
+        self.reset_visual_state()  # back to the normal body colour
+        # Re-initialize the tail to its rest layout at the spawn point (#41): the
+        # Verlet tail keeps live position/velocity and freezes wherever the cat
+        # flew off-screen, so without this the chain whips in from there. facing
+        # and rect are set above, so the layout is correct.
         self.tail.reset()
+
+    def _respawn(self):
+        #### TODO: implement temporary respawn invulnerability
+        #### TODO: implement spawning animation
+        #### TODO: ensure that lives don't go negative
+        #### TODO: implement respawn visible count-down
+        self.reset_to_spawn()
 
     # state starters ----------------------------
     def _start_hurt(self) -> None:  # visual flash only

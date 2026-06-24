@@ -264,65 +264,18 @@ def reset_game():
 
     # Only reset if players exist (they may not exist if coming from character selection)
     if player1 and player2:
-        # Reset player 1
-        player1.rect.midbottom = (PLAYER1_START_X, PLAYER1_START_Y)
-        player1.vel.update(0, 0)
-        player1.lives = INITIAL_LIVES
-        player1.percent = 0
-        player1.shield_hp = SHIELD_MAX_HP
-        player1.is_alive = True
-        player1.engine.force("idle")
-        player1.on_ground = False
-        player1.jumps_remaining = MAX_JUMPS
-        player1.air_dodge_ok = True
-        player1.invulnerable = False
-        player1.shield_attempting = False
-        player1.facing_right = True
-        # Reset visual appearance to original color
-        player1.reset_visual_state()
-        # Reset timers
-        player1.respawn_timer = 0
-        player1.dodge_timer = 0
-        player1.hurt_timer = 0
-        player1.stun_timer = 0
-        player1.attack_timer = 0
-        player1.invulnerable_timer = 0
-        player1.done_attacking = True
-        # Reset statistics
-        player1.attacks_made = 0
-        player1.hits_landed = 0
-        player1.suicides = 0
-        player1.was_hit_before_ko = False
-
-        # Reset player 2
-        player2.rect.midbottom = (PLAYER2_START_X, PLAYER2_START_Y)
-        player2.vel.update(0, 0)
-        player2.lives = INITIAL_LIVES
-        player2.percent = 0
-        player2.shield_hp = SHIELD_MAX_HP
-        player2.is_alive = True
-        player2.engine.force("idle")
-        player2.on_ground = False
-        player2.jumps_remaining = MAX_JUMPS
-        player2.air_dodge_ok = True
-        player2.invulnerable = False
-        player2.shield_attempting = False
-        player2.facing_right = False
-        # Reset visual appearance to original color
-        player2.reset_visual_state()
-        # Reset timers
-        player2.respawn_timer = 0
-        player2.dodge_timer = 0
-        player2.hurt_timer = 0
-        player2.stun_timer = 0
-        player2.attack_timer = 0
-        player2.invulnerable_timer = 0
-        player2.done_attacking = True
-        # Reset statistics
-        player2.attacks_made = 0
-        player2.hits_landed = 0
-        player2.suicides = 0
-        player2.was_hit_before_ko = False
+        # Per-life/spawn state is owned by Player.reset_to_spawn() (#34) so the
+        # new-match path and the per-life respawn cannot drift. reset_game adds
+        # only the match-scoped resets: full lives, cleared statistics, and a
+        # hard FSM reset to idle (the per-life respawn lets the chart transition
+        # ko -> idle on its own instead).
+        for p in (player1, player2):
+            p.reset_to_spawn()
+            p.lives = INITIAL_LIVES
+            p.attacks_made = 0
+            p.hits_landed = 0
+            p.suicides = 0
+            p.engine.force("idle")
 
     # Clear all attacks
     attacks.empty()
