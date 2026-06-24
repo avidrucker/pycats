@@ -19,7 +19,12 @@ class ChaseController:
     """
 
     def __init__(self, attacker_num=1, attack_period=12, standoff=30,
-                 attack_range=45, safe_x=(110, 770), drop_threshold=20):
+                 attack_range=45, safe_x=(110, 850), drop_threshold=20):
+        # safe_x is the range the attacker will walk to — the thick platform's
+        # standing extent (x[80..880]) minus a body-margin. Widened from the old
+        # 770 for #44: realistic knockback decay no longer launches the target
+        # off-stage in one hit, so it can linger near the platform edges; the bot
+        # must be able to follow it there to keep racking up damage to a KO.
         # attacker_num is 1 or 2; the other player is the (idle) target. Player
         # refs are resolved per-frame from the (p1, p2) passed to __call__, so a
         # ChaseController can be built before run_battle creates the players.
