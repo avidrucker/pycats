@@ -1,11 +1,16 @@
 # tests/test_render_cache.py
 """The cat-body composite cache must be pixel-identical to drawing each frame."""
+import pytest
 import pygame
 
 from pycats.config import BG_COLOR, SCREEN_WIDTH, SCREEN_HEIGHT, RED
 from pycats.sim.runner import build_stage, build_players
 from pycats.core.input import InputFrame
 from pycats import render_battle as rb
+
+# Re-init font + clear stale render/font caches before each test so a prior
+# test's pygame.quit() can't break the pixel-identity assertions (#63).
+pytestmark = pytest.mark.usefixtures("render_isolation")
 
 
 def _direct(surface, p):

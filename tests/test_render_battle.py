@@ -1,7 +1,12 @@
 # tests/test_render_battle.py
+import pytest
 import pygame
 from pycats.sim.runner import build_stage, build_players
 from pycats.render_battle import render_battle
+
+# Re-init font + clear stale render/font caches before each test so a prior
+# test's pygame.quit() can't break rendering (#63).
+pytestmark = pytest.mark.usefixtures("render_isolation")
 
 
 def test_render_battle_draws_without_error():
