@@ -30,7 +30,6 @@ import pygame  # type: ignore
 import math
 from enum import Enum, auto
 from ..config import (
-    JUMP_VEL,
     MAX_JUMPS,
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
@@ -49,6 +48,7 @@ from ..config import (
     YELLOW,
 )
 from .attack import Attack
+from .fighter_input import FighterInput
 from ..combat.data import load_fighter_data
 from ..combat.move_clock import MoveClock
 from ..combat.knockback import knockback, hitstun_frames, decay_velocity
@@ -61,7 +61,6 @@ from ..core.physics import (
     find_current_platform,
     would_dodge_off_platform,
 )
-from ..systems.movement import step_horizontal
 from ..systems.fsm import FSM, Transition
 from ..systems.state_engine import make_state_engine
 
@@ -154,6 +153,9 @@ class Player(pygame.sprite.Sprite):
         # / current_move / move_frame are derived properties over it (#71); the
         # POST-increment frame convention is unchanged (first tick -> frame 1).
         self._clock = MoveClock()
+
+        # Input → action translator (jump/dodge/shield/attack/move); #73.
+        self._input = FighterInput(self)
 
         # shield visual helpers
         self.shield_attempting = False
@@ -477,161 +479,17 @@ class Player(pygame.sprite.Sprite):
         self.engine.tick(None)
 
     # ============================================================== helpers
+    # Input handling lives in FighterInput (#73 / D1 slice 3); Player delegates
+    # so update() and other callers are unchanged.
     def _pressed(self, key_set: set[int], name):
         """key_set is usually input_frame.held or .pressed."""
-        return self.controls[name] in key_set
+        return self._input._pressed(key_set, name)
 
-    # horizontal input movement
-    #### TODO: implement per character friction
-    #### TODO: implement platform type friction modifier
     def handle_move(self, keys):
-        self.vel, self.facing_right = step_horizontal(
-            self.vel,
-            self.facing_right,
-            self.on_ground,
-            self._pressed(keys, "left"),
-            self._pressed(keys, "right"),
-            locked=self.state
-            == "shield",  # prevents moving while shielding, this may need to change when dodging is implemented
-        )
+        return self._input.handle_move(keys)
 
-    # actions
     def handle_actions(self, input_frame, attack_group):
-        held = input_frame.held
-        pressed = (
-            input_frame.pressed
-        )  # formerly prev_keys, refers to keys just freshly pressed this frame
-
-        # ------- Jump ---------------------------------------------
-        jump_pressed = self._pressed(pressed, "up")
-        #### TODO: determine whether walking off of a ledge "consumes" a jump
-        if (
-            jump_pressed
-            and self.jumps_remaining
-            and self.state not in ("dodge", "hurt", "stun")
-        ):
-            self.vel.y = JUMP_VEL
-            self.jumps_remaining -= 1
-            self.shield_attempting = False
-            return False  # No dodge initiated
-
-        # ------- Dodge Logic (check first to prevent shield conflicts) -------
-        #### DONE: implement dodge as a combo press of directional + shield
-        #### DONE: reset air_dodge_ok when landing
-        #### TODO: implement directional flipping when ground dodging/rolling
-        #### TODO: prevent repeated dodges by holding down shield and a directional, what happens instead is that the player will enter a shield state, and then can press a direction to dodge again
-        #### DONE: make player rect flash semi-transparent white while in dodge state
-        # Shield-plus-direction = dodge
-        can_dodge_state = self.state in ("idle", "jump", "fall", "shield")
-        # Special case: allow adding direction to neutral air dodges
-        can_modify_air_dodge = (
-            self.state == "dodge"
-            and not self.on_ground
-            and abs(self.vel.x) < 0.1  # Currently has no horizontal velocity
-            and self.dodge_timer > 0  # Still dodging
-        )
-
-        if self.state == "dodge" and not self.on_ground:
-            print(
-                f"DEBUG: Air dodge check for {self.char_name}: state={self.state}, on_ground={self.on_ground}, vel.x={self.vel.x}, abs(vel.x)={abs(self.vel.x)}, dodge_timer={self.dodge_timer}, can_modify={can_modify_air_dodge}"
-            )
-
-        if can_modify_air_dodge:
-            print(f"DEBUG: can_modify_air_dodge=True for {self.char_name}")
-
-        shield_down = self._pressed(held, "shield")
-        shield_pressed = self._pressed(pressed, "shield")
-        dodge_initiated = False
-
-        if (can_dodge_state and self.dodge_timer == 0) or can_modify_air_dodge:
-            dir_x = None
-
-            # Priority 1: Check for simultaneous shield + direction press (including spot dodge)
-            # Issue #6: the spot-dodge direction may be *held* from an earlier
-            # frame, not only freshly pressed — so pressing shield while down is
-            # already held still spot-dodges (symmetric with the shield-held-then-
-            # down path handled by Priority 3). Held left/right stay momentum/air
-            # dodges via Priority 2; only the neutral spot dodge reads held-down.
-            if shield_pressed and (self._pressed(pressed, "down")
-                                   or self._pressed(held, "down")):
-                dir_x = 0  # spot dodge
-            elif shield_pressed and self._pressed(pressed, "left"):
-                dir_x = -1  # left dodge
-            elif shield_pressed and self._pressed(pressed, "right"):
-                dir_x = 1  # right dodge
-            # Priority 2: Check if shield is *just* pressed for air dodge or momentum dodge
-            elif (
-                shield_pressed and not can_modify_air_dodge
-            ):  # Don't allow shield-only during air dodge modification
-                if not self.on_ground:
-                    dir_x = 0  # air dodge without direction pressed
-                elif abs(self.vel.x) > 0.1:
-                    dir_x = 1 if self.vel.x > 0 else -1
-            # Priority 3: Check if a direction is freshly pressed while shield is held (ground dodge)
-            # OR if direction is pressed during neutral air dodge
-            elif shield_down or can_modify_air_dodge:
-                if self._pressed(pressed, "down"):
-                    dir_x = 0
-                elif self._pressed(pressed, "left"):
-                    dir_x = -1
-                elif self._pressed(pressed, "right"):
-                    dir_x = 1
-
-            if dir_x is not None:
-                if can_modify_air_dodge:
-                    # Special case: modifying existing air dodge
-                    if dir_x != 0:  # Only allow directional modification, not neutral
-                        print(
-                            f"DEBUG: Modifying air dodge velocity from {self.vel.x} to {dir_x * DODGE_SPEED}"
-                        )
-                        self.vel.x = (dir_x * DODGE_SPEED) + self.vel.x
-                        dodge_initiated = True
-                elif self.on_ground or self.air_dodge_ok:
-                    self._start_dodge(dir_x)
-                    dodge_initiated = True
-                    if not self.on_ground:
-                        self.air_dodge_ok = False
-                # debugging
-                # print("dodge handled")
-                return True  # Dodge initiated, no further actions needed
-
-        # ------- Shield -------------------------------------------
-        # 2.  Shield can **only** be (re)started while on ground and not airborne
-        # Don't enter shield state if we just initiated a dodge
-        grounded_can_shield = (
-            self.on_ground
-            and self.state in ("idle", "shield", "dodge", "run")
-            and self.dodge_timer == 0
-            and not dodge_initiated  # Don't shield if we just started dodging
-        )
-
-        if self._pressed(held, "shield") and grounded_can_shield:
-            #### TODO: prevent entering of shield state when falling/jumping, when in hurt state, etc.
-            self.shield_attempting = True
-        else:
-            # Don't reset shield_attempting if we just initiated a dodge or are currently dodging
-            if not dodge_initiated and self.state != "dodge":
-                self.shield_attempting = False
-
-        # ------- Attack -------------------------------------------
-        #### TODO: implement attack buffering, that attacks can be chained
-        atk_pressed = self._pressed(pressed, "attack")
-        if atk_pressed and self.state not in ("shield", "dodge"):
-            # Data-driven attack (Task 4 / #71): start the move clock instead of
-            # spawning the hitbox immediately. The hitbox is spawned later, in
-            # update(), once the active window opens. done_attacking is kept so
-            # the legacy FSM and the chart's attack-exit guard classify/exit at
-            # the same total frame (attack_timer is now self._clock.remaining).
-            self._clock.start(self.fighter_data.moves["attack"])
-            self.record_attack_made()  # Track attack statistics
-            self.done_attacking = False  # set to false when attack starts, set true when done
-            #### TODO: implement unique custom attacks for each player w/ variable damage, knockback, and angle, attack activation time, attack duration, etc.
-        #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
-
-        # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs
-        # attack_group.add(Attack(self, disappear_on_hit=True))
-
-        return False  # No dodge initiated
+        return self._input.handle_actions(input_frame, attack_group)
 
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
