@@ -12,12 +12,13 @@ snapshots against tests/golden/<name>.json.  Set PYCATS_UPDATE_GOLDENS=1 to
 """
 from pycats.sim.runner import run_battle, KEYMAPS
 from pycats.sim.input_script import compile_timeline, COMBAT_SCRIPT
-from pycats.sim.controllers import ChaseController
+from pycats.sim.controllers import ChaseController, AttackerController, FollowerController
 from tests.golden_util import check_or_update
 
 # ---- scenario constants ----
 DEFAULT_FRAMES = 200
 COMBAT_TAIL = 240
+TWO_NPC_FRAMES = 600
 
 
 def test_golden_default():
@@ -68,3 +69,21 @@ def test_golden_full_match():
     assert min(p2_lives) < p2_lives[0], f"expected >=1 KO; P2 lives stayed {p2_lives[0]}"
 
     check_or_update("full_match", snaps)
+
+
+def test_golden_two_npc():
+    """Dual-controller battle (#58): attacker (P1) vs follower (P2), BOTH players
+    driven via controllers=. Locks the dual-controller path against a golden.
+    """
+    a = AttackerController(attacker_num=1)
+    f = FollowerController(attacker_num=2)
+    snaps = run_battle(backend="statechart", frames=TWO_NPC_FRAMES, controllers=(a, f))
+    assert len(snaps) == TWO_NPC_FRAMES
+
+    # emergent: both players are actually driven (pre-contact window, input-only)
+    p1x = [s[0][0][2] for s in snaps[:20]]
+    p2x = [s[0][1][2] for s in snaps[:20]]
+    assert len(set(p1x)) > 1, "P1 stayed idle in the 2-NPC battle"
+    assert len(set(p2x)) > 1, "P2 stayed idle in the 2-NPC battle"
+
+    check_or_update("two_npc", snaps)
