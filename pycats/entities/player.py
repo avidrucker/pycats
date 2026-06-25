@@ -650,7 +650,10 @@ class Player(pygame.sprite.Sprite):
 
         # debugging
         # print(f"PLAYER KO: {self.char_name} fell off and lost a life! (lives: {self.lives-1})")
-        self.lives -= 1
+        # Clamp at 0 (#54): enforce the lives>=0 invariant at the mutation site
+        # rather than relying on callers (the is_alive / respawn gates) never
+        # re-KOing a zero-life player.
+        self.lives = max(0, self.lives - 1)
         self.is_alive = False
         self.respawn_timer = RESPAWN_DELAY_FRAMES
         # hide sprite off-screen
@@ -707,7 +710,6 @@ class Player(pygame.sprite.Sprite):
     def _respawn(self):
         #### TODO: implement temporary respawn invulnerability
         #### TODO: implement spawning animation
-        #### TODO: ensure that lives don't go negative
         #### TODO: implement respawn visible count-down
         self.reset_to_spawn()
 
