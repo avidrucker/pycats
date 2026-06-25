@@ -66,6 +66,7 @@ class Attack(pygame.sprite.Sprite):
             owner.rect.x,
             owner.rect.y,
             owner.facing_right,
+            owner.rect.width,
         )
 
         self.hit_cx: float = hit_cx

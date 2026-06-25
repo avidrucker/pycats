@@ -40,13 +40,14 @@ Attack move ("attack") — ground attack approximating the current basic attack.
     recovery = 6  (cool-down; double the active time)
     total    = 12  ✓
 
-  Hitbox circle:
-    dx = 27  — offset rightward: body is 40 px wide, center at x=20; going
-               27 px right of origin places the circle center 7 px past the
-               right edge of the body, matching the spawned rect position.
+  Hitbox circle (reach convention — see the inline note on _ATTACK_HITBOX):
+    dx = 46  — offset rightward from the body's left edge; 26 px right of the
+               body centre (x=20), reaching ~18 px past the 40 px body so the
+               jab connects an opponent's body-centre hurtbox when flush and
+               across the bot's engagement range. Mirrors around the body centre
+               when facing left (see geometry.resolve_circle, #64).
     dy = 30  — vertically centred on the body (height=60, centre=30)
-    r  = 12  — approximates the 30×18 rect; short dimension is 9 px, long
-               is 15 px; radius 12 is a reasonable circle approximation.
+    r  = 12  — circle radius (the drawn rect is the render-only ATTACK_SIZE).
 
   damage = 10.0  (the jab's damage; formerly the global HIT_DAMAGE)
   angle  = 0     (horizontal launch; matches current behaviour)
@@ -65,7 +66,14 @@ _HURTBOX = Hurtbox(
 
 # --- Ground attack move -----------------------------------------------------
 _ATTACK_HITBOX = Hitbox(
-    circle=Circle(dx=27, dy=30, r=12),
+    # Reach convention (#64): dx is the hitbox centre offset from the body's
+    # left edge (body is 40 wide; centre at 20). For the jab to connect an
+    # opponent's body-centre hurtbox across the bot's engagement range (centre
+    # gap ~12–45) AND when flush (settled push gap ~41), the hitbox centre must
+    # land within sqrt((r+14)^2 - 15^2) ≈ 21 px of the opponent's body centre.
+    # dx=46 (26 px right of centre, r=12 → reaches ~18 px past the 40-wide body)
+    # sits the hitbox in that window. Playtest starting point.
+    circle=Circle(dx=46, dy=30, r=12),
     damage=10.0,
     angle=0,
     base_knockback=30.0,    # ⚠ initial tuning — a light jab; playtest with KNOCKBACK_LAUNCH_FACTOR/DECAY

@@ -232,27 +232,22 @@ def test_hit_with_multi_circle_hurtbox():
     )
 
 
-def test_facing_left_mirrors_hurtbox():
-    """When defender faces left, dx offsets are mirrored; correct circle is used."""
+def test_body_center_hurtbox_is_facing_invariant():
+    """A symmetric (body-centre) hurtbox does not move when the fighter turns
+    around (#64). Player at (100,100), body 40 wide → centre x=120. A dx=20
+    circle resolves to cx=120 whether facing right (100+20) or left (100+40-20).
+    The old left-edge mirror put the left-facing hurtbox at 80, off-body."""
     pygame.init()
-    # Player at (100, 100), facing LEFT.
-    # Circle dx=20, dy=30, r=14:
-    #   facing right → cx=120,cy=130
-    #   facing left  → cx=100-20=80, cy=130
-    # Attack at (90, 130), r=6 → dist to mirrored center 80,130 = 10 < 14+6=20 → HIT
-    # Attack at (120, 130), r=6 → dist to mirrored center 80,130 = 40 > 20 → MISS (if facing right it would hit)
-    circles = [Circle(dx=20, dy=30, r=14)]
+    circles = [Circle(dx=20, dy=30, r=14)]  # dx=20 == body centre of the 40-wide body
     owner = _make_player(_make_rect(0, 0), hurtbox_circles=circles)
-    defender = _make_player(PLAYER_RECT, hurtbox_circles=circles, facing_right=False)
 
-    atk_left = _make_attack(owner, hit_cx=90, hit_cy=130, hit_r=6)
-    process_hits([owner, defender], [atk_left])
-    assert defender.hits_received == 1, "attack near left-facing hurtbox should hit"
+    # A body-centre attack (120,130) connects regardless of defender facing.
+    for facing in (True, False):
+        d = _make_player(PLAYER_RECT, hurtbox_circles=circles, facing_right=facing)
+        process_hits([owner, d], [_make_attack(owner, hit_cx=120, hit_cy=130, hit_r=6)])
+        assert d.hits_received == 1, f"body-centre attack should hit (facing_right={facing})"
 
-    # Reset and try a position that would hit if facing right but misses facing left
-    defender2 = _make_player(PLAYER_RECT, hurtbox_circles=circles, facing_right=False)
-    atk_right = _make_attack(owner, hit_cx=120, hit_cy=130, hit_r=6)
-    process_hits([owner, defender2], [atk_right])
-    assert defender2.hits_received == 0, (
-        "attack at right-facing position should miss left-facing hurtbox"
-    )
+    # The old off-body mirror position (80,130) now misses a left-facing defender.
+    d2 = _make_player(PLAYER_RECT, hurtbox_circles=circles, facing_right=False)
+    process_hits([owner, d2], [_make_attack(owner, hit_cx=80, hit_cy=130, hit_r=6)])
+    assert d2.hits_received == 0, "off-body (old-mirror) position should now miss"

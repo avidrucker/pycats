@@ -40,7 +40,7 @@ def process_hits(players, attacks):
             # Origin convention: rect top-left (rect.x, rect.y).
             resolved_hurtbox = [
                 resolve_circle(c, defender.rect.x, defender.rect.y,
-                               defender.facing_right)
+                               defender.facing_right, defender.rect.width)
                 for c in defender.fighter_data.hurtbox.circles
             ]
 

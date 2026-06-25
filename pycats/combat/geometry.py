@@ -61,18 +61,28 @@ def circle_overlap(ax: float, ay: float, ar: float,
 
 def resolve_circle(circle: "Circle",
                    origin_x: float, origin_y: float,
-                   facing_right: bool) -> tuple[float, float, float]:
+                   facing_right: bool, width: float) -> tuple[float, float, float]:
     """Convert a facing-relative Circle to an absolute (cx, cy, r) triple.
 
-    The Circle's dx and dy are offsets from the fighter origin in
-    facing-RIGHT-relative coordinates. When the fighter faces left,
-    dx is mirrored: cx = origin_x - circle.dx.
+    `dx`/`dy` are offsets from the fighter's top-left origin in
+    facing-RIGHT-relative coordinates. When the fighter faces left the offset is
+    mirrored **around the body centre** (not the left-edge origin):
+
+        facing right: cx = origin_x + dx
+        facing left:  cx = origin_x + width - dx
+
+    so a symmetric body part (``dx == width/2``) is **facing-invariant** — a
+    fighter's hurtbox does not move when it turns around — and an attack pokes
+    out the side it faces (an offset ``k`` past the right edge mirrors to ``k``
+    past the left edge). The earlier ``origin_x - dx`` mirror pivoted on the left
+    edge, placing left-facing hurtboxes off-body toward the attacker (#64).
 
     Args:
         circle:       A Circle(dx, dy, r) with facing-right-relative offsets.
-        origin_x:     Absolute x of the fighter origin (e.g. player rect left).
-        origin_y:     Absolute y of the fighter origin (e.g. player rect top).
-        facing_right: True → add dx; False → subtract dx (mirror).
+        origin_x:     Absolute x of the fighter origin (player rect left).
+        origin_y:     Absolute y of the fighter origin (player rect top).
+        facing_right: True → add dx; False → mirror around the body centre.
+        width:        The fighter's body width (the mirror axis is its centre).
 
     Returns:
         (cx, cy, r) — absolute center coordinates and radius.
@@ -80,7 +90,7 @@ def resolve_circle(circle: "Circle",
     if facing_right:
         cx = origin_x + circle.dx
     else:
-        cx = origin_x - circle.dx
+        cx = origin_x + width - circle.dx
     cy = origin_y + circle.dy
     return (cx, cy, circle.r)
 

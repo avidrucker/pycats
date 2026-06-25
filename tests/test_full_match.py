@@ -6,11 +6,10 @@ that input list and replay it through both backends, so this is a clean
 byte-identical parity test on identical fixed inputs — its primary value — while
 also driving at least one KO (hurt + ko states + a stock loss).
 
-NOTE (#44): this used to assert a full 3-stock defeat. Realistic knockback decay
-(#44) parks a launched target at ledges/off-platform spots the scripted chase bot
-can't reliably finish off, so the *full-defeat* assertion is deferred to #46
-(robust full-match bot). The byte-identical parity check and the KO-arc assertion
-below are unchanged in spirit and remain the regression value here.
+NOTE (#44 → #64): #44's knockback decay briefly left the chase bot unable to
+finish off a target parked at a ledge (full-defeat was deferred to #46). The #64
+jab-reach fix lets the bot connect a body-blocked/fleeing target again, so it now
+**fully 3-stocks** P2 — the assertion below is restored to a full defeat.
 """
 from pycats.sim.runner import run_battle
 from pycats.sim.controllers import ChaseController
@@ -33,10 +32,10 @@ def test_match_byte_identical_and_exercises_ko_arc():
     for f, (a, b) in enumerate(zip(legacy, statechart)):
         assert a == b, f"divergence at frame {f}:\n legacy={a}\n  state={b}"
 
-    # the hurt -> ko arc is exercised, and P2 loses at least one stock
+    # the hurt -> ko arc is exercised, and P2 is fully 3-stocked (#64 reach fix)
     states = {p[1] for snap in legacy for p in snap[0]}
     assert "hurt" in states and "ko" in states, sorted(states)
     p2_lives = [next(p for p in s[0] if p[0] == "P2")[9] for s in legacy]
-    assert min(p2_lives) < p2_lives[0], (
-        f"expected at least one KO (a stock loss); P2 lives stayed {p2_lives[0]}"
+    assert min(p2_lives) == 0, (
+        f"expected a full defeat (P2 to 0 lives); P2 lives bottomed at {min(p2_lives)}"
     )

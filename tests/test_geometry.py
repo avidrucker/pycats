@@ -51,57 +51,61 @@ class TestCircleOverlap:
 # resolve_circle — facing-relative Circle → absolute (cx, cy, r)
 # ---------------------------------------------------------------------------
 
+WIDTH = 40  # the player body width (the facing-left mirror axis is its centre)
+
+
 class TestResolveCircle:
     def test_facing_right_adds_dx_to_origin_x(self):
         c = Circle(dx=10, dy=20, r=5)
-        cx, cy, r = resolve_circle(c, origin_x=100, origin_y=200, facing_right=True)
-        assert cx == 110  # 100 + 10
+        cx, cy, r = resolve_circle(c, 100, 200, facing_right=True, width=WIDTH)
+        assert cx == 110  # 100 + 10  (facing right is unaffected by width)
 
     def test_facing_right_preserves_dy(self):
         c = Circle(dx=10, dy=20, r=5)
-        cx, cy, r = resolve_circle(c, origin_x=100, origin_y=200, facing_right=True)
+        cx, cy, r = resolve_circle(c, 100, 200, facing_right=True, width=WIDTH)
         assert cy == 220  # 200 + 20
 
-    def test_facing_left_mirrors_dx_around_origin_x(self):
-        # When facing left, cx = origin_x - dx (mirror)
+    def test_facing_left_mirrors_dx_around_body_center(self):
+        # Facing left, cx = origin_x + width - dx (mirror around the body centre,
+        # not the left-edge origin). dx=10 of a 40-wide body → 100 + 40 - 10 = 130.
         c = Circle(dx=10, dy=20, r=5)
-        cx, cy, r = resolve_circle(c, origin_x=100, origin_y=200, facing_right=False)
-        assert cx == 90  # 100 - 10
+        cx, cy, r = resolve_circle(c, 100, 200, facing_right=False, width=WIDTH)
+        assert cx == 130
 
     def test_facing_left_dy_unaffected(self):
         c = Circle(dx=10, dy=20, r=5)
-        cx, cy, r = resolve_circle(c, origin_x=100, origin_y=200, facing_right=False)
+        cx, cy, r = resolve_circle(c, 100, 200, facing_right=False, width=WIDTH)
         assert cy == 220  # dy unchanged regardless of facing
 
     def test_radius_preserved_facing_right(self):
         c = Circle(dx=10, dy=20, r=7)
-        cx, cy, r = resolve_circle(c, origin_x=0, origin_y=0, facing_right=True)
+        cx, cy, r = resolve_circle(c, 0, 0, facing_right=True, width=WIDTH)
         assert r == 7
 
     def test_radius_preserved_facing_left(self):
         c = Circle(dx=10, dy=20, r=7)
-        cx, cy, r = resolve_circle(c, origin_x=0, origin_y=0, facing_right=False)
+        cx, cy, r = resolve_circle(c, 0, 0, facing_right=False, width=WIDTH)
         assert r == 7
 
-    def test_zero_dx_same_center_both_facings(self):
-        # dx=0 means circle is centered on origin_x regardless of facing
-        c = Circle(dx=0, dy=15, r=5)
-        right = resolve_circle(c, 50, 100, facing_right=True)
-        left = resolve_circle(c, 50, 100, facing_right=False)
-        assert right[0] == left[0] == 50
+    def test_body_center_dx_is_facing_invariant(self):
+        # dx == width/2 is the body centre → same absolute centre for both facings
+        # (a fighter's body part does not move when it turns around).
+        c = Circle(dx=WIDTH // 2, dy=15, r=5)
+        right = resolve_circle(c, 50, 100, facing_right=True, width=WIDTH)
+        left = resolve_circle(c, 50, 100, facing_right=False, width=WIDTH)
+        assert right[0] == left[0] == 50 + WIDTH // 2
 
     def test_default_cat_hurtbox_upper_facing_right(self):
-        # Smoke test with real data: origin (0,0), facing right
-        # upper circle dx=20, dy=15, r=14
+        # Real data: upper hurtbox circle dx=20 (=body centre), origin (0,0).
         c = Circle(dx=20, dy=15, r=14)
-        cx, cy, r = resolve_circle(c, origin_x=0, origin_y=0, facing_right=True)
+        cx, cy, r = resolve_circle(c, 0, 0, facing_right=True, width=WIDTH)
         assert (cx, cy, r) == (20, 15, 14)
 
-    def test_default_cat_hurtbox_upper_facing_left(self):
-        # Same circle, facing left → dx mirrored
+    def test_default_cat_hurtbox_upper_facing_left_is_invariant(self):
+        # The body-centre hurtbox is facing-invariant: 0 + 40 - 20 = 20 (same).
         c = Circle(dx=20, dy=15, r=14)
-        cx, cy, r = resolve_circle(c, origin_x=0, origin_y=0, facing_right=False)
-        assert (cx, cy, r) == (-20, 15, 14)
+        cx, cy, r = resolve_circle(c, 0, 0, facing_right=False, width=WIDTH)
+        assert (cx, cy, r) == (20, 15, 14)
 
 
 # ---------------------------------------------------------------------------
