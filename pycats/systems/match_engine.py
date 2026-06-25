@@ -1,18 +1,11 @@
 # pycats/systems/match_engine.py
-"""Match/stage state with swappable backends. Mirrors game.check_win_condition:
-P1 out of lives -> winner 2; P2 out -> winner 1; else in_play."""
+"""Match/stage state with swappable backends. The win-condition rule (by lives)
+is the single source in win_condition.winner_index; this drives match phase."""
 from __future__ import annotations
 
 from statecharts import state, statechart, transition, Session
 
-
-def _winner_from_lives(players) -> int:
-    p1, p2 = players
-    if p1.lives <= 0:
-        return 2
-    if p2.lives <= 0:
-        return 1
-    return 0
+from .win_condition import winner_index
 
 
 class LegacyMatchEngine:
@@ -22,7 +15,7 @@ class LegacyMatchEngine:
         self.winner = 0
 
     def tick(self) -> None:
-        w = _winner_from_lives(self._players)
+        w = winner_index(self._players)
         if w:
             self.phase = "match_over"
             self.winner = w
@@ -37,7 +30,7 @@ class StatechartMatchEngine:
             state(
                 {"id": "in_play"},
                 transition({"event": "tick",
-                            "cond": lambda e, d: _winner_from_lives(self._players) != 0,
+                            "cond": lambda e, d: winner_index(self._players) != 0,
                             "target": "match_over"}),
             ),
             state({"id": "match_over"}),
@@ -50,7 +43,7 @@ class StatechartMatchEngine:
 
     def tick(self) -> None:
         if self.phase == "in_play":
-            w = _winner_from_lives(self._players)
+            w = winner_index(self._players)
             self._session.send("tick")
             if self.phase == "match_over":
                 self.winner = w

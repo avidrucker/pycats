@@ -45,6 +45,7 @@ from .config import (
 )
 from .entities import Platform, Player
 from .systems import combat
+from .systems.win_condition import winner_loser
 from .core import input as inp
 from .core.physics import resolve_player_push
 from . import stats_print
@@ -281,15 +282,9 @@ def reset_game():
 
 
 def check_win_condition():
-    """Check if either player has won the game"""
-    if not player1 or not player2:
-        return None, None  # Players not initialized yet
-
-    if player1.lives <= 0:
-        return player2, player1  # winner, loser
-    elif player2.lives <= 0:
-        return player1, player2  # winner, loser
-    return None, None  # no winner yet
+    """(winner, loser) or (None, None) — delegates to the single win-condition
+    rule (systems.win_condition), shared with the headless match_engine."""
+    return winner_loser((player1, player2))
 
 
 def toggle_fullscreen():
