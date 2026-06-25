@@ -12,13 +12,9 @@ Use: Shared constants across modules for tuning gameplay and UI.
 
 #### TODO: implement unique attacks for each player
 #### TODO: implement attack cooldowns
-#### TODO: implement attack blocking via having enough shield strength left
 #### TODO: implement attack dodging
 #### TODO: implement character selection that offers heavy, medium, & light-weight choices where heavy characters do more damage but are slower, and lighter characters are faster but deal less damage
-#### TODO: implement knockback based on attack strength and player weight
 #### TODO: implement attack combos that can be chained together for more damage
-#### TODO: implement attack hit-stun that prevents the player from moving for a short time after being hit
-#### TODO: implement player weight attribute that affects knockback
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 960, 540
 FPS = 60

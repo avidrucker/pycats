@@ -80,8 +80,6 @@ class PState(Enum):
     #### TODO: implement grabbed state
     #### TODO: implement grabbing state
     #### TODO: implement stunned state
-    #### TODO: implement hurt state
-    #### TODO: implement KO state
     KO = auto()  # knocked out, waiting to respawn
     HURT = auto()  # hit by an attack, unable to move or attack for a short time
 
