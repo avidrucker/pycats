@@ -148,31 +148,38 @@ STRIPE_HEIGHT = 8
 STRIPE_SPACING = 12  # Vertical spacing between stripes
 
 # ---------------- tail features -----------------
-TAIL_SEGMENTS = 30  # Number of segments in the tail
-TAIL_SEGMENT_LENGTH = 3  # Length of each segment
-TAIL_SEGMENT_WIDTH = 15  # Width of each segment (tapers towards the tip)
+TAIL_SEGMENTS = 15  # Number of segments in the tail
+TAIL_SEGMENT_LENGTH = 8  # Length of each segment
+TAIL_SEGMENT_WIDTH = 14  # Width of each segment (tapers towards the tip)
 TAIL_BASE_OFFSET_X = 15  # Horizontal offset from player center to tail base
 TAIL_BASE_OFFSET_Y = 5  # Vertical offset from player bottom to tail base
 TAIL_ANCHOR_FLIP_STEP = 3  # px/frame the tail-base anchor eases across a facing
 # flip (#3): caps the per-frame anchor move so a turn slides the base to the
 # other hip over ~2*offset/step frames instead of teleporting in one frame.
-TAPER_MODIFER = 0.1  # Tapering effect for tail segments
+TAPER_MODIFER = 0.2  # Tapering effect for tail segments
 
 # (#37) Verlet tail physics — secondary motion (trail / drag / whip / settle).
 # The tail is a Verlet point chain pinned at the hip; inertia is implicit in
 # (pos - prev_pos), so these few knobs are the whole feel:
 TAIL_GRAVITY = 0.30  # downward accel per frame — weight / how hard it hangs.
-TAIL_AIR_DRAG = 0.91  # velocity retained per frame (<1). LOWER = more damped /
+TAIL_AIR_DRAG = 0.85  # velocity retained per frame (<1). LOWER = more damped /
 # less springy (settles faster); HIGHER = floppier, more trailing/whip. Main knob.
-TAIL_CONSTRAINT_ITERS = 34  # relaxation passes/frame — higher = stiffer/less stretch.
+TAIL_CONSTRAINT_ITERS = 30  # relaxation passes/frame — higher = stiffer/less stretch.
 
 # (#42) Cat-tail curl/expression layered on top of the passive chain: each frame
 # the free points are nudged toward a gently up-curling rest arc in the cat's
 # frame, so the tail holds a cat-like curl while gravity/inertia still dominate
 # (trailing on the move, settling at rest).
-TAIL_CURL = 0.06  # rad of upward curl per segment in the rest pose (0 = straight).
-TAIL_CURL_STRENGTH = 0.04  # how strongly the tail seeks that curl each frame
+TAIL_CURL = 0.02  # rad of upward curl per segment in the rest pose (0 = straight).
+TAIL_CURL_STRENGTH = 0.02  # how strongly the tail seeks that curl each frame
 # (0 = off / pure passive physics; higher = holds the curl more, flops less).
+
+# (#42) Continuous undulation — a traveling sine wave on the rest target makes
+# the tail constantly snake/flow even when idle (the cat is never "stiff").
+TAIL_UNDULATE_AMP = 9.0  # px lateral wave amplitude at the tip (0 = off; tapers
+# to ~0 at the base so the base stays attached and only the length snakes).
+TAIL_UNDULATE_SPEED = 0.08  # temporal phase advance per frame (wiggle speed).
+TAIL_UNDULATE_WAVELENGTH = 0.20  # spatial phase per segment (waves along length).
 
 #### TODO: implement player color (yellow, blue, red, green) which will affect the shield color
 #### TODO: implement parameterized shield color

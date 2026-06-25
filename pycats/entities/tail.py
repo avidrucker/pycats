@@ -31,6 +31,9 @@ from ..config import (
     TAIL_CONSTRAINT_ITERS,
     TAIL_CURL,
     TAIL_CURL_STRENGTH,
+    TAIL_UNDULATE_AMP,
+    TAIL_UNDULATE_SPEED,
+    TAIL_UNDULATE_WAVELENGTH,
     TAPER_MODIFER,
 )
 
@@ -78,6 +81,10 @@ class Tail:
         # Eased backward direction (-1 tail points left / +1 right); eases across
         # a facing flip so the pinned base stub swings over smoothly (no snap).
         self._base_back = -1.0 if self.player.facing_right else 1.0
+        # Undulation phase clock (#42) — keep it running across reset so the
+        # wave doesn't visibly jump when a respawn re-lays the tail out.
+        if not hasattr(self, "_t"):
+            self._t = 0.0
 
         # Lay the chain out horizontally backward from the hip with zero velocity
         # (prev == pos) so it settles smoothly instead of snapping/whipping in.
@@ -123,12 +130,15 @@ class Tail:
             s.x += vx
             s.y += vy + TAIL_GRAVITY
 
-        # 2b) Curl / expression (#42): nudge the free points toward a gently
-        #     up-curling rest arc built in the cat's frame from the (eased) base
-        #     direction, so the tail holds a cat-like curl on top of the passive
-        #     physics. Gentle by default, so gravity/inertia still dominate
-        #     (it trails on the move and settles at rest). Skipped when off.
-        if TAIL_CURL_STRENGTH and TAIL_CURL:
+        # 2b) Curl / expression (#42): nudge the free points toward a rest arc
+        #     built in the cat's frame from the (eased) base direction — a gently
+        #     up-curling pose, plus a traveling sine wave so the tail constantly
+        #     undulates/snakes even when idle. The wave is applied perpendicular
+        #     to the arc, tapers from ~0 at the base to full amplitude at the tip,
+        #     and its phase travels down the length over time. Gravity/inertia
+        #     still dominate (it trails on the move). Skipped when fully off.
+        self._t += dt
+        if TAIL_CURL_STRENGTH and (TAIL_CURL or TAIL_UNDULATE_AMP):
             ang0 = math.pi if self._base_back < 0 else 0.0
             rx, ry = base_x, base_y
             k = TAIL_CURL_STRENGTH
@@ -136,10 +146,19 @@ class Tail:
                 ang0 -= self._base_back * TAIL_CURL   # accumulate the per-link curl
                 rx += math.cos(ang0) * L
                 ry += math.sin(ang0) * L
+                tx, ty = rx, ry
+                if TAIL_UNDULATE_AMP:
+                    # lateral wave, perpendicular to the current arc direction,
+                    # growing toward the tip and travelling down the length.
+                    wave = (TAIL_UNDULATE_AMP * (i / n)
+                            * math.sin(self._t * TAIL_UNDULATE_SPEED
+                                       - i * TAIL_UNDULATE_WAVELENGTH))
+                    tx += -math.sin(ang0) * wave
+                    ty += math.cos(ang0) * wave
                 if i >= _PINNED:
                     s = segs[i]
-                    s.x += (rx - s.x) * k
-                    s.y += (ry - s.y) * k
+                    s.x += (tx - s.x) * k
+                    s.y += (ty - s.y) * k
 
         # 3) Jakobsen constraint relaxation: keep adjacent points one link apart.
         #    Pinned points act as infinite mass (never moved).
