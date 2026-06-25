@@ -130,3 +130,21 @@ class AttackerController(BaseController):
 
 # Back-compat alias: the original single controller was the attacker policy.
 ChaseController = AttackerController
+
+
+class IdlerController(BaseController):
+    """A deterministic baseline opponent. By default a true no-op (emits nothing),
+    so it stands in for an idle player transparently. Optionally performs minimal
+    RNG-free activity: with `shield_period > 0`, holds `shield` for `shield_hold`
+    frames at the start of each `shield_period`-frame cycle. Position-independent.
+    """
+
+    def __init__(self, attacker_num=1, shield_period=0, shield_hold=0):
+        super().__init__(attacker_num)
+        self.shield_period = shield_period
+        self.shield_hold = shield_hold
+
+    def decide(self, a, t, frame) -> set:
+        if self.shield_period > 0 and (self._f % self.shield_period) < self.shield_hold:
+            return {a.controls["shield"]}
+        return set()

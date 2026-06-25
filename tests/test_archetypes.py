@@ -7,8 +7,10 @@ policy becomes `AttackerController`; `ChaseController` stays as a back-compat
 alias. This is a pure refactor — the existing chase-bot golden + full_match suite
 are the byte-identical proof; the tests here pin structure + the attack policy.
 """
-from pycats.sim.controllers import BaseController, AttackerController, ChaseController
-from pycats.sim.runner import run_battle
+from pycats.sim.controllers import (
+    BaseController, AttackerController, ChaseController, IdlerController,
+)
+from pycats.sim.runner import run_battle, P1_KEYS, P2_KEYS
 
 
 def test_attacker_subclasses_base_and_chase_is_alias():
@@ -46,3 +48,40 @@ def test_attacker_and_chase_alias_emit_identically():
     run_battle("legacy", frames=400, controller=b)
     assert [(f.held, f.pressed, f.released) for f in a.emitted] == \
            [(f.held, f.pressed, f.released) for f in b.emitted]
+
+
+# --- Child C (#55): IdlerController, the deterministic baseline opponent ---
+
+def test_idler_subclasses_base():
+    assert issubclass(IdlerController, BaseController)
+
+
+def test_idler_default_is_a_true_noop_baseline():
+    """A default idler emits nothing, so attacker-vs-idler is byte-identical to
+    attacker-vs-idle (today's `controller=` path)."""
+    idler = IdlerController(attacker_num=2)
+    run_battle("legacy", frames=300, controllers=(AttackerController(1), idler))
+    assert all(not (f.held or f.pressed or f.released) for f in idler.emitted), (
+        "default IdlerController must emit no input"
+    )
+
+    dual = run_battle("legacy", frames=300,
+                      controllers=(AttackerController(1), IdlerController(2)))
+    single = run_battle("legacy", frames=300, controller=AttackerController(1))
+    assert dual == single, "default idler is not a transparent baseline"
+
+
+def test_idler_periodic_shield_is_deterministic_and_disjoint():
+    """With shield_period/shield_hold set, the idler holds ONLY its own shield key
+    on frames where `_f % period < hold`, and nothing otherwise."""
+    period, hold = 10, 3
+    idler = IdlerController(attacker_num=2, shield_period=period, shield_hold=hold)
+    run_battle("legacy", frames=50, controllers=(None, idler))
+
+    shield = P2_KEYS["shield"]
+    for i, f in enumerate(idler.emitted):
+        expected = {shield} if (i % period) < hold else set()
+        assert f.held == expected, f"frame {i}: held={f.held} expected={expected}"
+    # never leaks a P1 keycode
+    emitted = set().union(*(f.held for f in idler.emitted)) if idler.emitted else set()
+    assert emitted.isdisjoint(set(P1_KEYS.values()))
