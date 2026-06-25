@@ -42,13 +42,9 @@ Phase-0 introduced a **data-driven attack system** with circle hitboxes (see
 `pycats/combat/` and `pycats/characters/`). Golden snapshots in `tests/golden/`
 are the regression oracle — regenerate them with `PYCATS_UPDATE_GOLDENS=1`.
 
-Run tests:        .venv/bin/python -m pytest tests/test_smoke.py tests/test_state_engine.py \
-                      tests/test_player_seam.py tests/test_input_script.py tests/test_fighter_chart.py \
-                      tests/test_match_engine.py tests/test_runner.py tests/test_parity.py \
-                      tests/test_full_match.py tests/test_render_battle.py tests/test_render_cache.py \
-                      tests/test_benchmark.py tests/test_combat_data.py tests/test_geometry.py \
-                      tests/test_player_move.py tests/test_combat.py tests/test_golden.py \
-                      tests/test_dual_controller.py tests/test_archetypes.py
+Run tests:        SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. .venv/bin/python -m pytest -q
+                      # bare pytest is the source of truth — collects & runs the whole suite
+                      # green (skips OK). Add -m "not slow" to skip the benchmark tests.
 Run benchmark:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py
 Store results:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
 Watch a replay:   .venv/bin/python watch.py                    # statechart (default)
@@ -61,8 +57,8 @@ Record a video:   .venv/bin/python watch.py --match --video media/full_battle.mp
 The live window shows an FPS counter + each fighter's stocks/damage (hide with
 --no-overlay). It paces to 60 FPS by default; --uncapped shows the true rate.
 
-(The benchmark suite is the test_*.py list above. Bare `pytest` also picks up
-pre-existing legacy debug scripts in tests/ that have unrelated collection issues.)
+(Legacy debug/diagnostic scripts that once masqueraded as tests now live in
+`scripts/`, so bare `pytest` is clean. `tests/` holds only real assert-based tests.)
 
 (If your `python` already resolves to a writable environment, drop the
 `.venv/bin/` prefix.)

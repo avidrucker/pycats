@@ -53,7 +53,7 @@ def make_state_engine(player, backend: str = "legacy") -> StateEngine:
     """Build the state engine for a Player. backend in {"legacy","statechart"}."""
     if backend == "statechart":
         from statecharts import Session
-        from ..statecharts.fighter_chart import build_fighter_chart
+        from ..charts.fighter_chart import build_fighter_chart
         from .state_engine_sc import StatechartEngine
 
         return StatechartEngine(Session(build_fighter_chart(player)))
