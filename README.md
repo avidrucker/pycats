@@ -48,7 +48,7 @@ Run tests:        .venv/bin/python -m pytest tests/test_smoke.py tests/test_stat
                       tests/test_full_match.py tests/test_render_battle.py tests/test_render_cache.py \
                       tests/test_benchmark.py tests/test_combat_data.py tests/test_geometry.py \
                       tests/test_player_move.py tests/test_combat.py tests/test_golden.py \
-                      tests/test_dual_controller.py
+                      tests/test_dual_controller.py tests/test_archetypes.py
 Run benchmark:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py
 Store results:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
 Watch a replay:   .venv/bin/python watch.py                    # statechart (default)

@@ -10,7 +10,45 @@ from __future__ import annotations
 from ..core.input import InputFrame
 
 
-class ChaseController:
+class BaseController:
+    """Scaffolding shared by all deterministic archetype controllers.
+
+    Owns the per-frame bookkeeping every archetype needs: resolving
+    `(attacker, target)` from `attacker_num`, edge detection (`pressed`/
+    `released` from the previous frame's `held`), capturing each `InputFrame`
+    into `emitted` (for freezing a fixed input list), and the integer frame
+    counter `_f`. Subclasses supply the policy via `decide(a, t, frame) -> set`
+    returning the keys to *hold* this frame.
+
+    `attacker_num` is 1 or 2; player refs are resolved per-frame from the
+    (p1, p2) passed to `__call__`, so a controller can be built before
+    `run_battle` creates the players.
+    """
+
+    def __init__(self, attacker_num=1):
+        self.attacker_num = attacker_num
+        self._prev = set()
+        self._f = 0
+        self.emitted = []  # recorded InputFrames, for freezing into a fixed list
+
+    def decide(self, a, t, frame) -> set:
+        """Return the set of keys to HOLD this frame. `a` is this controller's
+        player, `t` the other. Override in an archetype."""
+        raise NotImplementedError
+
+    def __call__(self, p1, p2, frame):
+        a, t = (p1, p2) if self.attacker_num == 1 else (p2, p1)
+        held = self.decide(a, t, frame)
+        pressed = held - self._prev
+        released = self._prev - held
+        self._prev = held
+        self._f += 1
+        fi = InputFrame(held=set(held), pressed=set(pressed), released=set(released))
+        self.emitted.append(fi)
+        return fi
+
+
+class AttackerController(BaseController):
     """Drives `attacker` to hunt down `target` and attack; `target` gets no input.
 
     Deterministic: decisions depend only on live positions (no randomness), so a
@@ -20,15 +58,12 @@ class ChaseController:
 
     def __init__(self, attacker_num=1, attack_period=12, standoff=30,
                  attack_range=45, safe_x=(110, 850), drop_threshold=20):
+        super().__init__(attacker_num)
         # safe_x is the range the attacker will walk to — the thick platform's
         # standing extent (x[80..880]) minus a body-margin. Widened from the old
         # 770 for #44: realistic knockback decay no longer launches the target
         # off-stage in one hit, so it can linger near the platform edges; the bot
         # must be able to follow it there to keep racking up damage to a KO.
-        # attacker_num is 1 or 2; the other player is the (idle) target. Player
-        # refs are resolved per-frame from the (p1, p2) passed to __call__, so a
-        # ChaseController can be built before run_battle creates the players.
-        self.attacker_num = attacker_num
         self.attack_period = attack_period
         self.standoff = standoff          # desired horizontal gap (stand beside, not on top of)
         self.attack_range = attack_range
@@ -38,13 +73,9 @@ class ChaseController:
         # thin platform the attacker is standing on so they reach the target's
         # level.  Purely a policy parameter; 0 disables the behaviour.
         self.drop_threshold = drop_threshold
-        self._prev = set()
         self._last_attack = -10_000
-        self._f = 0
-        self.emitted = []  # recorded InputFrames, for freezing into a fixed list
 
-    def __call__(self, p1, p2, frame):
-        a, t = (p1, p2) if self.attacker_num == 1 else (p2, p1)
+    def decide(self, a, t, frame) -> set:
         keys = a.controls
         held = set()
 
@@ -94,10 +125,8 @@ class ChaseController:
                 held.add(keys["attack"])
                 self._last_attack = self._f
 
-        pressed = held - self._prev
-        released = self._prev - held
-        self._prev = held
-        self._f += 1
-        fi = InputFrame(held=set(held), pressed=set(pressed), released=set(released))
-        self.emitted.append(fi)
-        return fi
+        return held
+
+
+# Back-compat alias: the original single controller was the attacker policy.
+ChaseController = AttackerController
