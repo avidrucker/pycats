@@ -51,16 +51,16 @@ def test_respawn_clears_transient_action_state(backend):
     # _ko() early-returns, so transient action state set mid-dodge/mid-attack is
     # FROZEN through death (never ticks down). Replicate that frozen state now;
     # the dead-path of update() also early-returns, so nothing processes these
-    # until _respawn runs. (object() stands in for a live move clock — it is never
-    # touched while dead.)
+    # until _respawn runs. A live move clock (advanced a few frames) stands in
+    # for mid-attack: current_move set, move_frame > 0, attack_timer > 0.
     p.dodge_timer = 20
-    p.attack_timer = 15
     p.invulnerable_timer = 10
     p.invulnerable = True
     p.spot_dodge_shield_held = True
     p.dodge_blocked_by_edge = True
-    p.current_move = object()
-    p.move_frame = 7
+    p._clock.start(p.fighter_data.moves["attack"])
+    for _ in range(7):
+        p._clock.tick()
     p.done_attacking = False
 
     # Tick only until the respawn fires. The respawn frame early-returns, so we

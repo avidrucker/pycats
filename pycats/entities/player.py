@@ -50,6 +50,7 @@ from ..config import (
 )
 from .attack import Attack
 from ..combat.data import load_fighter_data
+from ..combat.move_clock import MoveClock
 from ..combat.knockback import knockback, hitstun_frames, decay_velocity
 from ..core.physics import (
     apply_gravity,
@@ -136,7 +137,7 @@ class Player(pygame.sprite.Sprite):
         self.dodge_timer = 0
         self.hurt_timer = 0
         self.stun_timer = 0
-        self.attack_timer = 0  # for a given attack, how long until the player character is done activating/initiating an attack (this is distinct from the attack's lifetime, which is handled by the Attack class)
+        # attack_timer is now a derived property over self._clock (see below).
         self.invulnerable_timer = 0  # used for invulnerability mid-dodge, post-respawn, or while ledge grabbing
         self.jumps_remaining = MAX_JUMPS
         self.air_dodge_ok = True  # players can only air dodge once per combined sustained jump/fall status, until they land
@@ -145,19 +146,14 @@ class Player(pygame.sprite.Sprite):
             True  # used to determine when the player is done attacking
         )
 
-        # ---------- data-driven move clock (Task 4) ----------
+        # ---------- data-driven move clock (Task 4 / #71) ----------
         # Load the fighter's data once. Phase 0: load_fighter_data returns the
         # same default for any character key, so passing char_name is fine.
         self.fighter_data = load_fighter_data(char_name)
-        # current_move is the MoveData currently executing (None when idle).
-        # move_frame counts frames elapsed since the move started, using a
-        # POST-increment convention: it is bumped at the top of each update
-        # while a move is live, so the first update frame after the attack press
-        # has move_frame == 1.
-        self.current_move = None
-        self.move_frame = 0
-        # Guards the once-per-move hitbox spawn during the active window.
-        self._move_hitbox_spawned = False
+        # MoveClock is the single source of truth for move progress. attack_timer
+        # / current_move / move_frame are derived properties over it (#71); the
+        # POST-increment frame convention is unchanged (first tick -> frame 1).
+        self._clock = MoveClock()
 
         # shield visual helpers
         self.shield_attempting = False
@@ -196,6 +192,25 @@ class Player(pygame.sprite.Sprite):
         invulnerability flag (backend-agnostic; the statechart engine mirrors
         this same flag in its orthogonal defensive_status region)."""
         return "intangible" if self.invulnerable else "vulnerable"
+
+    # ---- move-progress, delegated to MoveClock (#71) ----
+    # These three are read by the legacy FSM, the statechart (fighter_chart),
+    # and the runner snapshot; keeping the legacy names/values means no consumer
+    # changes and parity stays byte-identical.
+    @property
+    def attack_timer(self) -> int:
+        """Frames remaining in the current move (0 when idle)."""
+        return self._clock.remaining
+
+    @property
+    def current_move(self):
+        """The MoveData currently executing, or None when idle."""
+        return self._clock.move
+
+    @property
+    def move_frame(self) -> int:
+        """Frames elapsed since the current move started (POST-increment)."""
+        return self._clock.frame
 
     # ----------- hit processing ------------
     def receive_hit(self, atk):
@@ -435,36 +450,25 @@ class Player(pygame.sprite.Sprite):
                     self.shield_attempting = True
                     # print(f"SPOT DODGE TRANSITION: {self.char_name} shield_attempting set to True")
                 self.spot_dodge_shield_held = False  # reset spot dodge flag
-        if self.attack_timer > 0:
-            self.attack_timer -= 1
+
+        # ---------- data-driven move clock (Task 4 / #71: MoveClock) ----------
+        # Advance the move one frame and spawn its hitbox exactly once, when the
+        # active window opens. The clock owns move_frame/current_move and clears
+        # itself on completion (current_move -> None, attack_timer -> 0). Then
+        # latch done_attacking when the move finishes while still in the attack
+        # state — verbatim legacy semantics (attack_timer is now
+        # self._clock.remaining), so both backends classify/exit on the same
+        # frame. The active window is startup < move_frame <= startup + active;
+        # the hitbox lives for `active` frames.
+        tick = self._clock.tick()
+        if tick.spawn is not None:
+            # Task 5: pass the full Hitbox so Attack can resolve its circle.
+            attack_group.add(
+                Attack(self, hitbox=tick.spawn,
+                       disappear_on_hit=False, lifetime=tick.lifetime)
+            )
         if self.attack_timer == 0 and self.state == "attack":
             self.done_attacking = True
-
-        # ---------- data-driven move clock (Task 4) ----------
-        # Advance the per-move frame counter and spawn the hitbox exactly once
-        # when move_frame first enters the active window. POST-increment: bump
-        # first, then test, so the first update after the attack press is
-        # move_frame == 1. The active window is startup < move_frame <=
-        # startup + active. The hitbox lives for `active` frames. The move ends
-        # (current_move -> None) when move_frame reaches the total duration,
-        # which coincides with attack_timer hitting 0 (so done_attacking / the
-        # chart's attack-exit fire on the same frame for both backends).
-        if self.current_move is not None:
-            move = self.current_move
-            self.move_frame += 1
-            active_start = move.startup            # exclusive lower bound
-            active_end = move.startup + move.active  # inclusive upper bound
-            if (active_start < self.move_frame <= active_end
-                    and not self._move_hitbox_spawned):
-                hb = move.hitboxes[0]
-                # Task 5: pass the full Hitbox so Attack can resolve its circle.
-                attack_group.add(
-                    Attack(self, hitbox=hb,
-                           disappear_on_hit=False, lifetime=move.active)
-                )
-                self._move_hitbox_spawned = True
-            if self.move_frame >= move.startup + move.active + move.recovery:
-                self.current_move = None
 
         # Update tail physics
         self.tail.update()
@@ -613,19 +617,14 @@ class Player(pygame.sprite.Sprite):
         #### TODO: implement attack buffering, that attacks can be chained
         atk_pressed = self._pressed(pressed, "attack")
         if atk_pressed and self.state not in ("shield", "dodge"):
-            # Data-driven attack (Task 4): start the move clock instead of
+            # Data-driven attack (Task 4 / #71): start the move clock instead of
             # spawning the hitbox immediately. The hitbox is spawned later, in
-            # update(), once move_frame enters the active window. attack_timer /
-            # done_attacking are kept exactly as before so the legacy FSM and the
-            # chart's attack-exit guard still classify and exit at the same total
-            # frame.
-            move = self.fighter_data.moves["attack"]
-            self.current_move = move
-            self.move_frame = 0
-            self._move_hitbox_spawned = False
+            # update(), once the active window opens. done_attacking is kept so
+            # the legacy FSM and the chart's attack-exit guard classify/exit at
+            # the same total frame (attack_timer is now self._clock.remaining).
+            self._clock.start(self.fighter_data.moves["attack"])
             self.record_attack_made()  # Track attack statistics
-            self.done_attacking = False  # set to false when attack starts, will be set to true when attack is done
-            self.attack_timer = move.startup + move.active + move.recovery
+            self.done_attacking = False  # set to false when attack starts, set true when done
             #### TODO: implement unique custom attacks for each player w/ variable damage, knockback, and angle, attack activation time, attack duration, etc.
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
 
@@ -692,13 +691,11 @@ class Player(pygame.sprite.Sprite):
         self.dodge_timer = 0
         self.hurt_timer = 0
         self.stun_timer = 0
-        self.attack_timer = 0
         self.invulnerable_timer = 0
         self.invulnerable = False
         self.spot_dodge_shield_held = False
         self.dodge_blocked_by_edge = False
-        self.current_move = None
-        self.move_frame = 0
+        self._clock.reset()  # attack_timer/current_move/move_frame all derive from this
         self.done_attacking = True
         self.reset_visual_state()  # back to the normal body colour
         # Re-initialize the tail to its rest layout at the spawn point (#41): the

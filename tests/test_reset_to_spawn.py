@@ -37,7 +37,8 @@ def test_reset_clears_transient_state_and_position():
     p = _player(facing_right=True)
     # dirty a spread of per-life state
     p.is_alive = False
-    p.dodge_timer = p.hurt_timer = p.stun_timer = p.attack_timer = 9
+    p.dodge_timer = p.hurt_timer = p.stun_timer = 9
+    p._clock.start(p.fighter_data.moves["attack"])  # dirty the move clock -> attack_timer > 0
     p.invulnerable = True
     p.percent = 80
     p.vel.update(7, -7)

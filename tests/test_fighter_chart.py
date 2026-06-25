@@ -31,9 +31,11 @@ def test_idle_to_run_on_velocity():
 
 
 def test_single_hop_per_tick():
-    # From idle with attack_timer set, first tick -> attack (not multi-hop onward)
+    # From idle mid-attack (move clock live -> attack_timer > 0), first tick ->
+    # attack (not multi-hop onward).
     p = _mk_player("statechart")
-    p.attack_timer = 5
+    p._clock.start(p.fighter_data.moves["attack"])
+    assert p.attack_timer > 0
     p.engine.tick(None)
     assert p.state == "attack"
 
@@ -118,7 +120,10 @@ def test_matches_legacy_across_scenarios():
             p.on_ground = sc.get("on_ground", False)
             p.shield_attempting = sc.get("shield_attempting", False)
             p.hurt_timer = sc.get("hurt_timer", 0)
-            p.attack_timer = sc.get("attack_timer", 0)
+            # attack_timer is derived from the move clock (#71); a live move
+            # gives attack_timer > 0, which is all the "-> attack" guard reads.
+            if sc.get("attack_timer", 0):
+                p._clock.start(p.fighter_data.moves["attack"])
             p.dodge_timer = sc.get("dodge_timer", 0)
             p.engine.tick(None)
         assert legacy.state == sch.state, (sc, legacy.state, sch.state)
