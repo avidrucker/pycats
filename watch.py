@@ -22,6 +22,9 @@ def main():
     ap.add_argument("--match", action="store_true",
                     help="play a full match to defeat (P1 chase bot vs idle P2) "
                          "instead of the fixed scripted replay")
+    ap.add_argument("--vs", choices=["idle", "chase"], default="idle",
+                    help="who controls P2: idle (default) or a second chase bot "
+                         "(a watchable 2-NPC battle). `chase` drives both players.")
     ap.add_argument("--uncapped", action="store_true",
                     help="run the live window uncapped so the FPS readout shows "
                          "the true achievable rate (default paces to 60)")
@@ -31,11 +34,19 @@ def main():
 
     presenter = (VideoPresenter(args.video) if args.video
                  else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay))
-    controller = ChaseController(attacker_num=1) if args.match else None
+    # `--vs chase` drives BOTH players (controllers=); otherwise the classic
+    # single-bot `--match` (P1 chase vs idle P2) or the scripted replay.
+    controller = None
+    controllers = None
+    if args.vs == "chase":
+        controllers = (ChaseController(attacker_num=1), ChaseController(attacker_num=2))
+    elif args.match:
+        controller = ChaseController(attacker_num=1)
     frames = 6000 if args.match else args.frames
     try:
         run_battle(backend=args.backend, frames=frames, presenter=presenter,
-                   controller=controller, stop_on_match_over=args.match)
+                   controller=controller, controllers=controllers,
+                   stop_on_match_over=args.match)
     except KeyboardInterrupt:
         presenter.close()
     if args.video:

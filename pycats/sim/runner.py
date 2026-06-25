@@ -24,6 +24,7 @@ from ..systems import combat  # noqa: E402
 from ..core.physics import resolve_player_push  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
 from .input_script import default_timeline  # noqa: E402
+from ..core.input import merge_frames  # noqa: E402
 
 P1_KEYS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
                attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
@@ -80,7 +81,7 @@ def snapshot(players, attacks, match):
 
 
 def run_battle(backend="statechart", frames=None, frame_inputs=None, presenter=None,
-               controller=None, stop_on_match_over=False):
+               controller=None, stop_on_match_over=False, controllers=None):
     """Run the headless battle.
 
     Inputs come from `controller(p1, p2, frame) -> InputFrame` when given,
@@ -88,8 +89,17 @@ def run_battle(backend="statechart", frames=None, frame_inputs=None, presenter=N
     A controller is for live/generated battles (e.g. a chase bot); capture its
     emitted frames to freeze a deterministic input list for parity tests.
     `stop_on_match_over=True` ends the run the frame the match resolves.
+
+    `controllers=(c1, c2)` drives BOTH players from a controller per player
+    (either may be None for an idle player). Each controller is called on the
+    same frame-start snapshot and their emitted frames are merged by set-union;
+    this is unambiguous because P1/P2 keymaps are disjoint. To freeze a 2-NPC
+    battle for replay, capture the per-controller `.emitted` lists and zip them
+    through `merge_frames`. Pass at most one of `controller` / `controllers`.
     """
-    if controller is None and frame_inputs is None:
+    if controller is not None and controllers is not None:
+        raise ValueError("pass at most one of `controller` / `controllers`")
+    if controller is None and controllers is None and frame_inputs is None:
         frame_inputs = default_timeline(KEYMAPS)
     if frames is None:
         frames = len(frame_inputs) if frame_inputs is not None else 0
@@ -101,7 +111,14 @@ def run_battle(backend="statechart", frames=None, frame_inputs=None, presenter=N
 
     snaps = []
     for f in range(frames):
-        if controller is not None:
+        if controllers is not None:
+            # Call every controller on the SAME frame-start snapshot, THEN merge
+            # and apply — so neither sees the other's mutation mid-frame.
+            fi = merge_frames(
+                c(p1, p2, f) if c is not None else _empty_frame()
+                for c in controllers
+            )
+        elif controller is not None:
             fi = controller(p1, p2, f)
         else:
             fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()

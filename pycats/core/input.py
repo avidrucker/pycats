@@ -22,6 +22,23 @@ class InputFrame:
         )
 
 
+def merge_frames(frames) -> InputFrame:
+    """Union several InputFrames into one (held/pressed/released each set-unioned).
+
+    Used to drive both players from per-player controllers: each controller emits
+    only its own keymap's keycodes (P1_KEYS / P2_KEYS are disjoint), so the union
+    is unambiguous and order-independent. Inputs are not mutated.
+    """
+    held: set[int] = set()
+    pressed: set[int] = set()
+    released: set[int] = set()
+    for fr in frames:
+        held |= fr.held
+        pressed |= fr.pressed
+        released |= fr.released
+    return InputFrame(held=held, pressed=pressed, released=released)
+
+
 _currently_held: set[int] = set()
 
 
