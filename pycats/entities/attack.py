@@ -20,11 +20,7 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame  # type: ignore
-from ..config import (
-    ATTACK_LIFETIME,
-    ATTACK_SIZE,
-    HIT_DAMAGE,
-)
+from ..config import ATTACK_SIZE  # render-only: sizes the drawn hit-box rect
 from ..combat.geometry import resolve_circle
 
 
@@ -44,11 +40,9 @@ class Attack(pygame.sprite.Sprite):
     def __init__(
         self,
         owner,
-        hitbox=None,        # Hitbox dataclass (circle, damage, angle); preferred
-        damage: int = HIT_DAMAGE,
+        hitbox,             # Hitbox dataclass (circle, damage, angle, knockback)
+        lifetime: int,      # frames the hit-box persists (a move's active window)
         disappear_on_hit=False,
-        angle=0,
-        lifetime: int = ATTACK_LIFETIME,
     ):
         super().__init__()
         self.owner = owner
@@ -63,29 +57,16 @@ class Attack(pygame.sprite.Sprite):
         # Resolve the move's facing-relative circle to an absolute center ONCE at
         # spawn from the owner's current position (Phase 0: static hitbox).
         # Origin convention: owner.rect top-left (rect.x, rect.y).
-        if hitbox is not None:
-            self.damage = hitbox.damage
-            self.angle = hitbox.angle
-            self.base_knockback = hitbox.base_knockback
-            self.knockback_growth = hitbox.knockback_growth
-            hit_cx, hit_cy, hit_r = resolve_circle(
-                hitbox.circle,
-                owner.rect.x,
-                owner.rect.y,
-                owner.facing_right,
-            )
-        else:
-            # Fallback: no Hitbox provided — derive a circle from the legacy
-            # rect offset so older call-sites still work.
-            self.damage = damage
-            self.angle = angle
-            self.base_knockback = 0.0
-            self.knockback_growth = 0.0
-            offset_x = owner.rect.width // 2 + 4
-            raw_dx = offset_x if owner.facing_right else -offset_x
-            hit_cx = owner.rect.x + raw_dx + ATTACK_SIZE[0] // 2
-            hit_cy = owner.rect.y + owner.rect.height // 2
-            hit_r = min(ATTACK_SIZE) // 2
+        self.damage = hitbox.damage
+        self.angle = hitbox.angle
+        self.base_knockback = hitbox.base_knockback
+        self.knockback_growth = hitbox.knockback_growth
+        hit_cx, hit_cy, hit_r = resolve_circle(
+            hitbox.circle,
+            owner.rect.x,
+            owner.rect.y,
+            owner.facing_right,
+        )
 
         self.hit_cx: float = hit_cx
         self.hit_cy: float = hit_cy

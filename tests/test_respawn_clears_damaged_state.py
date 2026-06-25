@@ -12,6 +12,7 @@ import pygame as pg
 from pycats.entities.player import Player
 from pycats.entities.platform import Platform
 from pycats.entities.attack import Attack
+from pycats.combat.data import Hitbox, Circle
 from pycats.core.input import InputFrame
 from pycats.config import P1_COLOR, P2_COLOR, WHITE, RESPAWN_DELAY_FRAMES
 
@@ -37,11 +38,11 @@ def _ko_while_damaged_then_respawn(kind):
 
     if kind == "hurt":
         # Give the hit real knockback so computed hitstun (#40) exceeds 1 frame;
-        # a fallback Attack has zero BKB/KBG -> only the HITSTUN_FLOOR, which one
-        # update() would consume before the assertion below.
-        atk = Attack(owner=attacker, damage=10, angle=0)
-        atk.base_knockback, atk.knockback_growth = 30.0, 100.0
-        victim.receive_hit(atk)
+        # zero BKB/KBG would leave only the HITSTUN_FLOOR, which one update()
+        # would consume before the assertion below.
+        hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=10,
+                    angle=0, base_knockback=30.0, knockback_growth=100.0)
+        victim.receive_hit(Attack(owner=attacker, hitbox=hb, lifetime=1))
     else:  # stun
         victim._start_stun()
     victim.update(_empty(), plats, empty)

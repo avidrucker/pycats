@@ -23,15 +23,16 @@ Hurtbox design (PLAYER_SIZE = 40 wide, 60 tall):
 
   Note: dx=20 centres each circle horizontally within the 40-wide body.
 
-Attack move ("attack") — ground attack approximating the current basic attack:
-  Reference values from pycats/config.py:
-    PLAYER_ATTACK_DURATION = 12   (total move window)
-    ATTACK_LIFETIME        = 12   (hitbox lasts this long in current code)
-    ATTACK_SIZE            = (30, 18)  (rect, spawned beside body)
-    HIT_DAMAGE             = 10
+Attack move ("attack") — ground attack approximating the current basic attack.
+  This move's data IS the single source of truth (the old global ATTACK_LIFETIME
+  / HIT_DAMAGE fallbacks were retired in #70). The values below derive from the
+  former config constants for continuity:
+    total window = 12  (was PLAYER_ATTACK_DURATION; still in config)
+    active/lifetime = 3 active frames (was the global ATTACK_LIFETIME=12)
+    damage = 10        (was the global HIT_DAMAGE)
+  Note: ATTACK_SIZE=(30,18) survives as a render-only constant (the drawn rect).
 
-  Current code spawns a 30×18 rect offset ~half-body-width+4 = 24 px from
-  the fighter left edge (= 4 px gap past the right edge of the 40 px body).
+  The drawn rect is 30×18, centered on the hitbox circle below.
 
   Phase 0 timing split for 12-frame total:
     startup  = 3  (wind-up; short — it's a quick jab)
@@ -47,7 +48,7 @@ Attack move ("attack") — ground attack approximating the current basic attack:
     r  = 12  — approximates the 30×18 rect; short dimension is 9 px, long
                is 15 px; radius 12 is a reasonable circle approximation.
 
-  damage = 10.0  (matches HIT_DAMAGE)
+  damage = 10.0  (the jab's damage; formerly the global HIT_DAMAGE)
   angle  = 0     (horizontal launch; matches current behaviour)
 """
 

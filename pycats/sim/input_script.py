@@ -83,7 +83,8 @@ def default_timeline(keymaps):
 # back to "idle", completing the ko→idle arc.
 #
 # Timer reference (config.py): HURT_TIME=12, PLAYER_ATTACK_DURATION=12,
-# ATTACK_LIFETIME=12, RESPAWN_DELAY_FRAMES=120.
+# RESPAWN_DELAY_FRAMES=120. (The jab's active window is now move data, not a
+# global ATTACK_LIFETIME — retired in #70.)
 COMBAT_SCRIPT = list(DEFAULT_SCRIPT) + [
     InputSpan(141, 142, 1, "attack"),   # P1 hits P2 on the ground → P2 hurt
     InputSpan(142, 165, 1, "right"),    # P1 chases P2 rightward

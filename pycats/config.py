@@ -37,11 +37,11 @@ DODGE_TIME = 14
 DODGE_SPEED = 14  # horizontal boost for a roll
 
 # ---------------- combat / attacks ----------------
-#### TODO: implement variable attack lifetimes, attack sizes, attack colors, and hit damage, save each attack into a dictionary with the attack name as the key
-ATTACK_LIFETIME = 12
 PLAYER_ATTACK_DURATION = 12  # this can be different than the lifetime of an attack, for example, a fireball could take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames
-ATTACK_SIZE = (30, 18)  # width, height
-HIT_DAMAGE = 10  # default damage per hit
+ATTACK_SIZE = (30, 18)  # width, height — render-only: sizes the drawn hit-box rect
+# Per-move damage/lifetime/knockback now live in the move data (MoveData/Hitbox,
+# see characters/default_cat.py); the old global ATTACK_LIFETIME / HIT_DAMAGE
+# fallbacks were retired in #70.
 
 # ---------------- shield / bubble ---------------
 SHIELD_MAX_HP = 50  # fresh shield bubble hit points

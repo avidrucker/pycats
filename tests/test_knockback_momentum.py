@@ -20,14 +20,15 @@ import pytest
 from pycats.entities.player import Player
 from pycats.entities.platform import Platform
 from pycats.entities.attack import Attack
+from pycats.combat.data import Hitbox, Circle
 from pycats.core.input import InputFrame
 from pycats.combat.knockback import knockback
 from pycats.config import (P1_COLOR, P2_COLOR, WHITE, MOVE_SPEED,
-                           KNOCKBACK_LAUNCH_FACTOR, HIT_DAMAGE)
+                           KNOCKBACK_LAUNCH_FACTOR)
 
-# The default cat jab's knockback fields (see characters/default_cat.py). These
-# tests build a fallback Attack (no Hitbox), so set them explicitly to exercise a
-# real, non-zero launch.
+# The default cat jab's data (see characters/default_cat.py). These tests build a
+# real Hitbox so the launch is non-zero and the model is exercised end-to-end.
+_JAB_DAMAGE = 10
 _JAB_BKB = 30.0
 _JAB_KBG = 100.0
 
@@ -57,14 +58,14 @@ def _setup(defender_vel_x=0.0):
 
 def _expected_launch(defender):
     # Initial launch applied to vel.x: authentic KB * launch factor (angle 0 -> horizontal).
-    kb = knockback(defender.percent, HIT_DAMAGE, defender.weight, _JAB_BKB, _JAB_KBG)
+    kb = knockback(defender.percent, _JAB_DAMAGE, defender.weight, _JAB_BKB, _JAB_KBG)
     return kb * KNOCKBACK_LAUNCH_FACTOR
 
 
 def _jab(attacker):
-    atk = Attack(owner=attacker, damage=HIT_DAMAGE, angle=0)  # horizontal +x
-    atk.base_knockback, atk.knockback_growth = _JAB_BKB, _JAB_KBG
-    return atk
+    hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=_JAB_DAMAGE,
+                angle=0, base_knockback=_JAB_BKB, knockback_growth=_JAB_KBG)
+    return Attack(owner=attacker, hitbox=hb, lifetime=1)  # horizontal +x
 
 
 def test_receive_hit_combines_horizontal_momentum():
@@ -87,7 +88,7 @@ def test_hitstun_is_computed_from_knockback_not_fixed():
     from pycats.combat.knockback import knockback, hitstun_frames
     attacker, defender, *_ = _setup(defender_vel_x=0.0)
     defender.receive_hit(_jab(attacker))
-    kb = knockback(defender.percent, HIT_DAMAGE, defender.weight, _JAB_BKB, _JAB_KBG)
+    kb = knockback(defender.percent, _JAB_DAMAGE, defender.weight, _JAB_BKB, _JAB_KBG)
     assert defender.hurt_timer == hitstun_frames(kb)
     assert defender.hurt_timer != 12  # the retired HURT_TIME constant
 

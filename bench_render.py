@@ -56,10 +56,12 @@ def _build_scene():
         for p in players:
             p.update(right if f < 20 else InputFrame(set(), set(), set()),
                      platforms, attacks)
-    # Force one fighter to render its shield bubble, and add a live attack hitbox.
+    # Force one fighter to render its shield bubble, and add a live attack hitbox
+    # (the fighter's jab move data — the single attack model).
     p2.shield_attempting = True
     p2.engine.force("shield")
-    attacks.add(Attack(p1, disappear_on_hit=False))
+    jab = p1.fighter_data.moves["attack"]
+    attacks.add(Attack(p1, hitbox=jab.hitboxes[0], lifetime=jab.active))
     return platforms, players, attacks
 
 
