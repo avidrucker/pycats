@@ -1,0 +1,38 @@
+{
+  "attack_active_frames": 4,
+  "final_phase": "in_play",
+  "frames": 200,
+  "players": {
+    "P1": {
+      "ko_frames": [],
+      "lives_end": 3,
+      "lives_min": 3,
+      "lives_start": 3,
+      "percent_max": 0,
+      "states": [
+        "attack",
+        "dodge",
+        "fall",
+        "idle",
+        "jump",
+        "run",
+        "shield"
+      ]
+    },
+    "P2": {
+      "ko_frames": [],
+      "lives_end": 3,
+      "lives_min": 3,
+      "lives_start": 3,
+      "percent_max": 0,
+      "states": [
+        "attack",
+        "fall",
+        "idle",
+        "jump",
+        "run"
+      ]
+    }
+  },
+  "winner": 0
+}

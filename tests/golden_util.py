@@ -43,6 +43,94 @@ def serialize(snaps: list) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Semantic summary (S4 — the reviewable digest of an opaque golden)
+# ---------------------------------------------------------------------------
+
+def summarize(snaps: list) -> dict:
+    """Distil a snapshot list into a tiny, human-reviewable semantic digest.
+
+    The raw golden is good at *detecting* divergence but its diff is unreadable;
+    this digest is what a reviewer reads before accepting a regen (see
+    tests/golden/REGEN_PROTOCOL.md). It captures the behaviour that matters —
+    not every pixel.
+
+    Snapshot shape (see sim/runner.snapshot): ``(parts, attacks, phase, winner)``
+    where each part is ``(name, state, x, y, vx, vy, on_ground, percent,
+    shield_hp, lives, is_alive, ...)`` — we read name(0)/state(1)/percent(7)/
+    lives(9).
+    """
+    snaps = _to_list(snaps)  # normalise tuples → lists for uniform indexing
+    n = len(snaps)
+    if n == 0:
+        return {"frames": 0, "final_phase": None, "winner": None,
+                "attack_active_frames": 0, "players": {}}
+
+    names = [p[0] for p in snaps[0][0]]
+    players: dict = {}
+    for idx, name in enumerate(names):
+        states = sorted({snaps[f][0][idx][1] for f in range(n)})
+        lives = [snaps[f][0][idx][9] for f in range(n)]
+        percents = [snaps[f][0][idx][7] for f in range(n)]
+        ko_frames = [f for f in range(1, n) if lives[f] < lives[f - 1]]
+        players[name] = {
+            "states": states,
+            "lives_start": lives[0],
+            "lives_end": lives[-1],
+            "lives_min": min(lives),
+            "percent_max": max(percents),
+            "ko_frames": ko_frames,
+        }
+
+    attack_active_frames = sum(1 for f in range(n) if snaps[f][1])
+    return {
+        "frames": n,
+        "final_phase": snaps[-1][2],
+        "winner": snaps[-1][3],
+        "attack_active_frames": attack_active_frames,
+        "players": players,
+    }
+
+
+def _summary_path(name: str) -> Path:
+    return GOLDEN_DIR / f"{name}.summary.json"
+
+
+def _summary_text(summary: dict) -> str:
+    """Pretty, stable JSON so the sidecar git-diffs cleanly."""
+    return json.dumps(summary, indent=2, sort_keys=True) + "\n"
+
+
+def _check_or_update_summary(name: str, snaps: list) -> None:
+    """Write (update mode) or assert (check mode) the reviewable summary sidecar.
+
+    In check mode the sidecar must equal ``summarize(snaps)`` for the current
+    run — so a stale/hand-edited sidecar, or a behaviour change that slipped past
+    review, surfaces as a small readable diff rather than an opaque blob."""
+    path = _summary_path(name)
+    summary = summarize(snaps)
+
+    if os.environ.get("PYCATS_UPDATE_GOLDENS") == "1":
+        GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
+        path.write_text(_summary_text(summary), encoding="utf-8")
+        return
+
+    if not path.exists():
+        raise AssertionError(
+            f"Golden summary missing: {path}\n"
+            "Run tests with PYCATS_UPDATE_GOLDENS=1 to record it."
+        )
+
+    expected = json.loads(path.read_text(encoding="utf-8"))
+    if summary != expected:
+        raise AssertionError(
+            f"Golden '{name}': semantic summary changed.\n"
+            f"  expected (sidecar) = {json.dumps(expected, sort_keys=True)}\n"
+            f"  actual   (this run)= {json.dumps(summary, sort_keys=True)}\n"
+            "If intended, review per tests/golden/REGEN_PROTOCOL.md and regen."
+        )
+
+
+# ---------------------------------------------------------------------------
 # Oracle
 # ---------------------------------------------------------------------------
 
@@ -62,6 +150,7 @@ def check_or_update(name: str, snaps: list) -> None:
     if os.environ.get("PYCATS_UPDATE_GOLDENS") == "1":
         GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
         golden_path.write_text(actual, encoding="utf-8")
+        _check_or_update_summary(name, snaps)  # rewrite the reviewable sidecar too
         return  # always passes in update mode
 
     if not golden_path.exists():
@@ -69,6 +158,10 @@ def check_or_update(name: str, snaps: list) -> None:
             f"Golden file missing: {golden_path}\n"
             "Run tests with PYCATS_UPDATE_GOLDENS=1 to record it."
         )
+
+    # Semantic summary first: a behaviour change fails with a small readable diff
+    # (the reviewable layer) before the opaque raw byte comparison below.
+    _check_or_update_summary(name, snaps)
 
     expected = golden_path.read_text(encoding="utf-8")
     if actual == expected:

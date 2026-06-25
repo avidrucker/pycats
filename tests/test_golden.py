@@ -7,8 +7,10 @@ Three deterministic scenarios are recorded:
 - full_match:  ChaseController inputs captured once then frozen
 
 Each test calls check_or_update(name, snaps) which compares the serialized
-snapshots against tests/golden/<name>.json.  Set PYCATS_UPDATE_GOLDENS=1 to
-(re)record them.
+snapshots against tests/golden/<name>.json AND a small reviewable semantic digest
+in tests/golden/<name>.summary.json.  Set PYCATS_UPDATE_GOLDENS=1 to (re)record
+them — but a regen must be REVIEWED, not rubber-stamped: see
+tests/golden/REGEN_PROTOCOL.md (S4).
 """
 from pycats.sim.runner import run_battle, KEYMAPS
 from pycats.sim.input_script import compile_timeline, COMBAT_SCRIPT
