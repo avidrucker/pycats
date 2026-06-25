@@ -9,6 +9,7 @@ are the byte-identical proof; the tests here pin structure + the attack policy.
 """
 from pycats.sim.controllers import (
     BaseController, AttackerController, ChaseController, IdlerController,
+    FollowerController,
 )
 from pycats.sim.runner import run_battle, P1_KEYS, P2_KEYS
 
@@ -85,3 +86,43 @@ def test_idler_periodic_shield_is_deterministic_and_disjoint():
     # never leaks a P1 keycode
     emitted = set().union(*(f.held for f in idler.emitted)) if idler.emitted else set()
     assert emitted.isdisjoint(set(P1_KEYS.values()))
+
+
+# --- Child D (#57): FollowerController, the shadow/spacing archetype ---
+
+def test_follower_subclasses_base():
+    assert issubclass(FollowerController, BaseController)
+
+
+def test_follower_never_attacks_and_emits_no_p1_keys():
+    """Pressure without committing: a follower emits no attack key, ever — and
+    only its own (P2) keycodes."""
+    foll = FollowerController(attacker_num=2)
+    run_battle("legacy", frames=600, controllers=(None, foll))
+    emitted = set().union(
+        *(f.held | f.pressed | f.released for f in foll.emitted)
+    ) if foll.emitted else set()
+    assert P2_KEYS["attack"] not in emitted, "follower committed to an attack"
+    assert emitted.isdisjoint(set(P1_KEYS.values())), "follower leaked P1 keycodes"
+    assert emitted, "follower never moved at all"
+
+
+def test_follower_settles_at_standoff_distance():
+    """Vs an idle target the follower closes the initial gap but holds a standoff
+    rather than piling on — the shadow/spacing behavior. Gap measured on rect.x
+    (equal-width players ⇒ rect.x gap == centerx gap)."""
+    standoff = 120
+    foll = FollowerController(attacker_num=2, standoff=standoff)
+    snaps = run_battle("legacy", frames=1500, controllers=(None, foll))
+
+    def gap(s):
+        p1x = next(p for p in s[0] if p[0] == "P1")[2]
+        p2x = next(p for p in s[0] if p[0] == "P2")[2]
+        return abs(p1x - p2x)
+
+    start_gap = gap(snaps[0])
+    final_gap = gap(snaps[-1])
+    assert start_gap > 300, f"expected a wide initial gap, got {start_gap}"
+    assert abs(final_gap - standoff) <= 20, (
+        f"follower did not settle at standoff {standoff}: final gap {final_gap}"
+    )

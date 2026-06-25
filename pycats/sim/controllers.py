@@ -148,3 +148,44 @@ class IdlerController(BaseController):
         if self.shield_period > 0 and (self._f % self.shield_period) < self.shield_hold:
             return {a.controls["shield"]}
         return set()
+
+
+class FollowerController(BaseController):
+    """Shadows the target at a `standoff` distance and mirrors its movement,
+    applying spatial pressure WITHOUT committing to an attack. Deterministic and
+    position-driven: the attacker's horizontal spacing logic (close in if too
+    far, back off if too close, clamped to `safe_x`) minus the attack and the
+    vertical jump/drop. The wide default gap makes the shadowing visually
+    distinct from the attacker.
+    """
+
+    def __init__(self, attacker_num=1, standoff=120, safe_x=(110, 850)):
+        super().__init__(attacker_num)
+        self.standoff = standoff
+        self.safe_x = safe_x
+
+    def decide(self, a, t, frame) -> set:
+        held = set()
+        if not t.is_alive:
+            return held
+        keys = a.controls
+        dx = t.rect.centerx - a.rect.centerx
+        adx = abs(dx)
+        cx = a.rect.centerx
+        lo, hi = self.safe_x
+        toward = keys["right"] if dx > 0 else keys["left"]
+        away = keys["left"] if dx > 0 else keys["right"]
+        # Maintain the standoff gap: close in if too far, back off if too close.
+        move = None
+        if adx > self.standoff + 8:
+            move = toward
+        elif adx < self.standoff - 8:
+            move = away
+        # Never press further past a blast-zone-side bound (allow coming back in).
+        if move == keys["right"] and cx >= hi:
+            move = None
+        elif move == keys["left"] and cx <= lo:
+            move = None
+        if move is not None:
+            held.add(move)
+        return held
