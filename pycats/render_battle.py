@@ -22,6 +22,7 @@ from .config import (
     WHISKER_OFFSET_Y, WHISKER_OFFSET_X, STRIPE_COUNT, STRIPE_WIDTH,
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
+    FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, SHOW_STATUS_TIMER_BARS,
 )
 from . import text_utils
 from . import cat_faces
@@ -302,6 +303,70 @@ def draw_dizzy_stars(surface, p: Player):
         )
 
 
+# --- status-effect count-down bar (#111) -------------------------------------
+# A small bar floating above a fighter showing how long a status effect lasts:
+# a static background rect at full width with a foreground rect on top whose
+# width tracks the remaining fraction, plus an "Ns" seconds readout. Rendered
+# ABOVE the dizzy stars so the stun animation is never occluded.
+STATUS_BAR_WIDTH = int(1.5 * PLAYER_SIZE[0])  # ~1.5x the cat body width (tail excluded)
+STATUS_BAR_HEIGHT = 6
+STATUS_BAR_BG = (30, 30, 30)            # background (drained) rect colour
+STATUS_BAR_SECONDS_SIZE = 16
+# Lift the bar above the dizzy-star halo so the two never overlap. The stars
+# orbit at (EAR_HEIGHT + DIZZY_ORBIT_LIFT) above the head with a vertical reach
+# of ~(DIZZY_ORBIT_RADIUS*0.4 + DIZZY_STAR_OUTER); clear that plus a small gap.
+_STAR_HALO = DIZZY_ORBIT_RADIUS * 0.4 + DIZZY_STAR_OUTER
+STATUS_BAR_GAP_ABOVE_STARS = 6
+
+
+def status_bar_spec(p):
+    """The active status bar for fighter `p` as (ratio, seconds, color), or None.
+
+    Pure function of live state (#111): the fill is the remaining value over the
+    *known constant max* — shield -> shield_hp/SHIELD_MAX_HP, stun ->
+    stun_timer/SHIELD_BREAK_STUN_MAX — so no per-instance start value is stored
+    and the bar tracks mid-effect changes (e.g. a blocked hit chipping shield).
+    Honours the SHOW_STATUS_TIMER_BARS toggle. Shield takes precedence: a
+    shielding fighter is never simultaneously stunned.
+    """
+    if not SHOW_STATUS_TIMER_BARS:
+        return None
+    if p.state == "shield":
+        ratio = p.shield_hp / SHIELD_MAX_HP
+        seconds = math.ceil(p.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))
+        return (ratio, seconds, SHIELD_COLOR)
+    if p.stun_timer > 0:
+        ratio = p.stun_timer / SHIELD_BREAK_STUN_MAX
+        seconds = math.ceil(p.stun_timer / FPS)
+        return (ratio, seconds, YELLOW)
+    return None
+
+
+def draw_status_bar(surface, p, ratio, seconds, fill_color):
+    """Draw p's count-down bar (two rects + "Ns") above the dizzy-star halo."""
+    ratio = max(0.0, min(1.0, ratio))
+    cx = p.rect.centerx
+    star_cy = p.rect.top - EAR_HEIGHT - DIZZY_ORBIT_LIFT
+    bar_bottom = int(star_cy - _STAR_HALO - STATUS_BAR_GAP_ABOVE_STARS)
+    bar_top = bar_bottom - STATUS_BAR_HEIGHT
+    bar_left = cx - STATUS_BAR_WIDTH // 2
+
+    # Background rect (full width) then the shrinking foreground rect on top.
+    pygame.draw.rect(surface, STATUS_BAR_BG,
+                     (bar_left, bar_top, STATUS_BAR_WIDTH, STATUS_BAR_HEIGHT))
+    fg_w = int(STATUS_BAR_WIDTH * ratio)
+    if fg_w > 0:
+        pygame.draw.rect(surface, fill_color,
+                         (bar_left, bar_top, fg_w, STATUS_BAR_HEIGHT))
+
+    # Seconds readout sits just above the bar (and thus above the stars).
+    text_utils.render_text(
+        surface, f"{seconds}s",
+        (cx, bar_top - STATUS_BAR_SECONDS_SIZE // 2 - 2),
+        STATUS_BAR_SECONDS_SIZE, WHITE, center=True,
+    )
+
+
 def render_battle(surface, players, platforms):
     """Draw platforms, alive fighters, and their attacks onto `surface`.
     Mirrors game.py's playing-branch draw block (no HUD/controls/FPS text)."""
@@ -323,6 +388,11 @@ def render_battle(surface, players, platforms):
             s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
             pygame.draw.circle(s, (*SHIELD_COLOR, 100), (r, r), r)
             surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
+        # Status count-down bar (#111) — drawn last so it sits above the dizzy
+        # stars; suppressed entirely when SHOW_STATUS_TIMER_BARS is off.
+        spec = status_bar_spec(p)
+        if spec is not None:
+            draw_status_bar(surface, p, *spec)
 
 
 def render_attacks(surface, attacks):

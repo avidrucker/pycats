@@ -57,8 +57,20 @@ ATTACK_SIZE = (30, 18)  # width, height — render-only: sizes the drawn hit-box
 
 # ---------------- shield / bubble ---------------
 SHIELD_MAX_HP = 50  # fresh shield bubble hit points
+# HP lost per frame while the shield is held (and regained per frame when not).
+# Keep in sync with the literal in player.py's shield tick. Used to estimate the
+# shield count-down seconds for the status timer bar (#111).
+SHIELD_DRAIN_PER_FRAME = 0.2
 MAX_SHIELD_RADIUS = 40
 MIN_SHIELD_RADIUS = 10
+
+# ---------------- status-effect timer bars (#111) ----------------
+# A count-down bar above a fighter showing how long a status effect (shield,
+# stun) has left. This is a deliberate divergence from Project M (which shows no
+# such bar), so it is toggle-able: ON by default; a future main-menu Options
+# sub-menu will flip it. Rendering reads this flag, so flipping it off removes
+# every status bar.
+SHOW_STATUS_TIMER_BARS = True
 
 # ---------------- knockback / hitstun ----------------
 # Authentic Brawl/PM knockback feeds these. The formula lives in
