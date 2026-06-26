@@ -13,6 +13,7 @@ from ..config import (
     MAX_FALL_SPEED,
     GROUND_FRICTION,
     AIR_FRICTION,
+    JOSTLE_MIN_VOVERLAP_FRAC,
 )
 
 # ------------------------------------------------------------------ vertical
@@ -139,6 +140,18 @@ def resolve_player_push(players: list["Player"]) -> None:
             if a.state == "dodge" or b.state == "dodge":
                 continue
             if not a.rect.colliderect(b.rect):
+                continue
+
+            # Issue #68: the jostle is a grounded-contact interaction, so only
+            # apply it when the two bodies are at substantially the same level.
+            # An airborne fighter passing *over* a grounded one re-overlaps each
+            # rising frame with only a sliver of vertical overlap; pushing on that
+            # sliver ratchets the stationary fighter sideways. Require a meaningful
+            # vertical overlap (≥ JOSTLE_MIN_VOVERLAP_FRAC of the shorter body) so a
+            # flyover / standing-on-a-head no longer shoves the fighter below.
+            v_overlap = min(a.rect.bottom, b.rect.bottom) - max(a.rect.top, b.rect.top)
+            min_overlap = JOSTLE_MIN_VOVERLAP_FRAC * min(a.rect.height, b.rect.height)
+            if v_overlap < min_overlap:
                 continue
 
             # Issue #1 / Project M "jostle": fighter-vs-fighter collision is

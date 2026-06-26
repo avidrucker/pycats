@@ -30,6 +30,13 @@ MAX_JUMPS = 2  # single + double
 GROUND_FRICTION = 0.5  # 1.0 = ice; 0.0 = instant stop
 AIR_FRICTION = 0.85
 
+# Fighter-vs-fighter "jostle" (Project M X-only push, issue #1) only applies when
+# the two bodies are at substantially the same level — i.e. a grounded-contact
+# interaction. Require their vertical overlap to be at least this fraction of the
+# shorter body's height; below it, one fighter is clearly above the other
+# (jumping over / standing on a head) and must NOT shove the one below (issue #68).
+JOSTLE_MIN_VOVERLAP_FRAC = 0.8
+
 # Timers (frames)
 HURT_TIME = 12
 STUN_TIME = 60

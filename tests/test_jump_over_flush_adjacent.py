@@ -5,11 +5,11 @@ B is shoved sideways by `resolve_player_push`, which applies its X-separation on
 any rect overlap — including while A is airborne *above* B. Jumping over is fine
 (PM allows it); displacing the grounded fighter is not.
 
-This file is the deterministic, RNG-free repro. The correct-behavior case is a
-live regression guard; the bug case is `xfail` pending the fix in #68.
+This file is the deterministic, RNG-free repro. Both cases are now live
+regression guards: the fix for #68 (a vertical-overlap gate in
+resolve_player_push) holds the stationary fighter's displacement at ~0.
 """
 import pygame as pg
-import pytest
 
 from pycats.entities.player import Player
 from pycats.entities.platform import Platform
@@ -68,11 +68,11 @@ def test_straight_up_jump_while_flush_does_not_displace_neighbor():
     assert p2.rect.centerx == p2_start, f"P2 displaced to {p2.rect.centerx}"
 
 
-@pytest.mark.xfail(strict=True, reason="bug #68: airborne flyover shoves the grounded neighbor")
 def test_jumping_over_flush_neighbor_should_not_shove_it():
-    """BUG #68: a stationary fighter should not be shoved when a flush neighbor
-    jumps over it. Currently P2 is ratcheted ~35px sideways by the X-push firing
-    while P1 is airborne above it. Expected: displacement stays ~0."""
+    """Regression #68: a stationary fighter must not be shoved when a flush
+    neighbor jumps over it. Before the fix P2 was ratcheted ~35px sideways by the
+    X-push firing while P1 was airborne above it; the vertical-overlap gate in
+    resolve_player_push now holds displacement at ~0."""
     p1, p2, players, plats = _flush_pair()
     displacement = _p1_jumps_toward_p2(p1, p2, players, plats)
     assert displacement <= 4, f"stationary P2 shoved {displacement}px by P1's flyover"

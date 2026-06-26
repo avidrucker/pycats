@@ -5,7 +5,7 @@
   "players": {
     "P1": {
       "ko_frames": [
-        256
+        267
       ],
       "lives_end": 2,
       "lives_min": 2,
@@ -24,12 +24,12 @@
     },
     "P2": {
       "ko_frames": [
-        238
+        259
       ],
       "lives_end": 2,
       "lives_min": 2,
       "lives_start": 3,
-      "percent_max": 30.0,
+      "percent_max": 20.0,
       "states": [
         "attack",
         "fall",
