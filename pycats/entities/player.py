@@ -27,20 +27,10 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: implement ledge grabbing mechanics where the player can grab the ledge when falling off of a platform, and then can press up to get back on the platform, or down to drop down from the ledge, they get limited time invulnerability while hanging on the ledge, and eventually fall off the ledge if they don't get back on the platform (Q: can thin platforms be grabbed as well as thick platforms?)
 
 import pygame  # type: ignore
-import math
 from enum import Enum, auto
 from ..config import (
     MAX_JUMPS,
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
     PLAYER_SIZE,
-    SHIELD_MAX_HP,
-    BLAST_PADDING,
-    RESPAWN_DELAY_FRAMES,
-    STUN_TIME,
-    DODGE_TIME,
-    DODGE_SPEED,
-    KNOCKBACK_LAUNCH_FACTOR,
     KNOCKBACK_DECAY,
 )
 from .attack import Attack
@@ -49,7 +39,7 @@ from .fighter_input import FighterInput
 from .fighter_physics import step_physics
 from ..combat.data import load_fighter_data
 from ..combat.move_clock import MoveClock
-from ..combat.knockback import knockback, hitstun_frames, decay_velocity
+from ..combat.knockback import decay_velocity
 from ..systems.state_engine import make_state_engine
 
 
@@ -104,7 +94,7 @@ class Player(pygame.sprite.Sprite):
         # stats and enforcing their invariants (#81 / D1 slice 6b-1; design #69).
         # Player composes it and delegates via properties so every reader/writer
         # is unchanged; the rules + rect/vel follow in 6b-2/6b-3.
-        self.fighter = Fighter()
+        self.fighter = Fighter(self)
 
         # ---------- spawn / KO ----------
         self.spawn_point = pygame.Vector2(x, y)
@@ -260,40 +250,17 @@ class Player(pygame.sprite.Sprite):
     def was_hit_before_ko(self, value):
         self.fighter.was_hit_before_ko = value
 
-    # ----------- hit processing ------------
+    # Fighter rules live on the Fighter aggregate (#83 / D1 slice 6b-2); Player
+    # delegates each with a thin pass-through so update(), fighter_physics,
+    # fighter_input, combat, game, and the tests are unchanged. The simulation
+    # state the rules mutate (rect/vel/timers/flags) is still Player's and the
+    # rules reach it via Fighter.owner; it relocates in 6b-3.
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""
-        self.record_hit_received()  # Track that this player was hit
-        if self.shield_attempting and self.shield_hp > 0:
-            self.shield_hp = self.shield_hp - atk.damage  # Fighter setter clamps >= 0
-            if self.shield_hp == 0:
-                self._start_stun()
-        #### TODO: elif dodging
-        else:
-            # Phase 1 (#40): authentic Brawl/PM knockback + hitstun-from-knockback.
-            self.percent += atk.damage
-            kb = knockback(self.percent, atk.damage, self.weight,
-                           atk.base_knockback, atk.knockback_growth)
-            self.hurt_timer = hitstun_frames(kb)
-            # (the red hurt-flash is now render-time: render_battle.body_tint #75)
-            direction = (
-                1 if atk.owner.facing_right else -1
-            )  # the direction of the attack
-            radians = math.radians(atk.angle)
-            # Initial launch velocity (#44): KB * launch factor. It then bleeds
-            # off via decay_velocity each hitstun frame in update() — Smash-style
-            # ease-out rather than a constant slide (#43). Issue #8: COMBINE the
-            # defender's existing horizontal momentum (`+=`) instead of
-            # overwriting it; vertical stays an override (`=`) so a launch sets the
-            # arc rather than adding to fall speed.
-            launch = kb * KNOCKBACK_LAUNCH_FACTOR
-            self.vel.x += launch * math.cos(radians) * direction
-            self.vel.y = launch * -math.sin(radians)  # up = negative y
+        return self.fighter.receive_hit(atk)
 
     def _handle_landing(self, was_airborne: bool):
-        if self.on_ground and was_airborne:
-            self.jumps_remaining = MAX_JUMPS  # reset jumps when landing
-            self.air_dodge_ok = True  # reset air dodge availability
+        return self.fighter._handle_landing(was_airborne)
 
     # ============================================================== update
     def update(self, input_frame, platforms, attack_group):
@@ -411,124 +378,27 @@ class Player(pygame.sprite.Sprite):
         return self._input.handle_actions(input_frame, attack_group)
 
     # ============================================================= KO / respawn
+    # These rules live on Fighter (#83); Player keeps thin delegators so update()
+    # (`self._outside_blast_zone`/`self._ko`/`self._respawn`), game.reset_game
+    # (`reset_to_spawn`), fighter_input (`_start_dodge`) and the tests are
+    # unchanged.
     def _outside_blast_zone(self) -> bool:
-        return (
-            self.rect.right < -BLAST_PADDING
-            or self.rect.left > SCREEN_WIDTH + BLAST_PADDING
-            or self.rect.bottom < -BLAST_PADDING
-            or self.rect.top > SCREEN_HEIGHT + BLAST_PADDING
-        )
+        return self.fighter._outside_blast_zone()
 
     def _ko(self):
-        # Track if this was a suicide (no hit received before KO)
-        if not self.was_hit_before_ko:
-            self.suicides += 1
-
-        # debugging
-        # print(f"PLAYER KO: {self.char_name} fell off and lost a life! (lives: {self.lives-1})")
-        # Decrement; the lives>=0 invariant (#54) is now enforced once, in the
-        # Fighter.lives setter (#81), instead of clamped here. This keeps a
-        # zero-life player from going negative if the is_alive / respawn gates
-        # ever let a re-KO through.
-        self.lives -= 1
-        self.is_alive = False
-        self.respawn_timer = RESPAWN_DELAY_FRAMES
-        # hide sprite off-screen
-        self.rect.center = (-1000, -1000)
-        self.vel.update(0, 0)
-        self.engine.force("ko")
+        return self.fighter._ko()
 
     def reset_to_spawn(self):
-        """Authoritative per-life reset to a clean spawn state (#34).
-
-        Both the per-life respawn (`_respawn`) and the new-match reset
-        (`game.reset_game`) call this, so the two cannot silently drift. It
-        resets only per-life/spawn state; it does NOT touch match-scoped fields
-        (`lives`, the `attacks_made`/`hits_landed`/`suicides` stats) or force the
-        FSM state — callers own those. Facing is derived from
-        `original_facing_right`, not hardcoded, so it stays correct if a player
-        is ever constructed facing a non-default direction (e.g. #16 skins).
-        """
-        self.is_alive = True
-        self.rect.midbottom = self.spawn_point
-        self.vel.update(0, 0)
-        self.on_ground = False
-        self.facing_right = self.original_facing_right
-        self.jumps_remaining = MAX_JUMPS
-        self.air_dodge_ok = True
-        self.percent = 0
-        self.shield_hp = SHIELD_MAX_HP
-        self.shield_attempting = False
-        self.was_hit_before_ko = False  # reset hit tracking for the next life
-        # Transient hitstun / action timers + flags. _ko early-returns from
-        # update(), so these never tick down during death; clearing them here is
-        # what keeps a player KO'd mid-hurt/stun (#9) or mid-dodge/attack (#31)
-        # from carrying that state into its next life (a frozen dodge_timer, a
-        # leaked invulnerable=True, etc.).
-        self.respawn_timer = 0
-        self.dodge_timer = 0
-        self.hurt_timer = 0
-        self.stun_timer = 0
-        self.invulnerable_timer = 0
-        self.invulnerable = False
-        self.spot_dodge_shield_held = False
-        self.dodge_blocked_by_edge = False
-        self._clock.reset()  # attack_timer/current_move/move_frame all derive from this
-        self.done_attacking = True
-        # (visual reset is render-time now: render_battle.body_tint #75)
-        # Re-initialize the tail to its rest layout at the spawn point (#41): the
-        # Verlet tail keeps live position/velocity and freezes wherever the cat
-        # flew off-screen, so without this the chain whips in from there. facing
-        # and rect are set above, so the layout is correct.
-        self.tail.reset()
+        return self.fighter.reset_to_spawn()
 
     def _respawn(self):
-        #### TODO: implement temporary respawn invulnerability
-        #### TODO: implement spawning animation
-        #### TODO: implement respawn visible count-down
-        self.reset_to_spawn()
+        return self.fighter._respawn()
 
-    # state starters ----------------------------
     def _start_stun(self) -> None:
-        # self.state = "stun"
-        self.stun_timer = STUN_TIME
-        self.vel.update(0, 0)
+        return self.fighter._start_stun()
 
     def _start_dodge(self, dir_x: int) -> None:
-        self.dodge_timer = DODGE_TIME
-        self.invulnerable = True
-        self.dodge_blocked_by_edge = False  # Reset edge blocking flag
-
-        # Only set spot_dodge_shield_held for ground-based spot dodges (not air dodges)
-        if dir_x == 0 and self.on_ground:
-            # Ground spot dodge - no movement, special thin platform protection
-            self.vel.update(0, 0)  # No movement for ground spot dodge
-            self.spot_dodge_shield_held = True
-            # debugging
-            # print(f"GROUND SPOT DODGE START: {self.char_name} ground spot dodge initiated")
-        elif dir_x == 0 and not self.on_ground:
-            # Air dodge - preserve Y velocity, no horizontal movement
-            # self.vel.x = 0  # Only reset horizontal velocity for air dodge
-            self.spot_dodge_shield_held = False
-            # debugging
-            # print(f"AIR DODGE START: {self.char_name} air dodge initiated (preserving Y velocity)")
-        else:
-            # Directional dodge (ground roll) - set horizontal velocity, preserve or reset Y
-            if self.on_ground:
-                self.vel.update(dir_x * DODGE_SPEED, 0)  # Ground roll
-                # Issue #2: a ground roll ends facing OPPOSITE to its travel
-                # direction (Project M). Per SmashWiki (Roll), a forward roll
-                # turns the character around and a back roll keeps facing — both
-                # of which collapse to "face opposite the travel direction". So
-                # roll left (dir_x < 0) -> face right; roll right -> face left.
-                # (Air directional dodges are out of scope here — see air-dodge
-                # research #23 — so only the grounded branch sets facing.)
-                self.facing_right = dir_x < 0
-            else:
-                self.vel.x = (
-                    dir_x * DODGE_SPEED + self.vel.x
-                )  # Air directional dodge - preserve Y velocity
-            self.spot_dodge_shield_held = False
+        return self.fighter._start_dodge(dir_x)
 
     # Stat counters live on the Fighter aggregate (#81); Player delegates so
     # callers (fighter_input, combat, the test stand-ins) are unchanged.
