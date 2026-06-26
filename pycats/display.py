@@ -10,7 +10,10 @@ Use: window_size_for / blit_mode_for / cycle_preset from game.py's present path.
 """
 import pygame  # type: ignore
 
-from .config import SCREEN_WIDTH, SCREEN_HEIGHT
+from .config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+
+# How long the zoom toast stays on screen after an F10 change (#89).
+TOAST_DURATION_FRAMES = 3 * FPS
 
 # Selectable windowed-scale presets (multiples of the 960x540 base). Integer
 # steps (1x, 2x) are pixel-crisp; fractional steps (1.5x, 2.5x) are smooth-scaled.
@@ -79,6 +82,39 @@ def cycle_preset(current, step=1, presets=WINDOWED_SCALE_PRESETS):
     except ValueError:
         return presets[0]
     return presets[(i + step) % len(presets)]
+
+
+def format_scale_label(value):
+    """Short human label for a scale/zoom value: 1.0 -> "1×", 1.5 -> "1.5×",
+    2.0 -> "2×", and the "fit" choice -> "Fit"."""
+    if value == "fit":
+        return "Fit"
+    return f"{value:g}×"
+
+
+class Toast:
+    """A transient on-screen message with a frame countdown (#89).
+
+    Pure timer/state holder — no pygame. game.py calls show() on an F10 change,
+    tick() once per presented frame, and draws self.text while self.active."""
+
+    def __init__(self):
+        self.text = ""
+        self.frames_left = 0
+
+    def show(self, text, frames=TOAST_DURATION_FRAMES):
+        """Display `text` for `frames` frames, resetting any current toast."""
+        self.text = text
+        self.frames_left = frames
+
+    @property
+    def active(self):
+        return self.frames_left > 0
+
+    def tick(self):
+        """Advance one frame; clamps at 0 (idempotent once expired)."""
+        if self.frames_left > 0:
+            self.frames_left -= 1
 
 
 def scale_surface(surface, scale):

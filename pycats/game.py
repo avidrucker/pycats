@@ -122,6 +122,8 @@ windowed_scale = display.WINDOWED_SCALE_PRESETS[0]
 # Current in-fullscreen magnification: "fit" (crisp auto max-fit) or a preset
 # float; cycle with F10 while fullscreen. See pycats.display (#85).
 fullscreen_zoom = "fit"
+# Transient toast showing the current scale/zoom after an F10 change (#89).
+zoom_toast = display.Toast()
 
 if start_fullscreen:
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -370,6 +372,19 @@ def present_frame():
         # window (which is exactly window_size_for(scale), so no letterbox).
         display_surface.blit(display.scale_surface(game_surface, scale_factor), (0, 0))
 
+    # Zoom toast (#89): drawn on the window surface, above the scene, so it is
+    # crisp and screen-positioned (and never lands in the 960x540 sim/goldens).
+    if zoom_toast.active:
+        text_utils.render_text(
+            display_surface,
+            zoom_toast.text,
+            (display_surface.get_width() - HUD_PADDING, HUD_PADDING),
+            24,
+            WHITE,
+            right_align=True,
+        )
+    zoom_toast.tick()
+
     pygame.display.flip()
 
 
@@ -450,9 +465,11 @@ while running:
                             fullscreen_zoom, presets=display.FULLSCREEN_ZOOM_PRESETS
                         )
                     )
+                    zoom_toast.show(display.format_scale_label(fullscreen_zoom))
                 else:
                     # Windowed: cycle the window-size presets (resizes the window).
                     set_windowed_scale(display.cycle_preset(windowed_scale))
+                    zoom_toast.show(display.format_scale_label(windowed_scale))
 
     # Update screen state manager
     screen_manager.update(frame_input)

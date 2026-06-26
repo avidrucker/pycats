@@ -122,3 +122,51 @@ def test_scale_surface_at_1x_returns_source_unchanged():
     src = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     # 1x is the no-scale fast path — same surface object, no copy/transform.
     assert display.scale_surface(src, 1.0) is src
+
+
+# --- zoom toast (#89): label formatting + countdown timer (both pure) ---
+
+
+@pytest.mark.parametrize(
+    "value, label",
+    [
+        (1.0, "1×"),
+        (1.5, "1.5×"),
+        (2.0, "2×"),
+        (2.5, "2.5×"),
+        ("fit", "Fit"),
+    ],
+)
+def test_format_scale_label(value, label):
+    assert display.format_scale_label(value) == label
+
+
+def test_toast_starts_inactive():
+    assert not display.Toast().active
+
+
+def test_toast_show_activates_then_expires_after_its_frames():
+    t = display.Toast()
+    t.show("2×", frames=3)
+    assert t.active and t.text == "2×"
+    t.tick()
+    t.tick()
+    assert t.active  # 1 frame left
+    t.tick()
+    assert not t.active  # counted down to 0 -> gone
+
+
+def test_toast_reshow_resets_the_timer_and_text():
+    t = display.Toast()
+    t.show("1×", frames=2)
+    t.tick()  # 1 left
+    t.show("2×", frames=2)  # re-show resets
+    assert t.active and t.text == "2×"
+    t.tick()
+    assert t.active  # still 1 left because the timer reset
+
+
+def test_toast_default_duration_is_three_seconds():
+    from pycats.config import FPS
+
+    assert display.TOAST_DURATION_FRAMES == 3 * FPS
