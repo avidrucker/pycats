@@ -97,14 +97,6 @@ def test_clamp_scale_never_exceeds_what_the_display_can_show(scale, display_size
     assert display.clamp_scale(scale, display_size) == expected
 
 
-def test_fullscreen_zoom_cycle_includes_fit_and_wraps():
-    presets = display.FULLSCREEN_ZOOM_PRESETS
-    assert presets[0] == "fit"
-    assert display.cycle_preset("fit", presets=presets) == 1.0
-    assert display.cycle_preset(2.5, presets=presets) == "fit"  # wraps back to fit
-    assert display.cycle_preset(2.0, step=-1, presets=presets) == 1.5
-
-
 @pytest.mark.parametrize("scale", [1.0, 1.5, 2.0, 2.5])
 def test_scale_surface_produces_expected_dimensions(scale):
     import pygame
@@ -170,3 +162,50 @@ def test_toast_default_duration_is_three_seconds():
     from pycats.config import FPS
 
     assert display.TOAST_DURATION_FRAMES == 3 * FPS
+
+
+# --- #92: dedupe fullscreen zoom cycle to distinct achievable sizes ---
+
+
+@pytest.mark.parametrize(
+    "display_size, expected",
+    [
+        ((1920, 1080), [1.0, 1.5, 2.0]),            # 2.5x & fit collapse onto 2x
+        ((2560, 1440), [1.0, 1.5, 2.0, 2.5]),       # fit(2x) dedups with the 2x preset
+        ((3840, 2160), [1.0, 1.5, 2.0, 2.5, 4.0]),  # fit=4x adds a fill step
+    ],
+)
+def test_achievable_zoom_scales_are_distinct_and_sorted(display_size, expected):
+    assert display.achievable_zoom_scales(display_size) == expected
+
+
+def test_achievable_zoom_scales_small_display_collapses_to_two():
+    # 1366x768: 1.5/2/2.5 all clamp to the limiting axis (768/540); fit=1.0.
+    scales = display.achievable_zoom_scales((1366, 768))
+    assert len(scales) == 2
+    assert scales[0] == 1.0
+    assert scales[1] == pytest.approx(768 / 540)
+
+
+def test_achievable_zoom_scales_have_no_duplicates_and_all_fit():
+    for d in [(1920, 1080), (2560, 1440), (1366, 768), (1280, 720), (800, 480)]:
+        scales = display.achievable_zoom_scales(d)
+        # every press distinct:
+        assert len(scales) == len({round(s, 4) for s in scales})
+        # never crops — base*scale fits the display:
+        for s in scales:
+            assert SCREEN_WIDTH * s <= d[0] + 1e-9
+            assert SCREEN_HEIGHT * s <= d[1] + 1e-9
+
+
+def test_fullscreen_zoom_label_marks_the_max_as_fit():
+    scales = [1.0, 1.5, 2.0]
+    assert display.fullscreen_zoom_label(2.0, scales) == "Fit"   # largest = "as big as fits"
+    assert display.fullscreen_zoom_label(1.0, scales) == "1×"
+    assert display.fullscreen_zoom_label(1.5, scales) == "1.5×"
+
+
+def test_fullscreen_zoom_label_fit_can_be_a_clamped_fractional():
+    scales = [1.0, 768 / 540]
+    assert display.fullscreen_zoom_label(768 / 540, scales) == "Fit"
+    assert display.fullscreen_zoom_label(1.0, scales) == "1×"

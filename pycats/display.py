@@ -19,12 +19,6 @@ TOAST_DURATION_FRAMES = 3 * FPS
 # steps (1x, 2x) are pixel-crisp; fractional steps (1.5x, 2.5x) are smooth-scaled.
 WINDOWED_SCALE_PRESETS = (1.0, 1.5, 2.0, 2.5)
 
-# Fullscreen magnification cycle (#85): the game view is drawn at this zoom and
-# centred (letterboxed) inside the full-monitor window. "fit" is the auto crisp
-# max-fit; the numeric presets are clamped to what the monitor can show.
-FULLSCREEN_ZOOM_PRESETS = ("fit", 1.0, 1.5, 2.0, 2.5)
-
-
 def fit_scale(display_size, base=(SCREEN_WIDTH, SCREEN_HEIGHT)):
     """Largest scale that fits `base` inside `display_size`, preferring a crisp
     whole-number multiple. If no integer >= 1 fits (display smaller than base on
@@ -44,6 +38,29 @@ def clamp_scale(scale, display_size, base=(SCREEN_WIDTH, SCREEN_HEIGHT)):
     dw, dh = display_size
     base_w, base_h = base
     return min(scale, dw / base_w, dh / base_h)
+
+
+def achievable_zoom_scales(display_size, base=(SCREEN_WIDTH, SCREEN_HEIGHT)):
+    """Sorted, de-duplicated list of the *distinct* fullscreen zoom sizes a given
+    monitor can actually show (#92): the auto fit_scale plus each windowed preset
+    clamped to fit. Presets that clamp onto the same size collapse to one entry,
+    so cycling this list changes the rendered size on every step (no dead F10
+    presses). The largest entry is the most-zoomed-in size that still fits."""
+    candidates = [fit_scale(display_size, base)]
+    candidates += [clamp_scale(p, display_size, base) for p in WINDOWED_SCALE_PRESETS]
+    distinct = {}
+    for s in candidates:
+        distinct.setdefault(round(s, 4), s)  # first value wins per rounded key
+    return sorted(distinct.values())
+
+
+def fullscreen_zoom_label(scale, scales):
+    """Toast label for a fullscreen zoom: the largest achievable scale reads
+    "Fit" (it is "as big as fits" — a clean integer like 2x or a clamped
+    fractional like 1.42x), smaller clean presets read their value ("1×", ...)."""
+    if scale == scales[-1]:
+        return "Fit"
+    return format_scale_label(scale)
 
 
 def window_size_for(scale, base=(SCREEN_WIDTH, SCREEN_HEIGHT)):

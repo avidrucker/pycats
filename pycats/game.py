@@ -119,9 +119,11 @@ start_fullscreen = False
 
 # Current windowed-scale preset (1x by default; cycle with F10). See pycats.display.
 windowed_scale = display.WINDOWED_SCALE_PRESETS[0]
-# Current in-fullscreen magnification: "fit" (crisp auto max-fit) or a preset
-# float; cycle with F10 while fullscreen. See pycats.display (#85).
-fullscreen_zoom = "fit"
+# In-fullscreen magnification (#85, #92): F10 cycles the distinct zoom sizes the
+# current monitor can show (display.achievable_zoom_scales). fullscreen_scales is
+# that list (set on entering fullscreen); fullscreen_zoom_index points into it.
+fullscreen_scales = []
+fullscreen_zoom_index = 0
 # Transient toast showing the current scale/zoom after an F10 change (#89).
 zoom_toast = display.Toast()
 
@@ -130,8 +132,10 @@ if start_fullscreen:
     display_surface = screen
     game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    # Default "fit" zoom, centred in the full-monitor window.
-    scale_factor = display.fit_scale(screen.get_size())
+    # Start at the largest achievable zoom ("Fit"), centred in the window.
+    fullscreen_scales = display.achievable_zoom_scales(screen.get_size())
+    fullscreen_zoom_index = len(fullscreen_scales) - 1
+    scale_factor = fullscreen_scales[fullscreen_zoom_index]
     scaled_width, scaled_height = display.window_size_for(scale_factor)
     offset_x = (screen.get_width() - scaled_width) // 2
     offset_y = (screen.get_height() - scaled_height) // 2
@@ -300,12 +304,12 @@ def toggle_fullscreen():
         is_fullscreen = False
         # print("Switched to windowed mode")
     else:
-        # Switch to fullscreen at the default "fit" zoom; F10 cycles it in place.
+        # Switch to fullscreen at the largest "Fit" zoom; F10 cycles it in place.
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         display_surface = screen
         game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         is_fullscreen = True
-        set_fullscreen_zoom("fit")
+        enter_fullscreen_zoom()
 
 
 def set_windowed_scale(scale):
@@ -329,22 +333,24 @@ def set_windowed_scale(scale):
     is_fullscreen = False
 
 
-def set_fullscreen_zoom(choice):
-    """Set the in-fullscreen magnification of the 960x540 view, staying fullscreen.
+def enter_fullscreen_zoom():
+    """Compute this monitor's distinct zoom sizes and start at the largest ("Fit").
+    Call right after switching the display to fullscreen (screen must be active)."""
+    global fullscreen_scales, fullscreen_zoom_index
+    fullscreen_scales = display.achievable_zoom_scales(screen.get_size())
+    set_fullscreen_zoom_index(len(fullscreen_scales) - 1)
 
-    `choice` is "fit" (crisp auto max-fit) or a preset float (1x/1.5x/2x/2.5x).
-    Numeric choices are clamped so the game never exceeds the monitor — the whole
-    stage (and its KO/blast bounds) always stays on-screen; we letterbox the rest.
-    Assumes the fullscreen display surface is already active (screen)."""
-    global scale_factor, offset_x, offset_y, fullscreen_zoom
 
-    fullscreen_zoom = choice
+def set_fullscreen_zoom_index(i):
+    """Apply the i-th achievable fullscreen zoom (staying fullscreen): set the
+    magnification of the 960x540 view and recompute the centring offsets. The
+    achievable scales already fit the monitor, so the whole stage stays on-screen
+    (letterboxed). Assumes the fullscreen display surface is active (screen)."""
+    global scale_factor, offset_x, offset_y, fullscreen_zoom_index
+
+    fullscreen_zoom_index = i
+    scale_factor = fullscreen_scales[i]
     display_w, display_h = screen.get_size()
-    if choice == "fit":
-        scale_factor = display.fit_scale((display_w, display_h))
-    else:
-        scale_factor = display.clamp_scale(choice, (display_w, display_h))
-
     scaled_w, scaled_h = display.window_size_for(scale_factor)
     offset_x = (display_w - scaled_w) // 2
     offset_y = (display_h - scaled_h) // 2
@@ -360,7 +366,7 @@ def present_frame():
     """Present the rendered frame to the display."""
     if is_fullscreen:
         # Letterbox: clear, then draw the magnified 960x540 view centred. The
-        # zoom (scale_factor) is set by set_fullscreen_zoom; crisp at whole
+        # zoom (scale_factor) is set by set_fullscreen_zoom_index; crisp at whole
         # multiples, smoothscale at fractional zooms (see display.scale_surface).
         display_surface.fill((0, 0, 0))
         display_surface.blit(
@@ -458,14 +464,15 @@ while running:
                 toggle_fullscreen()
             elif ev.key == pygame.K_F10:
                 if is_fullscreen:
-                    # Cycle the fullscreen magnification in place, staying
-                    # fullscreen (fit -> 1x -> 1.5x -> 2x -> 2.5x -> fit).
-                    set_fullscreen_zoom(
-                        display.cycle_preset(
-                            fullscreen_zoom, presets=display.FULLSCREEN_ZOOM_PRESETS
-                        )
+                    # Advance to the next *distinct* achievable zoom (wraps), so
+                    # every press visibly changes the rendered size (#92).
+                    set_fullscreen_zoom_index(
+                        (fullscreen_zoom_index + 1) % len(fullscreen_scales)
                     )
-                    zoom_toast.show(display.format_scale_label(fullscreen_zoom))
+                    scale = fullscreen_scales[fullscreen_zoom_index]
+                    zoom_toast.show(
+                        display.fullscreen_zoom_label(scale, fullscreen_scales)
+                    )
                 else:
                     # Windowed: cycle the window-size presets (resizes the window).
                     set_windowed_scale(display.cycle_preset(windowed_scale))
