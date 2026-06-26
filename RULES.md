@@ -26,8 +26,36 @@
   `scripts/create-standard-labels.sh`. Don't invent project-local severity
   meanings — keep labels identical across repos.
 
+### Area labels (`area:*`)
+
+- **Every ticket gets exactly one `area:*` label at filing time.** Unlike the
+  shared `severity:*` taxonomy, areas are **project-local** — they name *this*
+  codebase's subsystems. The current set:
+  - `area:display` — rendering, fullscreen, zoom, resolution, display preferences
+  - `area:combat` — knockback, hitstun, hitboxes, dodges, attacks, off-stage mechanics
+  - `area:entities` — Fighter/Player state machine (dizzy, prone, ledge-hang, decomposition)
+  - `area:screens` — screen system/manager, start/win-loss screens, menus, skins, input feedback
+  - `area:watch` — `--watch` / `--vs` spectator battles
+  - `area:tracker` — ticket discipline, TODO reconciliation, rules/process docs
+- **One area per issue.** If a ticket spans two areas, pick the dominant one — the
+  orchestrator uses the *first-listed* `area:*` when several are present. Split the
+  ticket if it genuinely needs two lanes.
+- **Why it matters:** `/fruit-agent-orchestrate` partitions the backlog into
+  per-agent lanes by `area:*`, assigning at most one cluster per agent, so a ticket
+  with no area label falls into the wildcard pool and weakens the same-file
+  collision guard. Reproducible label *creation* (vs today's hand-created repo
+  labels) is tracked in `avidrucker/pmtools#69`.
+
 ## Filing work
 
+- **A question or suggestion is not authorization to create work.** "Have you done
+  X?", "did you Y?", "is Z done?", or "this would be good" asks for an *answer* or
+  surfaces an *option* — it is not a cue to file an issue, claim a worktree, or
+  start coding. Answer the question (or present the option) and **stop**;
+  file/claim/execute only after an explicit go-ahead ("yes, do it", "take that
+  ticket", "go ahead"). Filing-and-claiming is outward-facing and costly to
+  unwind — when unsure whether you've been authorized, ask. (Front-end mirror of
+  "surface the contradiction before an outward-facing close" under *Fixing bugs*.)
 - Shape every ticket as a complaint: **have X / should have Y / repro**
   (yegor-bdd).
 - **Repro/spec-first for unclear bugs.** If a bug's symptom isn't crisp enough to

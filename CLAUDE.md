@@ -8,6 +8,8 @@ Critical rules:
 - **`severity:*` labels are for DEFECTS (bugs) only.** Features = `enhancement`
   with no severity; use `blocked` for dependencies. Don't fake severity to express
   feature priority — assign features directly instead.
+- **A question/suggestion is not authorization to create work** — answer first;
+  file/claim/code only on an explicit go-ahead. See [RULES.md](./RULES.md) → "Filing work".
 - **Repro/spec-first:** if a bug's symptom isn't crisp, file a `research` ticket to
   reproduce/spec it before a DEV ticket.
 - **Every bugfix lands a regression test in the same commit**, and that test must
