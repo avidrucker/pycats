@@ -332,12 +332,12 @@ def status_bar_spec(p):
     if not SHOW_STATUS_TIMER_BARS:
         return None
     if p.state == "shield":
-        ratio = p.shield_hp / SHIELD_MAX_HP
-        seconds = math.ceil(p.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))
+        ratio = p.fighter.shield_hp / SHIELD_MAX_HP
+        seconds = math.ceil(p.fighter.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))
         return (ratio, seconds, SHIELD_COLOR)
-    if p.stun_timer > 0:
-        ratio = p.stun_timer / SHIELD_BREAK_STUN_MAX
-        seconds = math.ceil(p.stun_timer / FPS)
+    if p.fighter.stun_timer > 0:
+        ratio = p.fighter.stun_timer / SHIELD_BREAK_STUN_MAX
+        seconds = math.ceil(p.fighter.stun_timer / FPS)
         return (ratio, seconds, YELLOW)
     return None
 

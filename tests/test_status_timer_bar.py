@@ -27,10 +27,14 @@ from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402
 
 
 def _fake(state="idle", shield_hp=SHIELD_MAX_HP, stun_timer=0, cx=120, top=200):
-    return types.SimpleNamespace(
+    # status_bar_spec reads shield_hp/stun_timer through `.fighter` (#90); `state`
+    # stays a direct Player attr. Self-ref so the flat stand-in satisfies both.
+    ns = types.SimpleNamespace(
         state=state, shield_hp=shield_hp, stun_timer=stun_timer,
         rect=pygame.Rect(cx - 20, top, 40, 60),
     )
+    ns.fighter = ns
+    return ns
 
 
 def test_no_status_returns_none():
