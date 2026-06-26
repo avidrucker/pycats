@@ -52,6 +52,7 @@ from . import stats_print
 from .screen_manager import ScreenStateManager
 from . import text_utils
 from . import display
+from . import settings
 from .render_battle import render_battle, render_attacks
 
 pygame.init()
@@ -114,11 +115,14 @@ players = pygame.sprite.Group()
 attacks = pygame.sprite.Group()
 
 # ------------------------------------------------ pygame set-up
-# Start in windowed mode by default (change to True for fullscreen by default)
-start_fullscreen = False
+# Restore persisted display preferences (#95); defaults if none/invalid.
+_prefs = settings.load()
 
-# Current windowed-scale preset (1x by default; cycle with F10). See pycats.display.
-windowed_scale = display.WINDOWED_SCALE_PRESETS[0]
+# Open fullscreen if that's how the player last left it.
+start_fullscreen = _prefs["fullscreen"]
+
+# Saved windowed-scale preset (1x default; cycle with F10). See pycats.display.
+windowed_scale = _prefs["windowed_scale"]
 # In-fullscreen magnification (#85, #92): F10 cycles the distinct zoom sizes the
 # current monitor can show (display.achievable_zoom_scales). fullscreen_scales is
 # that list (set on entering fullscreen); fullscreen_zoom_index points into it.
@@ -142,10 +146,13 @@ if start_fullscreen:
 
     is_fullscreen = True
 else:
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    # Open the window at the saved scale (offscreen surface + upscale when >1x).
+    screen = pygame.display.set_mode(display.window_size_for(windowed_scale))
     display_surface = screen
-    game_surface = screen
-    scale_factor = 1.0
+    game_surface = screen if windowed_scale == 1.0 else pygame.Surface(
+        (SCREEN_WIDTH, SCREEN_HEIGHT)
+    )
+    scale_factor = windowed_scale
     offset_x = 0
     offset_y = 0
     is_fullscreen = False
@@ -356,6 +363,12 @@ def set_fullscreen_zoom_index(i):
     offset_y = (display_h - scaled_h) // 2
 
 
+def save_prefs():
+    """Persist the current display preferences (#95): windowed scale + fullscreen.
+    Called after an F10/F11 change. No-op when persistence is disabled."""
+    settings.save({"windowed_scale": windowed_scale, "fullscreen": is_fullscreen})
+
+
 def get_render_surface():
     """Get the surface to render the game onto (the offscreen 960x540 surface
     whenever we are scaling; the window itself at windowed 1x)."""
@@ -459,9 +472,11 @@ while running:
         elif ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_F11:
                 toggle_fullscreen()
+                save_prefs()
             elif ev.key == pygame.K_ESCAPE and is_fullscreen:
                 # Allow ESC to exit fullscreen
                 toggle_fullscreen()
+                save_prefs()
             elif ev.key == pygame.K_F10:
                 if is_fullscreen:
                     # Advance to the next *distinct* achievable zoom (wraps), so
@@ -477,6 +492,7 @@ while running:
                     # Windowed: cycle the window-size presets (resizes the window).
                     set_windowed_scale(display.cycle_preset(windowed_scale))
                     zoom_toast.show(display.format_scale_label(windowed_scale))
+                    save_prefs()
 
     # Update screen state manager
     screen_manager.update(frame_input)
