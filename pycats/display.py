@@ -16,6 +16,32 @@ from .config import SCREEN_WIDTH, SCREEN_HEIGHT
 # steps (1x, 2x) are pixel-crisp; fractional steps (1.5x, 2.5x) are smooth-scaled.
 WINDOWED_SCALE_PRESETS = (1.0, 1.5, 2.0, 2.5)
 
+# Fullscreen magnification cycle (#85): the game view is drawn at this zoom and
+# centred (letterboxed) inside the full-monitor window. "fit" is the auto crisp
+# max-fit; the numeric presets are clamped to what the monitor can show.
+FULLSCREEN_ZOOM_PRESETS = ("fit", 1.0, 1.5, 2.0, 2.5)
+
+
+def fit_scale(display_size, base=(SCREEN_WIDTH, SCREEN_HEIGHT)):
+    """Largest scale that fits `base` inside `display_size`, preferring a crisp
+    whole-number multiple. If no integer >= 1 fits (display smaller than base on
+    some axis), fall back to the largest fractional scale that fits."""
+    dw, dh = display_size
+    base_w, base_h = base
+    max_int = min(dw // base_w, dh // base_h)
+    if max_int >= 1:
+        return float(max_int)
+    return min(dw / base_w, dh / base_h)
+
+
+def clamp_scale(scale, display_size, base=(SCREEN_WIDTH, SCREEN_HEIGHT)):
+    """`scale` reduced (never increased) so `base * scale` still fits inside
+    `display_size`. Keeps the chosen fractional value when it fits — only the
+    limiting axis can pull it down. Guarantees the full stage stays on-screen."""
+    dw, dh = display_size
+    base_w, base_h = base
+    return min(scale, dw / base_w, dh / base_h)
+
 
 def window_size_for(scale, base=(SCREEN_WIDTH, SCREEN_HEIGHT)):
     """(width, height) in pixels for a window at `scale` times the base size.

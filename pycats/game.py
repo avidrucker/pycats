@@ -119,30 +119,20 @@ start_fullscreen = False
 
 # Current windowed-scale preset (1x by default; cycle with F10). See pycats.display.
 windowed_scale = display.WINDOWED_SCALE_PRESETS[0]
+# Current in-fullscreen magnification: "fit" (crisp auto max-fit) or a preset
+# float; cycle with F10 while fullscreen. See pycats.display (#85).
+fullscreen_zoom = "fit"
 
 if start_fullscreen:
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     display_surface = screen
     game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    # Calculate scaling for fullscreen
-    screen_width, screen_height = screen.get_size()
-    scale_x = screen_width / SCREEN_WIDTH
-    scale_y = screen_height / SCREEN_HEIGHT
-
-    # For crisp scaling, prefer integer scale factors when possible
-    max_integer_scale = min(int(scale_x), int(scale_y))
-    if max_integer_scale >= 1:
-        # Use integer scaling for crisp pixels
-        scale_factor = float(max_integer_scale)
-    else:
-        # If screen is smaller than game resolution, use fractional scaling
-        scale_factor = min(scale_x, scale_y)
-
-    scaled_width = int(SCREEN_WIDTH * scale_factor)
-    scaled_height = int(SCREEN_HEIGHT * scale_factor)
-    offset_x = (screen_width - scaled_width) // 2
-    offset_y = (screen_height - scaled_height) // 2
+    # Default "fit" zoom, centred in the full-monitor window.
+    scale_factor = display.fit_scale(screen.get_size())
+    scaled_width, scaled_height = display.window_size_for(scale_factor)
+    offset_x = (screen.get_width() - scaled_width) // 2
+    offset_y = (screen.get_height() - scaled_height) // 2
 
     is_fullscreen = True
 else:
@@ -308,36 +298,12 @@ def toggle_fullscreen():
         is_fullscreen = False
         # print("Switched to windowed mode")
     else:
-        # Switch to fullscreen mode
+        # Switch to fullscreen at the default "fit" zoom; F10 cycles it in place.
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         display_surface = screen
-
-        # Create a surface for rendering the game at original resolution
         game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-        # Calculate scaling to fit the screen while maintaining aspect ratio
-        screen_width, screen_height = screen.get_size()
-        scale_x = screen_width / SCREEN_WIDTH
-        scale_y = screen_height / SCREEN_HEIGHT
-
-        # For crisp scaling, prefer integer scale factors when possible
-        max_integer_scale = min(int(scale_x), int(scale_y))
-        if max_integer_scale >= 1:
-            # Use integer scaling for crisp pixels
-            scale_factor = float(max_integer_scale)
-        else:
-            # If screen is smaller than game resolution, use fractional scaling
-            scale_factor = min(scale_x, scale_y)
-
-        # Calculate offset to center the scaled image
-        scaled_width = int(SCREEN_WIDTH * scale_factor)
-        scaled_height = int(SCREEN_HEIGHT * scale_factor)
-        offset_x = (screen_width - scaled_width) // 2
-        offset_y = (screen_height - scaled_height) // 2
-
         is_fullscreen = True
-        # print(f"Switched to fullscreen mode: {screen_width}x{screen_height}, scale: {scale_factor:.2f}")
-        # print(f"Using {'integer' if scale_factor == int(scale_factor) else 'fractional'} scaling")
+        set_fullscreen_zoom("fit")
 
 
 def set_windowed_scale(scale):
@@ -361,6 +327,27 @@ def set_windowed_scale(scale):
     is_fullscreen = False
 
 
+def set_fullscreen_zoom(choice):
+    """Set the in-fullscreen magnification of the 960x540 view, staying fullscreen.
+
+    `choice` is "fit" (crisp auto max-fit) or a preset float (1x/1.5x/2x/2.5x).
+    Numeric choices are clamped so the game never exceeds the monitor — the whole
+    stage (and its KO/blast bounds) always stays on-screen; we letterbox the rest.
+    Assumes the fullscreen display surface is already active (screen)."""
+    global scale_factor, offset_x, offset_y, fullscreen_zoom
+
+    fullscreen_zoom = choice
+    display_w, display_h = screen.get_size()
+    if choice == "fit":
+        scale_factor = display.fit_scale((display_w, display_h))
+    else:
+        scale_factor = display.clamp_scale(choice, (display_w, display_h))
+
+    scaled_w, scaled_h = display.window_size_for(scale_factor)
+    offset_x = (display_w - scaled_w) // 2
+    offset_y = (display_h - scaled_h) // 2
+
+
 def get_render_surface():
     """Get the surface to render the game onto (the offscreen 960x540 surface
     whenever we are scaling; the window itself at windowed 1x)."""
@@ -370,34 +357,13 @@ def get_render_surface():
 def present_frame():
     """Present the rendered frame to the display."""
     if is_fullscreen:
-        # Clear the display surface
+        # Letterbox: clear, then draw the magnified 960x540 view centred. The
+        # zoom (scale_factor) is set by set_fullscreen_zoom; crisp at whole
+        # multiples, smoothscale at fractional zooms (see display.scale_surface).
         display_surface.fill((0, 0, 0))
-
-        # Scale and blit the game surface to the display using nearest-neighbor for crisp scaling
-        scaled_width = int(SCREEN_WIDTH * scale_factor)
-        scaled_height = int(SCREEN_HEIGHT * scale_factor)
-
-        # For crisp pixel art scaling, we want to use integer scaling when possible
-        # and avoid sub-pixel positioning
-        if scale_factor >= 2.0 and scale_factor == int(scale_factor):
-            # Perfect integer scaling - use scale_by for best results
-            try:
-                scaled_surface = pygame.transform.scale_by(
-                    game_surface, int(scale_factor)
-                )
-            except AttributeError:
-                # Fallback for older pygame versions
-                scaled_surface = pygame.transform.scale(
-                    game_surface, (scaled_width, scaled_height)
-                )
-        else:
-            # For non-integer scaling, still use regular scale but with size adjustment
-            # to maintain crisp pixels as much as possible
-            scaled_surface = pygame.transform.scale(
-                game_surface, (scaled_width, scaled_height)
-            )
-
-        display_surface.blit(scaled_surface, (offset_x, offset_y))
+        display_surface.blit(
+            display.scale_surface(game_surface, scale_factor), (offset_x, offset_y)
+        )
 
     elif game_surface is not screen:
         # Windowed at >1x: scale the offscreen 960x540 surface up to fill the
@@ -476,9 +442,17 @@ while running:
                 # Allow ESC to exit fullscreen
                 toggle_fullscreen()
             elif ev.key == pygame.K_F10:
-                # Cycle windowed-scale presets (1x -> 1.5x -> 2x -> 2.5x -> 1x).
-                # Brings the game to windowed mode at the next preset.
-                set_windowed_scale(display.cycle_preset(windowed_scale))
+                if is_fullscreen:
+                    # Cycle the fullscreen magnification in place, staying
+                    # fullscreen (fit -> 1x -> 1.5x -> 2x -> 2.5x -> fit).
+                    set_fullscreen_zoom(
+                        display.cycle_preset(
+                            fullscreen_zoom, presets=display.FULLSCREEN_ZOOM_PRESETS
+                        )
+                    )
+                else:
+                    # Windowed: cycle the window-size presets (resizes the window).
+                    set_windowed_scale(display.cycle_preset(windowed_scale))
 
     # Update screen state manager
     screen_manager.update(frame_input)
@@ -515,8 +489,10 @@ while running:
         screen_manager.render(get_render_surface())
 
         # Draw fullscreen instructions on character select screen
-        fs_text = "F11: Toggle Fullscreen | F10: Window Size" + (
-            " | ESC: Exit Fullscreen" if is_fullscreen else ""
+        fs_text = (
+            "F11: Toggle Fullscreen | "
+            + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
+            + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
         )
         text_utils.render_text(
             get_render_surface(),
@@ -598,8 +574,10 @@ while running:
         )
 
         # Draw fullscreen instructions
-        fs_text = "F11: Toggle Fullscreen | F10: Window Size" + (
-            " | ESC: Exit Fullscreen" if is_fullscreen else ""
+        fs_text = (
+            "F11: Toggle Fullscreen | "
+            + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
+            + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
         )
         text_utils.render_text(
             render_surface,

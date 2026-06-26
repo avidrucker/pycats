@@ -64,6 +64,47 @@ def test_cycle_preset_from_unknown_scale_snaps_to_first():
     assert display.cycle_preset(2.66) == display.WINDOWED_SCALE_PRESETS[0]
 
 
+@pytest.mark.parametrize(
+    "display_size, expected",
+    [
+        ((1920, 1080), 2.0),   # 1080p: clean 2x integer fit
+        ((2560, 1440), 2.0),   # 1440p: 2.66x possible, but fit prefers crisp 2x
+        ((1366, 768), 1.0),    # common laptop: only 1x fits as an integer
+        ((960, 540), 1.0),     # exactly the base
+    ],
+)
+def test_fit_scale_prefers_largest_integer_that_fits(display_size, expected):
+    assert display.fit_scale(display_size) == expected
+
+
+def test_fit_scale_falls_back_to_fractional_when_smaller_than_base():
+    # Display smaller than 960x540 in some axis: no integer >= 1 fits, so shrink
+    # to the largest fractional scale that fits (the limiting axis wins).
+    # 800/960 = 0.8333..., 480/540 = 0.8888... -> 0.8333...
+    assert display.fit_scale((800, 480)) == pytest.approx(800 / 960)
+
+
+@pytest.mark.parametrize(
+    "scale, display_size, expected",
+    [
+        (2.5, (1920, 1080), 2.0),   # 2.5x would overflow 1080p -> clamp to fit (2x)
+        (2.5, (2560, 1440), 2.5),   # 2.5x fits on 1440p -> unchanged
+        (1.0, (1920, 1080), 1.0),   # well within -> unchanged
+        (1.5, (1366, 768), pytest.approx(768 / 540)),  # clamp to the limiting axis
+    ],
+)
+def test_clamp_scale_never_exceeds_what_the_display_can_show(scale, display_size, expected):
+    assert display.clamp_scale(scale, display_size) == expected
+
+
+def test_fullscreen_zoom_cycle_includes_fit_and_wraps():
+    presets = display.FULLSCREEN_ZOOM_PRESETS
+    assert presets[0] == "fit"
+    assert display.cycle_preset("fit", presets=presets) == 1.0
+    assert display.cycle_preset(2.5, presets=presets) == "fit"  # wraps back to fit
+    assert display.cycle_preset(2.0, step=-1, presets=presets) == 1.5
+
+
 @pytest.mark.parametrize("scale", [1.0, 1.5, 2.0, 2.5])
 def test_scale_surface_produces_expected_dimensions(scale):
     import pygame
