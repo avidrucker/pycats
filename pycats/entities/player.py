@@ -29,7 +29,6 @@ Use: Core gameplay logic for player control and interaction.
 import pygame  # type: ignore
 from enum import Enum, auto
 from ..config import (
-    MAX_JUMPS,
     PLAYER_SIZE,
     KNOCKBACK_DECAY,
 )
@@ -71,15 +70,16 @@ class Player(pygame.sprite.Sprite):
         state_backend: str = "legacy", weight: int = 100,
     ):
         super().__init__()
-        self.weight = weight  # fighter weight; feeds the knockback formula (#40)
 
         # ---------- combat domain: the Fighter aggregate ----------
-        # Sprite-free domain object owning the combat state + stats + rules and,
-        # since #84, the kinematics (rect/vel/on_ground/spawn_point). Player
-        # composes it and delegates via properties so every reader/writer is
-        # unchanged; created first so those properties resolve during the rest of
-        # __init__. The remaining timers/flags relocate in 6b-3b. (design #69)
-        self.fighter = Fighter(self, x, y)
+        # Sprite-free domain object that owns ALL of this fighter's simulation
+        # state — kinematics, combat stats, timers, flags, facing, weight — and
+        # the rules over them (#81/#83/#84/#87; design #69). Player is the thin
+        # pygame Sprite adapter: it composes the Fighter, wires the subsystems
+        # below, exposes delegating properties so readers are unchanged, and
+        # orchestrates them in update(). Created first so those properties resolve
+        # during the rest of __init__.
+        self.fighter = Fighter(self, x, y, facing_right, weight)
 
         # Presentation is a render-time concern (#75): the body tint is computed
         # by render_battle.body_tint(self) from this player's state, so the entity
@@ -96,25 +96,8 @@ class Player(pygame.sprite.Sprite):
         else:
             self.stripe_color = color  # Default to same color if no match
 
-        # ---------- spawn / KO ----------
-        self.is_alive = True
-
         # Input mapping
         self.controls = controls
-
-        # Timers / counters
-        self.respawn_timer = 0  # frames until next spawn
-        self.dodge_timer = 0
-        self.hurt_timer = 0
-        self.stun_timer = 0
-        # attack_timer is now a derived property over self._clock (see below).
-        self.invulnerable_timer = 0  # used for invulnerability mid-dodge, post-respawn, or while ledge grabbing
-        self.jumps_remaining = MAX_JUMPS
-        self.air_dodge_ok = True  # players can only air dodge once per combined sustained jump/fall status, until they land
-        self.invulnerable = False  # used for dodging and invulnerability after being hit, respawned, or ledge grabbing
-        self.done_attacking = (
-            True  # used to determine when the player is done attacking
-        )
 
         # ---------- data-driven move clock (Task 4 / #71) ----------
         # Load the fighter's data once. Phase 0: load_fighter_data returns the
@@ -128,28 +111,11 @@ class Player(pygame.sprite.Sprite):
         # Input → action translator (jump/dodge/shield/attack/move); #73.
         self._input = FighterInput(self)
 
-        # shield visual helpers
-        self.shield_attempting = False
-
-        # Platform drop-through reference
-        self.drop_platform = None
-
-        # Edge-aware dodge state
-        self.dodge_blocked_by_edge = False  # Track if current dodge is blocked by edge
-        self.spot_dodge_shield_held = (
-            False  # Track if shield was held during spot dodge
-        )
-
         # Action-state engine (legacy FSM or statechart; legacy by default)
         self.engine = make_state_engine(self, state_backend)
 
-        # Facing
-        self.facing_right = facing_right
-        self.original_facing_right = (
-            facing_right  # Store original facing direction for respawn
-        )
-
-        # Tail (initialize after facing_right is set)
+        # Tail. facing_right/rect are Fighter-owned and set above, so the tail's
+        # initial layout is correct.
         from .tail import Tail
 
         self.tail = Tail(self)
@@ -221,6 +187,148 @@ class Player(pygame.sprite.Sprite):
     @spawn_point.setter
     def spawn_point(self, value):
         self.fighter.spawn_point = value
+
+    # ---- timers / flags / facing / weight, delegated to Fighter (#87 / 6b-3b) ----
+    # Plain get+set pass-throughs (no invariants) so update(), fighter_physics,
+    # fighter_input, tail, render_battle, game, the runner and the tests keep
+    # reading/writing these as `player.<x>` unchanged. Player is now the thin
+    # pygame Sprite adapter; the Fighter owns the state.
+
+    @property
+    def weight(self):
+        return self.fighter.weight
+
+    @weight.setter
+    def weight(self, value):
+        self.fighter.weight = value
+
+    @property
+    def is_alive(self):
+        return self.fighter.is_alive
+
+    @is_alive.setter
+    def is_alive(self, value):
+        self.fighter.is_alive = value
+
+    @property
+    def respawn_timer(self):
+        return self.fighter.respawn_timer
+
+    @respawn_timer.setter
+    def respawn_timer(self, value):
+        self.fighter.respawn_timer = value
+
+    @property
+    def dodge_timer(self):
+        return self.fighter.dodge_timer
+
+    @dodge_timer.setter
+    def dodge_timer(self, value):
+        self.fighter.dodge_timer = value
+
+    @property
+    def hurt_timer(self):
+        return self.fighter.hurt_timer
+
+    @hurt_timer.setter
+    def hurt_timer(self, value):
+        self.fighter.hurt_timer = value
+
+    @property
+    def stun_timer(self):
+        return self.fighter.stun_timer
+
+    @stun_timer.setter
+    def stun_timer(self, value):
+        self.fighter.stun_timer = value
+
+    @property
+    def invulnerable_timer(self):
+        return self.fighter.invulnerable_timer
+
+    @invulnerable_timer.setter
+    def invulnerable_timer(self, value):
+        self.fighter.invulnerable_timer = value
+
+    @property
+    def jumps_remaining(self):
+        return self.fighter.jumps_remaining
+
+    @jumps_remaining.setter
+    def jumps_remaining(self, value):
+        self.fighter.jumps_remaining = value
+
+    @property
+    def air_dodge_ok(self):
+        return self.fighter.air_dodge_ok
+
+    @air_dodge_ok.setter
+    def air_dodge_ok(self, value):
+        self.fighter.air_dodge_ok = value
+
+    @property
+    def invulnerable(self):
+        return self.fighter.invulnerable
+
+    @invulnerable.setter
+    def invulnerable(self, value):
+        self.fighter.invulnerable = value
+
+    @property
+    def done_attacking(self):
+        return self.fighter.done_attacking
+
+    @done_attacking.setter
+    def done_attacking(self, value):
+        self.fighter.done_attacking = value
+
+    @property
+    def shield_attempting(self):
+        return self.fighter.shield_attempting
+
+    @shield_attempting.setter
+    def shield_attempting(self, value):
+        self.fighter.shield_attempting = value
+
+    @property
+    def drop_platform(self):
+        return self.fighter.drop_platform
+
+    @drop_platform.setter
+    def drop_platform(self, value):
+        self.fighter.drop_platform = value
+
+    @property
+    def dodge_blocked_by_edge(self):
+        return self.fighter.dodge_blocked_by_edge
+
+    @dodge_blocked_by_edge.setter
+    def dodge_blocked_by_edge(self, value):
+        self.fighter.dodge_blocked_by_edge = value
+
+    @property
+    def spot_dodge_shield_held(self):
+        return self.fighter.spot_dodge_shield_held
+
+    @spot_dodge_shield_held.setter
+    def spot_dodge_shield_held(self, value):
+        self.fighter.spot_dodge_shield_held = value
+
+    @property
+    def facing_right(self):
+        return self.fighter.facing_right
+
+    @facing_right.setter
+    def facing_right(self, value):
+        self.fighter.facing_right = value
+
+    @property
+    def original_facing_right(self):
+        return self.fighter.original_facing_right
+
+    @original_facing_right.setter
+    def original_facing_right(self, value):
+        self.fighter.original_facing_right = value
 
     # ---- combat state + stats, delegated to Fighter (#81 / D1 slice 6b-1) ----
     # Thin pass-throughs so every existing reader/writer (render_battle, game.py,

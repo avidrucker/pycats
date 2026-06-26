@@ -1,18 +1,24 @@
 """Fighter — the Sprite-free domain aggregate for a fighter's combat state + rules.
 
-D1 slices 6b-1 (#81) and 6b-2 (#83): the courier slices of the `Player` →
-`Fighter`/`Sprite` split scoped on #69. 6b-1 extracted the combat *state* + stats
-and named the S3 invariants; 6b-2 relocates the *rules* (`receive_hit`, KO /
-respawn, blast-zone, the state-starters). The remaining simulation *state*
-(`rect`/`vel`/timers/flags) still lives on `Player` for now and the rules reach it
-through `self.owner`; it relocates in 6b-3, after which the `owner.` accesses
-become `self.` and `Player` becomes the thin pygame adapter.
+The end of the D1 `Player` god-object decomposition (#69), landed across slices
+6b-1 (#81, combat state + stats + S3 invariants), 6b-2 (#83, the rules), 6b-3a
+(#84, kinematics) and 6b-3b (#87, timers/flags/facing/weight). `Fighter` now owns
+**all** of a fighter's simulation state and the rules over it; `Player` is the
+thin `pygame.sprite.Sprite` adapter that composes a `Fighter`, wires the
+subsystems (`_clock`/`_input`/`engine`/`tail`), exposes delegating properties so
+every reader/writer is unchanged, and orchestrates the per-frame `update()`.
 
-`Fighter` is deliberately NOT a `pygame.sprite.Sprite` — it holds plain values,
-enforces their contracts, and runs the rules. `Player` composes one
-(`self.fighter = Fighter(self)`, the established `Tail(self)` back-ref pattern)
-and exposes thin delegating properties/methods so every existing reader/writer is
-unchanged.
+`Fighter` is deliberately NOT a `pygame.sprite.Sprite` — it holds plain values
+(`pygame.Rect`/`Vector2` are kept as value types per the #69 Sprite-free, not
+pygame-free, boundary), enforces its contracts, and runs the rules. It keeps an
+`owner` back-reference (the established `Tail(self)` pattern) through which the
+rules reach the few things that remain Player's: the `_clock`/`engine`/`tail`
+subsystems and `char_name`.
+
+Invariants (S3 — enforced once, at the setter, instead of re-derived per site):
+- ``percent >= 0``                 (had NO guard before — first enforcement)
+- ``0 <= shield_hp <= SHIELD_MAX_HP`` (clamps were scattered across player.py)
+- ``lives >= 0``                   (was only clamped at the `_ko` site, #54)
 
 Invariants (S3 — enforced once, at the setter, instead of re-derived per site):
 - ``percent >= 0``                 (had NO guard before — first enforcement)
@@ -42,11 +48,14 @@ from ..combat.knockback import knockback, hitstun_frames
 
 
 class Fighter:
-    def __init__(self, owner, x, y):
-        # Back-reference to the owning Player (pygame Sprite adapter). The rules
-        # reach the not-yet-relocated simulation state (timers/flags) and the
-        # engine/tail through it; the rest relocates in 6b-3b.
+    def __init__(self, owner, x, y, facing_right, weight):
+        # Back-reference to the owning Player (the pygame Sprite adapter). Since
+        # 6b-3b the rules reach only Player's wiring through it — `owner._clock`,
+        # `owner.engine`, `owner.tail` (and `owner.char_name` in debug comments);
+        # all the simulation state is now Fighter's own.
         self.owner = owner
+
+        self.weight = weight  # fighter weight; feeds the knockback formula (#40)
 
         # ---------- kinematics (#84 / 6b-3a) ----------
         # The authoritative body box + velocity now live on the domain object;
@@ -68,6 +77,31 @@ class Fighter:
         self.hits_landed = 0  # Successful hits on opponent
         self.suicides = 0  # Deaths without being hit (self-inflicted)
         self.was_hit_before_ko = False  # Track if last KO was from being hit
+
+        # ---------- spawn / KO ----------
+        self.is_alive = True
+
+        # ---------- timers / counters (#87 / 6b-3b) ----------
+        self.respawn_timer = 0  # frames until next spawn
+        self.dodge_timer = 0
+        self.hurt_timer = 0
+        self.stun_timer = 0
+        # attack_timer is a derived property over owner._clock (#71).
+        self.invulnerable_timer = 0  # invulnerability mid-dodge, post-respawn, or while ledge grabbing
+        self.jumps_remaining = MAX_JUMPS
+        self.air_dodge_ok = True  # players can only air dodge once per sustained jump/fall, until they land
+        self.invulnerable = False  # dodging / post-hit / respawn / ledge-grab invulnerability
+        self.done_attacking = True  # used to determine when the player is done attacking
+
+        # ---------- shield / dodge flags ----------
+        self.shield_attempting = False  # shield visual helper
+        self.drop_platform = None  # platform drop-through reference
+        self.dodge_blocked_by_edge = False  # current dodge is blocked by an edge
+        self.spot_dodge_shield_held = False  # shield was held during a spot dodge
+
+        # ---------- facing ----------
+        self.facing_right = facing_right
+        self.original_facing_right = facing_right  # restored on respawn
 
     # ---------- combat state ----------
     @property
@@ -114,7 +148,7 @@ class Fighter:
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""
         self.record_hit_received()  # Track that this player was hit
-        if self.owner.shield_attempting and self.shield_hp > 0:
+        if self.shield_attempting and self.shield_hp > 0:
             self.shield_hp = self.shield_hp - atk.damage  # setter clamps >= 0
             if self.shield_hp == 0:
                 self._start_stun()
@@ -122,9 +156,9 @@ class Fighter:
         else:
             # Phase 1 (#40): authentic Brawl/PM knockback + hitstun-from-knockback.
             self.percent += atk.damage
-            kb = knockback(self.percent, atk.damage, self.owner.weight,
+            kb = knockback(self.percent, atk.damage, self.weight,
                            atk.base_knockback, atk.knockback_growth)
-            self.owner.hurt_timer = hitstun_frames(kb)
+            self.hurt_timer = hitstun_frames(kb)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
             direction = (
                 1 if atk.owner.facing_right else -1
@@ -142,8 +176,8 @@ class Fighter:
 
     def _handle_landing(self, was_airborne: bool):
         if self.on_ground and was_airborne:
-            self.owner.jumps_remaining = MAX_JUMPS  # reset jumps when landing
-            self.owner.air_dodge_ok = True  # reset air dodge availability
+            self.jumps_remaining = MAX_JUMPS  # reset jumps when landing
+            self.air_dodge_ok = True  # reset air dodge availability
 
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
@@ -166,8 +200,8 @@ class Fighter:
         # zero-life player from going negative if the is_alive / respawn gates
         # ever let a re-KO through.
         self.lives -= 1
-        self.owner.is_alive = False
-        self.owner.respawn_timer = RESPAWN_DELAY_FRAMES
+        self.is_alive = False
+        self.respawn_timer = RESPAWN_DELAY_FRAMES
         # hide sprite off-screen
         self.rect.center = (-1000, -1000)
         self.vel.update(0, 0)
@@ -184,32 +218,32 @@ class Fighter:
         `original_facing_right`, not hardcoded, so it stays correct if a player
         is ever constructed facing a non-default direction (e.g. #16 skins).
         """
-        self.owner.is_alive = True
+        self.is_alive = True
         self.rect.midbottom = self.spawn_point
         self.vel.update(0, 0)
         self.on_ground = False
-        self.owner.facing_right = self.owner.original_facing_right
-        self.owner.jumps_remaining = MAX_JUMPS
-        self.owner.air_dodge_ok = True
+        self.facing_right = self.original_facing_right
+        self.jumps_remaining = MAX_JUMPS
+        self.air_dodge_ok = True
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
-        self.owner.shield_attempting = False
+        self.shield_attempting = False
         self.was_hit_before_ko = False  # reset hit tracking for the next life
         # Transient hitstun / action timers + flags. _ko early-returns from
         # update(), so these never tick down during death; clearing them here is
         # what keeps a player KO'd mid-hurt/stun (#9) or mid-dodge/attack (#31)
         # from carrying that state into its next life (a frozen dodge_timer, a
         # leaked invulnerable=True, etc.).
-        self.owner.respawn_timer = 0
-        self.owner.dodge_timer = 0
-        self.owner.hurt_timer = 0
-        self.owner.stun_timer = 0
-        self.owner.invulnerable_timer = 0
-        self.owner.invulnerable = False
-        self.owner.spot_dodge_shield_held = False
-        self.owner.dodge_blocked_by_edge = False
+        self.respawn_timer = 0
+        self.dodge_timer = 0
+        self.hurt_timer = 0
+        self.stun_timer = 0
+        self.invulnerable_timer = 0
+        self.invulnerable = False
+        self.spot_dodge_shield_held = False
+        self.dodge_blocked_by_edge = False
         self.owner._clock.reset()  # attack_timer/current_move/move_frame all derive from this
-        self.owner.done_attacking = True
+        self.done_attacking = True
         # (visual reset is render-time now: render_battle.body_tint #75)
         # Re-initialize the tail to its rest layout at the spawn point (#41): the
         # Verlet tail keeps live position/velocity and freezes wherever the cat
@@ -226,25 +260,25 @@ class Fighter:
     # state starters ----------------------------
     def _start_stun(self) -> None:
         # self.state = "stun"
-        self.owner.stun_timer = STUN_TIME
+        self.stun_timer = STUN_TIME
         self.vel.update(0, 0)
 
     def _start_dodge(self, dir_x: int) -> None:
-        self.owner.dodge_timer = DODGE_TIME
-        self.owner.invulnerable = True
-        self.owner.dodge_blocked_by_edge = False  # Reset edge blocking flag
+        self.dodge_timer = DODGE_TIME
+        self.invulnerable = True
+        self.dodge_blocked_by_edge = False  # Reset edge blocking flag
 
         # Only set spot_dodge_shield_held for ground-based spot dodges (not air dodges)
         if dir_x == 0 and self.on_ground:
             # Ground spot dodge - no movement, special thin platform protection
             self.vel.update(0, 0)  # No movement for ground spot dodge
-            self.owner.spot_dodge_shield_held = True
+            self.spot_dodge_shield_held = True
             # debugging
             # print(f"GROUND SPOT DODGE START: {self.owner.char_name} ground spot dodge initiated")
         elif dir_x == 0 and not self.on_ground:
             # Air dodge - preserve Y velocity, no horizontal movement
             # self.vel.x = 0  # Only reset horizontal velocity for air dodge
-            self.owner.spot_dodge_shield_held = False
+            self.spot_dodge_shield_held = False
             # debugging
             # print(f"AIR DODGE START: {self.owner.char_name} air dodge initiated (preserving Y velocity)")
         else:
@@ -258,9 +292,9 @@ class Fighter:
                 # roll left (dir_x < 0) -> face right; roll right -> face left.
                 # (Air directional dodges are out of scope here — see air-dodge
                 # research #23 — so only the grounded branch sets facing.)
-                self.owner.facing_right = dir_x < 0
+                self.facing_right = dir_x < 0
             else:
                 self.vel.x = (
                     dir_x * DODGE_SPEED + self.vel.x
                 )  # Air directional dodge - preserve Y velocity
-            self.owner.spot_dodge_shield_held = False
+            self.spot_dodge_shield_held = False
