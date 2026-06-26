@@ -11,6 +11,7 @@ class _P:
     """Minimal fighter stand-in: only `.lives` matters to the rule."""
     def __init__(self, lives):
         self.lives = lives
+        self.fighter = self
 
 
 # ---- winner_index: 0 none / 1 first / 2 second, by lives ----

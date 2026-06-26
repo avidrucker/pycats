@@ -63,7 +63,7 @@ class Attack(pygame.sprite.Sprite):
             hitbox.circle,
             owner.rect.x,
             owner.rect.y,
-            owner.facing_right,
+            owner.fighter.facing_right,
             owner.rect.width,
         )
 

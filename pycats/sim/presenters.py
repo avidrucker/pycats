@@ -41,7 +41,7 @@ class LivePresenter:
         for i, p in enumerate(players):
             text_utils.render_text(
                 self.screen,
-                f"{p.char_name}: {p.lives} stocks  {int(p.percent)}%  [{p.state}]",
+                f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
                 (HUD_PADDING, HUD_PADDING + i * 22), 22, WHITE)
 
     def show(self, platforms, players, attacks, frame):

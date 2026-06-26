@@ -199,11 +199,11 @@ font = pygame.font.SysFont(unicode_font_name, 24)
 def draw_hud(surface, p: Player, label, topright=False):
     """Draws the HUD for a player, showing their state, jumps left, shield HP, lives, and damage percent."""
     fsm = f"FSM: {p.state.capitalize()}"
-    jumps = f"{p.jumps_remaining} jump{'s' if p.jumps_remaining != 1 else ''} left"
-    shield = f"Shield HP: {p.shield_hp}"
-    shield_attempting = f"Shield Attempting: {'Yes' if p.shield_attempting else 'No'}"
-    stocks = f"Lives: {p.lives}"
-    percent = f"Damage: {int(p.percent)}%"
+    jumps = f"{p.fighter.jumps_remaining} jump{'s' if p.fighter.jumps_remaining != 1 else ''} left"
+    shield = f"Shield HP: {p.fighter.shield_hp}"
+    shield_attempting = f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}"
+    stocks = f"Lives: {p.fighter.lives}"
+    percent = f"Damage: {int(p.fighter.percent)}%"
     for i, txt in enumerate(
         (label, fsm, jumps, shield, shield_attempting, stocks, percent)
     ):
@@ -278,11 +278,11 @@ def reset_game():
         # hard FSM reset to idle (the per-life respawn lets the chart transition
         # ko -> idle on its own instead).
         for p in (player1, player2):
-            p.reset_to_spawn()
-            p.lives = INITIAL_LIVES
-            p.attacks_made = 0
-            p.hits_landed = 0
-            p.suicides = 0
+            p.fighter.reset_to_spawn()
+            p.fighter.lives = INITIAL_LIVES
+            p.fighter.attacks_made = 0
+            p.fighter.hits_landed = 0
+            p.fighter.suicides = 0
             p.engine.force("idle")
 
     # Clear all attacks

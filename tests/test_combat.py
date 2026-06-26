@@ -61,6 +61,7 @@ def _make_player(rect, *, hurtbox_circles, facing_right=True,
 
     p.receive_hit = receive_hit
     p.record_hit_landed = record_hit_landed
+    p.fighter = p
     return p
 
 

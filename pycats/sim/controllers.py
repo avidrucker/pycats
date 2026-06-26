@@ -79,7 +79,7 @@ class AttackerController(BaseController):
         keys = a.controls
         held = set()
 
-        if t.is_alive:
+        if t.fighter.is_alive:
             dx = t.rect.centerx - a.rect.centerx
             dy = t.rect.centery - a.rect.centery
             adx = abs(dx)
@@ -107,14 +107,14 @@ class AttackerController(BaseController):
             # The horizontal window is wide enough to chase a target knocked onto
             # a neighbouring platform (Task 4's data-driven attack times can leave
             # the target on a different level after knockback).
-            if dy < -30 and a.on_ground and adx < 120:
+            if dy < -30 and a.fighter.on_ground and adx < 120:
                 held.add(keys["up"])
             # Drop through thin platforms when target is below.  Pressing 'down'
             # while grounded on a thin platform causes solve_vertical to let the
             # player fall through it, putting them on the same y-level as the
             # target.  Only activate when dy exceeds the policy threshold so the
             # bot doesn't perpetually fall through the main platform.
-            if self.drop_threshold > 0 and dy > self.drop_threshold and a.on_ground:
+            if self.drop_threshold > 0 and dy > self.drop_threshold and a.fighter.on_ground:
                 held.add(keys["down"])
             # Attack on a cadence when at standoff range and roughly level. The
             # vertical tolerance is wide enough to keep engaging after knockback
@@ -166,7 +166,7 @@ class FollowerController(BaseController):
 
     def decide(self, a, t, frame) -> set:
         held = set()
-        if not t.is_alive:
+        if not t.fighter.is_alive:
             return held
         keys = a.controls
         dx = t.rect.centerx - a.rect.centerx

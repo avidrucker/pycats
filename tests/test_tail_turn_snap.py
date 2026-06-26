@@ -67,7 +67,7 @@ def _max_step_over(p, plats, empty, frames):
 
 def test_facing_flip_does_not_snap_tail():
     p, plats, empty = _settled_player()
-    p.facing_right = not p.facing_right              # cat turns around
+    p.fighter.facing_right = not p.fighter.facing_right              # cat turns around
     flip_max = _max_step_over(p, plats, empty, 15)
     # The pre-fix bug teleported the whole tail ~2*TAIL_BASE_OFFSET_X (30px) in a
     # SINGLE frame. The eased anchor + base orientation keep any single-frame move

@@ -32,14 +32,14 @@ def _player():
 def test_ko_at_zero_lives_does_not_underflow():
     """The invariant: a KO at 0 lives leaves lives at 0, never negative."""
     p = _player()
-    p.lives = 0
-    p._ko()
-    assert p.lives == 0
+    p.fighter.lives = 0
+    p.fighter._ko()
+    assert p.fighter.lives == 0
 
 
 def test_normal_ko_still_decrements():
     """Guard against over-clamping: a KO above 0 still costs one life."""
     p = _player()
-    assert p.lives == INITIAL_LIVES
-    p._ko()
-    assert p.lives == INITIAL_LIVES - 1
+    assert p.fighter.lives == INITIAL_LIVES
+    p.fighter._ko()
+    assert p.fighter.lives == INITIAL_LIVES - 1

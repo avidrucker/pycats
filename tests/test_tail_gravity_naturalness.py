@@ -41,7 +41,7 @@ def test_gravity_droop_is_substantial_and_stable():
     droop = {}
     for f in range(1, 401):
         p.rect.midbottom = (460, 300)   # pin so it settles without falling away
-        p.vel.update(0, 0)
+        p.fighter.vel.update(0, 0)
         p.update(_empty(), far, pg.sprite.Group())
         if f in (200, 400):
             base, tip = p.tail.segments[0], p.tail.segments[-1]

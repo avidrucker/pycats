@@ -20,7 +20,7 @@ def _kos_scored(opponent):
     0 defensively (each suicide costs a life, so it can't legitimately exceed
     lives lost). Mirrors Smash's "KOs" column.
     """
-    return max(0, (INITIAL_LIVES - opponent.lives) - opponent.suicides)
+    return max(0, (INITIAL_LIVES - opponent.fighter.lives) - opponent.fighter.suicides)
 
 
 def _falls_taken(player):
@@ -30,7 +30,7 @@ def _falls_taken(player):
     "Suicides" row. By construction this equals the opponent's KOs scored,
     mirroring Smash's "Falls" column.
     """
-    return max(0, (INITIAL_LIVES - player.lives) - player.suicides)
+    return max(0, (INITIAL_LIVES - player.fighter.lives) - player.fighter.suicides)
 
 
 def format_stats_table(winner, loser):
@@ -53,8 +53,8 @@ def format_stats_table(winner, loser):
         p2_player = winner
 
     # Calculate accuracies for P1 and P2
-    p1_accuracy = (p1_player.hits_landed / max(p1_player.attacks_made, 1)) * 100
-    p2_accuracy = (p2_player.hits_landed / max(p2_player.attacks_made, 1)) * 100
+    p1_accuracy = (p1_player.fighter.hits_landed / max(p1_player.fighter.attacks_made, 1)) * 100
+    p2_accuracy = (p2_player.fighter.hits_landed / max(p2_player.fighter.attacks_made, 1)) * 100
 
     # KOs scored (stocks taken off the opponent) and Falls suffered (times KO'd
     # by the opponent). By construction P1's KOs == P2's Falls and vice versa.
@@ -79,13 +79,13 @@ def format_stats_table(winner, loser):
             },
             {
                 "stat_name": "Attacks Made",
-                "p1_value": str(p1_player.attacks_made),
-                "p2_value": str(p2_player.attacks_made),
+                "p1_value": str(p1_player.fighter.attacks_made),
+                "p2_value": str(p2_player.fighter.attacks_made),
             },
             {
                 "stat_name": "Hits Landed",
-                "p1_value": str(p1_player.hits_landed),
-                "p2_value": str(p2_player.hits_landed),
+                "p1_value": str(p1_player.fighter.hits_landed),
+                "p2_value": str(p2_player.fighter.hits_landed),
             },
             {
                 "stat_name": "Accuracy",
@@ -94,18 +94,18 @@ def format_stats_table(winner, loser):
             },
             {
                 "stat_name": "Damage Given",
-                "p1_value": f"{p1_player.damage_given:.0f}%",
-                "p2_value": f"{p2_player.damage_given:.0f}%",
+                "p1_value": f"{p1_player.fighter.damage_given:.0f}%",
+                "p2_value": f"{p2_player.fighter.damage_given:.0f}%",
             },
             {
                 "stat_name": "Damage Taken",
-                "p1_value": f"{p1_player.damage_taken:.0f}%",
-                "p2_value": f"{p2_player.damage_taken:.0f}%",
+                "p1_value": f"{p1_player.fighter.damage_taken:.0f}%",
+                "p2_value": f"{p2_player.fighter.damage_taken:.0f}%",
             },
             {
                 "stat_name": "Suicides",
-                "p1_value": str(p1_player.suicides),
-                "p2_value": str(p2_player.suicides),
+                "p1_value": str(p1_player.fighter.suicides),
+                "p2_value": str(p2_player.fighter.suicides),
             },
         ],
     }
@@ -122,7 +122,7 @@ def format_final_stocks(winner, loser):
     Returns:
         Formatted string for final stocks
     """
-    return f"Final Stocks: {winner.lives} - {loser.lives}"
+    return f"Final Stocks: {winner.fighter.lives} - {loser.fighter.lives}"
 
 
 def format_winner_announcement(winner, from_pause=False):

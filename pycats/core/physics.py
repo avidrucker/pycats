@@ -171,24 +171,24 @@ def resolve_player_push(players: list["Player"]) -> None:
                 b.rect.x -= overlap // 2 + 1
 
             # Pushing logic — match velocities so neither side gains an advantage
-            if (a.vel.x > 0 and b.vel.x < 0) or (a.vel.x < 0 and b.vel.x > 0):
+            if (a.fighter.vel.x > 0 and b.fighter.vel.x < 0) or (a.fighter.vel.x < 0 and b.fighter.vel.x > 0):
                 # Pushing in opposite directions — cancel out
-                a.vel.x = 0.0
-                b.vel.x = 0.0
+                a.fighter.vel.x = 0.0
+                b.fighter.vel.x = 0.0
             # If only one is pushing, both move at half the pusher's speed
-            elif a.vel.x != 0 and b.vel.x == 0:
-                push_speed = a.vel.x * 0.5
-                a.vel.x = push_speed
-                b.vel.x = push_speed
-            elif b.vel.x != 0 and a.vel.x == 0:
-                push_speed = b.vel.x * 0.5
-                a.vel.x = push_speed
-                b.vel.x = push_speed
+            elif a.fighter.vel.x != 0 and b.fighter.vel.x == 0:
+                push_speed = a.fighter.vel.x * 0.5
+                a.fighter.vel.x = push_speed
+                b.fighter.vel.x = push_speed
+            elif b.fighter.vel.x != 0 and a.fighter.vel.x == 0:
+                push_speed = b.fighter.vel.x * 0.5
+                a.fighter.vel.x = push_speed
+                b.fighter.vel.x = push_speed
             # If both move the same direction, average them
-            elif a.vel.x != 0 and b.vel.x != 0:
-                avg = (a.vel.x + b.vel.x) / 2
-                a.vel.x = avg
-                b.vel.x = avg
+            elif a.fighter.vel.x != 0 and b.fighter.vel.x != 0:
+                avg = (a.fighter.vel.x + b.fighter.vel.x) / 2
+                a.fighter.vel.x = avg
+                b.fighter.vel.x = avg
 
 
 # ----------------------------------------------------------------- edge detection for dodging

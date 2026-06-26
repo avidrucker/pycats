@@ -170,13 +170,13 @@ class Fighter:
             # (#98). Only the non-shield path counts — a shielded hit deals shield
             # damage, not percent, so it is correctly excluded here.
             self.damage_taken += atk.damage
-            atk.owner.record_damage_given(atk.damage)
+            atk.owner.fighter.record_damage_given(atk.damage)
             kb = knockback(self.percent, atk.damage, self.weight,
                            atk.base_knockback, atk.knockback_growth)
             self.hurt_timer = hitstun_frames(kb)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
             direction = (
-                1 if atk.owner.facing_right else -1
+                1 if atk.owner.fighter.facing_right else -1
             )  # the direction of the attack
             radians = math.radians(atk.angle)
             # Initial launch velocity (#44): KB * launch factor. It then bleeds

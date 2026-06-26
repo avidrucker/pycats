@@ -64,10 +64,10 @@ def snapshot(players, attacks, match):
     for p in players:
         parts.append((
             p.char_name, p.state, p.rect.x, p.rect.y,
-            round(p.vel.x, 6), round(p.vel.y, 6), p.on_ground,
-            round(p.percent, 6), round(p.shield_hp, 6), p.lives, p.is_alive,
-            p.jumps_remaining, p.dodge_timer, p.hurt_timer, p.stun_timer,
-            p.attack_timer, p.invulnerable_timer, p.facing_right, p.invulnerable,
+            round(p.fighter.vel.x, 6), round(p.fighter.vel.y, 6), p.fighter.on_ground,
+            round(p.fighter.percent, 6), round(p.fighter.shield_hp, 6), p.fighter.lives, p.fighter.is_alive,
+            p.fighter.jumps_remaining, p.fighter.dodge_timer, p.fighter.hurt_timer, p.fighter.stun_timer,
+            p.attack_timer, p.fighter.invulnerable_timer, p.fighter.facing_right, p.fighter.invulnerable,
             # Task 6: new observable state fields (appended to preserve existing indices)
             p.defensive_status,
             p.move_frame,

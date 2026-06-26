@@ -37,7 +37,7 @@ def _frame(held, pressed):
 
 
 def _is_ground_spot_dodge(p):
-    return p.dodge_timer > 0 and p.state == "dodge" and p.spot_dodge_shield_held
+    return p.fighter.dodge_timer > 0 and p.state == "dodge" and p.fighter.spot_dodge_shield_held
 
 
 def test_simultaneous_down_shield_spot_dodges():

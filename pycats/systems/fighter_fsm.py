@@ -26,112 +26,112 @@ def build_fighter_fsm(player) -> FSM:
             "idle": [
                 Transition("attack", lambda f, ctx: player.attack_timer > 0),
                 Transition(
-                    "dodge", lambda f, ctx: player.dodge_timer > 0
+                    "dodge", lambda f, ctx: player.fighter.dodge_timer > 0
                 ),  # Dodge should take priority
                 Transition(
-                    "run", lambda f, ctx: player.vel.x != 0 and player.on_ground
+                    "run", lambda f, ctx: player.fighter.vel.x != 0 and player.fighter.on_ground
                 ),
-                Transition("jump", lambda f, ctx: player.vel.y < 0),
+                Transition("jump", lambda f, ctx: player.fighter.vel.y < 0),
                 Transition(
-                    "fall", lambda f, ctx: not player.on_ground and player.vel.y > 0
+                    "fall", lambda f, ctx: not player.fighter.on_ground and player.fighter.vel.y > 0
                 ),
-                Transition("shield", lambda f, ctx: player.shield_attempting),
-                Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
+                Transition("shield", lambda f, ctx: player.fighter.shield_attempting),
+                Transition("hurt", lambda f, ctx: player.fighter.hurt_timer > 0),
             ],
             "run": [
                 Transition("attack", lambda f, ctx: player.attack_timer > 0),
                 Transition(
-                    "dodge", lambda f, ctx: player.dodge_timer > 0
+                    "dodge", lambda f, ctx: player.fighter.dodge_timer > 0
                 ),  # Dodge should take priority
-                Transition("idle", lambda f, ctx: player.vel.x == 0),
-                Transition("jump", lambda f, ctx: player.vel.y < 0),
+                Transition("idle", lambda f, ctx: player.fighter.vel.x == 0),
+                Transition("jump", lambda f, ctx: player.fighter.vel.y < 0),
                 Transition(
-                    "fall", lambda f, ctx: not player.on_ground and player.vel.y > 0
+                    "fall", lambda f, ctx: not player.fighter.on_ground and player.fighter.vel.y > 0
                 ),
-                Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
+                Transition("hurt", lambda f, ctx: player.fighter.hurt_timer > 0),
                 Transition(
                     "shield",
-                    lambda f, ctx: player.shield_attempting and player.on_ground,
+                    lambda f, ctx: player.fighter.shield_attempting and player.fighter.on_ground,
                 ),  # can enter shield state while running on the ground
             ],
             "jump": [
                 Transition("attack", lambda f, ctx: player.attack_timer > 0),
-                Transition("fall", lambda f, ctx: player.vel.y >= 0),
-                Transition("ko", lambda f, ctx: not player.is_alive),
-                Transition("dodge", lambda f, ctx: player.dodge_timer > 0),
-                Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
+                Transition("fall", lambda f, ctx: player.fighter.vel.y >= 0),
+                Transition("ko", lambda f, ctx: not player.fighter.is_alive),
+                Transition("dodge", lambda f, ctx: player.fighter.dodge_timer > 0),
+                Transition("hurt", lambda f, ctx: player.fighter.hurt_timer > 0),
             ],
             "fall": [
                 Transition("attack", lambda f, ctx: player.attack_timer > 0),
                 Transition(
-                    "idle", lambda f, ctx: player.on_ground and player.vel.x == 0
+                    "idle", lambda f, ctx: player.fighter.on_ground and player.fighter.vel.x == 0
                 ),
                 Transition(
-                    "run", lambda f, ctx: player.on_ground and player.vel.x != 0
+                    "run", lambda f, ctx: player.fighter.on_ground and player.fighter.vel.x != 0
                 ),
-                Transition("jump", lambda f, ctx: player.vel.y < 0),
-                Transition("ko", lambda f, ctx: not player.is_alive),
-                Transition("dodge", lambda f, ctx: player.dodge_timer > 0),
-                Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
+                Transition("jump", lambda f, ctx: player.fighter.vel.y < 0),
+                Transition("ko", lambda f, ctx: not player.fighter.is_alive),
+                Transition("dodge", lambda f, ctx: player.fighter.dodge_timer > 0),
+                Transition("hurt", lambda f, ctx: player.fighter.hurt_timer > 0),
             ],
             "shield": [
                 # Shield-break stun (#12) takes priority: a depleted shield calls
                 # _start_stun (stun_timer > 0) and the fighter is dizzy regardless
                 # of whether shield is still held.
-                Transition("stun", lambda f, ctx: player.stun_timer > 0),
-                Transition("idle", lambda f, ctx: not player.shield_attempting),
-                Transition("dodge", lambda f, ctx: player.dodge_timer > 0),
-                Transition("jump", lambda f, ctx: player.vel.y < 0),
+                Transition("stun", lambda f, ctx: player.fighter.stun_timer > 0),
+                Transition("idle", lambda f, ctx: not player.fighter.shield_attempting),
+                Transition("dodge", lambda f, ctx: player.fighter.dodge_timer > 0),
+                Transition("jump", lambda f, ctx: player.fighter.vel.y < 0),
                 #### TODO: grab: attacking while shielding leads to grabbing state
                 #### TODO: held: being grabbed by an opponent leads to held state
             ],
-            "ko": [Transition("idle", lambda f, ctx: player.is_alive)],
+            "ko": [Transition("idle", lambda f, ctx: player.fighter.is_alive)],
             "dodge": [
                 Transition(
                     "shield",
-                    lambda f, ctx: player.shield_attempting
-                    and player.dodge_timer <= 0
-                    and player.on_ground,
+                    lambda f, ctx: player.fighter.shield_attempting
+                    and player.fighter.dodge_timer <= 0
+                    and player.fighter.on_ground,
                 ),  # can re-enter shield state after dodging on the ground
                 Transition(
                     "idle",
-                    lambda f, ctx: not player.shield_attempting
-                    and player.dodge_timer <= 0
-                    and player.on_ground
-                    and not player.spot_dodge_shield_held,  # Don't go to idle if spot dodge shield is held
-                ),  #  and player.vel.x == 0
+                    lambda f, ctx: not player.fighter.shield_attempting
+                    and player.fighter.dodge_timer <= 0
+                    and player.fighter.on_ground
+                    and not player.fighter.spot_dodge_shield_held,  # Don't go to idle if spot dodge shield is held
+                ),  #  and player.fighter.vel.x == 0
                 Transition(
                     "fall",
-                    lambda f, ctx: player.dodge_timer <= 0 and not player.on_ground,
-                ),  # and player.vel.y > 0
+                    lambda f, ctx: player.fighter.dodge_timer <= 0 and not player.fighter.on_ground,
+                ),  # and player.fighter.vel.y > 0
             ],
             #### hurt: hit by an attack, unable to move or attack for a short time
             "hurt": [
                 Transition(
-                    "idle", lambda f, ctx: player.hurt_timer <= 0 and player.on_ground
+                    "idle", lambda f, ctx: player.fighter.hurt_timer <= 0 and player.fighter.on_ground
                 ),
                 Transition(
                     "fall",
-                    lambda f, ctx: player.hurt_timer <= 0 and not player.on_ground,
+                    lambda f, ctx: player.fighter.hurt_timer <= 0 and not player.fighter.on_ground,
                 ),
                 #### TODO: implement shield holding to transition from hurt to shield state
             ],
             "stun": [
                 Transition(
-                    "idle", lambda f, ctx: player.stun_timer <= 0 and player.on_ground
+                    "idle", lambda f, ctx: player.fighter.stun_timer <= 0 and player.fighter.on_ground
                 ),
                 Transition(
                     "fall",
-                    lambda f, ctx: player.stun_timer <= 0 and not player.on_ground,
+                    lambda f, ctx: player.fighter.stun_timer <= 0 and not player.fighter.on_ground,
                 ),
             ],
             "attack": [
                 Transition(
-                    "idle", lambda f, ctx: player.done_attacking and player.on_ground
+                    "idle", lambda f, ctx: player.fighter.done_attacking and player.fighter.on_ground
                 ),
                 Transition(
                     "fall",
-                    lambda f, ctx: player.done_attacking and not player.on_ground,
+                    lambda f, ctx: player.fighter.done_attacking and not player.fighter.on_ground,
                 ),
             ],
             #### TODO: hang: hanging on the ledge

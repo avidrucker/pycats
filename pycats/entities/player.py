@@ -128,7 +128,7 @@ class Player(pygame.sprite.Sprite):
         """Defensive-status label, computed directly from the authoritative
         invulnerability flag (backend-agnostic; the statechart engine mirrors
         this same flag in its orthogonal defensive_status region)."""
-        return "intangible" if self.invulnerable else "vulnerable"
+        return "intangible" if self.fighter.invulnerable else "vulnerable"
 
     # ---- move-progress, delegated to MoveClock (#71) ----
     # These three are read by the legacy FSM, the statechart (fighter_chart),
@@ -149,11 +149,10 @@ class Player(pygame.sprite.Sprite):
         """Frames elapsed since the current move started (POST-increment)."""
         return self._clock.frame
 
-    # ---- kinematics, delegated to Fighter (#84 / D1 slice 6b-3a) ----
-    # rect/vel are pygame value types the renderer, physics, tail and collision
-    # read as `player.rect`/`player.vel`; get+set so in-place mutation
-    # (`p.rect.left = …`) AND wholesale assignment (`p.vel = Vector2(...)`, used
-    # in __init__ and tests) both flow to the Fighter.
+    # rect is kept on Player (NOT collapsed in #90): pygame's Sprite machinery
+    # reads `sprite.rect` directly, so it must stay a real attribute. get+set so
+    # both in-place mutation (`p.rect.left = …`) and wholesale assignment flow
+    # through to the Fighter, which owns it.
     @property
     def rect(self):
         return self.fighter.rect
@@ -162,259 +161,13 @@ class Player(pygame.sprite.Sprite):
     def rect(self, value):
         self.fighter.rect = value
 
-    @property
-    def vel(self):
-        return self.fighter.vel
-
-    @vel.setter
-    def vel(self, value):
-        self.fighter.vel = value
-
-    @property
-    def on_ground(self):
-        return self.fighter.on_ground
-
-    @on_ground.setter
-    def on_ground(self, value):
-        self.fighter.on_ground = value
-
-    @property
-    def spawn_point(self):
-        return self.fighter.spawn_point
-
-    @spawn_point.setter
-    def spawn_point(self, value):
-        self.fighter.spawn_point = value
-
-    # ---- timers / flags / facing / weight, delegated to Fighter (#87 / 6b-3b) ----
-    # Plain get+set pass-throughs (no invariants) so update(), fighter_physics,
-    # fighter_input, tail, render_battle, game, the runner and the tests keep
-    # reading/writing these as `player.<x>` unchanged. Player is now the thin
-    # pygame Sprite adapter; the Fighter owns the state.
-
-    @property
-    def weight(self):
-        return self.fighter.weight
-
-    @weight.setter
-    def weight(self, value):
-        self.fighter.weight = value
-
-    @property
-    def is_alive(self):
-        return self.fighter.is_alive
-
-    @is_alive.setter
-    def is_alive(self, value):
-        self.fighter.is_alive = value
-
-    @property
-    def respawn_timer(self):
-        return self.fighter.respawn_timer
-
-    @respawn_timer.setter
-    def respawn_timer(self, value):
-        self.fighter.respawn_timer = value
-
-    @property
-    def dodge_timer(self):
-        return self.fighter.dodge_timer
-
-    @dodge_timer.setter
-    def dodge_timer(self, value):
-        self.fighter.dodge_timer = value
-
-    @property
-    def hurt_timer(self):
-        return self.fighter.hurt_timer
-
-    @hurt_timer.setter
-    def hurt_timer(self, value):
-        self.fighter.hurt_timer = value
-
-    @property
-    def stun_timer(self):
-        return self.fighter.stun_timer
-
-    @stun_timer.setter
-    def stun_timer(self, value):
-        self.fighter.stun_timer = value
-
-    @property
-    def invulnerable_timer(self):
-        return self.fighter.invulnerable_timer
-
-    @invulnerable_timer.setter
-    def invulnerable_timer(self, value):
-        self.fighter.invulnerable_timer = value
-
-    @property
-    def jumps_remaining(self):
-        return self.fighter.jumps_remaining
-
-    @jumps_remaining.setter
-    def jumps_remaining(self, value):
-        self.fighter.jumps_remaining = value
-
-    @property
-    def air_dodge_ok(self):
-        return self.fighter.air_dodge_ok
-
-    @air_dodge_ok.setter
-    def air_dodge_ok(self, value):
-        self.fighter.air_dodge_ok = value
-
-    @property
-    def invulnerable(self):
-        return self.fighter.invulnerable
-
-    @invulnerable.setter
-    def invulnerable(self, value):
-        self.fighter.invulnerable = value
-
-    @property
-    def done_attacking(self):
-        return self.fighter.done_attacking
-
-    @done_attacking.setter
-    def done_attacking(self, value):
-        self.fighter.done_attacking = value
-
-    @property
-    def shield_attempting(self):
-        return self.fighter.shield_attempting
-
-    @shield_attempting.setter
-    def shield_attempting(self, value):
-        self.fighter.shield_attempting = value
-
-    @property
-    def drop_platform(self):
-        return self.fighter.drop_platform
-
-    @drop_platform.setter
-    def drop_platform(self, value):
-        self.fighter.drop_platform = value
-
-    @property
-    def dodge_blocked_by_edge(self):
-        return self.fighter.dodge_blocked_by_edge
-
-    @dodge_blocked_by_edge.setter
-    def dodge_blocked_by_edge(self, value):
-        self.fighter.dodge_blocked_by_edge = value
-
-    @property
-    def spot_dodge_shield_held(self):
-        return self.fighter.spot_dodge_shield_held
-
-    @spot_dodge_shield_held.setter
-    def spot_dodge_shield_held(self, value):
-        self.fighter.spot_dodge_shield_held = value
-
-    @property
-    def facing_right(self):
-        return self.fighter.facing_right
-
-    @facing_right.setter
-    def facing_right(self, value):
-        self.fighter.facing_right = value
-
-    @property
-    def original_facing_right(self):
-        return self.fighter.original_facing_right
-
-    @original_facing_right.setter
-    def original_facing_right(self, value):
-        self.fighter.original_facing_right = value
-
-    # ---- combat state + stats, delegated to Fighter (#81 / D1 slice 6b-1) ----
-    # Thin pass-throughs so every existing reader/writer (render_battle, game.py,
-    # stats_print, the runner snapshot, tests) is unchanged. The invariants on
-    # percent/shield_hp/lives are enforced once, in Fighter's setters.
-    @property
-    def percent(self):
-        return self.fighter.percent
-
-    @percent.setter
-    def percent(self, value):
-        self.fighter.percent = value
-
-    @property
-    def shield_hp(self):
-        return self.fighter.shield_hp
-
-    @shield_hp.setter
-    def shield_hp(self, value):
-        self.fighter.shield_hp = value
-
-    @property
-    def lives(self):
-        return self.fighter.lives
-
-    @lives.setter
-    def lives(self, value):
-        self.fighter.lives = value
-
-    @property
-    def attacks_made(self):
-        return self.fighter.attacks_made
-
-    @attacks_made.setter
-    def attacks_made(self, value):
-        self.fighter.attacks_made = value
-
-    @property
-    def hits_landed(self):
-        return self.fighter.hits_landed
-
-    @hits_landed.setter
-    def hits_landed(self, value):
-        self.fighter.hits_landed = value
-
-    @property
-    def suicides(self):
-        return self.fighter.suicides
-
-    @suicides.setter
-    def suicides(self, value):
-        self.fighter.suicides = value
-
-    @property
-    def was_hit_before_ko(self):
-        return self.fighter.was_hit_before_ko
-
-    @was_hit_before_ko.setter
-    def was_hit_before_ko(self, value):
-        self.fighter.was_hit_before_ko = value
-
-    @property
-    def damage_given(self):
-        return self.fighter.damage_given
-
-    @damage_given.setter
-    def damage_given(self, value):
-        self.fighter.damage_given = value
-
-    @property
-    def damage_taken(self):
-        return self.fighter.damage_taken
-
-    @damage_taken.setter
-    def damage_taken(self, value):
-        self.fighter.damage_taken = value
-
-    # Fighter rules live on the Fighter aggregate (#83 / D1 slice 6b-2); Player
-    # delegates each with a thin pass-through so update(), fighter_physics,
-    # fighter_input, combat, game, and the tests are unchanged. The simulation
-    # state the rules mutate (rect/vel/timers/flags) is still Player's and the
-    # rules reach it via Fighter.owner; it relocates in 6b-3.
-    def receive_hit(self, atk):
-        """Called by combat system when this player is struck."""
-        return self.fighter.receive_hit(atk)
-
-    def _handle_landing(self, was_airborne: bool):
-        return self.fighter._handle_landing(was_airborne)
+    # #90: the ~30 thin get/set delegating properties + the receive_hit/_ko/
+    # reset_to_spawn/_start_*/record_* method delegators that used to live here
+    # are gone. All other fighter state and rules are reached explicitly via
+    # `player.fighter.<x>`; Player is purely the pygame Sprite adapter and the
+    # Fighter aggregate owns the simulation. (state/defensive_status/attack_timer/
+    # current_move/move_frame above are computed from the Player-owned engine /
+    # move clock, not from Fighter, so they stay.)
 
     # ============================================================== update
     def update(self, input_frame, platforms, attack_group):
@@ -425,27 +178,27 @@ class Player(pygame.sprite.Sprite):
 
         """Master per-frame update; handles KO/respawn before usual logic."""
         # ---------- dead / waiting to respawn ----------
-        if not self.is_alive:
-            self.respawn_timer -= 1
-            if self.respawn_timer <= 0 and self.lives > 0:
-                self._respawn()
+        if not self.fighter.is_alive:
+            self.fighter.respawn_timer -= 1
+            if self.fighter.respawn_timer <= 0 and self.fighter.lives > 0:
+                self.fighter._respawn()
             return  # nothing else while dead
 
         # ---------- blast-zone KO check ----------
-        if self._outside_blast_zone():
-            self._ko()
+        if self.fighter._outside_blast_zone():
+            self.fighter._ko()
             return
 
         # ---------- shield tick ----------
         # if shielding, then shield HP goes down, otherwise it goes up
         if self.state == "shield":
-            self.shield_hp = round(self.shield_hp - 0.2, 2)  # Fighter setter clamps >= 0
+            self.fighter.shield_hp = round(self.fighter.shield_hp - 0.2, 2)  # Fighter setter clamps >= 0
         else:
-            self.shield_hp = round(self.shield_hp + 0.2, 2)  # Fighter setter clamps <= MAX
+            self.fighter.shield_hp = round(self.fighter.shield_hp + 0.2, 2)  # Fighter setter clamps <= MAX
 
         #
         if not self._pressed(held, "shield") and not self._pressed(pressed, "shield"):
-            self.shield_attempting = False
+            self.fighter.shield_attempting = False
 
         # input / movement / state logic --------------------------------------
         # Issue #8: hits are resolved AFTER this frame's engine.tick (game.py
@@ -454,7 +207,7 @@ class Player(pygame.sprite.Sprite):
         # on the timers too, not just the lagging state label, so the post-hit
         # frame does not run handle_move and clobber the knockback with walk
         # speed when a direction is held.
-        in_hitstun = self.hurt_timer > 0 or self.stun_timer > 0
+        in_hitstun = self.fighter.hurt_timer > 0 or self.fighter.stun_timer > 0
         dodge_initiated = False
         if not in_hitstun and self.state not in ("dodge", "hurt", "stun"):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
@@ -467,31 +220,31 @@ class Player(pygame.sprite.Sprite):
             # speed (#43). handle_move/friction is skipped during hitstun, so this
             # is the only horizontal decel here; normal friction resumes once
             # hitstun ends. (Gravity still acts on vel.y below.)
-            self.vel.x = decay_velocity(self.vel.x, KNOCKBACK_DECAY)
+            self.fighter.vel.x = decay_velocity(self.fighter.vel.x, KNOCKBACK_DECAY)
 
         # physics: gravity, edge-aware dodge clamping, movement, drop-through,
         # vertical/horizontal collision, and landing — see fighter_physics (#77).
         step_physics(self, platforms, held)
 
         # Non-shield timers tick
-        if self.hurt_timer > 0:
-            self.hurt_timer -= 1
-        if self.stun_timer > 0:
-            self.stun_timer -= 1
-        if self.dodge_timer > 0:
-            self.dodge_timer -= 1
-        if self.dodge_timer == 0 and self.state == "dodge":
-            self.invulnerable = False  # reset invulnerability after dodge ends
-            self.vel.x = 0  # stop horizontal movement after dodge ends
+        if self.fighter.hurt_timer > 0:
+            self.fighter.hurt_timer -= 1
+        if self.fighter.stun_timer > 0:
+            self.fighter.stun_timer -= 1
+        if self.fighter.dodge_timer > 0:
+            self.fighter.dodge_timer -= 1
+        if self.fighter.dodge_timer == 0 and self.state == "dodge":
+            self.fighter.invulnerable = False  # reset invulnerability after dodge ends
+            self.fighter.vel.x = 0  # stop horizontal movement after dodge ends
 
             # Handle spot dodge transition
-            if self.spot_dodge_shield_held:
+            if self.fighter.spot_dodge_shield_held:
                 # print(f"SPOT DODGE END: {self.char_name} ending spot dodge, shield_held={self._pressed(held, 'shield')}")
                 if self._pressed(held, "shield"):
                     # Force shield attempting to true for smooth transition
-                    self.shield_attempting = True
+                    self.fighter.shield_attempting = True
                     # print(f"SPOT DODGE TRANSITION: {self.char_name} shield_attempting set to True")
-                self.spot_dodge_shield_held = False  # reset spot dodge flag
+                self.fighter.spot_dodge_shield_held = False  # reset spot dodge flag
 
         # ---------- data-driven move clock (Task 4 / #71: MoveClock) ----------
         # Advance the move one frame and spawn its hitbox exactly once, when the
@@ -510,7 +263,7 @@ class Player(pygame.sprite.Sprite):
                        disappear_on_hit=False, lifetime=tick.lifetime)
             )
         if self.attack_timer == 0 and self.state == "attack":
-            self.done_attacking = True
+            self.fighter.done_attacking = True
 
         # Update tail physics
         self.tail.update(platforms)
@@ -533,41 +286,12 @@ class Player(pygame.sprite.Sprite):
 
     # ============================================================= KO / respawn
     # These rules live on Fighter (#83); Player keeps thin delegators so update()
-    # (`self._outside_blast_zone`/`self._ko`/`self._respawn`), game.reset_game
+    # (`self.fighter._outside_blast_zone`/`self.fighter._ko`/`self.fighter._respawn`), game.reset_game
     # (`reset_to_spawn`), fighter_input (`_start_dodge`) and the tests are
     # unchanged.
-    def _outside_blast_zone(self) -> bool:
-        return self.fighter._outside_blast_zone()
 
-    def _ko(self):
-        return self.fighter._ko()
-
-    def reset_to_spawn(self):
-        return self.fighter.reset_to_spawn()
-
-    def _respawn(self):
-        return self.fighter._respawn()
-
-    def _start_stun(self) -> None:
-        return self.fighter._start_stun()
-
-    def _start_dodge(self, dir_x: int) -> None:
-        return self.fighter._start_dodge(dir_x)
 
     # Stat counters live on the Fighter aggregate (#81); Player delegates so
     # callers (fighter_input, combat, the test stand-ins) are unchanged.
-    def record_attack_made(self):
-        """Record that this player initiated an attack"""
-        self.fighter.record_attack_made()
 
-    def record_hit_landed(self):
-        """Record that this player successfully hit an opponent"""
-        self.fighter.record_hit_landed()
 
-    def record_hit_received(self):
-        """Record that this player was hit by an opponent"""
-        self.fighter.record_hit_received()
-
-    def record_damage_given(self, amount):
-        """Record percent damage this player dealt to an opponent (#98)"""
-        self.fighter.record_damage_given(amount)

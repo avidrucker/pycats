@@ -33,7 +33,7 @@ def _mk_player(initial_facing_right, backend):
     p = Player(100, 300, P1, (255, 160, 64), eye_color=(0, 0, 0),
                char_name="P1", facing_right=initial_facing_right,
                state_backend=backend)
-    p.lives = 3
+    p.fighter.lives = 3
     return p
 
 
@@ -46,20 +46,20 @@ def test_respawn_restores_initial_facing(initial_facing_right, backend):
     p.platforms = platforms
 
     # Simulate the player having turned to face the *opposite* of its initial direction.
-    p.facing_right = not initial_facing_right
+    p.fighter.facing_right = not initial_facing_right
 
     # Force a KO by driving the player out the bottom blast zone, via the real loop.
     p.rect.top = SCREEN_HEIGHT + 9999
     p.update(_noop(), platforms, pygame.sprite.Group())
-    assert not p.is_alive, "precondition: player should be KO'd"
+    assert not p.fighter.is_alive, "precondition: player should be KO'd"
     # Facing is untouched while dead/waiting; the reset happens on respawn.
-    assert p.facing_right == (not initial_facing_right)
+    assert p.fighter.facing_right == (not initial_facing_right)
 
     # Tick through the respawn delay; _respawn fires from update() on both backends.
     for _ in range(RESPAWN_DELAY_FRAMES + 2):
         p.update(_noop(), platforms, pygame.sprite.Group())
 
-    assert p.is_alive, "player should have respawned"
-    assert p.facing_right == initial_facing_right, (
+    assert p.fighter.is_alive, "player should have respawned"
+    assert p.fighter.facing_right == initial_facing_right, (
         "respawn did not reset facing to the player's initial direction"
     )

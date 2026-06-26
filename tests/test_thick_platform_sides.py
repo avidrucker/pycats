@@ -100,7 +100,7 @@ def test_landing_on_thick_top_is_not_side_ejected():
     for _ in range(20):
         p.update(noop, floor, attacks)
 
-    assert p.on_ground, "player failed to land on the thick platform top"
+    assert p.fighter.on_ground, "player failed to land on the thick platform top"
     assert p.rect.bottom == floor[0].rect.top
     assert floor[0].rect.left <= p.rect.left and p.rect.right <= floor[0].rect.right, \
         "player was wrongly ejected sideways off the platform top"

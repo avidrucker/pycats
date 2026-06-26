@@ -25,84 +25,84 @@ def step_physics(p, platforms, held):
 
     ``held`` is the held-keys set (for the shield+down drop-through guard).
     """
-    was_airborne = not p.on_ground
+    was_airborne = not p.fighter.on_ground
 
     # Apply gravity - but not for ground-based spot dodges to prevent falling
     # through thin platforms. Air dodges should still have normal gravity.
     is_ground_spot_dodge = (
-        p.state == "dodge" and p.spot_dodge_shield_held and p.on_ground
+        p.state == "dodge" and p.fighter.spot_dodge_shield_held and p.fighter.on_ground
     )
     if not is_ground_spot_dodge:
-        apply_gravity(p.vel)
+        apply_gravity(p.fighter.vel)
     else:
         # For ground spot dodges, keep velocity minimal to prevent any fall-through
-        p.vel.y = 0
+        p.fighter.vel.y = 0
 
     # Edge-aware dodge: prevent horizontal movement if it would take the player
     # off the platform. After friction, immediately before movement.
-    if p.state == "dodge" and p.on_ground:
+    if p.state == "dodge" and p.fighter.on_ground:
         current_platform = find_current_platform(p.rect, platforms)
         if current_platform is not None:
             # First, check if velocity would take us off edge.
-            if p.vel.x != 0 and would_dodge_off_platform(
-                p.rect, p.vel.x, current_platform
+            if p.fighter.vel.x != 0 and would_dodge_off_platform(
+                p.rect, p.fighter.vel.x, current_platform
             ):
-                p.vel.x = 0
-                p.dodge_blocked_by_edge = True
+                p.fighter.vel.x = 0
+                p.fighter.dodge_blocked_by_edge = True
 
             # Second, clamp position so the player never goes past platform edges
             # (safety net in case any movement still occurs).
             platform_rect = current_platform.rect
             if p.rect.left < platform_rect.left:
                 p.rect.left = platform_rect.left
-                p.vel.x = 0  # Stop any leftward movement
+                p.fighter.vel.x = 0  # Stop any leftward movement
             if p.rect.right > platform_rect.right:
                 p.rect.right = platform_rect.right
-                p.vel.x = 0  # Stop any rightward movement
+                p.fighter.vel.x = 0  # Stop any rightward movement
 
     # Apply movement - this must happen immediately after the edge check.
-    move_rect(p.rect, p.vel)
+    move_rect(p.rect, p.fighter.vel)
 
     # Post-movement clamping: ensure the dodge didn't move the player off-platform.
-    if p.state == "dodge" and p.on_ground:
+    if p.state == "dodge" and p.fighter.on_ground:
         current_platform = find_current_platform(p.rect, platforms)
         if current_platform is not None:
             platform_rect = current_platform.rect
             if p.rect.left < platform_rect.left:
                 p.rect.left = platform_rect.left
-                p.vel.x = 0
+                p.fighter.vel.x = 0
             if p.rect.right > platform_rect.right:
                 p.rect.right = platform_rect.right
-                p.vel.x = 0
+                p.fighter.vel.x = 0
 
     # Prevent drop-through of thin platforms when shield is held with down (both
     # during a ground spot dodge and in shield state).
     is_shield_down_held = p._pressed(held, "shield") and p._pressed(held, "down")
     should_prevent_drop_through = (
-        (p.state == "dodge" and p.spot_dodge_shield_held)
+        (p.state == "dodge" and p.fighter.spot_dodge_shield_held)
         or (p.state == "shield" and is_shield_down_held)
     )
 
-    p.vel, p.on_ground, p.drop_platform = solve_vertical(
+    p.fighter.vel, p.fighter.on_ground, p.fighter.drop_platform = solve_vertical(
         p.rect,
-        p.vel,
+        p.fighter.vel,
         platforms,
         p._pressed(held, "down") and not should_prevent_drop_through,
-        p.drop_platform,
+        p.fighter.drop_platform,
     )
 
     # Issue #5: block the SIDE faces of solid (thick) platforms. Runs after
     # solve_vertical so a top-landing is resolved first and not mistaken for a
     # side entry.
-    p.vel = solve_horizontal(p.rect, p.vel, platforms)
+    p.fighter.vel = solve_horizontal(p.rect, p.fighter.vel, platforms)
 
     # Maintain on_ground during a ground spot dodge to prevent unwanted fall
     # transitions.
-    if p.state == "dodge" and p.spot_dodge_shield_held:
-        if not p.on_ground:
-            p.on_ground = True
+    if p.state == "dodge" and p.fighter.spot_dodge_shield_held:
+        if not p.fighter.on_ground:
+            p.fighter.on_ground = True
             current_platform = find_current_platform(p.rect, platforms)
             if current_platform:
                 p.rect.bottom = current_platform.rect.top
 
-    p._handle_landing(was_airborne)
+    p.fighter._handle_landing(was_airborne)

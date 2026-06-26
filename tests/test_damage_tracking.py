@@ -48,12 +48,12 @@ def test_hit_credits_both_given_and_taken():
     attacker = _mk("P1", P1_KEYS, 100)
     defender = _mk("P2", P2_KEYS, 300)
 
-    defender.receive_hit(_hit(attacker, 15))
+    defender.fighter.receive_hit(_hit(attacker, 15))
 
-    assert defender.damage_taken == 15.0
-    assert attacker.damage_given == 15.0
+    assert defender.fighter.damage_taken == 15.0
+    assert attacker.fighter.damage_given == 15.0
     # The mirror identity the win screen relies on (1v1): given == opponent taken.
-    assert attacker.damage_given == defender.damage_taken
+    assert attacker.fighter.damage_given == defender.fighter.damage_taken
 
 
 def test_damage_survives_respawn():
@@ -61,30 +61,30 @@ def test_damage_survives_respawn():
     attacker = _mk("P1", P1_KEYS, 100)
     defender = _mk("P2", P2_KEYS, 300)
 
-    defender.receive_hit(_hit(attacker, 40))
-    assert defender.damage_taken == 40.0
-    assert defender.percent == 40.0
+    defender.fighter.receive_hit(_hit(attacker, 40))
+    assert defender.fighter.damage_taken == 40.0
+    assert defender.fighter.percent == 40.0
 
     # Simulate the death/respawn: reset_to_spawn is what zeroes percent.
     defender.fighter.reset_to_spawn()
-    assert defender.percent == 0.0, "respawn should clear current percent"
-    assert defender.damage_taken == 40.0, "cumulative damage must survive the death"
-    assert attacker.damage_given == 40.0
+    assert defender.fighter.percent == 0.0, "respawn should clear current percent"
+    assert defender.fighter.damage_taken == 40.0, "cumulative damage must survive the death"
+    assert attacker.fighter.damage_given == 40.0
 
     # Damage from the next life keeps accumulating onto the match total.
-    defender.receive_hit(_hit(attacker, 25))
-    assert defender.damage_taken == 65.0
-    assert attacker.damage_given == 65.0
+    defender.fighter.receive_hit(_hit(attacker, 25))
+    assert defender.fighter.damage_taken == 65.0
+    assert attacker.fighter.damage_given == 65.0
 
 
 def test_shielded_hit_is_not_counted():
     """A shielded hit deals shield damage, not percent, so it must not count."""
     attacker = _mk("P1", P1_KEYS, 100)
     defender = _mk("P2", P2_KEYS, 300)
-    defender.shield_attempting = True  # raise the shield
+    defender.fighter.shield_attempting = True  # raise the shield
 
-    defender.receive_hit(_hit(attacker, 30))
+    defender.fighter.receive_hit(_hit(attacker, 30))
 
-    assert defender.damage_taken == 0.0, "shielded hit must not add to damage taken"
-    assert attacker.damage_given == 0.0, "shielded hit must not add to damage given"
-    assert defender.percent == 0.0, "shielded hit must not add percent"
+    assert defender.fighter.damage_taken == 0.0, "shielded hit must not add to damage taken"
+    assert attacker.fighter.damage_given == 0.0, "shielded hit must not add to damage given"
+    assert defender.fighter.percent == 0.0, "shielded hit must not add percent"

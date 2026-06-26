@@ -43,15 +43,15 @@ def _ko_while_damaged_then_respawn(kind):
         # would consume before the assertion below.
         hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=10,
                     angle=0, base_knockback=30.0, knockback_growth=100.0)
-        victim.receive_hit(Attack(owner=attacker, hitbox=hb, lifetime=1))
+        victim.fighter.receive_hit(Attack(owner=attacker, hitbox=hb, lifetime=1))
     else:  # stun
-        victim._start_stun()
+        victim.fighter._start_stun()
     victim.update(_empty(), plats, empty)
-    assert victim.hurt_timer > 0 or victim.stun_timer > 0  # genuinely damaged
+    assert victim.fighter.hurt_timer > 0 or victim.fighter.stun_timer > 0  # genuinely damaged
 
     victim.rect.center = (5000, 400)          # outside the blast zone -> KO
     victim.update(_empty(), plats, empty)
-    assert not victim.is_alive
+    assert not victim.fighter.is_alive
 
     for _ in range(RESPAWN_DELAY_FRAMES + 2):  # wait out respawn + settle
         victim.update(_empty(), plats, empty)
@@ -60,15 +60,15 @@ def _ko_while_damaged_then_respawn(kind):
 
 def test_respawn_clears_hurt_state():
     v = _ko_while_damaged_then_respawn("hurt")
-    assert v.is_alive
-    assert v.hurt_timer == 0
+    assert v.fighter.is_alive
+    assert v.fighter.hurt_timer == 0
     assert v.state not in ("hurt", "stun", "ko")
     assert body_tint(v) == v.char_color  # rendered normal (#75: tint is render-time)
 
 
 def test_respawn_clears_stun_state():
     v = _ko_while_damaged_then_respawn("stun")
-    assert v.is_alive
-    assert v.stun_timer == 0
+    assert v.fighter.is_alive
+    assert v.fighter.stun_timer == 0
     assert v.state not in ("hurt", "stun", "ko")
     assert body_tint(v) == v.char_color  # rendered normal (#75: tint is render-time)

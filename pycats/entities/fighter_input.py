@@ -29,10 +29,10 @@ class FighterInput:
     # horizontal input movement
     def handle_move(self, keys):
         p = self._p
-        p.vel, p.facing_right = step_horizontal(
-            p.vel,
-            p.facing_right,
-            p.on_ground,
+        p.fighter.vel, p.fighter.facing_right = step_horizontal(
+            p.fighter.vel,
+            p.fighter.facing_right,
+            p.fighter.on_ground,
             self._pressed(keys, "left"),
             self._pressed(keys, "right"),
             locked=p.state
@@ -52,12 +52,12 @@ class FighterInput:
         #### TODO: determine whether walking off of a ledge "consumes" a jump
         if (
             jump_pressed
-            and p.jumps_remaining
+            and p.fighter.jumps_remaining
             and p.state not in ("dodge", "hurt", "stun")
         ):
-            p.vel.y = JUMP_VEL
-            p.jumps_remaining -= 1
-            p.shield_attempting = False
+            p.fighter.vel.y = JUMP_VEL
+            p.fighter.jumps_remaining -= 1
+            p.fighter.shield_attempting = False
             return False  # No dodge initiated
 
         # ------- Dodge Logic (check first to prevent shield conflicts) -------
@@ -71,16 +71,16 @@ class FighterInput:
         # Special case: allow adding direction to neutral air dodges
         can_modify_air_dodge = (
             p.state == "dodge"
-            and not p.on_ground
-            and abs(p.vel.x) < 0.1  # Currently has no horizontal velocity
-            and p.dodge_timer > 0  # Still dodging
+            and not p.fighter.on_ground
+            and abs(p.fighter.vel.x) < 0.1  # Currently has no horizontal velocity
+            and p.fighter.dodge_timer > 0  # Still dodging
         )
 
         shield_down = self._pressed(held, "shield")
         shield_pressed = self._pressed(pressed, "shield")
         dodge_initiated = False
 
-        if (can_dodge_state and p.dodge_timer == 0) or can_modify_air_dodge:
+        if (can_dodge_state and p.fighter.dodge_timer == 0) or can_modify_air_dodge:
             dir_x = None
 
             # Priority 1: Check for simultaneous shield + direction press (including spot dodge)
@@ -100,10 +100,10 @@ class FighterInput:
             elif (
                 shield_pressed and not can_modify_air_dodge
             ):  # Don't allow shield-only during air dodge modification
-                if not p.on_ground:
+                if not p.fighter.on_ground:
                     dir_x = 0  # air dodge without direction pressed
-                elif abs(p.vel.x) > 0.1:
-                    dir_x = 1 if p.vel.x > 0 else -1
+                elif abs(p.fighter.vel.x) > 0.1:
+                    dir_x = 1 if p.fighter.vel.x > 0 else -1
             # Priority 3: Check if a direction is freshly pressed while shield is held (ground dodge)
             # OR if direction is pressed during neutral air dodge
             elif shield_down or can_modify_air_dodge:
@@ -118,32 +118,32 @@ class FighterInput:
                 if can_modify_air_dodge:
                     # Special case: modifying existing air dodge
                     if dir_x != 0:  # Only allow directional modification, not neutral
-                        p.vel.x = (dir_x * DODGE_SPEED) + p.vel.x
+                        p.fighter.vel.x = (dir_x * DODGE_SPEED) + p.fighter.vel.x
                         dodge_initiated = True
-                elif p.on_ground or p.air_dodge_ok:
-                    p._start_dodge(dir_x)
+                elif p.fighter.on_ground or p.fighter.air_dodge_ok:
+                    p.fighter._start_dodge(dir_x)
                     dodge_initiated = True
-                    if not p.on_ground:
-                        p.air_dodge_ok = False
+                    if not p.fighter.on_ground:
+                        p.fighter.air_dodge_ok = False
                 return True  # Dodge initiated, no further actions needed
 
         # ------- Shield -------------------------------------------
         # 2.  Shield can **only** be (re)started while on ground and not airborne
         # Don't enter shield state if we just initiated a dodge
         grounded_can_shield = (
-            p.on_ground
+            p.fighter.on_ground
             and p.state in ("idle", "shield", "dodge", "run")
-            and p.dodge_timer == 0
+            and p.fighter.dodge_timer == 0
             and not dodge_initiated  # Don't shield if we just started dodging
         )
 
         if self._pressed(held, "shield") and grounded_can_shield:
             #### TODO: prevent entering of shield state when falling/jumping, when in hurt state, etc.
-            p.shield_attempting = True
+            p.fighter.shield_attempting = True
         else:
             # Don't reset shield_attempting if we just initiated a dodge or are currently dodging
             if not dodge_initiated and p.state != "dodge":
-                p.shield_attempting = False
+                p.fighter.shield_attempting = False
 
         # ------- Attack -------------------------------------------
         #### TODO: implement attack buffering, that attacks can be chained
@@ -155,8 +155,8 @@ class FighterInput:
             # the legacy FSM and the chart's attack-exit guard classify/exit at
             # the same total frame (attack_timer is now p._clock.remaining).
             p._clock.start(p.fighter_data.moves["attack"])
-            p.record_attack_made()  # Track attack statistics
-            p.done_attacking = False  # set to false when attack starts, set true when done
+            p.fighter.record_attack_made()  # Track attack statistics
+            p.fighter.done_attacking = False  # set to false when attack starts, set true when done
             #### TODO: implement unique custom attacks for each player w/ variable damage, knockback, and angle, attack activation time, attack duration, etc.
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
 

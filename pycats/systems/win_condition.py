@@ -15,9 +15,9 @@ def winner_index(players) -> int:
     (players[1] wins) — preserving the historical match_engine/game behaviour.
     """
     p1, p2 = players
-    if p1.lives <= 0:
+    if p1.fighter.lives <= 0:
         return 2
-    if p2.lives <= 0:
+    if p2.fighter.lives <= 0:
         return 1
     return 0
 

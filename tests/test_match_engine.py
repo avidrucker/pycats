@@ -5,6 +5,7 @@ from pycats.systems.match_engine import make_match_engine
 class _P:
     def __init__(self, lives):
         self.lives = lives
+        self.fighter = self
 
 
 def _run(backend, p1_lives, p2_lives):

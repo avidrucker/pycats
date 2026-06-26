@@ -46,25 +46,25 @@ def test_formula_is_clamped_and_monotonic_decreasing():
 # ------------------------------------------------------ 2. state wiring (both)
 def test_shield_break_sets_timer_from_formula():
     p = _mk_player("statechart")
-    p.percent = 100
+    p.fighter.percent = 100
     p.fighter._start_stun()
-    assert p.stun_timer == shield_break_stun_frames(100) == 390
+    assert p.fighter.stun_timer == shield_break_stun_frames(100) == 390
 
 
 def test_shield_to_stun_entry_and_exit_both_backends():
     for backend in ("legacy", "statechart"):
         p = _mk_player(backend)
         # get into the shield state first
-        p.on_ground = True
-        p.shield_attempting = True
+        p.fighter.on_ground = True
+        p.fighter.shield_attempting = True
         p.engine.tick(None)
         assert p.state == "shield", (backend, p.state)
         # shield breaks -> stun_timer set; next tick must enter `stun`
-        p.stun_timer = 30
+        p.fighter.stun_timer = 30
         p.engine.tick(None)
         assert p.state == "stun", (backend, p.state)
         # timer runs down; on_ground -> idle when it expires
-        p.stun_timer = 0
+        p.fighter.stun_timer = 0
         p.engine.tick(None)
         assert p.state == "idle", (backend, p.state)
 
@@ -85,12 +85,12 @@ def test_draw_dizzy_stars_only_when_stunned():
     p.rect.topleft = (60, 60)   # leave room above the head on the surface
 
     blank = pg.Surface((160, 160)); blank.fill((0, 0, 0))
-    p.stun_timer = 0
+    p.fighter.stun_timer = 0
     draw_dizzy_stars(blank, p)
     assert _nonblack_pixel_count(blank) == 0, "drew dizzy stars while not stunned"
 
     lit = pg.Surface((160, 160)); lit.fill((0, 0, 0))
-    p.stun_timer = 200
+    p.fighter.stun_timer = 200
     draw_dizzy_stars(lit, p)
     assert _nonblack_pixel_count(lit) > 0, "no dizzy stars drawn while stunned"
 
@@ -102,7 +102,7 @@ def test_draw_dizzy_stars_animate_between_frames():
 
     def _frame(timer):
         s = pg.Surface((160, 160)); s.fill((0, 0, 0))
-        p.stun_timer = timer
+        p.fighter.stun_timer = timer
         draw_dizzy_stars(s, p)
         return pg.image.tobytes(s, "RGB")
 
@@ -113,14 +113,14 @@ def test_draw_dizzy_stars_animate_between_frames():
 def test_render_battle_invokes_dizzy_for_stunned_player(monkeypatch):
     from pycats import render_battle as rb
     calls = []
-    monkeypatch.setattr(rb, "draw_dizzy_stars", lambda surf, p: calls.append(p.stun_timer))
+    monkeypatch.setattr(rb, "draw_dizzy_stars", lambda surf, p: calls.append(p.fighter.stun_timer))
     surf = pg.Surface((400, 300))
 
-    calm = _mk_player("statechart"); calm.stun_timer = 0
+    calm = _mk_player("statechart"); calm.fighter.stun_timer = 0
     rb.render_battle(surf, [calm], pg.sprite.Group())
     assert calls == [], "dizzy drawn for a non-stunned fighter"
 
-    dizzy = _mk_player("statechart"); dizzy.stun_timer = 200
+    dizzy = _mk_player("statechart"); dizzy.fighter.stun_timer = 200
     rb.render_battle(surf, [dizzy], pg.sprite.Group())
     assert calls == [200], "render_battle did not draw dizzy for a stunned fighter"
 
@@ -140,4 +140,4 @@ def test_all_inputs_locked_while_stunned():
     for _ in range(10):
         p.update(held_right, plats, pg.sprite.Group())
     assert p.rect.x == x0, "stunned fighter moved despite locked inputs"
-    assert p.jumps_remaining == 2, "stunned fighter jumped despite locked inputs"
+    assert p.fighter.jumps_remaining == 2, "stunned fighter jumped despite locked inputs"

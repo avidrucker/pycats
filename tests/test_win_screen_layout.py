@@ -37,6 +37,7 @@ class _FakePlayer:
         # Wide three-digit values exercise the worst-case row width/height.
         self.damage_given = 312.0
         self.damage_taken = 188.0
+        self.fighter = self
 
 
 def _record_text_ys(render_call):

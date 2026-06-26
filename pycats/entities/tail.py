@@ -76,11 +76,11 @@ class Tail:
         Verlet chain in from wherever it froze at KO."""
         # Eased horizontal anchor offset (#3): set straight to the facing target.
         self._anchor_offset_x = (
-            -TAIL_BASE_OFFSET_X if self.player.facing_right else TAIL_BASE_OFFSET_X
+            -TAIL_BASE_OFFSET_X if self.player.fighter.facing_right else TAIL_BASE_OFFSET_X
         )
         # Eased backward direction (-1 tail points left / +1 right); eases across
         # a facing flip so the pinned base stub swings over smoothly (no snap).
-        self._base_back = -1.0 if self.player.facing_right else 1.0
+        self._base_back = -1.0 if self.player.fighter.facing_right else 1.0
         # Undulation phase clock (#42) — keep it running across reset so the
         # wave doesn't visibly jump when a respawn re-lays the tail out.
         if not hasattr(self, "_t"):
@@ -111,7 +111,7 @@ class Tail:
 
         # Ease the base's backward direction toward the facing target so a turn
         # swings the base stub over smoothly rather than snapping it across.
-        target_back = -1.0 if self.player.facing_right else 1.0
+        target_back = -1.0 if self.player.fighter.facing_right else 1.0
         if self._base_back < target_back:
             self._base_back = min(self._base_back + _BASE_TURN_STEP, target_back)
         elif self._base_back > target_back:
@@ -205,7 +205,7 @@ class Tail:
     def _get_tail_base_position(self) -> Tuple[float, float]:
         """Hip attachment point, with the facing-flip ease from #3."""
         target_offset = (
-            TAIL_BASE_OFFSET_X if not self.player.facing_right else -TAIL_BASE_OFFSET_X
+            TAIL_BASE_OFFSET_X if not self.player.fighter.facing_right else -TAIL_BASE_OFFSET_X
         )
         delta = target_offset - self._anchor_offset_x
         if delta > TAIL_ANCHOR_FLIP_STEP:

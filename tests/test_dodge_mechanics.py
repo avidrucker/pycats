@@ -50,7 +50,7 @@ def _airborne_player():
                char_name="AirCat", facing_right=True)
     for _ in range(3):
         p.update(_frame(set(), set()), plats, pg.sprite.Group())
-    assert not p.on_ground, "fixture precondition: player should be airborne"
+    assert not p.fighter.on_ground, "fixture precondition: player should be airborne"
     return p, plats
 
 
@@ -68,7 +68,7 @@ def test_spot_dodge_on_thin_platform_does_not_fall_through():
     p.update(_frame({SHIELD, DOWN}, {SHIELD, DOWN}), plats, pg.sprite.Group())
     for _ in range(DODGE_TIME + 1):
         p.update(_frame({SHIELD, DOWN}, set()), plats, pg.sprite.Group())
-        assert p.on_ground, "spot dodge left the ground (started falling through)"
+        assert p.fighter.on_ground, "spot dodge left the ground (started falling through)"
         assert p.rect.y == settled_y, f"player dropped from y={settled_y} to y={p.rect.y}"
 
 
@@ -76,7 +76,7 @@ def test_spot_dodge_returns_to_shield_while_shield_held():
     """After the dodge window, with shield still held, the player is shielding."""
     p, plats = _grounded_player((600, 400, 200, 20), thin=False)
     p.update(_frame({SHIELD, DOWN}, {SHIELD, DOWN}), plats, pg.sprite.Group())
-    assert p.state == "dodge" and p.spot_dodge_shield_held
+    assert p.state == "dodge" and p.fighter.spot_dodge_shield_held
     for _ in range(DODGE_TIME + 1):
         p.update(_frame({SHIELD, DOWN}, set()), plats, pg.sprite.Group())
     assert p.state == "shield", f"expected return to shield, got {p.state!r}"
@@ -88,42 +88,42 @@ def test_right_air_dodge_applies_positive_dodge_speed():
     p, plats = _airborne_player()
     p.update(_frame({SHIELD, RIGHT}, {SHIELD, RIGHT}), plats, pg.sprite.Group())
     assert p.state == "dodge"
-    assert p.vel.x == DODGE_SPEED, f"expected +{DODGE_SPEED}, got {p.vel.x}"
+    assert p.fighter.vel.x == DODGE_SPEED, f"expected +{DODGE_SPEED}, got {p.fighter.vel.x}"
 
 
 def test_left_air_dodge_applies_negative_dodge_speed():
     p, plats = _airborne_player()
     p.update(_frame({SHIELD, LEFT}, {SHIELD, LEFT}), plats, pg.sprite.Group())
     assert p.state == "dodge"
-    assert p.vel.x == -DODGE_SPEED, f"expected -{DODGE_SPEED}, got {p.vel.x}"
+    assert p.fighter.vel.x == -DODGE_SPEED, f"expected -{DODGE_SPEED}, got {p.fighter.vel.x}"
 
 
 def test_neutral_air_dodge_adds_no_horizontal_velocity():
     """Shield-only air dodge from a standstill imparts no horizontal velocity."""
     p, plats = _airborne_player()
-    assert p.vel.x == 0
+    assert p.fighter.vel.x == 0
     p.update(_frame({SHIELD}, {SHIELD}), plats, pg.sprite.Group())
     assert p.state == "dodge"
-    assert p.vel.x == 0, f"neutral air dodge imparted vel.x={p.vel.x}"
+    assert p.fighter.vel.x == 0, f"neutral air dodge imparted vel.x={p.fighter.vel.x}"
 
 
 def test_neutral_air_dodge_preserves_existing_horizontal_momentum():
     """A neutral (directionless) air dodge must NOT zero pre-existing horizontal
     momentum (the bug `test_dodge_issues` was chasing)."""
     p, plats = _airborne_player()
-    p.vel.x = 8.0
+    p.fighter.vel.x = 8.0
     p.update(_frame({SHIELD}, {SHIELD}), plats, pg.sprite.Group())
-    assert p.vel.x == 8.0, f"neutral air dodge zeroed momentum: vel.x={p.vel.x}"
+    assert p.fighter.vel.x == 8.0, f"neutral air dodge zeroed momentum: vel.x={p.fighter.vel.x}"
 
 
 def test_air_dodge_preserves_vertical_velocity():
     """Air dodge keeps normal physics: it does not reset vertical velocity to 0;
     gravity keeps acting (unlike the gravity-suppressed ground spot dodge)."""
     p, plats = _airborne_player()
-    vy_before = p.vel.y
+    vy_before = p.fighter.vel.y
     assert vy_before > 0
     p.update(_frame({SHIELD, RIGHT}, {SHIELD, RIGHT}), plats, pg.sprite.Group())
-    assert p.vel.y >= vy_before, f"air dodge reset vel.y to {p.vel.y} (was {vy_before})"
+    assert p.fighter.vel.y >= vy_before, f"air dodge reset vel.y to {p.fighter.vel.y} (was {vy_before})"
 
 
 def test_air_dodge_is_not_a_ground_spot_dodge():
@@ -131,15 +131,15 @@ def test_air_dodge_is_not_a_ground_spot_dodge():
     p, plats = _airborne_player()
     p.update(_frame({SHIELD, RIGHT}, {SHIELD, RIGHT}), plats, pg.sprite.Group())
     assert p.state == "dodge"
-    assert p.spot_dodge_shield_held is False
+    assert p.fighter.spot_dodge_shield_held is False
 
 
 def test_air_dodge_consumes_air_dodge_ok():
     """An air dodge spends the one available air dodge (air_dodge_ok True -> False)."""
     p, plats = _airborne_player()
-    assert p.air_dodge_ok is True
+    assert p.fighter.air_dodge_ok is True
     p.update(_frame({SHIELD, RIGHT}, {SHIELD, RIGHT}), plats, pg.sprite.Group())
-    assert p.air_dodge_ok is False
+    assert p.fighter.air_dodge_ok is False
 
 
 # ------------------------------------------------------------- ground roll
@@ -148,14 +148,14 @@ def test_ground_side_dodge_rolls_at_full_dodge_speed():
     """A grounded side dodge (shield+direction) rolls at the full DODGE_SPEED for
     the whole window — not half speed/distance (`test_dodge_issues` / `test_left_right_dodge`)."""
     p, plats = _grounded_player((100, 400, 700, 40), thin=False)
-    assert p.on_ground
+    assert p.fighter.on_ground
     start_x = p.rect.centerx
     p.update(_frame({SHIELD, RIGHT}, {SHIELD, RIGHT}), plats, pg.sprite.Group())
     assert p.state == "dodge"
-    speeds = [p.vel.x]
+    speeds = [p.fighter.vel.x]
     for _ in range(DODGE_TIME - 1):
         p.update(_frame({SHIELD, RIGHT}, set()), plats, pg.sprite.Group())
-        speeds.append(p.vel.x)
+        speeds.append(p.fighter.vel.x)
     moving = [s for s in speeds if s != 0]
     assert moving and all(s == DODGE_SPEED for s in moving), f"roll not at full speed: {speeds}"
     assert p.rect.centerx - start_x == DODGE_SPEED * DODGE_TIME, "roll distance is not full"
@@ -165,14 +165,14 @@ def test_ground_side_dodge_left_mirrors_right_at_full_speed():
     """Left ground roll is the mirror of right — full -DODGE_SPEED, full distance.
     Ports the left-vs-right symmetry intent of `test_left_right_dodge`."""
     p, plats = _grounded_player((100, 400, 700, 40), thin=False)
-    assert p.on_ground
+    assert p.fighter.on_ground
     start_x = p.rect.centerx
     p.update(_frame({SHIELD, LEFT}, {SHIELD, LEFT}), plats, pg.sprite.Group())
     assert p.state == "dodge"
-    speeds = [p.vel.x]
+    speeds = [p.fighter.vel.x]
     for _ in range(DODGE_TIME - 1):
         p.update(_frame({SHIELD, LEFT}, set()), plats, pg.sprite.Group())
-        speeds.append(p.vel.x)
+        speeds.append(p.fighter.vel.x)
     moving = [s for s in speeds if s != 0]
     assert moving and all(s == -DODGE_SPEED for s in moving), f"left roll not full speed: {speeds}"
     assert start_x - p.rect.centerx == DODGE_SPEED * DODGE_TIME, "left roll distance is not full"
@@ -193,4 +193,4 @@ def test_shield_then_direction_air_dodge_is_neutral():
     p.update(_frame({SHIELD}, {SHIELD}), plats, pg.sprite.Group())       # shield first
     p.update(_frame({SHIELD, RIGHT}, {RIGHT}), plats, pg.sprite.Group())  # then direction
     assert p.state == "dodge"
-    assert p.vel.x == 0, f"shield-then-direction redirected to vel.x={p.vel.x} (was neutral)"
+    assert p.fighter.vel.x == 0, f"shield-then-direction redirected to vel.x={p.fighter.vel.x} (was neutral)"

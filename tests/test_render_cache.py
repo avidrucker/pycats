@@ -18,11 +18,13 @@ def _direct(surface, p):
     body = pygame.Surface(p.rect.size)
     body.fill(rb.body_tint(p))  # tint is render-time now (#75), not p.image
     surface.blit(body, p.rect)
-    rb.draw_stripes(surface, p)
-    rb.draw_eye(surface, p)
-    rb.draw_eye(surface, p, eye=False)
-    rb.draw_cat_features(surface, p)
-    rb.draw_player_name(surface, p)
+    shim = rb._CatShim(p.rect, p.fighter.facing_right, p.char_color, p.eye_color,
+                       p.stripe_color, p.char_name)
+    rb.draw_stripes(surface, shim)
+    rb.draw_eye(surface, shim)
+    rb.draw_eye(surface, shim, eye=False)
+    rb.draw_cat_features(surface, shim)
+    rb.draw_player_name(surface, shim)
 
 
 def _cached(surface, p):
@@ -62,12 +64,12 @@ def test_body_cache_pixel_identical_both_players():
 
 def test_body_cache_pixel_identical_left_facing():
     p1, _ = _settle()
-    p1.facing_right = False
+    p1.fighter.facing_right = False
     _compare(p1)
 
 
 def test_body_cache_pixel_identical_hurt_tint():
     p1, _ = _settle()
-    p1.hurt_timer = 1  # hurt flash -> body_tint(p) returns RED (#75)
+    p1.fighter.hurt_timer = 1  # hurt flash -> body_tint(p) returns RED (#75)
     assert rb.body_tint(p1) == RED
     _compare(p1)

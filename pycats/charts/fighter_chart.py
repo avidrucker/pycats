@@ -67,32 +67,32 @@ def build_fighter_chart(p):
         state(
             {"id": "idle"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
-            _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
-            _tick(lambda e, d: p.vel.x != 0 and p.on_ground, "run"),
-            _tick(lambda e, d: p.vel.y < 0, "jump"),
-            _tick(lambda e, d: not p.on_ground and p.vel.y > 0, "fall"),
-            _tick(lambda e, d: p.shield_attempting, "shield"),
-            _tick(lambda e, d: p.hurt_timer > 0, "hurt"),
+            _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.vel.x != 0 and p.fighter.on_ground, "run"),
+            _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
+            _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
+            _tick(lambda e, d: p.fighter.shield_attempting, "shield"),
+            _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
         ),
         state(
             {"id": "run"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
-            _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
-            _tick(lambda e, d: p.vel.x == 0, "idle"),
-            _tick(lambda e, d: p.vel.y < 0, "jump"),
-            _tick(lambda e, d: not p.on_ground and p.vel.y > 0, "fall"),
-            _tick(lambda e, d: p.hurt_timer > 0, "hurt"),
-            _tick(lambda e, d: p.shield_attempting and p.on_ground, "shield"),
+            _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.vel.x == 0, "idle"),
+            _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
+            _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
+            _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
+            _tick(lambda e, d: p.fighter.shield_attempting and p.fighter.on_ground, "shield"),
         ),
         state(
             {"id": "shield"},
             # Shield-break stun (#12) takes priority: a depleted shield calls
             # _start_stun (stun_timer > 0) and the fighter is dizzy regardless of
             # whether shield is still held.
-            _tick(lambda e, d: p.stun_timer > 0, "stun"),
-            _tick(lambda e, d: not p.shield_attempting, "idle"),
-            _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
-            _tick(lambda e, d: p.vel.y < 0, "jump"),
+            _tick(lambda e, d: p.fighter.stun_timer > 0, "stun"),
+            _tick(lambda e, d: not p.fighter.shield_attempting, "idle"),
+            _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
         ),
     )
 
@@ -101,20 +101,20 @@ def build_fighter_chart(p):
         state(
             {"id": "jump"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
-            _tick(lambda e, d: p.vel.y >= 0, "fall"),
-            _tick(lambda e, d: not p.is_alive, "ko"),
-            _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
-            _tick(lambda e, d: p.hurt_timer > 0, "hurt"),
+            _tick(lambda e, d: p.fighter.vel.y >= 0, "fall"),
+            _tick(lambda e, d: not p.fighter.is_alive, "ko"),
+            _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
         ),
         state(
             {"id": "fall"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
-            _tick(lambda e, d: p.on_ground and p.vel.x == 0, "idle"),
-            _tick(lambda e, d: p.on_ground and p.vel.x != 0, "run"),
-            _tick(lambda e, d: p.vel.y < 0, "jump"),
-            _tick(lambda e, d: not p.is_alive, "ko"),
-            _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
-            _tick(lambda e, d: p.hurt_timer > 0, "hurt"),
+            _tick(lambda e, d: p.fighter.on_ground and p.fighter.vel.x == 0, "idle"),
+            _tick(lambda e, d: p.fighter.on_ground and p.fighter.vel.x != 0, "run"),
+            _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
+            _tick(lambda e, d: not p.fighter.is_alive, "ko"),
+            _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
         ),
     )
 
@@ -135,7 +135,7 @@ def build_fighter_chart(p):
     # The active window is therefore startup < move_frame <= startup+active,
     # identical to where the player spawns the hitbox.
     #
-    # The EXIT (-> idle / -> fall) stays on p.done_attacking, exactly as the
+    # The EXIT (-> idle / -> fall) stays on p.fighter.done_attacking, exactly as the
     # legacy FSM. It is placed on each phase leaf (first, so it has priority and
     # can fire from whichever phase is active when attack_timer hits 0). Because
     # the total move duration == startup+active+recovery == attack_timer, the
@@ -151,20 +151,20 @@ def build_fighter_chart(p):
         {"id": "attacking", "initial": "startup"},
         state(
             {"id": "startup"},
-            _tick(lambda e, d: p.done_attacking and p.on_ground, "idle"),
-            _tick(lambda e, d: p.done_attacking and not p.on_ground, "fall"),
+            _tick(lambda e, d: p.fighter.done_attacking and p.fighter.on_ground, "idle"),
+            _tick(lambda e, d: p.fighter.done_attacking and not p.fighter.on_ground, "fall"),
             _tick(_mf_gt(lambda m: m.startup), "active"),
         ),
         state(
             {"id": "active"},
-            _tick(lambda e, d: p.done_attacking and p.on_ground, "idle"),
-            _tick(lambda e, d: p.done_attacking and not p.on_ground, "fall"),
+            _tick(lambda e, d: p.fighter.done_attacking and p.fighter.on_ground, "idle"),
+            _tick(lambda e, d: p.fighter.done_attacking and not p.fighter.on_ground, "fall"),
             _tick(_mf_gt(lambda m: m.startup + m.active), "recovery"),
         ),
         state(
             {"id": "recovery"},
-            _tick(lambda e, d: p.done_attacking and p.on_ground, "idle"),
-            _tick(lambda e, d: p.done_attacking and not p.on_ground, "fall"),
+            _tick(lambda e, d: p.fighter.done_attacking and p.fighter.on_ground, "idle"),
+            _tick(lambda e, d: p.fighter.done_attacking and not p.fighter.on_ground, "fall"),
         ),
     )
 
@@ -172,11 +172,11 @@ def build_fighter_chart(p):
         {"id": "dodging", "initial": "dodge"},
         state(
             {"id": "dodge"},
-            _tick(lambda e, d: p.shield_attempting and p.dodge_timer <= 0
-                  and p.on_ground, "shield"),
-            _tick(lambda e, d: not p.shield_attempting and p.dodge_timer <= 0
-                  and p.on_ground and not p.spot_dodge_shield_held, "idle"),
-            _tick(lambda e, d: p.dodge_timer <= 0 and not p.on_ground, "fall"),
+            _tick(lambda e, d: p.fighter.shield_attempting and p.fighter.dodge_timer <= 0
+                  and p.fighter.on_ground, "shield"),
+            _tick(lambda e, d: not p.fighter.shield_attempting and p.fighter.dodge_timer <= 0
+                  and p.fighter.on_ground and not p.fighter.spot_dodge_shield_held, "idle"),
+            _tick(lambda e, d: p.fighter.dodge_timer <= 0 and not p.fighter.on_ground, "fall"),
         ),
     )
 
@@ -184,19 +184,19 @@ def build_fighter_chart(p):
         {"id": "hitstun", "initial": "hurt"},
         state(
             {"id": "hurt"},
-            _tick(lambda e, d: p.hurt_timer <= 0 and p.on_ground, "idle"),
-            _tick(lambda e, d: p.hurt_timer <= 0 and not p.on_ground, "fall"),
+            _tick(lambda e, d: p.fighter.hurt_timer <= 0 and p.fighter.on_ground, "idle"),
+            _tick(lambda e, d: p.fighter.hurt_timer <= 0 and not p.fighter.on_ground, "fall"),
         ),
         state(
             {"id": "stun"},
-            _tick(lambda e, d: p.stun_timer <= 0 and p.on_ground, "idle"),
-            _tick(lambda e, d: p.stun_timer <= 0 and not p.on_ground, "fall"),
+            _tick(lambda e, d: p.fighter.stun_timer <= 0 and p.fighter.on_ground, "idle"),
+            _tick(lambda e, d: p.fighter.stun_timer <= 0 and not p.fighter.on_ground, "fall"),
         ),
     )
 
     ko = state(
         {"id": "ko"},
-        _tick(lambda e, d: p.is_alive, "idle"),
+        _tick(lambda e, d: p.fighter.is_alive, "idle"),
     )
 
     action = state(
@@ -216,11 +216,11 @@ def build_fighter_chart(p):
         {"id": "defensive_status", "initial": "vulnerable"},
         state(
             {"id": "vulnerable"},
-            _tick(lambda e, d: p.invulnerable, "intangible"),
+            _tick(lambda e, d: p.fighter.invulnerable, "intangible"),
         ),
         state(
             {"id": "intangible"},
-            _tick(lambda e, d: not p.invulnerable, "vulnerable"),
+            _tick(lambda e, d: not p.fighter.invulnerable, "vulnerable"),
         ),
     )
 

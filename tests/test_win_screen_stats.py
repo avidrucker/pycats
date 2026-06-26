@@ -30,6 +30,7 @@ class _FakePlayer:
         self.attacks_made = attacks_made
         self.damage_given = damage_given
         self.damage_taken = damage_taken
+        self.fighter = self
 
 
 def _rows_by_name(winner, loser):

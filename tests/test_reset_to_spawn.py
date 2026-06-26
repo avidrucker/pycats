@@ -21,32 +21,32 @@ def _player(facing_right):
 
 def test_reset_restores_original_facing_left():
     p = _player(facing_right=False)   # constructed facing LEFT
-    p.facing_right = True             # turned around during play
-    p.reset_to_spawn()
-    assert p.facing_right is False    # back to original, not a literal
+    p.fighter.facing_right = True             # turned around during play
+    p.fighter.reset_to_spawn()
+    assert p.fighter.facing_right is False    # back to original, not a literal
 
 
 def test_reset_restores_original_facing_right():
     p = _player(facing_right=True)
-    p.facing_right = False
-    p.reset_to_spawn()
-    assert p.facing_right is True
+    p.fighter.facing_right = False
+    p.fighter.reset_to_spawn()
+    assert p.fighter.facing_right is True
 
 
 def test_reset_clears_transient_state_and_position():
     p = _player(facing_right=True)
     # dirty a spread of per-life state
-    p.is_alive = False
-    p.dodge_timer = p.hurt_timer = p.stun_timer = 9
+    p.fighter.is_alive = False
+    p.fighter.dodge_timer = p.fighter.hurt_timer = p.fighter.stun_timer = 9
     p._clock.start(p.fighter_data.moves["attack"])  # dirty the move clock -> attack_timer > 0
-    p.invulnerable = True
-    p.percent = 80
-    p.vel.update(7, -7)
+    p.fighter.invulnerable = True
+    p.fighter.percent = 80
+    p.fighter.vel.update(7, -7)
     p.rect.center = (9999, 9999)
-    p.reset_to_spawn()
-    assert p.is_alive
-    assert (p.dodge_timer, p.hurt_timer, p.stun_timer, p.attack_timer) == (0, 0, 0, 0)
-    assert p.invulnerable is False
-    assert p.percent == 0
-    assert (p.vel.x, p.vel.y) == (0, 0)
-    assert p.rect.midbottom == (int(p.spawn_point.x), int(p.spawn_point.y))
+    p.fighter.reset_to_spawn()
+    assert p.fighter.is_alive
+    assert (p.fighter.dodge_timer, p.fighter.hurt_timer, p.fighter.stun_timer, p.attack_timer) == (0, 0, 0, 0)
+    assert p.fighter.invulnerable is False
+    assert p.fighter.percent == 0
+    assert (p.fighter.vel.x, p.fighter.vel.y) == (0, 0)
+    assert p.rect.midbottom == (int(p.fighter.spawn_point.x), int(p.fighter.spawn_point.y))

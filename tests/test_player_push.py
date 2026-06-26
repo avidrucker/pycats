@@ -39,10 +39,10 @@ def _two_players():
 
 def _drop_on_same_spot(p1, p2, top):
     p2.rect.midbottom = (482, top)         # settled on the floor, centre
-    p2.vel = pygame.Vector2(0, 0)
-    p2.on_ground = True
+    p2.fighter.vel = pygame.Vector2(0, 0)
+    p2.fighter.on_ground = True
     p1.rect.midbottom = (478, top - 70)    # just above, almost identical x
-    p1.vel = pygame.Vector2(0, 3)          # falling onto P2
+    p1.fighter.vel = pygame.Vector2(0, 3)          # falling onto P2
 
 
 def _noop():
@@ -90,13 +90,13 @@ def test_push_never_touches_vertical_velocity():
     p1, p2 = _two_players()
     p1.rect.midbottom = (480, 410)
     p2.rect.midbottom = (490, 410)   # overlaps p1 on X and Y
-    p1.vel = pygame.Vector2(0, 7.0)
-    p2.vel = pygame.Vector2(0, -3.0)
+    p1.fighter.vel = pygame.Vector2(0, 7.0)
+    p2.fighter.vel = pygame.Vector2(0, -3.0)
     assert p1.rect.colliderect(p2.rect)  # guard: scenario actually triggers push
 
     resolve_player_push([p1, p2])
 
-    assert p1.vel.y == 7.0 and p2.vel.y == -3.0, "push modified vertical velocity"
+    assert p1.fighter.vel.y == 7.0 and p2.fighter.vel.y == -3.0, "push modified vertical velocity"
 
 
 class _FakeFighter:
@@ -108,6 +108,7 @@ class _FakeFighter:
         self.rect.midbottom = midbottom
         self.vel = pygame.Vector2(0, 0)
         self.state = state
+        self.fighter = self
 
 
 def test_dodge_player_skips_push():

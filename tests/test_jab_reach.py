@@ -31,14 +31,14 @@ def _jab_lands_on_flush_defender(defender_facing_right):
     # Place them flush at the settled push gap (rect.x 41 apart, bodies touching+).
     attacker.rect.x, attacker.rect.y = 400, 340
     defender.rect.x, defender.rect.y = 441, 340
-    attacker.facing_right = True
-    defender.facing_right = defender_facing_right
+    attacker.fighter.facing_right = True
+    defender.fighter.facing_right = defender_facing_right
 
     jab = attacker.fighter_data.moves["attack"].hitboxes[0]
     attacks = pg.sprite.Group()
     attacks.add(Attack(attacker, hitbox=jab, lifetime=3))
     combat.process_hits([attacker, defender], attacks)
-    return defender.percent
+    return defender.fighter.percent
 
 
 def test_jab_connects_flush_defender_facing_toward_attacker():

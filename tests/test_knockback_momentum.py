@@ -52,13 +52,13 @@ def _setup(defender_vel_x=0.0):
     for _ in range(2):  # settle on platform
         attacker.update(_frame([]), plats, empty)
         defender.update(_frame([]), plats, empty)
-    defender.vel.x = defender_vel_x
+    defender.fighter.vel.x = defender_vel_x
     return attacker, defender, plats, empty
 
 
 def _expected_launch(defender):
     # Initial launch applied to vel.x: authentic KB * launch factor (angle 0 -> horizontal).
-    kb = knockback(defender.percent, _JAB_DAMAGE, defender.weight, _JAB_BKB, _JAB_KBG)
+    kb = knockback(defender.fighter.percent, _JAB_DAMAGE, defender.fighter.weight, _JAB_BKB, _JAB_KBG)
     return kb * KNOCKBACK_LAUNCH_FACTOR
 
 
@@ -71,26 +71,26 @@ def _jab(attacker):
 def test_receive_hit_combines_horizontal_momentum():
     """A stationary `=` overwrite is fine, but existing momentum must be added."""
     attacker, defender, *_ = _setup(defender_vel_x=5.0)
-    defender.receive_hit(_jab(attacker))
+    defender.fighter.receive_hit(_jab(attacker))
     # momentum (5) COMBINED with knockback, not overwritten
-    assert defender.vel.x == pytest.approx(5.0 + _expected_launch(defender))
+    assert defender.fighter.vel.x == pytest.approx(5.0 + _expected_launch(defender))
 
 
 def test_stationary_knockback_unchanged():
     """With no prior momentum, combine == plain knockback (no regression)."""
     attacker, defender, *_ = _setup(defender_vel_x=0.0)
-    defender.receive_hit(_jab(attacker))
-    assert defender.vel.x == pytest.approx(_expected_launch(defender))
+    defender.fighter.receive_hit(_jab(attacker))
+    assert defender.fighter.vel.x == pytest.approx(_expected_launch(defender))
 
 
 def test_hitstun_is_computed_from_knockback_not_fixed():
     """#40: hurt_timer comes from hitstun_frames(KB), not the old fixed 12."""
     from pycats.combat.knockback import knockback, hitstun_frames
     attacker, defender, *_ = _setup(defender_vel_x=0.0)
-    defender.receive_hit(_jab(attacker))
-    kb = knockback(defender.percent, _JAB_DAMAGE, defender.weight, _JAB_BKB, _JAB_KBG)
-    assert defender.hurt_timer == hitstun_frames(kb)
-    assert defender.hurt_timer != 12  # the retired HURT_TIME constant
+    defender.fighter.receive_hit(_jab(attacker))
+    kb = knockback(defender.fighter.percent, _JAB_DAMAGE, defender.fighter.weight, _JAB_BKB, _JAB_KBG)
+    assert defender.fighter.hurt_timer == hitstun_frames(kb)
+    assert defender.fighter.hurt_timer != 12  # the retired HURT_TIME constant
 
 
 def test_moving_knockback_not_clobbered_by_input():
@@ -104,10 +104,10 @@ def test_moving_knockback_not_clobbered_by_input():
     # hit frame: update first, then receive_hit (mirrors game.py order)
     attacker.update(_frame([]), plats, empty)
     defender.update(_frame(held), plats, empty)
-    defender.receive_hit(_jab(attacker))
+    defender.fighter.receive_hit(_jab(attacker))
     # frame after the hit, direction still held
     defender.update(_frame(held), plats, empty)
-    assert defender.vel.x > MOVE_SPEED + 0.5  # knockback survived, not clobbered
+    assert defender.fighter.vel.x > MOVE_SPEED + 0.5  # knockback survived, not clobbered
 
 
 def test_launch_decays_each_hitstun_frame_not_constant():
@@ -116,13 +116,13 @@ def test_launch_decays_each_hitstun_frame_not_constant():
     from pycats.config import KNOCKBACK_DECAY
     attacker, defender, plats, empty = _setup(defender_vel_x=0.0)
     defender.platforms = plats
-    defender.receive_hit(_jab(attacker))
-    v0 = defender.vel.x
+    defender.fighter.receive_hit(_jab(attacker))
+    v0 = defender.fighter.vel.x
     assert v0 > 0
     prev = v0
     for _ in range(5):
         defender.update(_frame([]), plats, empty)
         # within hitstun, only knockback decay touches vel.x (friction is skipped)
-        assert defender.vel.x == pytest.approx(max(0.0, prev - KNOCKBACK_DECAY))
-        assert defender.vel.x < prev           # strictly eases out, not constant
-        prev = defender.vel.x
+        assert defender.fighter.vel.x == pytest.approx(max(0.0, prev - KNOCKBACK_DECAY))
+        assert defender.fighter.vel.x < prev           # strictly eases out, not constant
+        prev = defender.fighter.vel.x

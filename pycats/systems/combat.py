@@ -32,7 +32,7 @@ def process_hits(players, attacks):
         for defender in players:
             # Skip if defender is invulnerable, is dead, or is the owner of the attack
             if (
-                defender.invulnerable or not defender.is_alive or defender is atk.owner
+                defender.fighter.invulnerable or not defender.fighter.is_alive or defender is atk.owner
             ):  # no self-hit
                 continue
 
@@ -40,13 +40,13 @@ def process_hits(players, attacks):
             # Origin convention: rect top-left (rect.x, rect.y).
             resolved_hurtbox = [
                 resolve_circle(c, defender.rect.x, defender.rect.y,
-                               defender.facing_right, defender.rect.width)
+                               defender.fighter.facing_right, defender.rect.width)
                 for c in defender.fighter_data.hurtbox.circles
             ]
 
             if circles_overlap(atk.hit_cx, atk.hit_cy, atk.hit_r, resolved_hurtbox):
-                defender.receive_hit(atk)
-                atk.owner.record_hit_landed()  # Track successful hit
+                defender.fighter.receive_hit(atk)
+                atk.owner.fighter.record_hit_landed()  # Track successful hit
                 if atk.disappear_on_hit:
                     atk.kill()
                 else:

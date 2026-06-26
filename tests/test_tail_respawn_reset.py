@@ -58,9 +58,9 @@ def test_tail_reinitializes_on_respawn_like_first_load():
     for _ in range(30):
         p.rect.centerx += 60
         p.update(_e(), g, pg.sprite.Group())
-        if not p.is_alive:
+        if not p.fighter.is_alive:
             break
-    assert not p.is_alive                       # we actually KO'd
+    assert not p.fighter.is_alive                       # we actually KO'd
     for _ in range(RESPAWN_DELAY_FRAMES + 1):
         p.update(_e(), g, pg.sprite.Group())    # -> _respawn
     respawn_max = _max_move_over(p, g, 30)

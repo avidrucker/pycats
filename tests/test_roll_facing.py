@@ -32,19 +32,19 @@ def _roll(initial_facing_right, direction_key):
     empty = pg.sprite.Group()
     for _ in range(2):
         p.update(_f([]), plats, empty)
-    p.facing_right = initial_facing_right
+    p.fighter.facing_right = initial_facing_right
     p.update(_f([SHIELD, direction_key]), plats, empty)  # shield+dir -> ground roll
-    assert p.state == "dodge" and p.dodge_timer > 0       # a roll actually started
+    assert p.state == "dodge" and p.fighter.dodge_timer > 0       # a roll actually started
     return p
 
 
 @pytest.mark.parametrize("initial_facing_right", [True, False])
 def test_roll_left_faces_right(initial_facing_right):
     p = _roll(initial_facing_right, LEFT)
-    assert p.facing_right is True   # travel -x -> face +x
+    assert p.fighter.facing_right is True   # travel -x -> face +x
 
 
 @pytest.mark.parametrize("initial_facing_right", [True, False])
 def test_roll_right_faces_left(initial_facing_right):
     p = _roll(initial_facing_right, RIGHT)
-    assert p.facing_right is False  # travel +x -> face -x
+    assert p.fighter.facing_right is False  # travel +x -> face -x

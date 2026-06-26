@@ -223,11 +223,11 @@ def body_tint(p):
     state-label-driven) to match the old fill exactly: the flash is present
     while the timer is live and clears the frame it hits 0.
     """
-    if p.hurt_timer > 0:
+    if p.fighter.hurt_timer > 0:
         return RED
-    if p.stun_timer > 0:
+    if p.fighter.stun_timer > 0:
         return YELLOW
-    if p.dodge_timer > 0:
+    if p.fighter.dodge_timer > 0:
         return WHITE
     return p.char_color
 
@@ -241,14 +241,14 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
     w, h = PLAYER_SIZE
     tint = tuple(body_tint(p))
     key = (tuple(p.char_color), tuple(p.stripe_color), tuple(p.eye_color),
-           p.char_name, p.facing_right, tint, face_style)
+           p.char_name, p.fighter.facing_right, tint, face_style)
     surf = _body_cache.get(key)
     if surf is None:
         cw = w + 2 * _BODY_PAD_X
         ch = _BODY_PAD_TOP + h + _BODY_PAD_BOT
         surf = pygame.Surface((cw, ch), pygame.SRCALPHA)
         vrect = pygame.Rect(_BODY_PAD_X, _BODY_PAD_TOP, w, h)
-        shim = _CatShim(vrect, p.facing_right, p.char_color, p.eye_color,
+        shim = _CatShim(vrect, p.fighter.facing_right, p.char_color, p.eye_color,
                         p.stripe_color, p.char_name)
         body = pygame.Surface((w, h))
         body.fill(tint)
@@ -257,7 +257,7 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
         # Face: a glyph style replaces the primitive eyes + ears + whiskers;
         # falls back to primitives when the glyph can't render (font missing).
         face = cat_faces.render_face(
-            face_style, p.facing_right, cat_faces.ink_for(p.char_color)
+            face_style, p.fighter.facing_right, cat_faces.ink_for(p.char_color)
         )
         if face is not None:
             surf.blit(face, face.get_rect(center=(vrect.centerx, vrect.top + 10)))
@@ -288,11 +288,11 @@ def draw_dizzy_stars(surface, p: Player):
     frame with no external clock — and freeze deterministically when paused.
     The orbit is flattened into an ellipse so it reads as circling the head.
     """
-    if p.stun_timer <= 0:
+    if p.fighter.stun_timer <= 0:
         return
     cx = p.rect.centerx
     cy = p.rect.top - EAR_HEIGHT - DIZZY_ORBIT_LIFT
-    phase = p.stun_timer * DIZZY_SPIN_SPEED
+    phase = p.fighter.stun_timer * DIZZY_SPIN_SPEED
     for i in range(DIZZY_STAR_COUNT):
         ang = phase + i * (2 * math.pi / DIZZY_STAR_COUNT)
         sx = cx + math.cos(ang) * DIZZY_ORBIT_RADIUS
@@ -373,16 +373,16 @@ def render_battle(surface, players, platforms):
     for pl in platforms:
         surface.blit(pl.image, pl.rect)
     for p in players:
-        if not p.is_alive:
+        if not p.fighter.is_alive:
             continue
         p.tail.draw(surface)
         # Body composite (rect + stripes + eyes + ears + whiskers + name).
         body = _cat_body_surface(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
         surface.blit(body, (p.rect.x - _BODY_PAD_X, p.rect.y - _BODY_PAD_TOP))
-        if p.stun_timer > 0:
+        if p.fighter.stun_timer > 0:
             draw_dizzy_stars(surface, p)
         if p.state == "shield":
-            ratio = p.shield_hp / SHIELD_MAX_HP
+            ratio = p.fighter.shield_hp / SHIELD_MAX_HP
             shield_radius = int(MAX_SHIELD_RADIUS * ratio)
             r = max(MIN_SHIELD_RADIUS, shield_radius)
             s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
