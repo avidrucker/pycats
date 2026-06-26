@@ -43,9 +43,6 @@ from ..config import (
     DODGE_SPEED,
     KNOCKBACK_LAUNCH_FACTOR,
     KNOCKBACK_DECAY,
-    WHITE,
-    RED,
-    YELLOW,
 )
 from .attack import Attack
 from .fighter_input import FighterInput
@@ -94,11 +91,13 @@ class Player(pygame.sprite.Sprite):
     ):
         super().__init__()
         self.weight = weight  # fighter weight; feeds the knockback formula (#40)
-        self.image = pygame.Surface(self.SIZE)
+        # Presentation is a render-time concern (#75): the body tint is computed
+        # by render_battle.body_tint(self) from this player's state, so the entity
+        # no longer owns a Surface. rect is the authoritative body box.
         self.char_color = color
         self.char_name = char_name
-        self.image.fill(color)
-        self.rect = self.image.get_rect(midbottom=(x, y))
+        self.rect = pygame.Rect(0, 0, self.SIZE[0], self.SIZE[1])
+        self.rect.midbottom = (x, y)
         self.eye_color = eye_color
 
         # Secondary fur color for stripes
@@ -229,7 +228,7 @@ class Player(pygame.sprite.Sprite):
             kb = knockback(self.percent, atk.damage, self.weight,
                            atk.base_knockback, atk.knockback_growth)
             self.hurt_timer = hitstun_frames(kb)
-            self._start_hurt()  # visual flash only; caller set the timer above
+            # (the red hurt-flash is now render-time: render_battle.body_tint #75)
             direction = (
                 1 if atk.owner.facing_right else -1
             )  # the direction of the attack
@@ -431,17 +430,12 @@ class Player(pygame.sprite.Sprite):
         # Non-shield timers tick
         if self.hurt_timer > 0:
             self.hurt_timer -= 1
-        if self.hurt_timer == 0 and self.state == "hurt":
-            self.image.fill(self.char_color)  # reset image color to normal
         if self.stun_timer > 0:
             self.stun_timer -= 1
-        if self.stun_timer == 0 and self.state == "stun":
-            self.image.fill(self.char_color)  # reset image color to normal
         if self.dodge_timer > 0:
             self.dodge_timer -= 1
         if self.dodge_timer == 0 and self.state == "dodge":
             self.invulnerable = False  # reset invulnerability after dodge ends
-            self.image.fill(self.char_color)  # reset image color to normal
             self.vel.x = 0  # stop horizontal movement after dodge ends
 
             # Handle spot dodge transition
@@ -555,7 +549,7 @@ class Player(pygame.sprite.Sprite):
         self.dodge_blocked_by_edge = False
         self._clock.reset()  # attack_timer/current_move/move_frame all derive from this
         self.done_attacking = True
-        self.reset_visual_state()  # back to the normal body colour
+        # (visual reset is render-time now: render_battle.body_tint #75)
         # Re-initialize the tail to its rest layout at the spawn point (#41): the
         # Verlet tail keeps live position/velocity and freezes wherever the cat
         # flew off-screen, so without this the chain whips in from there. facing
@@ -569,21 +563,14 @@ class Player(pygame.sprite.Sprite):
         self.reset_to_spawn()
 
     # state starters ----------------------------
-    def _start_hurt(self) -> None:  # visual flash only
-        # hurt_timer is set by the caller (receive_hit) from computed hitstun (#40);
-        # this used to hard-code HURT_TIME, which would clobber the computed value.
-        self.image.fill(RED)  # red-flash tint
-
     def _start_stun(self) -> None:
         # self.state = "stun"
         self.stun_timer = STUN_TIME
-        self.image.fill(YELLOW)  # yellow-flash tint
         self.vel.update(0, 0)
 
     def _start_dodge(self, dir_x: int) -> None:
         self.dodge_timer = DODGE_TIME
         self.invulnerable = True
-        self.image.fill(WHITE)  # flash white
         self.dodge_blocked_by_edge = False  # Reset edge blocking flag
 
         # Only set spot_dodge_shield_held for ground-based spot dodges (not air dodges)
@@ -745,7 +732,3 @@ class Player(pygame.sprite.Sprite):
     def record_hit_received(self):
         """Record that this player was hit by an opponent"""
         self.was_hit_before_ko = True
-
-    def reset_visual_state(self):
-        """Reset player visual appearance to original color"""
-        self.image.fill(self.char_color)

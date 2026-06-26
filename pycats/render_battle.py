@@ -10,7 +10,7 @@ from .config import (
     WHISKER_LENGTH, WHISKER_THICKNESS, WHISKER_COUNT, WHISKER_ANGLE,
     WHISKER_OFFSET_Y, WHISKER_OFFSET_X, STRIPE_COUNT, STRIPE_WIDTH,
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
-    MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, PLAYER_SIZE,
+    MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
 )
 from . import text_utils
 from .entities import Player
@@ -200,10 +200,29 @@ class _CatShim:
         self.char_name = char_name
 
 
+def body_tint(p):
+    """The body fill colour for a fighter this frame (#75 / D1 slice 1).
+
+    Pure function of observable state: RED while hurt, YELLOW while stunned,
+    WHITE while dodging, else the character colour. Replaces the old
+    Player.image.fill(...) adapter mutations — the entity no longer carries its
+    own pixels; the tint is computed here at render time. Timer-driven (not
+    state-label-driven) to match the old fill exactly: the flash is present
+    while the timer is live and clears the frame it hits 0.
+    """
+    if p.hurt_timer > 0:
+        return RED
+    if p.stun_timer > 0:
+        return YELLOW
+    if p.dodge_timer > 0:
+        return WHITE
+    return p.char_color
+
+
 def _cat_body_surface(p):
     """Return the cached body composite for player `p` (built on first use)."""
     w, h = PLAYER_SIZE
-    tint = tuple(p.image.get_at((w // 2, h // 2)))
+    tint = tuple(body_tint(p))
     key = (tuple(p.char_color), tuple(p.stripe_color), tuple(p.eye_color),
            p.char_name, p.facing_right, tint)
     surf = _body_cache.get(key)

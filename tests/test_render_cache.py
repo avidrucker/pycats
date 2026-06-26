@@ -15,7 +15,9 @@ pytestmark = pytest.mark.usefixtures("render_isolation")
 
 def _direct(surface, p):
     """Replicate the original per-frame body draw sequence (pre-cache)."""
-    surface.blit(p.image, p.rect)
+    body = pygame.Surface(p.rect.size)
+    body.fill(rb.body_tint(p))  # tint is render-time now (#75), not p.image
+    surface.blit(body, p.rect)
     rb.draw_stripes(surface, p)
     rb.draw_eye(surface, p)
     rb.draw_eye(surface, p, eye=False)
@@ -66,5 +68,6 @@ def test_body_cache_pixel_identical_left_facing():
 
 def test_body_cache_pixel_identical_hurt_tint():
     p1, _ = _settle()
-    p1.image.fill(RED)  # hurt flash tints the body rect
+    p1.hurt_timer = 1  # hurt flash -> body_tint(p) returns RED (#75)
+    assert rb.body_tint(p1) == RED
     _compare(p1)

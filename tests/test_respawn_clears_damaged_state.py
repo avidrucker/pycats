@@ -14,6 +14,7 @@ from pycats.entities.platform import Platform
 from pycats.entities.attack import Attack
 from pycats.combat.data import Hitbox, Circle
 from pycats.core.input import InputFrame
+from pycats.render_battle import body_tint
 from pycats.config import P1_COLOR, P2_COLOR, WHITE, RESPAWN_DELAY_FRAMES
 
 CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
@@ -62,8 +63,7 @@ def test_respawn_clears_hurt_state():
     assert v.is_alive
     assert v.hurt_timer == 0
     assert v.state not in ("hurt", "stun", "ko")
-    ctr = (v.image.get_width() // 2, v.image.get_height() // 2)
-    assert tuple(v.image.get_at(ctr))[:3] == v.char_color  # rendered normal
+    assert body_tint(v) == v.char_color  # rendered normal (#75: tint is render-time)
 
 
 def test_respawn_clears_stun_state():
@@ -71,5 +71,4 @@ def test_respawn_clears_stun_state():
     assert v.is_alive
     assert v.stun_timer == 0
     assert v.state not in ("hurt", "stun", "ko")
-    ctr = (v.image.get_width() // 2, v.image.get_height() // 2)
-    assert tuple(v.image.get_at(ctr))[:3] == v.char_color
+    assert body_tint(v) == v.char_color  # rendered normal (#75: tint is render-time)
