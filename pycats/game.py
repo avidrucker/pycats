@@ -51,6 +51,7 @@ from .core.physics import resolve_player_push
 from . import stats_print
 from .screen_manager import ScreenStateManager
 from . import text_utils
+from . import display
 from .render_battle import render_battle, render_attacks
 
 pygame.init()
@@ -115,6 +116,9 @@ attacks = pygame.sprite.Group()
 # ------------------------------------------------ pygame set-up
 # Start in windowed mode by default (change to True for fullscreen by default)
 start_fullscreen = False
+
+# Current windowed-scale preset (1x by default; cycle with F10). See pycats.display.
+windowed_scale = display.WINDOWED_SCALE_PRESETS[0]
 
 if start_fullscreen:
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
@@ -290,13 +294,15 @@ def check_win_condition():
 def toggle_fullscreen():
     """Toggle between fullscreen and windowed mode."""
     global screen, is_fullscreen, display_surface, game_surface, scale_factor, offset_x, offset_y
+    global windowed_scale
 
     if is_fullscreen:
-        # Switch to windowed mode
+        # Switch to windowed mode (back to a 1x window)
         screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         display_surface = screen
         game_surface = screen
         scale_factor = 1.0
+        windowed_scale = 1.0
         offset_x = 0
         offset_y = 0
         is_fullscreen = False
@@ -334,9 +340,31 @@ def toggle_fullscreen():
         # print(f"Using {'integer' if scale_factor == int(scale_factor) else 'fractional'} scaling")
 
 
+def set_windowed_scale(scale):
+    """Switch to windowed mode at `scale`x the 960x540 base (e.g. 1x/1.5x/2x/2.5x).
+
+    The sim always renders at 960x540; at >1x we render to an offscreen
+    game_surface and present_frame scales it up to the window. At 1x we render
+    straight to the window (no scaling)."""
+    global screen, display_surface, game_surface, scale_factor
+    global offset_x, offset_y, is_fullscreen, windowed_scale
+
+    windowed_scale = scale
+    screen = pygame.display.set_mode(display.window_size_for(scale))
+    display_surface = screen
+    game_surface = screen if scale == 1.0 else pygame.Surface(
+        (SCREEN_WIDTH, SCREEN_HEIGHT)
+    )
+    scale_factor = scale
+    offset_x = 0
+    offset_y = 0
+    is_fullscreen = False
+
+
 def get_render_surface():
-    """Get the surface to render the game onto."""
-    return game_surface if is_fullscreen else screen
+    """Get the surface to render the game onto (the offscreen 960x540 surface
+    whenever we are scaling; the window itself at windowed 1x)."""
+    return game_surface
 
 
 def present_frame():
@@ -370,6 +398,11 @@ def present_frame():
             )
 
         display_surface.blit(scaled_surface, (offset_x, offset_y))
+
+    elif game_surface is not screen:
+        # Windowed at >1x: scale the offscreen 960x540 surface up to fill the
+        # window (which is exactly window_size_for(scale), so no letterbox).
+        display_surface.blit(display.scale_surface(game_surface, scale_factor), (0, 0))
 
     pygame.display.flip()
 
@@ -442,6 +475,10 @@ while running:
             elif ev.key == pygame.K_ESCAPE and is_fullscreen:
                 # Allow ESC to exit fullscreen
                 toggle_fullscreen()
+            elif ev.key == pygame.K_F10:
+                # Cycle windowed-scale presets (1x -> 1.5x -> 2x -> 2.5x -> 1x).
+                # Brings the game to windowed mode at the next preset.
+                set_windowed_scale(display.cycle_preset(windowed_scale))
 
     # Update screen state manager
     screen_manager.update(frame_input)
@@ -478,7 +515,7 @@ while running:
         screen_manager.render(get_render_surface())
 
         # Draw fullscreen instructions on character select screen
-        fs_text = "F11: Toggle Fullscreen" + (
+        fs_text = "F11: Toggle Fullscreen | F10: Window Size" + (
             " | ESC: Exit Fullscreen" if is_fullscreen else ""
         )
         text_utils.render_text(
@@ -561,7 +598,7 @@ while running:
         )
 
         # Draw fullscreen instructions
-        fs_text = "F11: Toggle Fullscreen" + (
+        fs_text = "F11: Toggle Fullscreen | F10: Window Size" + (
             " | ESC: Exit Fullscreen" if is_fullscreen else ""
         )
         text_utils.render_text(
