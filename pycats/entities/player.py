@@ -34,7 +34,6 @@ from ..config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     PLAYER_SIZE,
-    INITIAL_LIVES,
     SHIELD_MAX_HP,
     BLAST_PADDING,
     RESPAWN_DELAY_FRAMES,
@@ -45,6 +44,7 @@ from ..config import (
     KNOCKBACK_DECAY,
 )
 from .attack import Attack
+from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
 from ..combat.data import load_fighter_data
@@ -99,16 +99,12 @@ class Player(pygame.sprite.Sprite):
         else:
             self.stripe_color = color  # Default to same color if no match
 
-        # ---------- combat stats ----------
-        self.percent = 0
-        self.shield_hp = SHIELD_MAX_HP
-        self.lives = INITIAL_LIVES
-
-        # ---------- game statistics ----------
-        self.attacks_made = 0  # Total attacks initiated
-        self.hits_landed = 0  # Successful hits on opponent
-        self.suicides = 0  # Deaths without being hit (self-inflicted)
-        self.was_hit_before_ko = False  # Track if last KO was from being hit
+        # ---------- combat state + stats: the Fighter domain aggregate ----------
+        # Sprite-free domain object owning percent/shield_hp/lives + the match
+        # stats and enforcing their invariants (#81 / D1 slice 6b-1; design #69).
+        # Player composes it and delegates via properties so every reader/writer
+        # is unchanged; the rules + rect/vel follow in 6b-2/6b-3.
+        self.fighter = Fighter()
 
         # ---------- spawn / KO ----------
         self.spawn_point = pygame.Vector2(x, y)
@@ -204,12 +200,72 @@ class Player(pygame.sprite.Sprite):
         """Frames elapsed since the current move started (POST-increment)."""
         return self._clock.frame
 
+    # ---- combat state + stats, delegated to Fighter (#81 / D1 slice 6b-1) ----
+    # Thin pass-throughs so every existing reader/writer (render_battle, game.py,
+    # stats_print, the runner snapshot, tests) is unchanged. The invariants on
+    # percent/shield_hp/lives are enforced once, in Fighter's setters.
+    @property
+    def percent(self):
+        return self.fighter.percent
+
+    @percent.setter
+    def percent(self, value):
+        self.fighter.percent = value
+
+    @property
+    def shield_hp(self):
+        return self.fighter.shield_hp
+
+    @shield_hp.setter
+    def shield_hp(self, value):
+        self.fighter.shield_hp = value
+
+    @property
+    def lives(self):
+        return self.fighter.lives
+
+    @lives.setter
+    def lives(self, value):
+        self.fighter.lives = value
+
+    @property
+    def attacks_made(self):
+        return self.fighter.attacks_made
+
+    @attacks_made.setter
+    def attacks_made(self, value):
+        self.fighter.attacks_made = value
+
+    @property
+    def hits_landed(self):
+        return self.fighter.hits_landed
+
+    @hits_landed.setter
+    def hits_landed(self, value):
+        self.fighter.hits_landed = value
+
+    @property
+    def suicides(self):
+        return self.fighter.suicides
+
+    @suicides.setter
+    def suicides(self, value):
+        self.fighter.suicides = value
+
+    @property
+    def was_hit_before_ko(self):
+        return self.fighter.was_hit_before_ko
+
+    @was_hit_before_ko.setter
+    def was_hit_before_ko(self, value):
+        self.fighter.was_hit_before_ko = value
+
     # ----------- hit processing ------------
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""
         self.record_hit_received()  # Track that this player was hit
         if self.shield_attempting and self.shield_hp > 0:
-            self.shield_hp = max(0, self.shield_hp - atk.damage)
+            self.shield_hp = self.shield_hp - atk.damage  # Fighter setter clamps >= 0
             if self.shield_hp == 0:
                 self._start_stun()
         #### TODO: elif dodging
@@ -262,9 +318,9 @@ class Player(pygame.sprite.Sprite):
         # ---------- shield tick ----------
         # if shielding, then shield HP goes down, otherwise it goes up
         if self.state == "shield":
-            self.shield_hp = round(max(self.shield_hp - 0.2, 0), 2)
+            self.shield_hp = round(self.shield_hp - 0.2, 2)  # Fighter setter clamps >= 0
         else:
-            self.shield_hp = round(min(self.shield_hp + 0.2, SHIELD_MAX_HP), 2)
+            self.shield_hp = round(self.shield_hp + 0.2, 2)  # Fighter setter clamps <= MAX
 
         #
         if not self._pressed(held, "shield") and not self._pressed(pressed, "shield"):
@@ -370,10 +426,11 @@ class Player(pygame.sprite.Sprite):
 
         # debugging
         # print(f"PLAYER KO: {self.char_name} fell off and lost a life! (lives: {self.lives-1})")
-        # Clamp at 0 (#54): enforce the lives>=0 invariant at the mutation site
-        # rather than relying on callers (the is_alive / respawn gates) never
-        # re-KOing a zero-life player.
-        self.lives = max(0, self.lives - 1)
+        # Decrement; the lives>=0 invariant (#54) is now enforced once, in the
+        # Fighter.lives setter (#81), instead of clamped here. This keeps a
+        # zero-life player from going negative if the is_alive / respawn gates
+        # ever let a re-KO through.
+        self.lives -= 1
         self.is_alive = False
         self.respawn_timer = RESPAWN_DELAY_FRAMES
         # hide sprite off-screen
@@ -473,14 +530,16 @@ class Player(pygame.sprite.Sprite):
                 )  # Air directional dodge - preserve Y velocity
             self.spot_dodge_shield_held = False
 
+    # Stat counters live on the Fighter aggregate (#81); Player delegates so
+    # callers (fighter_input, combat, the test stand-ins) are unchanged.
     def record_attack_made(self):
         """Record that this player initiated an attack"""
-        self.attacks_made += 1
+        self.fighter.record_attack_made()
 
     def record_hit_landed(self):
         """Record that this player successfully hit an opponent"""
-        self.hits_landed += 1
+        self.fighter.record_hit_landed()
 
     def record_hit_received(self):
         """Record that this player was hit by an opponent"""
-        self.was_hit_before_ko = True
+        self.fighter.record_hit_received()
