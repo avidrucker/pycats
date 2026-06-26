@@ -39,12 +39,12 @@ from ..config import (
     SHIELD_MAX_HP,
     BLAST_PADDING,
     RESPAWN_DELAY_FRAMES,
-    STUN_TIME,
     DODGE_TIME,
     DODGE_SPEED,
     KNOCKBACK_LAUNCH_FACTOR,
 )
 from ..combat.knockback import knockback, hitstun_frames
+from ..combat.shield import shield_break_stun_frames
 
 
 class Fighter:
@@ -274,8 +274,10 @@ class Fighter:
 
     # state starters ----------------------------
     def _start_stun(self) -> None:
-        # self.state = "stun"
-        self.stun_timer = STUN_TIME
+        # Shield-break "dizzy" (#12): damage-scaled duration (Melee/PM). The
+        # engine flips state -> "stun" on the next tick (the chart/FSM `stun`
+        # entry guards on stun_timer > 0); input is locked while the timer runs.
+        self.stun_timer = shield_break_stun_frames(self.percent)
         self.vel.update(0, 0)
 
     def _start_dodge(self, dir_x: int) -> None:

@@ -86,6 +86,10 @@ def build_fighter_chart(p):
         ),
         state(
             {"id": "shield"},
+            # Shield-break stun (#12) takes priority: a depleted shield calls
+            # _start_stun (stun_timer > 0) and the fighter is dizzy regardless of
+            # whether shield is still held.
+            _tick(lambda e, d: p.stun_timer > 0, "stun"),
             _tick(lambda e, d: not p.shield_attempting, "idle"),
             _tick(lambda e, d: p.dodge_timer > 0, "dodge"),
             _tick(lambda e, d: p.vel.y < 0, "jump"),

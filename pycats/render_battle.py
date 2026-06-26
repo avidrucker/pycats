@@ -2,7 +2,18 @@
 """Shared battle renderer: draws the stage, fighters, and attacks onto a surface.
 Extracted from game.py so the live game, pause screen, and sim presenters all
 use one renderer."""
+import math
+
 import pygame
+
+# Dizzy stars drawn above a shield-broken (#12) fighter's head. Cosmetic only
+# (rendering is not golden-snapshotted), so these live here in the renderer.
+DIZZY_STAR_COUNT = 3       # stars orbiting the head
+DIZZY_ORBIT_RADIUS = 16    # horizontal orbit radius (px)
+DIZZY_ORBIT_LIFT = 8       # gap above the ear tips
+DIZZY_STAR_OUTER = 5       # star spike radius
+DIZZY_STAR_INNER = 2       # star inner radius
+DIZZY_SPIN_SPEED = 0.18    # radians of orbit advance per frame (per stun tick)
 
 from .config import (
     EYE_OFFSET_X, EYE_OFFSET_Y, EYE_RADIUS, GLINT_OFFSET_X, GLINT_OFFSET_Y,
@@ -245,6 +256,39 @@ def _cat_body_surface(p):
     return surf
 
 
+def _star_points(cx, cy, outer, inner, points, rot):
+    """Vertices of a `points`-pointed star centred at (cx, cy), rotated `rot`."""
+    pts = []
+    for k in range(points * 2):
+        r = outer if k % 2 == 0 else inner
+        a = rot + k * math.pi / points
+        pts.append((cx + math.cos(a) * r, cy + math.sin(a) * r))
+    return pts
+
+
+def draw_dizzy_stars(surface, p: Player):
+    """Orbiting 'dizzy' stars above a stunned fighter's head (#12).
+
+    Drawn while ``stun_timer > 0``. The orbit phase is derived from stun_timer
+    itself (which ticks down one per frame), so the stars advance one step each
+    frame with no external clock — and freeze deterministically when paused.
+    The orbit is flattened into an ellipse so it reads as circling the head.
+    """
+    if p.stun_timer <= 0:
+        return
+    cx = p.rect.centerx
+    cy = p.rect.top - EAR_HEIGHT - DIZZY_ORBIT_LIFT
+    phase = p.stun_timer * DIZZY_SPIN_SPEED
+    for i in range(DIZZY_STAR_COUNT):
+        ang = phase + i * (2 * math.pi / DIZZY_STAR_COUNT)
+        sx = cx + math.cos(ang) * DIZZY_ORBIT_RADIUS
+        sy = cy + math.sin(ang) * DIZZY_ORBIT_RADIUS * 0.4   # flatten to an ellipse
+        pygame.draw.polygon(
+            surface, YELLOW,
+            _star_points(sx, sy, DIZZY_STAR_OUTER, DIZZY_STAR_INNER, 5, ang),
+        )
+
+
 def render_battle(surface, players, platforms):
     """Draw platforms, alive fighters, and their attacks onto `surface`.
     Mirrors game.py's playing-branch draw block (no HUD/controls/FPS text)."""
@@ -257,6 +301,8 @@ def render_battle(surface, players, platforms):
         # Body composite (rect + stripes + eyes + ears + whiskers + name).
         body = _cat_body_surface(p)
         surface.blit(body, (p.rect.x - _BODY_PAD_X, p.rect.y - _BODY_PAD_TOP))
+        if p.stun_timer > 0:
+            draw_dizzy_stars(surface, p)
         if p.state == "shield":
             ratio = p.shield_hp / SHIELD_MAX_HP
             shield_radius = int(MAX_SHIELD_RADIUS * ratio)

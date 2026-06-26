@@ -68,6 +68,27 @@ pokes out).
 | Regen             | 0.07/frame (4.2/s)                      |
 | Full-HP hold time | ~2.98 s                                 |
 | Shieldstun        | `floor(damage × 0.345)` frames (<2.9% → 0 stun) |
+| Shield-break stun | `(400 − p) + 90` frames, clamped [90, 490] (Melee/PM) |
+
+### Shield-break "dizzy" stun (implemented, #12)
+
+When a shield is depleted to 0 HP it **breaks**, and the fighter is **stunned
+("dizzy")** with all inputs locked. Melee / Project M duration (SmashWiki
+[Stun](https://www.ssbwiki.com/Stun)):
+
+> `(400 − p) + 90` frames, where `p` is the fighter's damage % when the shield
+> broke — i.e. **490 frames at 0%, falling to a 90-frame floor at ≥400%**.
+
+Uniquely among stuns, **more damage means a *shorter* dizzy**. Melee shortens it
+further by **mash-out (−3 frames/input)**; pycats does **not** model mash-out
+because #12 locks all inputs while dizzy (so there is nothing to mash). PM is
+Melee-faithful on shield mechanics, so the Melee formula is the PM target.
+
+Implemented as `combat.shield.shield_break_stun_frames(percent)`
+(= `SHIELD_BREAK_STUN_MAX − percent`, clamped to `[SHIELD_BREAK_STUN_MIN,
+SHIELD_BREAK_STUN_MAX]`), set in `Fighter._start_stun`; the fighter-state engines
+(`charts/fighter_chart.py` + `systems/fighter_fsm.py`) enter the `stun` leaf from
+`shield` while `stun_timer > 0`.
 
 ## How interactions are actually modeled
 

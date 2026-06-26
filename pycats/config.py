@@ -39,7 +39,12 @@ JOSTLE_MIN_VOVERLAP_FRAC = 0.8
 
 # Timers (frames)
 HURT_TIME = 12
-STUN_TIME = 60
+# Shield-break "dizzy" stun (#12). Melee/PM: duration = (400 - p) + 90 frames,
+# i.e. SHIELD_BREAK_STUN_MAX - percent, clamped to [MIN, MAX]. Higher damage =>
+# SHORTER stun (inverse of every other stun). See combat.shield and
+# docs/research/brawl-projectm-fighter-states.md.
+SHIELD_BREAK_STUN_MAX = 490  # frames at 0% damage
+SHIELD_BREAK_STUN_MIN = 90   # frames at >= 400% damage
 DODGE_TIME = 14
 DODGE_SPEED = 14  # horizontal boost for a roll
 

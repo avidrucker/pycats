@@ -75,10 +75,13 @@ def build_fighter_fsm(player) -> FSM:
                 Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
             ],
             "shield": [
+                # Shield-break stun (#12) takes priority: a depleted shield calls
+                # _start_stun (stun_timer > 0) and the fighter is dizzy regardless
+                # of whether shield is still held.
+                Transition("stun", lambda f, ctx: player.stun_timer > 0),
                 Transition("idle", lambda f, ctx: not player.shield_attempting),
                 Transition("dodge", lambda f, ctx: player.dodge_timer > 0),
                 Transition("jump", lambda f, ctx: player.vel.y < 0),
-                #### TODO: stun: shield break leads to stunned state
                 #### TODO: grab: attacking while shielding leads to grabbing state
                 #### TODO: held: being grabbed by an opponent leads to held state
             ],
