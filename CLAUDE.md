@@ -25,7 +25,9 @@ Critical rules:
   + teardown. See [RULES.md](./RULES.md) → "Closing work".
 - **Surface the run/sim command for runnable changes.** Any change to the live
   game / render / input / screens / sim must end the final response with the exact
-  full-path run command (a `REPO=`/`PY=` block pointing at the main repo's venv).
+  full-path run command — a `REPO=`/`PY=` block pointing at the main repo's venv,
+  ending in `"$PY" -m pycats.game`. **There is no `main.py`** (entry points are
+  `-m pycats.game`, `watch.py`, `bench.py`); never emit `python main.py`.
   See [RULES.md](./RULES.md) → "Surfacing run/sim commands".
 
 Run & test: see [README.md](./README.md).

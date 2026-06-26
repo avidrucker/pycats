@@ -110,6 +110,11 @@ Study tree do not inherit this rule.
   (`watch.py --match --video media/clip.mp4`). The README "How to Run" section and
   the `watch.py` commands are the canonical sources — cite the one that exercises
   the change, with absolute paths filled in.
+- **There is no `main.py` or top-level launcher — never invent `python main.py`.**
+  The only entry points, all run from the repo root, are `-m pycats.game` (live
+  game), `watch.py` (replay/match), and `bench.py` (benchmark). `python main.py`
+  fails with `No such file or directory`. If unsure, the README "How to Run"
+  section is authoritative — read it rather than guessing a conventional path.
 
 ## Closing work
 
