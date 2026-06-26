@@ -142,7 +142,7 @@ class WinScreenManager:
             WIN_SCREEN_TEXT_COLOR,
             center=True,
         )
-        y_offset += WIN_SCREEN_LINE_SPACING * 2
+        y_offset += WIN_SCREEN_LINE_SPACING * 1.5
 
         # Final stock count
         text_utils.render_text(
@@ -153,7 +153,7 @@ class WinScreenManager:
             WIN_SCREEN_TEXT_COLOR,
             center=True,
         )
-        y_offset += WIN_SCREEN_LINE_SPACING * 1.5
+        y_offset += WIN_SCREEN_LINE_SPACING  # final-stocks → stats header
 
         # Game statistics header
         text_utils.render_text(
@@ -176,7 +176,7 @@ class WinScreenManager:
         self._draw_confirmation_boxes(screen, stats_table_start_y, y_offset)
 
         # Instructions
-        y_offset += WIN_SCREEN_LINE_SPACING * 2
+        y_offset += WIN_SCREEN_LINE_SPACING * 1.25
 
         # Show different instructions based on confirmation status
         if not self.both_confirmed():

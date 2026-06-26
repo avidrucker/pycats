@@ -9,6 +9,29 @@ Contents:
 Use: Used by game.py to display win screen statistics in a clean, aligned format.
 """
 
+from .config import INITIAL_LIVES
+
+
+def _kos_scored(opponent):
+    """Number of stocks this player took *off the opponent*.
+
+    A stock the opponent lost to a self-destruct is not a KO scored by us, so
+    we subtract the opponent's suicides from their total lost lives. Clamped at
+    0 defensively (each suicide costs a life, so it can't legitimately exceed
+    lives lost). Mirrors Smash's "KOs" column.
+    """
+    return max(0, (INITIAL_LIVES - opponent.lives) - opponent.suicides)
+
+
+def _falls_taken(player):
+    """Number of times this player was KO'd *by the opponent* (excludes SDs).
+
+    Total deaths minus self-destructs, so it stays distinct from the separate
+    "Suicides" row. By construction this equals the opponent's KOs scored,
+    mirroring Smash's "Falls" column.
+    """
+    return max(0, (INITIAL_LIVES - player.lives) - player.suicides)
+
 
 def format_stats_table(winner, loser):
     """
@@ -33,10 +56,27 @@ def format_stats_table(winner, loser):
     p1_accuracy = (p1_player.hits_landed / max(p1_player.attacks_made, 1)) * 100
     p2_accuracy = (p2_player.hits_landed / max(p2_player.attacks_made, 1)) * 100
 
+    # KOs scored (stocks taken off the opponent) and Falls suffered (times KO'd
+    # by the opponent). By construction P1's KOs == P2's Falls and vice versa.
+    p1_kos = _kos_scored(p2_player)
+    p2_kos = _kos_scored(p1_player)
+    p1_falls = _falls_taken(p1_player)
+    p2_falls = _falls_taken(p2_player)
+
     # Return structured data instead of formatted strings
     return {
         "header": {"stat_label": "Stat", "p1_label": "P1", "p2_label": "P2"},
         "rows": [
+            {
+                "stat_name": "KOs",
+                "p1_value": str(p1_kos),
+                "p2_value": str(p2_kos),
+            },
+            {
+                "stat_name": "Falls",
+                "p1_value": str(p1_falls),
+                "p2_value": str(p2_falls),
+            },
             {
                 "stat_name": "Attacks Made",
                 "p1_value": str(p1_player.attacks_made),

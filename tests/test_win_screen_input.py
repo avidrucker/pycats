@@ -43,3 +43,39 @@ def test_confirm_works_after_grace_window():
         ws.update(set())
     ws.update({P1_CONTROLS["attack"]})
     assert ws.p1_confirmed, "confirm did not register after the grace window"
+
+
+def _past_grace(ws):
+    """Advance past the initial input-grace window with no input."""
+    for _ in range(ws.INITIAL_INPUT_GRACE_FRAMES):
+        ws.update(set())
+
+
+def test_single_confirmation_does_not_return():
+    """Both players must confirm before the win screen yields (issue #11).
+
+    This pins a *deliberate* parity divergence from Project M, which advances
+    past its results screen on a single button press (documented in #99). pycats
+    keeps the both-confirm gate from #10. One player's confirm must NOT be
+    enough to leave for character select.
+    """
+    ws = _fresh_screen()
+    _past_grace(ws)
+    ws.update({P1_CONTROLS["attack"]})  # only P1 confirms
+    assert ws.p1_confirmed and not ws.p2_confirmed
+    assert not ws.ready_to_return(), "one confirm left the win screen (need both)"
+
+
+def test_both_confirmations_return_after_delay():
+    """Once both confirm, the screen yields — but only after the return delay."""
+    ws = _fresh_screen()
+    _past_grace(ws)
+    ws.update({P1_CONTROLS["attack"]})  # P1 confirms
+    ws.update({P2_CONTROLS["attack"]})  # P2 confirms -> starts the return delay
+    assert ws.both_confirmed()
+    assert not ws.ready_to_return(), "returned before the post-confirm delay elapsed"
+
+    # Burn the post-confirm delay; the bound comfortably exceeds the 30-frame delay.
+    for _ in range(ws.return_delay + 5):
+        ws.update(set())
+    assert ws.ready_to_return(), "both confirmed but never became ready to return"
