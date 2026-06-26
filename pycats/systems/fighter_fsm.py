@@ -1,0 +1,136 @@
+"""Legacy flat fighter FSM table (behavior-equivalent to the hierarchical
+statechart in charts/fighter_chart.py).
+
+This is the data/closure twin of `build_fighter_chart(p)`: the same per-state
+transition guards, expressed as the hand-rolled `FSM`/`Transition` table the
+`LegacyEngine` consumes. Extracted from `Player._build_fsm` (D1 slice 5, #79) so
+the table lives in `systems/` alongside the engine that runs it, mirroring how
+the statechart already lives outside the entity.
+
+Guards are closures over the owning `player`; they read its live attributes each
+tick. Transition ORDER within a state is significant — it encodes priority
+(first matching transition wins, break-after-first) and is kept verbatim to
+guarantee byte-identical parity with the statechart (see fighter_chart.py's
+"Transition selection note").
+"""
+from __future__ import annotations
+
+from .fsm import FSM, Transition
+
+
+def build_fighter_fsm(player) -> FSM:
+    """player is the owning Player; guards read its live attributes."""
+    return FSM(
+        state="idle",
+        table={
+            "idle": [
+                Transition("attack", lambda f, ctx: player.attack_timer > 0),
+                Transition(
+                    "dodge", lambda f, ctx: player.dodge_timer > 0
+                ),  # Dodge should take priority
+                Transition(
+                    "run", lambda f, ctx: player.vel.x != 0 and player.on_ground
+                ),
+                Transition("jump", lambda f, ctx: player.vel.y < 0),
+                Transition(
+                    "fall", lambda f, ctx: not player.on_ground and player.vel.y > 0
+                ),
+                Transition("shield", lambda f, ctx: player.shield_attempting),
+                Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
+            ],
+            "run": [
+                Transition("attack", lambda f, ctx: player.attack_timer > 0),
+                Transition(
+                    "dodge", lambda f, ctx: player.dodge_timer > 0
+                ),  # Dodge should take priority
+                Transition("idle", lambda f, ctx: player.vel.x == 0),
+                Transition("jump", lambda f, ctx: player.vel.y < 0),
+                Transition(
+                    "fall", lambda f, ctx: not player.on_ground and player.vel.y > 0
+                ),
+                Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
+                Transition(
+                    "shield",
+                    lambda f, ctx: player.shield_attempting and player.on_ground,
+                ),  # can enter shield state while running on the ground
+            ],
+            "jump": [
+                Transition("attack", lambda f, ctx: player.attack_timer > 0),
+                Transition("fall", lambda f, ctx: player.vel.y >= 0),
+                Transition("ko", lambda f, ctx: not player.is_alive),
+                Transition("dodge", lambda f, ctx: player.dodge_timer > 0),
+                Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
+            ],
+            "fall": [
+                Transition("attack", lambda f, ctx: player.attack_timer > 0),
+                Transition(
+                    "idle", lambda f, ctx: player.on_ground and player.vel.x == 0
+                ),
+                Transition(
+                    "run", lambda f, ctx: player.on_ground and player.vel.x != 0
+                ),
+                Transition("jump", lambda f, ctx: player.vel.y < 0),
+                Transition("ko", lambda f, ctx: not player.is_alive),
+                Transition("dodge", lambda f, ctx: player.dodge_timer > 0),
+                Transition("hurt", lambda f, ctx: player.hurt_timer > 0),
+            ],
+            "shield": [
+                Transition("idle", lambda f, ctx: not player.shield_attempting),
+                Transition("dodge", lambda f, ctx: player.dodge_timer > 0),
+                Transition("jump", lambda f, ctx: player.vel.y < 0),
+                #### TODO: stun: shield break leads to stunned state
+                #### TODO: grab: attacking while shielding leads to grabbing state
+                #### TODO: held: being grabbed by an opponent leads to held state
+            ],
+            "ko": [Transition("idle", lambda f, ctx: player.is_alive)],
+            "dodge": [
+                Transition(
+                    "shield",
+                    lambda f, ctx: player.shield_attempting
+                    and player.dodge_timer <= 0
+                    and player.on_ground,
+                ),  # can re-enter shield state after dodging on the ground
+                Transition(
+                    "idle",
+                    lambda f, ctx: not player.shield_attempting
+                    and player.dodge_timer <= 0
+                    and player.on_ground
+                    and not player.spot_dodge_shield_held,  # Don't go to idle if spot dodge shield is held
+                ),  #  and player.vel.x == 0
+                Transition(
+                    "fall",
+                    lambda f, ctx: player.dodge_timer <= 0 and not player.on_ground,
+                ),  # and player.vel.y > 0
+            ],
+            #### hurt: hit by an attack, unable to move or attack for a short time
+            "hurt": [
+                Transition(
+                    "idle", lambda f, ctx: player.hurt_timer <= 0 and player.on_ground
+                ),
+                Transition(
+                    "fall",
+                    lambda f, ctx: player.hurt_timer <= 0 and not player.on_ground,
+                ),
+                #### TODO: implement shield holding to transition from hurt to shield state
+            ],
+            "stun": [
+                Transition(
+                    "idle", lambda f, ctx: player.stun_timer <= 0 and player.on_ground
+                ),
+                Transition(
+                    "fall",
+                    lambda f, ctx: player.stun_timer <= 0 and not player.on_ground,
+                ),
+            ],
+            "attack": [
+                Transition(
+                    "idle", lambda f, ctx: player.done_attacking and player.on_ground
+                ),
+                Transition(
+                    "fall",
+                    lambda f, ctx: player.done_attacking and not player.on_ground,
+                ),
+            ],
+            #### TODO: hang: hanging on the ledge
+        },
+    )

@@ -57,4 +57,6 @@ def make_state_engine(player, backend: str = "legacy") -> StateEngine:
         from .state_engine_sc import StatechartEngine
 
         return StatechartEngine(Session(build_fighter_chart(player)))
-    return LegacyEngine(player._build_fsm())
+    from .fighter_fsm import build_fighter_fsm
+
+    return LegacyEngine(build_fighter_fsm(player))

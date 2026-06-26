@@ -1,5 +1,5 @@
 """Hierarchical + parallel fighter statechart (behavior-equivalent to the
-flat chart / Player._build_fsm).
+flat chart / systems.fighter_fsm.build_fighter_fsm).
 
 Structure (Task 3 of PM Phase 0):
 

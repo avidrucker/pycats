@@ -50,7 +50,6 @@ from .fighter_physics import step_physics
 from ..combat.data import load_fighter_data
 from ..combat.move_clock import MoveClock
 from ..combat.knockback import knockback, hitstun_frames, decay_velocity
-from ..systems.fsm import FSM, Transition
 from ..systems.state_engine import make_state_engine
 
 
@@ -473,123 +472,6 @@ class Player(pygame.sprite.Sprite):
                     dir_x * DODGE_SPEED + self.vel.x
                 )  # Air directional dodge - preserve Y velocity
             self.spot_dodge_shield_held = False
-
-    # --------------------------------------------------- FSM scaffold (pass-A)
-    def _build_fsm(self) -> FSM:
-        return FSM(
-            state="idle",
-            table={
-                "idle": [
-                    Transition("attack", lambda f, ctx: self.attack_timer > 0),
-                    Transition(
-                        "dodge", lambda f, ctx: self.dodge_timer > 0
-                    ),  # Dodge should take priority
-                    Transition(
-                        "run", lambda f, ctx: self.vel.x != 0 and self.on_ground
-                    ),
-                    Transition("jump", lambda f, ctx: self.vel.y < 0),
-                    Transition(
-                        "fall", lambda f, ctx: not self.on_ground and self.vel.y > 0
-                    ),
-                    Transition("shield", lambda f, ctx: self.shield_attempting),
-                    Transition("hurt", lambda f, ctx: self.hurt_timer > 0),
-                ],
-                "run": [
-                    Transition("attack", lambda f, ctx: self.attack_timer > 0),
-                    Transition(
-                        "dodge", lambda f, ctx: self.dodge_timer > 0
-                    ),  # Dodge should take priority
-                    Transition("idle", lambda f, ctx: self.vel.x == 0),
-                    Transition("jump", lambda f, ctx: self.vel.y < 0),
-                    Transition(
-                        "fall", lambda f, ctx: not self.on_ground and self.vel.y > 0
-                    ),
-                    Transition("hurt", lambda f, ctx: self.hurt_timer > 0),
-                    Transition(
-                        "shield",
-                        lambda f, ctx: self.shield_attempting and self.on_ground,
-                    ),  # can enter shield state while running on the ground
-                ],
-                "jump": [
-                    Transition("attack", lambda f, ctx: self.attack_timer > 0),
-                    Transition("fall", lambda f, ctx: self.vel.y >= 0),
-                    Transition("ko", lambda f, ctx: not self.is_alive),
-                    Transition("dodge", lambda f, ctx: self.dodge_timer > 0),
-                    Transition("hurt", lambda f, ctx: self.hurt_timer > 0),
-                ],
-                "fall": [
-                    Transition("attack", lambda f, ctx: self.attack_timer > 0),
-                    Transition(
-                        "idle", lambda f, ctx: self.on_ground and self.vel.x == 0
-                    ),
-                    Transition(
-                        "run", lambda f, ctx: self.on_ground and self.vel.x != 0
-                    ),
-                    Transition("jump", lambda f, ctx: self.vel.y < 0),
-                    Transition("ko", lambda f, ctx: not self.is_alive),
-                    Transition("dodge", lambda f, ctx: self.dodge_timer > 0),
-                    Transition("hurt", lambda f, ctx: self.hurt_timer > 0),
-                ],
-                "shield": [
-                    Transition("idle", lambda f, ctx: not self.shield_attempting),
-                    Transition("dodge", lambda f, ctx: self.dodge_timer > 0),
-                    Transition("jump", lambda f, ctx: self.vel.y < 0),
-                    #### TODO: stun: shield break leads to stunned state
-                    #### TODO: grab: attacking while shielding leads to grabbing state
-                    #### TODO: held: being grabbed by an opponent leads to held state
-                ],
-                "ko": [Transition("idle", lambda f, ctx: self.is_alive)],
-                "dodge": [
-                    Transition(
-                        "shield",
-                        lambda f, ctx: self.shield_attempting
-                        and self.dodge_timer <= 0
-                        and self.on_ground,
-                    ),  # can re-enter shield state after dodging on the ground
-                    Transition(
-                        "idle",
-                        lambda f, ctx: not self.shield_attempting
-                        and self.dodge_timer <= 0
-                        and self.on_ground
-                        and not self.spot_dodge_shield_held,  # Don't go to idle if spot dodge shield is held
-                    ),  #  and self.vel.x == 0
-                    Transition(
-                        "fall",
-                        lambda f, ctx: self.dodge_timer <= 0 and not self.on_ground,
-                    ),  # and self.vel.y > 0
-                ],
-                #### hurt: hit by an attack, unable to move or attack for a short time
-                "hurt": [
-                    Transition(
-                        "idle", lambda f, ctx: self.hurt_timer <= 0 and self.on_ground
-                    ),
-                    Transition(
-                        "fall",
-                        lambda f, ctx: self.hurt_timer <= 0 and not self.on_ground,
-                    ),
-                    #### TODO: implement shield holding to transition from hurt to shield state
-                ],
-                "stun": [
-                    Transition(
-                        "idle", lambda f, ctx: self.stun_timer <= 0 and self.on_ground
-                    ),
-                    Transition(
-                        "fall",
-                        lambda f, ctx: self.stun_timer <= 0 and not self.on_ground,
-                    ),
-                ],
-                "attack": [
-                    Transition(
-                        "idle", lambda f, ctx: self.done_attacking and self.on_ground
-                    ),
-                    Transition(
-                        "fall",
-                        lambda f, ctx: self.done_attacking and not self.on_ground,
-                    ),
-                ],
-                #### TODO: hang: hanging on the ledge
-            },
-        )
 
     def record_attack_made(self):
         """Record that this player initiated an attack"""
