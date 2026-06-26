@@ -72,13 +72,20 @@ class Player(pygame.sprite.Sprite):
     ):
         super().__init__()
         self.weight = weight  # fighter weight; feeds the knockback formula (#40)
+
+        # ---------- combat domain: the Fighter aggregate ----------
+        # Sprite-free domain object owning the combat state + stats + rules and,
+        # since #84, the kinematics (rect/vel/on_ground/spawn_point). Player
+        # composes it and delegates via properties so every reader/writer is
+        # unchanged; created first so those properties resolve during the rest of
+        # __init__. The remaining timers/flags relocate in 6b-3b. (design #69)
+        self.fighter = Fighter(self, x, y)
+
         # Presentation is a render-time concern (#75): the body tint is computed
         # by render_battle.body_tint(self) from this player's state, so the entity
-        # no longer owns a Surface. rect is the authoritative body box.
+        # no longer owns a Surface. rect (now Fighter-owned) is the body box.
         self.char_color = color
         self.char_name = char_name
-        self.rect = pygame.Rect(0, 0, self.SIZE[0], self.SIZE[1])
-        self.rect.midbottom = (x, y)
         self.eye_color = eye_color
 
         # Secondary fur color for stripes
@@ -89,23 +96,11 @@ class Player(pygame.sprite.Sprite):
         else:
             self.stripe_color = color  # Default to same color if no match
 
-        # ---------- combat state + stats: the Fighter domain aggregate ----------
-        # Sprite-free domain object owning percent/shield_hp/lives + the match
-        # stats and enforcing their invariants (#81 / D1 slice 6b-1; design #69).
-        # Player composes it and delegates via properties so every reader/writer
-        # is unchanged; the rules + rect/vel follow in 6b-2/6b-3.
-        self.fighter = Fighter(self)
-
         # ---------- spawn / KO ----------
-        self.spawn_point = pygame.Vector2(x, y)
         self.is_alive = True
 
         # Input mapping
         self.controls = controls
-
-        # Kinematics
-        self.vel = pygame.Vector2(0, 0)
-        self.on_ground = False
 
         # Timers / counters
         self.respawn_timer = 0  # frames until next spawn
@@ -189,6 +184,43 @@ class Player(pygame.sprite.Sprite):
     def move_frame(self) -> int:
         """Frames elapsed since the current move started (POST-increment)."""
         return self._clock.frame
+
+    # ---- kinematics, delegated to Fighter (#84 / D1 slice 6b-3a) ----
+    # rect/vel are pygame value types the renderer, physics, tail and collision
+    # read as `player.rect`/`player.vel`; get+set so in-place mutation
+    # (`p.rect.left = …`) AND wholesale assignment (`p.vel = Vector2(...)`, used
+    # in __init__ and tests) both flow to the Fighter.
+    @property
+    def rect(self):
+        return self.fighter.rect
+
+    @rect.setter
+    def rect(self, value):
+        self.fighter.rect = value
+
+    @property
+    def vel(self):
+        return self.fighter.vel
+
+    @vel.setter
+    def vel(self, value):
+        self.fighter.vel = value
+
+    @property
+    def on_ground(self):
+        return self.fighter.on_ground
+
+    @on_ground.setter
+    def on_ground(self, value):
+        self.fighter.on_ground = value
+
+    @property
+    def spawn_point(self):
+        return self.fighter.spawn_point
+
+    @spawn_point.setter
+    def spawn_point(self, value):
+        self.fighter.spawn_point = value
 
     # ---- combat state + stats, delegated to Fighter (#81 / D1 slice 6b-1) ----
     # Thin pass-throughs so every existing reader/writer (render_battle, game.py,

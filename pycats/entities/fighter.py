@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import math
 
+import pygame  # type: ignore
+
 from ..config import (
     MAX_JUMPS,
     SCREEN_WIDTH,
@@ -40,11 +42,21 @@ from ..combat.knockback import knockback, hitstun_frames
 
 
 class Fighter:
-    def __init__(self, owner):
+    def __init__(self, owner, x, y):
         # Back-reference to the owning Player (pygame Sprite adapter). The rules
-        # reach the not-yet-relocated simulation state (rect/vel/timers/flags) and
-        # the engine/tail through it; relocates in 6b-3.
+        # reach the not-yet-relocated simulation state (timers/flags) and the
+        # engine/tail through it; the rest relocates in 6b-3b.
         self.owner = owner
+
+        # ---------- kinematics (#84 / 6b-3a) ----------
+        # The authoritative body box + velocity now live on the domain object;
+        # Player exposes them as delegating get/set properties (pygame value
+        # types, kept per the #69 Sprite-free-not-pygame-free boundary).
+        self.rect = pygame.Rect(0, 0, owner.SIZE[0], owner.SIZE[1])
+        self.rect.midbottom = (x, y)
+        self.vel = pygame.Vector2(0, 0)
+        self.on_ground = False
+        self.spawn_point = pygame.Vector2(x, y)
 
         # ---------- combat state (invariant-enforced via the setters) ----------
         self._percent = 0
@@ -125,21 +137,21 @@ class Fighter:
             # overwriting it; vertical stays an override (`=`) so a launch sets the
             # arc rather than adding to fall speed.
             launch = kb * KNOCKBACK_LAUNCH_FACTOR
-            self.owner.vel.x += launch * math.cos(radians) * direction
-            self.owner.vel.y = launch * -math.sin(radians)  # up = negative y
+            self.vel.x += launch * math.cos(radians) * direction
+            self.vel.y = launch * -math.sin(radians)  # up = negative y
 
     def _handle_landing(self, was_airborne: bool):
-        if self.owner.on_ground and was_airborne:
+        if self.on_ground and was_airborne:
             self.owner.jumps_remaining = MAX_JUMPS  # reset jumps when landing
             self.owner.air_dodge_ok = True  # reset air dodge availability
 
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
         return (
-            self.owner.rect.right < -BLAST_PADDING
-            or self.owner.rect.left > SCREEN_WIDTH + BLAST_PADDING
-            or self.owner.rect.bottom < -BLAST_PADDING
-            or self.owner.rect.top > SCREEN_HEIGHT + BLAST_PADDING
+            self.rect.right < -BLAST_PADDING
+            or self.rect.left > SCREEN_WIDTH + BLAST_PADDING
+            or self.rect.bottom < -BLAST_PADDING
+            or self.rect.top > SCREEN_HEIGHT + BLAST_PADDING
         )
 
     def _ko(self):
@@ -157,8 +169,8 @@ class Fighter:
         self.owner.is_alive = False
         self.owner.respawn_timer = RESPAWN_DELAY_FRAMES
         # hide sprite off-screen
-        self.owner.rect.center = (-1000, -1000)
-        self.owner.vel.update(0, 0)
+        self.rect.center = (-1000, -1000)
+        self.vel.update(0, 0)
         self.owner.engine.force("ko")
 
     def reset_to_spawn(self):
@@ -173,9 +185,9 @@ class Fighter:
         is ever constructed facing a non-default direction (e.g. #16 skins).
         """
         self.owner.is_alive = True
-        self.owner.rect.midbottom = self.owner.spawn_point
-        self.owner.vel.update(0, 0)
-        self.owner.on_ground = False
+        self.rect.midbottom = self.spawn_point
+        self.vel.update(0, 0)
+        self.on_ground = False
         self.owner.facing_right = self.owner.original_facing_right
         self.owner.jumps_remaining = MAX_JUMPS
         self.owner.air_dodge_ok = True
@@ -215,7 +227,7 @@ class Fighter:
     def _start_stun(self) -> None:
         # self.state = "stun"
         self.owner.stun_timer = STUN_TIME
-        self.owner.vel.update(0, 0)
+        self.vel.update(0, 0)
 
     def _start_dodge(self, dir_x: int) -> None:
         self.owner.dodge_timer = DODGE_TIME
@@ -223,22 +235,22 @@ class Fighter:
         self.owner.dodge_blocked_by_edge = False  # Reset edge blocking flag
 
         # Only set spot_dodge_shield_held for ground-based spot dodges (not air dodges)
-        if dir_x == 0 and self.owner.on_ground:
+        if dir_x == 0 and self.on_ground:
             # Ground spot dodge - no movement, special thin platform protection
-            self.owner.vel.update(0, 0)  # No movement for ground spot dodge
+            self.vel.update(0, 0)  # No movement for ground spot dodge
             self.owner.spot_dodge_shield_held = True
             # debugging
             # print(f"GROUND SPOT DODGE START: {self.owner.char_name} ground spot dodge initiated")
-        elif dir_x == 0 and not self.owner.on_ground:
+        elif dir_x == 0 and not self.on_ground:
             # Air dodge - preserve Y velocity, no horizontal movement
-            # self.owner.vel.x = 0  # Only reset horizontal velocity for air dodge
+            # self.vel.x = 0  # Only reset horizontal velocity for air dodge
             self.owner.spot_dodge_shield_held = False
             # debugging
             # print(f"AIR DODGE START: {self.owner.char_name} air dodge initiated (preserving Y velocity)")
         else:
             # Directional dodge (ground roll) - set horizontal velocity, preserve or reset Y
-            if self.owner.on_ground:
-                self.owner.vel.update(dir_x * DODGE_SPEED, 0)  # Ground roll
+            if self.on_ground:
+                self.vel.update(dir_x * DODGE_SPEED, 0)  # Ground roll
                 # Issue #2: a ground roll ends facing OPPOSITE to its travel
                 # direction (Project M). Per SmashWiki (Roll), a forward roll
                 # turns the character around and a back roll keeps facing — both
@@ -248,7 +260,7 @@ class Fighter:
                 # research #23 — so only the grounded branch sets facing.)
                 self.owner.facing_right = dir_x < 0
             else:
-                self.owner.vel.x = (
-                    dir_x * DODGE_SPEED + self.owner.vel.x
+                self.vel.x = (
+                    dir_x * DODGE_SPEED + self.vel.x
                 )  # Air directional dodge - preserve Y velocity
             self.owner.spot_dodge_shield_held = False
