@@ -76,6 +76,12 @@ class Fighter:
         self.attacks_made = 0  # Total attacks initiated
         self.hits_landed = 0  # Successful hits on opponent
         self.suicides = 0  # Deaths without being hit (self-inflicted)
+        # Cumulative percent damage dealt to / received from opponents across the
+        # whole match. These are match-scoped like the counters above: they are
+        # deliberately NOT reset by reset_to_spawn (#98), so they survive respawns
+        # and only start fresh when a new Player is built for a new match.
+        self.damage_given = 0.0  # Total percent damage this fighter dealt
+        self.damage_taken = 0.0  # Total percent damage this fighter received
         self.was_hit_before_ko = False  # Track if last KO was from being hit
 
         # ---------- spawn / KO ----------
@@ -144,6 +150,10 @@ class Fighter:
         """Record that this fighter was hit by an opponent."""
         self.was_hit_before_ko = True
 
+    def record_damage_given(self, amount) -> None:
+        """Record percent damage this fighter dealt to an opponent (#98)."""
+        self.damage_given += amount
+
     # ----------- hit processing ------------
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""
@@ -156,6 +166,11 @@ class Fighter:
         else:
             # Phase 1 (#40): authentic Brawl/PM knockback + hitstun-from-knockback.
             self.percent += atk.damage
+            # Credit the percent damage to both sides for the win-screen stats
+            # (#98). Only the non-shield path counts — a shielded hit deals shield
+            # damage, not percent, so it is correctly excluded here.
+            self.damage_taken += atk.damage
+            atk.owner.record_damage_given(atk.damage)
             kb = knockback(self.percent, atk.damage, self.weight,
                            atk.base_knockback, atk.knockback_growth)
             self.hurt_timer = hitstun_frames(kb)

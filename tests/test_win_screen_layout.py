@@ -34,6 +34,9 @@ class _FakePlayer:
         self.suicides = suicides
         self.hits_landed = 7
         self.attacks_made = 20
+        # Wide three-digit values exercise the worst-case row width/height.
+        self.damage_given = 312.0
+        self.damage_taken = 188.0
 
 
 def _record_text_ys(render_call):

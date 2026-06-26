@@ -93,6 +93,16 @@ def format_stats_table(winner, loser):
                 "p2_value": f"{p2_accuracy:.1f}%",
             },
             {
+                "stat_name": "Damage Given",
+                "p1_value": f"{p1_player.damage_given:.0f}%",
+                "p2_value": f"{p2_player.damage_given:.0f}%",
+            },
+            {
+                "stat_name": "Damage Taken",
+                "p1_value": f"{p1_player.damage_taken:.0f}%",
+                "p2_value": f"{p2_player.damage_taken:.0f}%",
+            },
+            {
                 "stat_name": "Suicides",
                 "p1_value": str(p1_player.suicides),
                 "p2_value": str(p2_player.suicides),

@@ -197,7 +197,10 @@ RESPAWN_DELAY_FRAMES = int(2 * FPS)  # 2 s freeze before respawn
 WIN_SCREEN_BG_COLOR = (40, 40, 50)
 WIN_SCREEN_TEXT_COLOR = WHITE
 WIN_SCREEN_TITLE_SIZE = 48
-WIN_SCREEN_STATS_SIZE = 32
+# 26, not 32: the stats table grew to 8 rows (KOs/Falls #11, Damage Given/Taken
+# #98). At 32px the table + confirm instructions overflowed the 540px screen;
+# 26px keeps every row on-screen and is still comfortably legible.
+WIN_SCREEN_STATS_SIZE = 26
 WIN_SCREEN_INSTRUCTION_SIZE = 24
 WIN_SCREEN_PADDING = 20
 WIN_SCREEN_LINE_SPACING = 40

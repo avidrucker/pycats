@@ -21,12 +21,15 @@ from pycats.config import INITIAL_LIVES
 
 
 class _FakePlayer:
-    def __init__(self, char_name, lives, suicides, hits_landed=0, attacks_made=0):
+    def __init__(self, char_name, lives, suicides, hits_landed=0, attacks_made=0,
+                 damage_given=0.0, damage_taken=0.0):
         self.char_name = char_name
         self.lives = lives
         self.suicides = suicides
         self.hits_landed = hits_landed
         self.attacks_made = attacks_made
+        self.damage_given = damage_given
+        self.damage_taken = damage_taken
 
 
 def _rows_by_name(winner, loser):
@@ -72,3 +75,23 @@ def test_suicides_excluded_from_kos_and_falls():
 
     # P2 KO'd P1 once; P1 fell once. The KOs/Falls mirror identity must hold.
     assert rows["KOs"]["p2_value"] == rows["Falls"]["p1_value"] == "1"
+
+
+def test_damage_given_taken_rows():
+    """Damage Given/Taken render as whole-percent values (issue #98).
+
+    In a 1v1 a player's Damage Given equals the opponent's Damage Taken, so the
+    rows must mirror across columns; values are formatted as integer percents.
+    """
+    p1 = _FakePlayer("P1", lives=2, suicides=0,
+                     damage_given=312.0, damage_taken=188.0)
+    p2 = _FakePlayer("P2", lives=0, suicides=1,
+                     damage_given=188.0, damage_taken=312.0)
+    rows = _rows_by_name(winner=p1, loser=p2)
+
+    assert "Damage Given" in rows and "Damage Taken" in rows
+    assert rows["Damage Given"]["p1_value"] == "312%"
+    assert rows["Damage Taken"]["p2_value"] == "312%"
+    # given(P1) == taken(P2) and given(P2) == taken(P1)
+    assert rows["Damage Given"]["p1_value"] == rows["Damage Taken"]["p2_value"]
+    assert rows["Damage Given"]["p2_value"] == rows["Damage Taken"]["p1_value"] == "188%"

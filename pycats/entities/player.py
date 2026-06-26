@@ -390,6 +390,22 @@ class Player(pygame.sprite.Sprite):
     def was_hit_before_ko(self, value):
         self.fighter.was_hit_before_ko = value
 
+    @property
+    def damage_given(self):
+        return self.fighter.damage_given
+
+    @damage_given.setter
+    def damage_given(self, value):
+        self.fighter.damage_given = value
+
+    @property
+    def damage_taken(self):
+        return self.fighter.damage_taken
+
+    @damage_taken.setter
+    def damage_taken(self, value):
+        self.fighter.damage_taken = value
+
     # Fighter rules live on the Fighter aggregate (#83 / D1 slice 6b-2); Player
     # delegates each with a thin pass-through so update(), fighter_physics,
     # fighter_input, combat, game, and the tests are unchanged. The simulation
@@ -553,3 +569,7 @@ class Player(pygame.sprite.Sprite):
     def record_hit_received(self):
         """Record that this player was hit by an opponent"""
         self.fighter.record_hit_received()
+
+    def record_damage_given(self, amount):
+        """Record percent damage this player dealt to an opponent (#98)"""
+        self.fighter.record_damage_given(amount)
