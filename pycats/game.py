@@ -53,6 +53,7 @@ from .screen_manager import ScreenStateManager
 from . import text_utils
 from . import display
 from . import settings
+from . import cat_faces
 from .render_battle import render_battle, render_attacks
 
 pygame.init()
@@ -493,6 +494,18 @@ while running:
                     set_windowed_scale(display.cycle_preset(windowed_scale))
                     zoom_toast.show(display.format_scale_label(windowed_scale))
                     save_prefs()
+            elif ev.key == pygame.K_e and player1 is not None:
+                # Debug (#108): cycle P1's cat-face style; toast the new style.
+                player1.face_style = cat_faces.cycle_face_style(
+                    getattr(player1, "face_style", cat_faces.PRIMITIVES)
+                )
+                zoom_toast.show("P1 face: " + cat_faces.face_style_label(player1.face_style))
+            elif ev.key == pygame.K_SEMICOLON and player2 is not None:
+                # Debug (#108): cycle P2's cat-face style; toast the new style.
+                player2.face_style = cat_faces.cycle_face_style(
+                    getattr(player2, "face_style", cat_faces.PRIMITIVES)
+                )
+                zoom_toast.show("P2 face: " + cat_faces.face_style_label(player2.face_style))
 
     # Update screen state manager
     screen_manager.update(frame_input)

@@ -24,6 +24,7 @@ from .config import (
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
 )
 from . import text_utils
+from . import cat_faces
 from .entities import Player
 
 
@@ -230,12 +231,16 @@ def body_tint(p):
     return p.char_color
 
 
-def _cat_body_surface(p):
-    """Return the cached body composite for player `p` (built on first use)."""
+def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
+    """Return the cached body composite for player `p` (built on first use).
+
+    `face_style` (#108) selects how the face is drawn: PRIMITIVES (default —
+    eyes + ears + whiskers) or a glyph style (kaomoji/emoji) blitted over the
+    head. It is part of the cache key so toggling re-renders."""
     w, h = PLAYER_SIZE
     tint = tuple(body_tint(p))
     key = (tuple(p.char_color), tuple(p.stripe_color), tuple(p.eye_color),
-           p.char_name, p.facing_right, tint)
+           p.char_name, p.facing_right, tint, face_style)
     surf = _body_cache.get(key)
     if surf is None:
         cw = w + 2 * _BODY_PAD_X
@@ -248,9 +253,17 @@ def _cat_body_surface(p):
         body.fill(tint)
         surf.blit(body, vrect)
         draw_stripes(surf, shim)
-        draw_eye(surf, shim)
-        draw_eye(surf, shim, eye=False)
-        draw_cat_features(surf, shim)
+        # Face: a glyph style replaces the primitive eyes + ears + whiskers;
+        # falls back to primitives when the glyph can't render (font missing).
+        face = cat_faces.render_face(
+            face_style, p.facing_right, cat_faces.ink_for(p.char_color)
+        )
+        if face is not None:
+            surf.blit(face, face.get_rect(center=(vrect.centerx, vrect.top + 10)))
+        else:
+            draw_eye(surf, shim)
+            draw_eye(surf, shim, eye=False)
+            draw_cat_features(surf, shim)
         draw_player_name(surf, shim)
         _body_cache[key] = surf
     return surf
@@ -299,7 +312,7 @@ def render_battle(surface, players, platforms):
             continue
         p.tail.draw(surface)
         # Body composite (rect + stripes + eyes + ears + whiskers + name).
-        body = _cat_body_surface(p)
+        body = _cat_body_surface(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
         surface.blit(body, (p.rect.x - _BODY_PAD_X, p.rect.y - _BODY_PAD_TOP))
         if p.stun_timer > 0:
             draw_dizzy_stars(surface, p)
