@@ -98,9 +98,12 @@ class Tail:
             seg.angle = ang
 
     # ---------------------------------------------------------------- update
-    def update(self, dt: float = 1.0):
+    def update(self, platforms=None, dt: float = 1.0):
         """One Verlet step: pin root -> integrate free points -> satisfy length
-        constraints -> resolve platform collisions -> compute draw angles."""
+        constraints -> resolve platform collisions -> compute draw angles.
+
+        `platforms` is passed in (the owning fighter no longer stashes them; #77).
+        """
         segs = self.segments
         n = len(segs)
         L = TAIL_SEGMENT_LENGTH
@@ -186,7 +189,7 @@ class Tail:
                     b.y -= dy * 0.5 * diff
 
         # 4) Solid-platform collision (floor clamp; kills downward velocity).
-        self._resolve_platform_collisions()
+        self._resolve_platform_collisions(platforms)
 
         # 5) Draw angles: each segment points from its parent.
         segs[0].angle = math.pi if self._base_back < 0 else 0.0
@@ -214,7 +217,7 @@ class Tail:
         base_y = self.player.rect.bottom - TAIL_BASE_OFFSET_Y
         return base_x, base_y
 
-    def _resolve_platform_collisions(self):
+    def _resolve_platform_collisions(self, platforms):
         """Issue #4/#37: rest the tail on SOLID (thick) platforms — no clipping.
 
         Within a thick platform's horizontal footprint, clamp seg.y to the top
@@ -222,7 +225,6 @@ class Tail:
         platform in one step) and zero the segment's vertical velocity so it
         rests instead of jittering. Thin platforms stay pass-through.
         """
-        platforms = getattr(self.player, "platforms", None)
         if not platforms:
             return
         for plat in platforms:

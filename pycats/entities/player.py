@@ -46,18 +46,10 @@ from ..config import (
 )
 from .attack import Attack
 from .fighter_input import FighterInput
+from .fighter_physics import step_physics
 from ..combat.data import load_fighter_data
 from ..combat.move_clock import MoveClock
 from ..combat.knockback import knockback, hitstun_frames, decay_velocity
-from ..core.physics import (
-    apply_gravity,
-    move_rect,
-    solve_vertical,
-    solve_horizontal,
-    apply_horizontal_friction,
-    find_current_platform,
-    would_dodge_off_platform,
-)
 from ..systems.fsm import FSM, Transition
 from ..systems.state_engine import make_state_engine
 
@@ -255,9 +247,6 @@ class Player(pygame.sprite.Sprite):
         #       pressed means freshly pressed this frame
         pressed = input_frame.pressed
 
-        # Store platforms for edge detection during dodge
-        self.platforms = platforms
-
         """Master per-frame update; handles KO/respawn before usual logic."""
         # ---------- dead / waiting to respawn ----------
         if not self.is_alive:
@@ -282,11 +271,6 @@ class Player(pygame.sprite.Sprite):
         if not self._pressed(held, "shield") and not self._pressed(pressed, "shield"):
             self.shield_attempting = False
 
-        # ---------- airborne check ----------
-        # note: this is used to determine whether the player was airborne before landing, so that
-        #       the player can reset their jumps when landing
-        was_airborne = not self.on_ground
-
         # input / movement / state logic --------------------------------------
         # Issue #8: hits are resolved AFTER this frame's engine.tick (game.py
         # runs process_hits after player.update), so hurt_timer/stun_timer are
@@ -309,123 +293,9 @@ class Player(pygame.sprite.Sprite):
             # hitstun ends. (Gravity still acts on vel.y below.)
             self.vel.x = decay_velocity(self.vel.x, KNOCKBACK_DECAY)
 
-        # physics ---------------------------------------------------
-        # Apply gravity - but not for ground-based spot dodges to prevent falling through thin platforms
-        # Air dodges should still have normal gravity
-        is_ground_spot_dodge = (
-            self.state == "dodge" and self.spot_dodge_shield_held and self.on_ground
-        )
-
-        if not is_ground_spot_dodge:
-            apply_gravity(self.vel)
-        else:
-            # For ground spot dodges, keep velocity minimal to prevent any fall-through
-            self.vel.y = 0
-            # debugging
-            # print(f"GROUND SPOT DODGE GRAVITY PREVENTION: {self.char_name} gravity blocked during ground spot dodge")
-
-        # Edge-aware dodge: prevent horizontal movement if it would take player off platform
-        # This happens AFTER any friction is applied and immediately before movement
-        if self.state == "dodge" and self.on_ground and hasattr(self, "platforms"):
-            current_platform = find_current_platform(self.rect, self.platforms)
-            if current_platform is not None:
-                # First, check if velocity would take us off edge
-                if self.vel.x != 0 and would_dodge_off_platform(
-                    self.rect, self.vel.x, current_platform
-                ):
-                    # Stop horizontal movement to prevent falling off
-                    # debugging
-                    # print(f"EDGE BLOCKED: {self.char_name} dodge movement stopped (vel was {self.vel.x}) at pos ({self.rect.centerx}, {self.rect.centery})")
-                    self.vel.x = 0
-                    self.dodge_blocked_by_edge = True
-
-                # Second, clamp position to ensure player never goes past platform edges
-                # This is a safety net in case any movement still occurs
-                platform_rect = current_platform.rect
-
-                # Prevent left edge of player from going past left edge of platform
-                if self.rect.left < platform_rect.left:
-                    old_pos = self.rect.left
-                    self.rect.left = platform_rect.left
-                    self.vel.x = 0  # Stop any leftward movement
-                    # debugging
-                    # print(f"CLAMPED LEFT: {self.char_name} from {old_pos} to {self.rect.left}")
-
-                # Prevent right edge of player from going past right edge of platform
-                if self.rect.right > platform_rect.right:
-                    old_pos = self.rect.right
-                    self.rect.right = platform_rect.right
-                    self.vel.x = 0  # Stop any rightward movement
-                    # debugging
-                    # print(f"CLAMPED RIGHT: {self.char_name} from {old_pos} to {self.rect.right}")
-        # No else clause needed - edge detection is correctly conditional
-
-        # Apply movement - this must happen immediately after edge check
-        move_rect(self.rect, self.vel)
-
-        # Post-movement clamping: ensure dodge didn't move player off platform
-        if self.state == "dodge" and self.on_ground and hasattr(self, "platforms"):
-            current_platform = find_current_platform(self.rect, self.platforms)
-            if current_platform is not None:
-                platform_rect = current_platform.rect
-
-                # Clamp position if player went off platform edges
-                if self.rect.left < platform_rect.left:
-                    # print(f"POST-MOVE CLAMP LEFT: {self.char_name} moved to {self.rect.left}, clamping to {platform_rect.left}")
-                    self.rect.left = platform_rect.left
-                    self.vel.x = 0
-
-                if self.rect.right > platform_rect.right:
-                    # print(f"POST-MOVE CLAMP RIGHT: {self.char_name} moved to {self.rect.right}, clamping to {platform_rect.right}")
-                    self.rect.right = platform_rect.right
-                    self.vel.x = 0
-
-        # Special handling for preventing drop-through of thin platforms
-        # when shield is held with down (both during ground spot dodge and shield state)
-        is_shield_down_held = self._pressed(held, "shield") and self._pressed(
-            held, "down"
-        )
-        should_prevent_drop_through = (
-            # During ground spot dodge (only, not air dodge)
-            (self.state == "dodge" and self.spot_dodge_shield_held)
-            or
-            # In shield state with down held (after spot dodge or manual shielding)
-            (self.state == "shield" and is_shield_down_held)
-        )
-
-        # debugging
-        # if should_prevent_drop_through:
-        #     print(f"DROP THROUGH BLOCKED: {self.char_name} prevented from dropping through thin platform (state: {self.state})")
-
-        self.vel, self.on_ground, self.drop_platform = solve_vertical(
-            self.rect,
-            self.vel,
-            platforms,
-            self._pressed(held, "down")
-            and not should_prevent_drop_through,  # Don't drop through if conditions met
-            self.drop_platform,
-        )
-
-        # Issue #5: block the SIDE faces of solid (thick) platforms. Runs after
-        # solve_vertical so a top-landing is resolved first and is not mistaken
-        # for a side entry.
-        self.vel = solve_horizontal(self.rect, self.vel, platforms)
-
-        # Special case: maintain on_ground status during ground spot dodge to prevent unwanted fall transitions
-        if self.state == "dodge" and self.spot_dodge_shield_held:
-            # Force on_ground to remain True during ground spot dodge to prevent falling
-            if not self.on_ground:
-                # debugging
-                # print(f"GROUND SPOT DODGE GROUND FIX: {self.char_name} forced back to ground during spot dodge")
-                self.on_ground = True
-                # Also ensure the player stays at the exact platform level
-                current_platform = find_current_platform(self.rect, platforms)
-                if current_platform:
-                    self.rect.bottom = current_platform.rect.top
-                    # debugging
-                    # print(f"GROUND SPOT DODGE POSITION FIX: {self.char_name} position corrected to platform top")
-
-        self._handle_landing(was_airborne)
+        # physics: gravity, edge-aware dodge clamping, movement, drop-through,
+        # vertical/horizontal collision, and landing — see fighter_physics (#77).
+        step_physics(self, platforms, held)
 
         # Non-shield timers tick
         if self.hurt_timer > 0:
@@ -467,7 +337,7 @@ class Player(pygame.sprite.Sprite):
             self.done_attacking = True
 
         # Update tail physics
-        self.tail.update()
+        self.tail.update(platforms)
 
         # FSM state transitions -----------------------------------
         self.engine.tick(None)

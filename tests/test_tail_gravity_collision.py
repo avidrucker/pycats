@@ -80,7 +80,7 @@ def test_resolver_pushes_segment_out_of_thick_platform():
     p.update(_empty(), plats, empty)   # sets p.platforms
     seg = p.tail.segments[5]
     seg.x, seg.y = 460, plat.rect.top + 8   # 8px inside the solid platform
-    p.tail._resolve_platform_collisions()
+    p.tail._resolve_platform_collisions(plats)
     assert seg.y <= plat.rect.top + 0.001   # pushed up to the surface
 
 
@@ -91,5 +91,5 @@ def test_resolver_ignores_thin_platform():
     p.update(_empty(), plats, empty)
     seg = p.tail.segments[5]
     seg.x, seg.y = 460, thin.rect.top + 8    # inside a thin (pass-through) platform
-    p.tail._resolve_platform_collisions()
+    p.tail._resolve_platform_collisions(plats)
     assert seg.y == thin.rect.top + 8        # unchanged — tail passes through thin

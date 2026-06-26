@@ -61,5 +61,5 @@ def test_strong_droop_does_not_clip_below_thick_platform():
     p.update(_empty(), plats, pg.sprite.Group())   # sets p.platforms
     seg = p.tail.segments[10]
     seg.x, seg.y = 460, plat.rect.bottom + 12       # 12px BELOW the whole platform
-    p.tail._resolve_platform_collisions()
+    p.tail._resolve_platform_collisions(plats)
     assert seg.y <= plat.rect.top + 0.001           # pulled back up onto the surface
