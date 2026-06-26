@@ -23,5 +23,9 @@ Critical rules:
   **`pmtools close <N>`** from the worktree. Never `git push` to `main` or
   `git merge` your branch into `main` by hand — the tool owns the race-safe push
   + teardown. See [RULES.md](./RULES.md) → "Closing work".
+- **Surface the run/sim command for runnable changes.** Any change to the live
+  game / render / input / screens / sim must end the final response with the exact
+  full-path run command (a `REPO=`/`PY=` block pointing at the main repo's venv).
+  See [RULES.md](./RULES.md) → "Surfacing run/sim commands".
 
 Run & test: see [README.md](./README.md).

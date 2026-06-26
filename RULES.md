@@ -84,6 +84,33 @@
   commit that fixed it, add the can-fail guard), not a no-op close. Surface the
   contradiction to the reporter before an outward-facing close.
 
+## Surfacing run/sim commands
+
+When a change would **benefit from or require a live run or simulation** to verify
+— anything observable: the running game loop, rendering/scaling, input, screens or
+menus, audio, or sim output — the agent's **final response MUST include the exact
+command(s) to run it, with full absolute paths**, so the human can copy-paste and
+manually test (the agent can't drive the GUI). **pycats-only** — other repos in the
+Study tree do not inherit this rule.
+
+- **When it applies:** the change is runnable/observable. A pure-internal refactor
+  with full test coverage and no behaviour change doesn't strictly need it, though a
+  run command is still welcome.
+- **Full paths, not `python -m pycats.game` alone.** Worktrees have no `.venv`, so
+  point the interpreter at the **main repo's** `.venv` and run from the checkout.
+  Present it as a `REPO=` / `PY=` variable block (one assignment per line), not an
+  opaque one-liner:
+
+      REPO=/abs/path/to/pycats                   # the checkout (main repo or worktree)
+      PY=/abs/path/to/pycats/.venv/bin/python    # ALWAYS the main repo's venv
+      cd "$REPO" && "$PY" -m pycats.game
+
+- **Pick the command that shows the change:** the live game (`-m pycats.game`), a
+  replay/match (`watch.py`, `watch.py --match`), or a recorded video
+  (`watch.py --match --video media/clip.mp4`). The README "How to Run" section and
+  the `watch.py` commands are the canonical sources — cite the one that exercises
+  the change, with absolute paths filled in.
+
 ## Closing work
 
 The fleet closes via **`pmtools close`**, which owns the racy push to `main` and
