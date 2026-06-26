@@ -51,7 +51,6 @@ class PState(Enum):
     #### TODO: implement lunge attacks that start from run state
     JUMP = auto()
     FALL = auto()
-    #### TODO: implement squash and stretch when jumping and landing
     SHIELD = auto()
     DODGE = auto()
     #### TODO: implement grabbed state
@@ -62,7 +61,6 @@ class PState(Enum):
 
 
 class Player(pygame.sprite.Sprite):
-    #### TODO: implement variable player sizes
     SIZE = PLAYER_SIZE
 
     def __init__(

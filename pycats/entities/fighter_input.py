@@ -27,8 +27,6 @@ class FighterInput:
         return self._p.controls[name] in key_set
 
     # horizontal input movement
-    #### TODO: implement per character friction
-    #### TODO: implement platform type friction modifier
     def handle_move(self, keys):
         p = self._p
         p.vel, p.facing_right = step_horizontal(

@@ -268,8 +268,6 @@ class Fighter:
 
     def _respawn(self):
         #### TODO: implement temporary respawn invulnerability
-        #### TODO: implement spawning animation
-        #### TODO: implement respawn visible count-down
         self.reset_to_spawn()
 
     # state starters ----------------------------
