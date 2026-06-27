@@ -115,9 +115,14 @@ def process_hits(players, attacks):
             # Resolve defender hurtbox circles to absolute coordinates.
             # Origin convention: rect top-left (rect.x, rect.y). A crouching
             # defender uses its lower/shorter crouch hurtbox (#124), so high
-            # attacks whiff — relative to the (resized) crouch rect.
+            # attacks whiff — relative to the (resized) crouch rect. Read state
+            # defensively (#137): process_hits must not assume the full Player
+            # surface — a defender without `.state` (the minimal combat contract)
+            # is simply treated as not crouching, mirroring the `resolved` getattr
+            # fallback above.
             hurtbox = defender.fighter_data.hurtbox
-            if defender.state == "crouch" and defender.fighter.crouch_hurtbox is not None:
+            if (getattr(defender, "state", None) == "crouch"
+                    and getattr(defender.fighter, "crouch_hurtbox", None) is not None):
                 hurtbox = defender.fighter.crouch_hurtbox
             resolved_hurtbox = [
                 resolve_circle(c, defender.rect.x, defender.rect.y,
