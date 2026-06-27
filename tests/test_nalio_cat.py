@@ -67,6 +67,23 @@ def test_nalio_dtilt_is_three_hitboxes():
         assert hb.knockback_growth == 80.0
 
 
+def test_nalio_nair_is_pm_neutral_air():
+    """Nalio's neutral-air is PM3.6 Mario AttackAirN (#136), clean-hit form on the
+    #130 multi-hitbox engine: 2 simultaneous hitboxes, in_air, damage 12, BKB 20,
+    KBG 100, r15 (size 2.73 u × 5.4), startup 2 / active 4 / recovery 40. Angle is
+    a literal placeholder for the Sakurai sentinel 361 (deferred). Able-to-fail:
+    missing nair / wrong values red this."""
+    move = load_fighter_data("nalio").moves["nair"]
+    assert move.in_air is True
+    assert (move.startup, move.active, move.recovery) == (2, 4, 40)
+    assert len(move.hitboxes) == 2
+    for hb in move.hitboxes:
+        assert hb.damage == 12.0
+        assert hb.base_knockback == 20.0
+        assert hb.knockback_growth == 100.0
+        assert hb.circle.r == 15
+
+
 def test_default_cat_attack_is_unchanged():
     """Regression guard: branching Nalio must NOT alter the default cat's jab
     (the sim/golden path), which stays the placeholder (dmg 10, angle 0)."""

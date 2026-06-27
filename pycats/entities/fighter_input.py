@@ -157,7 +157,16 @@ class FighterInput:
             # update(), once the active window opens. done_attacking is kept so
             # the legacy FSM and the chart's attack-exit guard classify/exit at
             # the same total frame (attack_timer is now p._clock.remaining).
-            p._clock.start(p.fighter_data.moves["attack"])
+            # Ground/air split (#136): airborne attack selects the neutral aerial
+            # ("nair") when the character defines one, else falls back to the
+            # ground "attack". Minimal — only the neutral attack; directional
+            # tilt/aerial selection is a later move-selection-seam slice (#67 Q2).
+            # Characters without a "nair" (e.g. the default cat / sim path) always
+            # use "attack", so the golden sims are unchanged.
+            moves = p.fighter_data.moves
+            move = moves["nair"] if (not p.fighter.on_ground and "nair" in moves) \
+                else moves["attack"]
+            p._clock.start(move)
             p.fighter.record_attack_made()  # Track attack statistics
             p.fighter.done_attacking = False  # set to false when attack starts, set true when done
             #### TODO: implement unique custom attacks for each player w/ variable damage, knockback, and angle, attack activation time, attack duration, etc.

@@ -78,6 +78,35 @@ _DOWN_TILT = MoveData(
     ),
 )
 
+# --- Neutral-air, mapped to the "nair" slot (PM3.6 Mario AttackAirN) -----------
+# Nalio's first aerial (#136), authored as the CLEAN-HIT form on the #130 engine.
+# A "sex kick" — 2 simultaneous hitboxes around the body (rukaidata ids 0 & 1,
+# bones 17 / 12 at y ±0.86). Raw: damage 12, BKB 20, KBG 100, size 2.73 u → r15.
+# Clean hit is active frames 3-6 (startup 2 / active 4); total 46 → recovery 40.
+#
+# Deliberate approximations (each precedented; see #120):
+#   - angle 45 is a LITERAL PLACEHOLDER for the Sakurai sentinel 361 (a code, not
+#     degrees); real Sakurai-angle handling is a deferred #38 slice.
+#   - CLEAN HIT ONLY — the real move has a late hit (frames 7-30, 9%), a 2nd
+#     temporal window the single-window MoveData can't express yet (#67 gap).
+#   - positions are bone-relative → approximated around Nalio's body.
+#   - landing lag / auto-cancel / L-cancel are deferred (no landing-lag system).
+def _nair_box(dx, dy):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=15), damage=12.0,
+                  angle=45, base_knockback=20.0, knockback_growth=100.0)
+
+_NEUTRAL_AIR = MoveData(
+    name="neutral air",
+    in_air=True,
+    startup=2,
+    active=4,
+    recovery=40,
+    hitboxes=(
+        _nair_box(dx=30, dy=24),   # id0 (bone 17) — front/upper
+        _nair_box(dx=10, dy=38),   # id1 (bone 12) — back/lower
+    ),
+)
+
 # --- Crouch geometry (#124) ---------------------------------------------------
 # PM Mario's crouch is a moderate lower (not a Kirby-style ground-hug). The body
 # Rect resizes from the 40×60 stand box to a squarish 40×40 crouch box (feet
@@ -96,7 +125,7 @@ _CROUCH_HURTBOX = Hurtbox(
 NALIO_FIGHTER_DATA = FighterData(
     weight=100,            # PM3.6 Mario (== pycats default → no KB change)
     hurtbox=_HURTBOX,
-    moves={"attack": _DOWN_TILT},
+    moves={"attack": _DOWN_TILT, "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
 )
