@@ -51,6 +51,22 @@ def test_nalio_attack_is_pm_down_tilt():
     assert hb.knockback_growth == 80.0
 
 
+def test_nalio_dtilt_is_three_hitboxes():
+    """Nalio's down-tilt is PM3.6 Mario's real 3-hitbox AttackLw3 (#132, on the
+    #130 multi-hitbox engine) — not the single-hit approximation. All three are
+    active 5-8 (simultaneous), angle 80 / BKB 30 / KBG 80; damages 9/9/8 and
+    radii 13/17/21 (sizes 2.34/3.13/3.91 u × 5.4), in priority order (id 0->2).
+    Able-to-fail: today's single box reds this."""
+    move = load_fighter_data("nalio").moves["attack"]
+    assert len(move.hitboxes) == 3, "down-tilt should declare its 3 real hitboxes"
+    assert tuple(hb.damage for hb in move.hitboxes) == (9.0, 9.0, 8.0)
+    assert tuple(hb.circle.r for hb in move.hitboxes) == (13, 17, 21)
+    for hb in move.hitboxes:
+        assert hb.angle == 80
+        assert hb.base_knockback == 30.0
+        assert hb.knockback_growth == 80.0
+
+
 def test_default_cat_attack_is_unchanged():
     """Regression guard: branching Nalio must NOT alter the default cat's jab
     (the sim/golden path), which stays the placeholder (dmg 10, angle 0)."""
