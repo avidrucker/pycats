@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from ..config import DODGE_SPEED
 from ..systems.movement import step_horizontal
+from ..combat.move_select import resolve_move_key
 
 
 class FighterInput:
@@ -23,8 +24,12 @@ class FighterInput:
         self._p = player
 
     def _pressed(self, key_set: set[int], name):
-        """key_set is usually input_frame.held or .pressed."""
-        return self._p.controls[name] in key_set
+        """key_set is usually input_frame.held or .pressed. An action with no
+        binding in this fighter's control map is simply unpressable (#143: the
+        move-selection seam reads "special", which some minimal control maps omit)
+        — read defensively rather than KeyError."""
+        code = self._p.controls.get(name)
+        return code is not None and code in key_set
 
     # horizontal input movement
     def handle_move(self, keys):
@@ -39,6 +44,23 @@ class FighterInput:
             in ("shield", "crouch"),  # no walking while shielding or crouching (#124)
             move_speed=p.fighter.move_speed,
         )
+
+    def _move_direction(self, held):
+        """Direction token for move selection (#143) from held input + facing:
+        neutral / up / down / forward (toward facing) / back (away). Precedence
+        down > up > horizontal so down/up tilts+aerials win over f-tilt/f-air."""
+        p = self._p
+        if self._pressed(held, "down"):
+            return "down"
+        if self._pressed(held, "up"):
+            return "up"
+        right = self._pressed(held, "right")
+        left = self._pressed(held, "left")
+        if right and not left:
+            return "forward" if p.fighter.facing_right else "back"
+        if left and not right:
+            return "back" if p.fighter.facing_right else "forward"
+        return "neutral"
 
     # actions
     def handle_actions(self, input_frame, attack_group):
@@ -148,28 +170,26 @@ class FighterInput:
             if not dodge_initiated and p.state != "dodge":
                 p.fighter.shield_attempting = False
 
-        # ------- Attack -------------------------------------------
+        # ------- Attack / Special (move-selection seam #143) ------
         #### TODO: implement attack buffering, that attacks can be chained
         atk_pressed = self._pressed(pressed, "attack")
-        if atk_pressed and p.state not in ("shield", "dodge"):
-            # Data-driven attack (Task 4 / #71): start the move clock instead of
-            # spawning the hitbox immediately. The hitbox is spawned later, in
-            # update(), once the active window opens. done_attacking is kept so
-            # the legacy FSM and the chart's attack-exit guard classify/exit at
-            # the same total frame (attack_timer is now p._clock.remaining).
-            # Ground/air split (#136): airborne attack selects the neutral aerial
-            # ("nair") when the character defines one, else falls back to the
-            # ground "attack". Minimal — only the neutral attack; directional
-            # tilt/aerial selection is a later move-selection-seam slice (#67 Q2).
-            # Characters without a "nair" (e.g. the default cat / sim path) always
-            # use "attack", so the golden sims are unchanged.
-            moves = p.fighter_data.moves
-            move = moves["nair"] if (not p.fighter.on_ground and "nair" in moves) \
-                else moves["attack"]
-            p._clock.start(move)
-            p.fighter.record_attack_made()  # Track attack statistics
-            p.fighter.done_attacking = False  # set to false when attack starts, set true when done
-            #### TODO: implement unique custom attacks for each player w/ variable damage, knockback, and angle, attack activation time, attack duration, etc.
+        sp_pressed = self._pressed(pressed, "special")
+        if (atk_pressed or sp_pressed) and p.state not in ("shield", "dodge"):
+            # Map (direction × ground/air × A-vs-B) -> a move key, falling back to
+            # whatever the character defines (#143). Data-driven (Task 4 / #71):
+            # start the move clock; the hitbox spawns later in update() when the
+            # active window opens. Attack takes precedence if both are pressed.
+            # Characters with a partial kit (default cat = {"attack"}, Nalio =
+            # {"attack","nair"}) resolve to the same moves as before, so the
+            # golden sims are unchanged; B with no special is a no-op.
+            is_special = sp_pressed and not atk_pressed
+            direction = self._move_direction(held)
+            key = resolve_move_key(p.fighter_data.moves, direction,
+                                   p.fighter.on_ground, is_special)
+            if key is not None:
+                p._clock.start(p.fighter_data.moves[key])
+                p.fighter.record_attack_made()  # Track attack statistics
+                p.fighter.done_attacking = False  # set false on start, true when done
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
 
         # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs
