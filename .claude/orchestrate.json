@@ -3,7 +3,7 @@
   "languages": ["python"],
   "mode": "fleet",
   "issueLimit": 50,
-  "roster": ["APPLE", "BANANA", "CHERRY", "DRAGONFRUIT", "ELDERBERRY", "FIG", "GRAPE", "HONEYDEW"],
+  "roster": ["APPLE", "BANANA", "CHERRY", "DRAGONFRUIT", "ELDERBERRY", "FIG", "GRAPE", "HONEYDEW", "INCABERRY"],
   "worktreeBranchPattern": "^(?<agent>[a-z]+)/issue-(?<issue>\\d+)",
   "defaultBase": "origin/main",
   "paths": { "worktreeDir": ".claude/worktrees" },

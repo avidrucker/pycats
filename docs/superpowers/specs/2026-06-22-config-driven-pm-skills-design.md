@@ -91,7 +91,7 @@ degraded). Any missing key falls back to its default.
   // --- workflow ---
   "mode": "solo",                    // "solo" | "fleet"
   "roster": ["APPLE","BANANA","CHERRY","DRAGONFRUIT",
-             "ELDERBERRY","FIG","GRAPE","HONEYDEW"],
+             "ELDERBERRY","FIG","GRAPE","HONEYDEW","INCABERRY"],
   "issueLimit": 50,
   "worktreeBranchPattern": "^(?<agent>[a-z]+)/issue-(?<issue>\\d+)",  // fleet
   "defaultBase": "origin/main",      // fleet — claim's base branch
