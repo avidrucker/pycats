@@ -101,11 +101,15 @@ class FighterData:
     Fields:
         hurtbox — the fighter's vulnerable body
         moves   — mapping of move key (e.g. "attack") to MoveData
+        weight  — fighter weight fed to the knockback formula (#117/#123). The
+                  Smash convention is Mario = 100; defaults to 100 so existing
+                  data (the default cat) is unchanged and stays the baseline.
 
     The dict is not frozen; callers must not mutate it.
     """
     hurtbox: Hurtbox
     moves: dict[str, MoveData]
+    weight: int = 100
 
 
 # ---------------------------------------------------------------------------
@@ -115,15 +119,21 @@ class FighterData:
 def load_fighter_data(character: str) -> FighterData:
     """Return FighterData for the named character.
 
-    Phase 0: every character string maps to the same shared default.
-    Phase 1+: branch per character to per-file definitions.
+    Phase 1 (#117/#123): per-archetype keys branch to their own definitions;
+    every other string still maps to the shared default cat. The sim/golden path
+    loads "P1"/"P2" (see sim/runner.py, game.py), so those stay on the default
+    and goldens are unaffected by new archetypes.
 
     Args:
-        character: a CAT_CHARACTERS key (e.g. "calico", "ghost") or any string.
+        character: an archetype key (e.g. "nalio"), a CAT_CHARACTERS key, or any
+            string. Unknown strings fall through to the default cat.
 
     Returns:
         FighterData instance (frozen, deterministic, no RNG).
     """
-    # Phase 0: single default for all characters
+    if character == "nalio":
+        from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
+        return NALIO_FIGHTER_DATA
+    # default cat for every other key (incl. the "P1"/"P2" sim path)
     from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
     return DEFAULT_FIGHTER_DATA
