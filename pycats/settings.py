@@ -25,6 +25,9 @@ _DEFAULTS = {
     # HUD overlay toggle (#111), migrated from a config.py constant into persisted
     # prefs by #121 so the Options menu can flip it live + remember it.
     "show_status_timer_bars": True,
+    # Hold-ESC-to-quit feature (#113): when True, holding ESC for 2s quits the
+    # current context (battle→menu, menu→game). Toggleable in Options sub-menu.
+    "esc_hold_to_quit": True,
 }
 
 
@@ -63,6 +66,9 @@ def _validated(raw):
     out["fullscreen"] = bool(raw.get("fullscreen", out["fullscreen"]))
     out["show_status_timer_bars"] = bool(
         raw.get("show_status_timer_bars", out["show_status_timer_bars"])
+    )
+    out["esc_hold_to_quit"] = bool(
+        raw.get("esc_hold_to_quit", out["esc_hold_to_quit"])
     )
     return out
 

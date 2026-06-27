@@ -39,6 +39,13 @@ class ScreenStateManager:
         self.back_timer = 0
         self.back_hold_frames = 60  # 1 second at 60 FPS
 
+        # Hold-ESC-to-quit (#113): 2-second hold on ESC quits current context.
+        self.esc_quit_timer = 0
+        self.esc_quit_hold_frames = 120  # 2 seconds at 60 FPS
+        # Context-aware quit signal: True = exit app (from main_menu),
+        #                            False = return to menu (from playing).
+        self.esc_quit_to_menu = False
+
         # FSM setup
         self.fsm = FSM(
             state="main_menu",
@@ -161,11 +168,13 @@ class ScreenStateManager:
         if hasattr(self.char_selector, "reset"):
             self.char_selector.reset()
         self.back_timer = 0
+        self.esc_quit_timer = 0
+        self.esc_quit_to_menu = False
 
     def _on_enter_playing(self, fsm, ctx):
         """Called when entering playing state."""
-        # Game loop will handle this state
-        pass
+        self.esc_quit_timer = 0
+        self.esc_quit_to_menu = False
 
     def _on_enter_pause(self, fsm, ctx):
         """Called when entering pause state."""
@@ -189,6 +198,7 @@ class ScreenStateManager:
         """Update main menu state."""
         frame_input = ctx["frame_input"]
         self.main_menu.update(frame_input.pressed)
+        self._tick_esc_quit_timer(frame_input)
 
     def _update_options(self, fsm, ctx):
         """Update the Options sub-menu state."""
@@ -211,8 +221,8 @@ class ScreenStateManager:
 
     def _update_playing(self, fsm, ctx):
         """Update playing state."""
-        # The main game loop handles this state
-        pass
+        frame_input = ctx["frame_input"]
+        self._tick_esc_quit_timer(frame_input)
 
     def _update_pause(self, fsm, ctx):
         """Update pause state."""
@@ -224,23 +234,54 @@ class ScreenStateManager:
         frame_input = ctx["frame_input"]
         self.win_screen_manager.update(frame_input.pressed)
 
+    def should_quit_game(self):
+        """Check if the app should exit (from main_menu ESC-hold)."""
+        return self.should_quit and not self.esc_quit_to_menu
+
+    def should_return_to_menu(self):
+        """Check if the game should return to main_menu (from playing ESC-hold)."""
+        return not self.should_quit and self.esc_quit_to_menu
+
+    def _tick_esc_quit_timer(self, frame_input):
+        """Hold-ESC-to-quit (#113): count frames while ESC is held, trigger quit at threshold.
+
+        Only active when the setting ``esc_hold_to_quit`` is True. The timer resets
+        whenever ESC is released.
+
+        When in ``playing`` state, the quit signal is ``esc_quit_to_menu`` (return
+        to main menu). When in any other state (``main_menu``, ``options``,
+        ``char_select``, ``pause``, ``win_screen``), the signal is ``should_quit``
+        (exit app).
+        """
+        from .settings import load
+        if not load().get("esc_hold_to_quit", True):
+            self.esc_quit_timer = 0
+            return
+        if pygame.K_ESCAPE in frame_input.held:
+            self.esc_quit_timer += 1
+            if self.esc_quit_timer >= self.esc_quit_hold_frames:
+                # Context-aware: playing -> quit-to-menu, anything else -> exit app
+                if self.fsm.state == "playing":
+                    self.esc_quit_to_menu = True
+                else:
+                    self.should_quit = True
+                self.esc_quit_timer = 0
+        else:
+            self.esc_quit_timer = 0
+
     # FSM Guard Functions
     def _guard_menu_to_char_select(self, fsm, ctx):
         """Check if should transition from main menu to character select."""
-        # Check if the main menu has a "play" action ready without consuming it
-        # We'll peek at the action_requested without clearing it
         if (
             hasattr(self.main_menu, "action_requested")
             and self.main_menu.action_requested == "play"
         ):
-            # Clear the action so it doesn't get processed again
             self.main_menu.action_requested = None
             return True
         elif (
             hasattr(self.main_menu, "action_requested")
             and self.main_menu.action_requested == "quit"
         ):
-            # Handle quit action
             self.main_menu.action_requested = None
             self.should_quit = True
             return False
