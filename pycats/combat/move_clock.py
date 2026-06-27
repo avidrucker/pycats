@@ -29,13 +29,14 @@ from pycats.combat.data import Hitbox, MoveData
 class MoveTick(NamedTuple):
     """Result of a single :meth:`MoveClock.tick`.
 
-    spawn    — the hitbox to add this frame, or None on every frame except the
-               one the active window opens.
-    lifetime — that hitbox's active-frame count (only meaningful when spawn is
-               not None); mirrors the legacy ``lifetime=move.active``.
+    spawn    — the move's full hitbox tuple to add this frame (#130: multi-hitbox
+               per move), or None on every frame except the one the active window
+               opens.
+    lifetime — that move's active-frame count (only meaningful when spawn is not
+               None); mirrors the legacy ``lifetime=move.active``.
     """
 
-    spawn: Optional[Hitbox]
+    spawn: Optional[tuple[Hitbox, ...]]
     lifetime: int
 
 
@@ -86,19 +87,19 @@ class MoveClock:
     def tick(self) -> MoveTick:
         """Advance one frame while a move is live.
 
-        Spawns the move's hitbox exactly once, on the first frame of the active
-        window. Clears the move when it completes, so ``remaining`` reads 0 and
-        further ticks are no-ops. A no-op tick (no live move) returns
-        ``MoveTick(None, 0)``.
+        Spawns the move's full hitbox tuple exactly once, on the first frame of
+        the active window (#130). Clears the move when it completes, so
+        ``remaining`` reads 0 and further ticks are no-ops. A no-op tick (no live
+        move) returns ``MoveTick(None, 0)``.
         """
         if self._move is None:
             return MoveTick(None, 0)
         m = self._move
         self._frame += 1
-        spawn: Optional[Hitbox] = None
+        spawn: Optional[tuple[Hitbox, ...]] = None
         if m.startup < self._frame <= m.startup + m.active and not self._spawned:
             self._spawned = True
-            spawn = m.hitboxes[0]
+            spawn = m.hitboxes
         if self._frame >= m.startup + m.active + m.recovery:
             self._move = None
         return MoveTick(spawn, m.active)

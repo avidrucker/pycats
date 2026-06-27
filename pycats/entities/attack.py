@@ -25,12 +25,20 @@ from ..combat.geometry import resolve_circle
 class Attack(pygame.sprite.Sprite):
     """Simple rectangular hit-box that disappears after N frames, and that can either vanish on hit or persist visually.
 
-    Task 5: Attack now carries an absolute hitbox circle (hit_cx, hit_cy, hit_r)
-    resolved from the move's Hitbox.circle at spawn time using the owner's
-    rect top-left as origin and their facing direction.  This circle is fixed at
-    spawn (Phase 0: static hitbox — it does not follow the owner once launched).
-    combat.process_hits uses this circle for hit detection instead of the rect.
-    The rect is kept for rendering only, centered on the circle.
+    Task 5: Attack carries absolute hitbox circles resolved from the move's
+    Hitbox.circle(s) at spawn time using the owner's rect top-left as origin and
+    their facing direction. The circles are fixed at spawn (Phase 0: static
+    hitbox — they do not follow the owner once launched). combat.process_hits
+    uses these circles for hit detection instead of the rect; the rect is kept
+    for rendering only, centred on the primary (first) circle.
+
+    #130: a move may have MORE THAN ONE hitbox. Pass ``hitboxes=<tuple>`` for the
+    full set (priority order = tuple order); ``hitbox=<one>`` stays as a single-
+    box shorthand. ``self.resolved`` is the priority-ordered list of
+    ``(cx, cy, r, Hitbox)`` that process_hits walks; the legacy single-circle
+    fields (``hit_cx/hit_cy/hit_r`` + ``damage/angle/base_knockback/
+    knockback_growth``) mirror the PRIMARY box so existing readers/renderers are
+    unchanged.
     """
 
     COLOR = (255, 60, 60, 180)  # semi-transparent red
@@ -38,9 +46,10 @@ class Attack(pygame.sprite.Sprite):
     def __init__(
         self,
         owner,
-        hitbox,             # Hitbox dataclass (circle, damage, angle, knockback)
-        lifetime: int,      # frames the hit-box persists (a move's active window)
+        hitbox=None,        # single Hitbox shorthand (circle, damage, angle, kb)
+        lifetime: int = 0,  # frames the hit-box persists (a move's active window)
         disappear_on_hit=False,
+        hitboxes=None,      # #130: tuple[Hitbox, ...] for a multi-hitbox move
     ):
         super().__init__()
         self.owner = owner
@@ -51,32 +60,44 @@ class Attack(pygame.sprite.Sprite):
         # hit-box during a move's active window with lifetime == move.active.
         self.frames_left = lifetime
 
-        # ---------- hitbox circle (Task 5) ----------
-        # Resolve the move's facing-relative circle to an absolute center ONCE at
-        # spawn from the owner's current position (Phase 0: static hitbox).
-        # Origin convention: owner.rect top-left (rect.x, rect.y).
-        self.damage = hitbox.damage
-        self.angle = hitbox.angle
-        self.base_knockback = hitbox.base_knockback
-        self.knockback_growth = hitbox.knockback_growth
-        hit_cx, hit_cy, hit_r = resolve_circle(
-            hitbox.circle,
-            owner.rect.x,
-            owner.rect.y,
-            owner.fighter.facing_right,
-            owner.rect.width,
-        )
+        # Normalise to a non-empty tuple of hitboxes (priority order preserved).
+        if hitboxes is None:
+            if hitbox is None:
+                raise ValueError("Attack requires hitbox= or hitboxes=")
+            hitboxes = (hitbox,)
+        self.hitboxes = tuple(hitboxes)
 
-        self.hit_cx: float = hit_cx
-        self.hit_cy: float = hit_cy
-        self.hit_r: float = hit_r
+        # ---------- resolve every hitbox circle (Task 5 / #130) ----------
+        # Resolve each move circle to an absolute centre ONCE at spawn from the
+        # owner's current position (Phase 0: static hitboxes). Origin: owner.rect
+        # top-left. self.resolved is priority-ordered (cx, cy, r, Hitbox).
+        self.resolved: list[tuple[float, float, float, object]] = []
+        for hb in self.hitboxes:
+            cx, cy, r = resolve_circle(
+                hb.circle,
+                owner.rect.x,
+                owner.rect.y,
+                owner.fighter.facing_right,
+                owner.rect.width,
+            )
+            self.resolved.append((cx, cy, r, hb))
+
+        # Primary (first) box backs the legacy single-circle fields + rendering.
+        prim_cx, prim_cy, prim_r, prim = self.resolved[0]
+        self.damage = prim.damage
+        self.angle = prim.angle
+        self.base_knockback = prim.base_knockback
+        self.knockback_growth = prim.knockback_growth
+        self.hit_cx: float = prim_cx
+        self.hit_cy: float = prim_cy
+        self.hit_r: float = prim_r
 
         # ---------- rendering rect (kept for visuals only) ----------
-        # Centre the rect on the resolved circle so the drawn box tracks the
-        # hitbox position, regardless of how it was constructed.
+        # Centre the rect on the primary resolved circle so the drawn box tracks
+        # the hitbox position, regardless of how it was constructed.
         self.image = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
         self.image.fill(self.COLOR)
-        self.rect = self.image.get_rect(center=(int(hit_cx), int(hit_cy)))
+        self.rect = self.image.get_rect(center=(int(prim_cx), int(prim_cy)))
 
     # called every frame by sprite.Group.update()
     def update(self):

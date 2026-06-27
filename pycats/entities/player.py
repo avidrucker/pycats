@@ -263,9 +263,10 @@ class Player(pygame.sprite.Sprite):
         # the hitbox lives for `active` frames.
         tick = self._clock.tick()
         if tick.spawn is not None:
-            # Task 5: pass the full Hitbox so Attack can resolve its circle.
+            # Task 5 / #130: pass the move's full hitbox tuple so Attack resolves
+            # every circle (multi-hitbox moves activate all boxes at once).
             attack_group.add(
-                Attack(self, hitbox=tick.spawn,
+                Attack(self, hitboxes=tick.spawn,
                        disappear_on_hit=False, lifetime=tick.lifetime)
             )
         if self.attack_timer == 0 and self.state == "attack":
