@@ -43,6 +43,7 @@ from ..config import (
     KNOCKBACK_LAUNCH_FACTOR,
 )
 from ..combat.knockback import knockback, hitstun_frames, hitlag_frames
+from ..combat.shield import shieldstun_frames
 from ..combat.shield import shield_break_stun_frames
 
 
@@ -109,6 +110,7 @@ class Fighter:
         self.hurt_timer = 0
         self.stun_timer = 0
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
+        self.shieldstun_timer = 0  # locked-in-shield frames after a block (#140)
         # attack_timer is a derived property over owner._clock (#71).
         self.invulnerable_timer = 0  # invulnerability mid-dodge, post-respawn, or while ledge grabbing
         self.jumps_remaining = self.max_jumps
@@ -178,7 +180,16 @@ class Fighter:
         if self.shield_attempting and self.shield_hp > 0:
             self.shield_hp = self.shield_hp - atk.damage  # setter clamps >= 0
             if self.shield_hp == 0:
-                self._start_stun()
+                self._start_stun()  # shield broke -> dizzy stun (#12) supersedes
+            else:
+                # Shield held: shieldstun (#140) locks the defender in shield for
+                # floor(dmg*0.345) frames, and BOTH fighters take shield hitlag
+                # (the #138 deferral). Player.update runs the hitlag freeze first,
+                # then ticks shieldstun — Smash ordering (hitlag, then shieldstun).
+                self.shieldstun_timer = shieldstun_frames(atk.damage)
+                hl = hitlag_frames(atk.damage)
+                self.hitlag_timer = hl
+                atk.owner.fighter.hitlag_timer = hl
         #### TODO: elif dodging
         else:
             # Phase 1 (#40): authentic Brawl/PM knockback + hitstun-from-knockback.
@@ -280,6 +291,7 @@ class Fighter:
         self.hurt_timer = 0
         self.stun_timer = 0
         self.hitlag_timer = 0  # don't carry a freeze across a KO/respawn (#138)
+        self.shieldstun_timer = 0  # nor a block-stun (#140)
         self.invulnerable_timer = 0
         self.invulnerable = False
         self.spot_dodge_shield_held = False

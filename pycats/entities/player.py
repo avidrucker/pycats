@@ -213,8 +213,16 @@ class Player(pygame.sprite.Sprite):
         else:
             self.fighter.shield_hp = round(self.fighter.shield_hp + 0.2, 2)  # Fighter setter clamps <= MAX
 
-        #
-        if not self._pressed(held, "shield") and not self._pressed(pressed, "shield"):
+        # Shieldstun (#140): a blocked hit locks the defender in shield for
+        # shieldstun_timer frames — no drop, jump, dodge, grab, or move. Force
+        # shield_attempting True (so the chart stays in "shield") and skip the
+        # "shield released -> attempting False" reset below; the input gate and
+        # the timer tick are handled further down. Runs only after any hitlag
+        # freeze (the early-return above precedes this).
+        in_shieldstun = self.fighter.shieldstun_timer > 0
+        if in_shieldstun:
+            self.fighter.shield_attempting = True
+        elif not self._pressed(held, "shield") and not self._pressed(pressed, "shield"):
             self.fighter.shield_attempting = False
 
         # crouch intent (#124): hold down on solid ground, no shield (shield+down
@@ -239,7 +247,7 @@ class Player(pygame.sprite.Sprite):
         # speed when a direction is held.
         in_hitstun = self.fighter.hurt_timer > 0 or self.fighter.stun_timer > 0
         dodge_initiated = False
-        if not in_hitstun and self.state not in ("dodge", "hurt", "stun"):
+        if not in_hitstun and not in_shieldstun and self.state not in ("dodge", "hurt", "stun"):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
@@ -261,6 +269,8 @@ class Player(pygame.sprite.Sprite):
             self.fighter.hurt_timer -= 1
         if self.fighter.stun_timer > 0:
             self.fighter.stun_timer -= 1
+        if self.fighter.shieldstun_timer > 0:
+            self.fighter.shieldstun_timer -= 1
         if self.fighter.dodge_timer > 0:
             self.fighter.dodge_timer -= 1
         if self.fighter.dodge_timer == 0 and self.state == "dodge":

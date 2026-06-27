@@ -5,7 +5,9 @@ rules live together and stay import-light for headless tests.
 """
 from __future__ import annotations
 
-from ..config import SHIELD_BREAK_STUN_MIN, SHIELD_BREAK_STUN_MAX
+import math
+
+from ..config import SHIELD_BREAK_STUN_MIN, SHIELD_BREAK_STUN_MAX, SHIELDSTUN_FACTOR
 
 
 def shield_break_stun_frames(percent: float) -> int:
@@ -20,3 +22,14 @@ def shield_break_stun_frames(percent: float) -> int:
     locks all inputs during the dizzy, so there is nothing to mash.
     """
     return int(max(SHIELD_BREAK_STUN_MIN, round(SHIELD_BREAK_STUN_MAX - percent)))
+
+
+def shieldstun_frames(damage: float) -> int:
+    """Frames a defender is locked in shield after blocking a hit of ``damage``%.
+
+    SmashWiki *Shieldstun* / the project roadmap: Brawl/PM ``floor(damage *
+    SHIELDSTUN_FACTOR)`` with factor 0.345. Attacks under ~2.9% give 0 frames
+    (the floor yields that). Defender-only; applied after hitlag (#138). Unlike
+    the shield-break dizzy, this is a short block-stun the shield *survives*.
+    """
+    return math.floor(damage * SHIELDSTUN_FACTOR)

@@ -45,6 +45,11 @@ HURT_TIME = 12
 # docs/research/brawl-projectm-fighter-states.md.
 SHIELD_BREAK_STUN_MAX = 490  # frames at 0% damage
 SHIELD_BREAK_STUN_MIN = 90   # frames at >= 400% damage
+# Shieldstun (#140): a blocked hit locks the defender in shield for
+# floor(damage * SHIELDSTUN_FACTOR) frames. SmashWiki Shieldstun / the project
+# roadmap (pm-mechanics-implementation-analysis.md): Brawl/PM factor 0.345.
+# Attacks under ~2.9% give 0 frames (the floor yields that naturally).
+SHIELDSTUN_FACTOR = 0.345
 DODGE_TIME = 14
 DODGE_SPEED = 14  # horizontal boost for a roll
 
