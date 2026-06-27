@@ -539,6 +539,16 @@ while running:
         running = False
         continue
 
+    # Check if we should return to main menu (ESC-hold from playing)
+    if screen_manager.should_return_to_menu():
+        screen_manager.esc_quit_to_menu = False
+        screen_manager.should_quit = False
+        # Reset game state and transition to main menu
+        reset_game()
+        screen_manager.fsm.state = "main_menu"
+        screen_manager._on_enter_main_menu(screen_manager.fsm, {})
+        continue
+
     current_state = screen_manager.get_state()
     
     # Track previous state to detect transitions
