@@ -12,7 +12,7 @@ shipped DEBUG print() calls.
 """
 from __future__ import annotations
 
-from ..config import JUMP_VEL, DODGE_SPEED
+from ..config import DODGE_SPEED
 from ..systems.movement import step_horizontal
 
 
@@ -37,6 +37,7 @@ class FighterInput:
             self._pressed(keys, "right"),
             locked=p.state
             == "shield",  # prevents moving while shielding, this may need to change when dodging is implemented
+            move_speed=p.fighter.move_speed,
         )
 
     # actions
@@ -55,7 +56,7 @@ class FighterInput:
             and p.fighter.jumps_remaining
             and p.state not in ("dodge", "hurt", "stun")
         ):
-            p.fighter.vel.y = JUMP_VEL
+            p.fighter.vel.y = p.fighter.jump_vel
             p.fighter.jumps_remaining -= 1
             p.fighter.shield_attempting = False
             return False  # No dodge initiated

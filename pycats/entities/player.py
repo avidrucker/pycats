@@ -65,9 +65,17 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(
         self, x, y, controls: dict, color, eye_color, char_name, facing_right=True,
-        state_backend: str = "legacy", weight: int = 100,
+        state_backend: str = "legacy", fighter_data=None,
     ):
         super().__init__()
+
+        # ---------- data-driven fighter definition (#71/#123/#126) ----------
+        # Load the per-character FighterData first so the Fighter can take its
+        # weight + movement constants from it. `fighter_data` may be injected
+        # (tests / future archetype selection); otherwise it's loaded by key.
+        # Phase 1: load_fighter_data branches per archetype ("nalio", …) and
+        # returns the default cat for the "P1"/"P2" sim path.
+        self.fighter_data = fighter_data or load_fighter_data(char_name)
 
         # ---------- combat domain: the Fighter aggregate ----------
         # Sprite-free domain object that owns ALL of this fighter's simulation
@@ -75,9 +83,9 @@ class Player(pygame.sprite.Sprite):
         # the rules over them (#81/#83/#84/#87; design #69). Player is the thin
         # pygame Sprite adapter: it composes the Fighter, wires the subsystems
         # below, exposes delegating properties so readers are unchanged, and
-        # orchestrates them in update(). Created first so those properties resolve
+        # orchestrates them in update(). Created early so those properties resolve
         # during the rest of __init__.
-        self.fighter = Fighter(self, x, y, facing_right, weight)
+        self.fighter = Fighter(self, x, y, facing_right, self.fighter_data)
 
         # Presentation is a render-time concern (#75): the body tint is computed
         # by render_battle.body_tint(self) from this player's state, so the entity
@@ -98,12 +106,10 @@ class Player(pygame.sprite.Sprite):
         self.controls = controls
 
         # ---------- data-driven move clock (Task 4 / #71) ----------
-        # Load the fighter's data once. Phase 0: load_fighter_data returns the
-        # same default for any character key, so passing char_name is fine.
-        self.fighter_data = load_fighter_data(char_name)
-        # MoveClock is the single source of truth for move progress. attack_timer
-        # / current_move / move_frame are derived properties over it (#71); the
-        # POST-increment frame convention is unchanged (first tick -> frame 1).
+        # fighter_data was loaded above (before the Fighter). MoveClock is the
+        # single source of truth for move progress. attack_timer / current_move /
+        # move_frame are derived properties over it (#71); the POST-increment
+        # frame convention is unchanged (first tick -> frame 1).
         self._clock = MoveClock()
 
         # Input → action translator (jump/dodge/shield/attack/move); #73.

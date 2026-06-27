@@ -19,12 +19,16 @@ from ..config import (
 # ------------------------------------------------------------------ vertical
 
 
-def apply_gravity(vel: pg.Vector2) -> pg.Vector2:
+def apply_gravity(vel: pg.Vector2, gravity: float = GRAVITY,
+                  max_fall_speed: float = MAX_FALL_SPEED) -> pg.Vector2:
     """
-    Add gravity but never let velocity exceed MAX_FALL_SPEED.
+    Add gravity but never let velocity exceed max_fall_speed.
     Returns the *same* Vector2 (mutated) for chaining.
+
+    gravity / max_fall_speed are per-fighter (#126); they default to the config
+    globals so callers that don't pass them behave exactly as before.
     """
-    vel.y = min(vel.y + GRAVITY, MAX_FALL_SPEED)
+    vel.y = min(vel.y + gravity, max_fall_speed)
     return vel
 
 

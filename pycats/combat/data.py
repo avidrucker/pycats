@@ -25,6 +25,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# Movement-constant defaults live in config; FighterData uses them as field
+# defaults so any data that doesn't specify movement == today's globals (the
+# default cat / golden sim is unchanged). #126.
+from ..config import GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, MAX_JUMPS
+
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -104,12 +109,21 @@ class FighterData:
         weight  — fighter weight fed to the knockback formula (#117/#123). The
                   Smash convention is Mario = 100; defaults to 100 so existing
                   data (the default cat) is unchanged and stays the baseline.
+        gravity / max_fall_speed / move_speed / jump_vel / max_jumps —
+                  per-character movement constants (#126), read per-fighter by
+                  the physics/input layer. Each defaults to the matching config
+                  global, so data that omits them behaves exactly as before.
 
     The dict is not frozen; callers must not mutate it.
     """
     hurtbox: Hurtbox
     moves: dict[str, MoveData]
     weight: int = 100
+    gravity: float = GRAVITY
+    max_fall_speed: float = MAX_FALL_SPEED
+    move_speed: float = MOVE_SPEED
+    jump_vel: float = JUMP_VEL
+    max_jumps: int = MAX_JUMPS
 
 
 # ---------------------------------------------------------------------------

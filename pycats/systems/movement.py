@@ -13,11 +13,15 @@ def step_horizontal(
     press_left: bool,
     press_right: bool,
     locked: bool = False,
+    move_speed: float = MOVE_SPEED,
 ) -> Tuple[pg.Vector2, bool]:
     """
     • Applies friction (ground or air) first.
     • If BOTH left & right are pressed → inputs cancel out.
     • Returns (new_vel, new_facing_right).
+
+    move_speed is per-fighter (#126); defaults to the config global so callers
+    that don't pass it behave exactly as before.
     """
     # 1) friction
     vel = apply_horizontal_friction(vel, on_ground)
@@ -28,10 +32,10 @@ def step_horizontal(
 
     if not locked:
         if press_left:
-            vel.x = -MOVE_SPEED
+            vel.x = -move_speed
             facing_right = False
         elif press_right:
-            vel.x = MOVE_SPEED
+            vel.x = move_speed
             facing_right = True
 
     return vel, facing_right

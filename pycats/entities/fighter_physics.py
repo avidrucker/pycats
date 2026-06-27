@@ -33,7 +33,7 @@ def step_physics(p, platforms, held):
         p.state == "dodge" and p.fighter.spot_dodge_shield_held and p.fighter.on_ground
     )
     if not is_ground_spot_dodge:
-        apply_gravity(p.fighter.vel)
+        apply_gravity(p.fighter.vel, p.fighter.gravity, p.fighter.max_fall_speed)
     else:
         # For ground spot dodges, keep velocity minimal to prevent any fall-through
         p.fighter.vel.y = 0

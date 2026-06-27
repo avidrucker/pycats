@@ -32,7 +32,6 @@ import math
 import pygame  # type: ignore
 
 from ..config import (
-    MAX_JUMPS,
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     INITIAL_LIVES,
@@ -48,14 +47,23 @@ from ..combat.shield import shield_break_stun_frames
 
 
 class Fighter:
-    def __init__(self, owner, x, y, facing_right, weight):
+    def __init__(self, owner, x, y, facing_right, fighter_data):
         # Back-reference to the owning Player (the pygame Sprite adapter). Since
         # 6b-3b the rules reach only Player's wiring through it — `owner._clock`,
         # `owner.engine`, `owner.tail` (and `owner.char_name` in debug comments);
         # all the simulation state is now Fighter's own.
         self.owner = owner
 
-        self.weight = weight  # fighter weight; feeds the knockback formula (#40)
+        # ---------- per-character stats from FighterData (#123/#126) ----------
+        # weight feeds the knockback formula (#40); the movement constants are
+        # read per-fighter by the physics/input layer. All default (in
+        # FighterData) to the config globals, so the default cat is unchanged.
+        self.weight = fighter_data.weight
+        self.gravity = fighter_data.gravity
+        self.max_fall_speed = fighter_data.max_fall_speed
+        self.move_speed = fighter_data.move_speed
+        self.jump_vel = fighter_data.jump_vel
+        self.max_jumps = fighter_data.max_jumps
 
         # ---------- kinematics (#84 / 6b-3a) ----------
         # The authoritative body box + velocity now live on the domain object;
@@ -94,7 +102,7 @@ class Fighter:
         self.stun_timer = 0
         # attack_timer is a derived property over owner._clock (#71).
         self.invulnerable_timer = 0  # invulnerability mid-dodge, post-respawn, or while ledge grabbing
-        self.jumps_remaining = MAX_JUMPS
+        self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True  # players can only air dodge once per sustained jump/fall, until they land
         self.invulnerable = False  # dodging / post-hit / respawn / ledge-grab invulnerability
         self.done_attacking = True  # used to determine when the player is done attacking
@@ -191,7 +199,7 @@ class Fighter:
 
     def _handle_landing(self, was_airborne: bool):
         if self.on_ground and was_airborne:
-            self.jumps_remaining = MAX_JUMPS  # reset jumps when landing
+            self.jumps_remaining = self.max_jumps  # reset jumps when landing
             self.air_dodge_ok = True  # reset air dodge availability
 
     # ============================================================= KO / respawn
@@ -238,7 +246,7 @@ class Fighter:
         self.vel.update(0, 0)
         self.on_ground = False
         self.facing_right = self.original_facing_right
-        self.jumps_remaining = MAX_JUMPS
+        self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
