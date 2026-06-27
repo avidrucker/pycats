@@ -39,6 +39,10 @@ class ScreenStateManager:
         self.back_timer = 0
         self.back_hold_frames = 60  # 1 second at 60 FPS
 
+        # Hold-ESC-to-quit (#113): 2-second hold on ESC quits current context.
+        self.esc_quit_timer = 0
+        self.esc_quit_hold_frames = 120  # 2 seconds at 60 FPS
+
         # FSM setup
         self.fsm = FSM(
             state="main_menu",
@@ -161,11 +165,11 @@ class ScreenStateManager:
         if hasattr(self.char_selector, "reset"):
             self.char_selector.reset()
         self.back_timer = 0
+        self.esc_quit_timer = 0
 
     def _on_enter_playing(self, fsm, ctx):
         """Called when entering playing state."""
-        # Game loop will handle this state
-        pass
+        self.esc_quit_timer = 0
 
     def _on_enter_pause(self, fsm, ctx):
         """Called when entering pause state."""
@@ -189,6 +193,7 @@ class ScreenStateManager:
         """Update main menu state."""
         frame_input = ctx["frame_input"]
         self.main_menu.update(frame_input.pressed)
+        self._tick_esc_quit_timer(frame_input)
 
     def _update_options(self, fsm, ctx):
         """Update the Options sub-menu state."""
@@ -211,8 +216,8 @@ class ScreenStateManager:
 
     def _update_playing(self, fsm, ctx):
         """Update playing state."""
-        # The main game loop handles this state
-        pass
+        frame_input = ctx["frame_input"]
+        self._tick_esc_quit_timer(frame_input)
 
     def _update_pause(self, fsm, ctx):
         """Update pause state."""
@@ -223,6 +228,25 @@ class ScreenStateManager:
         """Update win screen state."""
         frame_input = ctx["frame_input"]
         self.win_screen_manager.update(frame_input.pressed)
+
+    def _tick_esc_quit_timer(self, frame_input):
+        """Hold-ESC-to-quit (#113): count frames while ESC is held, trigger quit at threshold.
+
+        Only active when the setting ``esc_hold_to_quit`` is True and the key is
+        not consumed by a fullscreen-exit tap. The timer resets whenever ESC is
+        released.
+        """
+        from .settings import load
+        if not load().get("esc_hold_to_quit", True):
+            self.esc_quit_timer = 0
+            return
+        if pygame.K_ESCAPE in frame_input.held:
+            self.esc_quit_timer += 1
+            if self.esc_quit_timer >= self.esc_quit_hold_frames:
+                self.should_quit = True
+                self.esc_quit_timer = 0
+        else:
+            self.esc_quit_timer = 0
 
     # FSM Guard Functions
     def _guard_menu_to_char_select(self, fsm, ctx):
