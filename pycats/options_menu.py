@@ -9,7 +9,7 @@ prefs here, per-player config stays on char-select). Each change persists throug
 - **Window Size / Fullscreen** (display): routed back to game.py via injected
   `display_hooks` (None in headless/tests → those rows are inert). The hooks reuse
   game.py's existing F10/F11 machinery, which already persists display prefs.
-- **Hold-ESC Quit**: an inert slot until #113 lands.
+- **Hold-ESC Quit**: flips the persisted hold-ESC-to-quit setting (#113).
 
 Nav convention (research #115 §10.4): up/down move, A (attack) confirms/toggles,
 B (special) backs out.
@@ -32,9 +32,6 @@ from . import runtime_settings
 from . import settings
 from .text_utils import text_renderer
 
-# A muted colour for a disabled row (the esc-quit slot until #113).
-DISABLED_COLOR = (120, 120, 120)
-
 
 class OptionsMenu:
     """Consolidated Options screen: navigation, toggles, and rendering."""
@@ -46,8 +43,7 @@ class OptionsMenu:
         # headless/tests → display rows render but do nothing on activate).
         self.display_hooks = display_hooks or {}
 
-        # Row keys in display order. "back" is the explicit exit row; the esc_quit
-        # row is a disabled placeholder until #113 lands.
+        # Row keys in display order. "back" is the explicit exit row.
         self.rows = ["status_bars", "window_scale", "fullscreen", "esc_quit", "back"]
         self.selected_option = 0
 
@@ -109,7 +105,10 @@ class OptionsMenu:
             if hook:
                 hook()
         elif row == "esc_quit":
-            pass  # inert until #113
+            prefs = settings.load()
+            settings.save(
+                {"esc_hold_to_quit": not prefs.get("esc_hold_to_quit", True)}
+            )
         elif row == "back":
             self.action_requested = "back"
 
@@ -124,7 +123,9 @@ class OptionsMenu:
             getter = self.display_hooks.get("is_fullscreen")
             return "Fullscreen: " + (("ON" if getter() else "OFF") if getter else "F11")
         if row == "esc_quit":
-            return "Hold-ESC Quit: (with #113)"
+            return "Hold-ESC Quit: " + (
+                "ON" if settings.load().get("esc_hold_to_quit", True) else "OFF"
+            )
         if row == "back":
             return "Back"
         return row
@@ -143,11 +144,8 @@ class OptionsMenu:
 
         start_y = MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE + MAIN_MENU_PADDING
         for i, row in enumerate(self.rows):
-            disabled = row == "esc_quit"
             if i == self.selected_option:
                 color = MAIN_MENU_SELECTED_COLOR
-            elif disabled:
-                color = DISABLED_COLOR
             else:
                 color = MAIN_MENU_OPTION_COLOR
 

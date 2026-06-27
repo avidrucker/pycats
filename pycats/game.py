@@ -684,6 +684,7 @@ while running:
             WHITE,
             right_align=True,
         )
+        screen_manager.render_esc_quit_progress(render_surface)
 
     elif current_state == "pause":
         # Game is paused - render the pause menu with frozen game background

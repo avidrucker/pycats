@@ -6,8 +6,6 @@ back into game.py through injected hooks (faked here). Navigation wraps; B backs
 out; the FSM gains an `options` state reachable from and returning to the menu.
 """
 import pygame
-import pytest
-
 from pycats import runtime_settings, settings
 from pycats.options_menu import OptionsMenu
 from pycats.screen_manager import ScreenStateManager
@@ -60,10 +58,6 @@ def test_fullscreen_row_calls_injected_hook():
     assert calls == ["toggle_fs"]
 
 
-@pytest.mark.xfail(
-    reason="#151 review: #113 leaves Hold-ESC Quit Options row inert",
-    strict=True,
-)
 def test_esc_quit_row_toggles_setting_and_persists(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
     settings.save({"esc_hold_to_quit": True})
@@ -75,6 +69,17 @@ def test_esc_quit_row_toggles_setting_and_persists(tmp_path, monkeypatch):
     m.input_cooldown = 0
     m.update({ATTACK})
     assert settings.load()["esc_hold_to_quit"] is True
+
+
+def test_esc_quit_row_label_reflects_persisted_setting(tmp_path, monkeypatch):
+    monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
+    m = _opts()
+
+    settings.save({"esc_hold_to_quit": True})
+    assert m._row_label("esc_quit") == "Hold-ESC Quit: ON"
+
+    settings.save({"esc_hold_to_quit": False})
+    assert m._row_label("esc_quit") == "Hold-ESC Quit: OFF"
 
 
 def test_back_row_requests_back():

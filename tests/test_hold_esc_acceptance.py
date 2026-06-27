@@ -5,7 +5,6 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
-import pytest
 
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.core.input import InputFrame
@@ -28,10 +27,6 @@ def _frame(held=None, pressed=None):
     )
 
 
-@pytest.mark.xfail(
-    reason="#151 review: #113 does not render visible ESC-hold progress yet",
-    strict=True,
-)
 def test_main_menu_render_changes_while_esc_hold_progress_is_live(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
     pygame.init()
@@ -48,5 +43,28 @@ def test_main_menu_render_changes_while_esc_hold_progress_is_live(tmp_path, monk
 
     assert pygame.image.tobytes(baseline, "RGBA") != pygame.image.tobytes(
         with_progress,
+        "RGBA",
+    )
+
+
+def test_main_menu_render_clears_esc_hold_progress_after_early_release(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
+    pygame.init()
+    sm = ScreenStateManager(P1, P2)
+
+    baseline = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    sm.render(baseline)
+
+    for _ in range(sm.esc_quit_hold_frames // 2):
+        sm.update(_frame(held={pygame.K_ESCAPE}))
+    sm.update(_frame())
+
+    after_release = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    sm.render(after_release)
+
+    assert pygame.image.tobytes(baseline, "RGBA") == pygame.image.tobytes(
+        after_release,
         "RGBA",
     )

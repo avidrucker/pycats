@@ -7,6 +7,7 @@ This module handles:
 - Input handling for screen transitions
 """
 
+import math
 import pygame  # type: ignore
 from .systems.fsm import FSM, Transition
 from .main_menu import MainMenuManager
@@ -14,6 +15,7 @@ from .char_select import CharacterSelector
 from .win_screen import WinScreenManager
 from .pause_menu import PauseMenuManager
 from .options_menu import OptionsMenu
+from .config import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, MAIN_MENU_SELECTED_COLOR
 
 
 class ScreenStateManager:
@@ -116,6 +118,7 @@ class ScreenStateManager:
             # Pause menu rendering is handled by the main game loop
             pass
         # Note: "playing" state is handled by the main game loop
+        self.render_esc_quit_progress(surface)
 
     def get_state(self):
         """Get the current state."""
@@ -241,6 +244,34 @@ class ScreenStateManager:
     def should_return_to_menu(self):
         """Check if the game should return to main_menu (from playing ESC-hold)."""
         return not self.should_quit and self.esc_quit_to_menu
+
+    def esc_quit_progress(self):
+        """Current ESC-hold progress as a 0..1 ratio for render callers."""
+        if self.esc_quit_hold_frames <= 0:
+            return 0.0
+        return min(1.0, self.esc_quit_timer / self.esc_quit_hold_frames)
+
+    def render_esc_quit_progress(self, surface):
+        """Draw a small circular hold-progress indicator while ESC is held."""
+        progress = self.esc_quit_progress()
+        if progress <= 0:
+            return
+
+        radius = 28
+        width = 6
+        center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 155)
+        rect = pygame.Rect(0, 0, radius * 2, radius * 2)
+        rect.center = center
+
+        pygame.draw.circle(surface, WHITE, center, radius, 2)
+        pygame.draw.arc(
+            surface,
+            MAIN_MENU_SELECTED_COLOR,
+            rect,
+            -math.pi / 2,
+            -math.pi / 2 + math.tau * progress,
+            width,
+        )
 
     def _tick_esc_quit_timer(self, frame_input):
         """Hold-ESC-to-quit (#113): count frames while ESC is held, trigger quit at threshold.
