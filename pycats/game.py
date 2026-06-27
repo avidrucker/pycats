@@ -53,6 +53,7 @@ from .screen_manager import ScreenStateManager
 from . import text_utils
 from . import display
 from . import settings
+from . import runtime_settings
 from . import cat_faces
 from .render_battle import render_battle, render_attacks
 
@@ -118,6 +119,9 @@ attacks = pygame.sprite.Group()
 # ------------------------------------------------ pygame set-up
 # Restore persisted display preferences (#95); defaults if none/invalid.
 _prefs = settings.load()
+# Seed the live present-layer settings (#121) so the render path reads the saved
+# HUD toggles immediately; the Options sub-menu mutates this live.
+runtime_settings.seed(_prefs)
 
 # Open fullscreen if that's how the player last left it.
 start_fullscreen = _prefs["fullscreen"]
@@ -411,8 +415,28 @@ def present_frame():
 # ------------------------------------------------ main loop
 running = True
 
+# Display hooks for the Options sub-menu (#121): reuse the F10/F11 machinery so a
+# menu change applies live AND persists (save_prefs), just like the hotkeys. Read
+# the module globals at call time (they're reassigned by the setters).
+def _opt_cycle_windowed_scale():
+    set_windowed_scale(display.cycle_preset(windowed_scale))
+    save_prefs()
+
+
+def _opt_toggle_fullscreen():
+    toggle_fullscreen()
+    save_prefs()
+
+
+_display_hooks = {
+    "get_windowed_scale": lambda: windowed_scale,
+    "cycle_windowed_scale": _opt_cycle_windowed_scale,
+    "is_fullscreen": lambda: is_fullscreen,
+    "toggle_fullscreen": _opt_toggle_fullscreen,
+}
+
 # Screen state manager
-screen_manager = ScreenStateManager(P1_KEYS, P2_KEYS)
+screen_manager = ScreenStateManager(P1_KEYS, P2_KEYS, display_hooks=_display_hooks)
 
 # Game state
 winner = None

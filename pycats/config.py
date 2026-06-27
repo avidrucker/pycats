@@ -70,12 +70,11 @@ MAX_SHIELD_RADIUS = 40
 MIN_SHIELD_RADIUS = 10
 
 # ---------------- status-effect timer bars (#111) ----------------
-# A count-down bar above a fighter showing how long a status effect (shield,
-# stun) has left. This is a deliberate divergence from Project M (which shows no
-# such bar), so it is toggle-able: ON by default; a future main-menu Options
-# sub-menu will flip it. Rendering reads this flag, so flipping it off removes
-# every status bar.
-SHOW_STATUS_TIMER_BARS = True
+# A count-down bar above a fighter showing how long a status effect (shield, stun)
+# has left — a deliberate divergence from Project M. The ON/OFF toggle moved from a
+# constant here into persisted prefs (#121): default lives in settings.py
+# (`show_status_timer_bars`), the live value the render path reads is in
+# runtime_settings, and the main-menu Options sub-menu flips it.
 
 # ---------------- knockback / hitstun ----------------
 # Authentic Brawl/PM knockback feeds these. The formula lives in

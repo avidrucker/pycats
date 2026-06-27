@@ -22,8 +22,9 @@ from .config import (
     WHISKER_OFFSET_Y, WHISKER_OFFSET_X, STRIPE_COUNT, STRIPE_WIDTH,
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
-    FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, SHOW_STATUS_TIMER_BARS,
+    FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME,
 )
+from . import runtime_settings
 from . import text_utils
 from . import cat_faces
 from .entities import Player
@@ -371,10 +372,10 @@ def status_bar_spec(p):
     *known constant max* — shield -> shield_hp/SHIELD_MAX_HP, stun ->
     stun_timer/SHIELD_BREAK_STUN_MAX — so no per-instance start value is stored
     and the bar tracks mid-effect changes (e.g. a blocked hit chipping shield).
-    Honours the SHOW_STATUS_TIMER_BARS toggle. Shield takes precedence: a
-    shielding fighter is never simultaneously stunned.
+    Honours the live status-bars toggle (runtime_settings, #111/#121). Shield
+    takes precedence: a shielding fighter is never simultaneously stunned.
     """
-    if not SHOW_STATUS_TIMER_BARS:
+    if not runtime_settings.show_status_timer_bars():
         return None
     if p.state == "shield":
         ratio = p.fighter.shield_hp / SHIELD_MAX_HP

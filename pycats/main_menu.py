@@ -35,14 +35,14 @@ class MainMenuManager:
         self.p2_controls = p2_controls
 
         # Menu options
-        self.options = ["Play", "Quit"]
+        self.options = ["Play", "Options", "Quit"]
         self.selected_option = 0  # Index of currently selected option
 
         # Input debouncing
         self.input_cooldown = 0
 
         # Action results
-        self.action_requested = None  # Will be "play", "quit", or None
+        self.action_requested = None  # Will be "play", "options", "quit", or None
 
     def reset(self):
         """Reset the menu state."""
@@ -60,15 +60,19 @@ class MainMenuManager:
         if self.input_cooldown > 0:
             return
 
-        # Handle navigation input from either player
+        # Handle navigation input from either player (wraps over N options)
         if (
             self.p1_controls["up"] in pressed_keys
-            or self.p1_controls["down"] in pressed_keys
             or self.p2_controls["up"] in pressed_keys
+        ):
+            self.selected_option = (self.selected_option - 1) % len(self.options)
+            self.input_cooldown = 10  # Prevent rapid navigation
+
+        if (
+            self.p1_controls["down"] in pressed_keys
             or self.p2_controls["down"] in pressed_keys
         ):
-            # Toggle between options (only 2 options, so just flip)
-            self.selected_option = 1 - self.selected_option
+            self.selected_option = (self.selected_option + 1) % len(self.options)
             self.input_cooldown = 10  # Prevent rapid navigation
 
         # Handle selection input from either player
@@ -76,10 +80,11 @@ class MainMenuManager:
             self.p1_controls["attack"] in pressed_keys
             or self.p2_controls["attack"] in pressed_keys
         ):
-            if self.selected_option == 0:  # Play
-                self.action_requested = "play"
-            elif self.selected_option == 1:  # Quit
-                self.action_requested = "quit"
+            self.action_requested = {
+                "Play": "play",
+                "Options": "options",
+                "Quit": "quit",
+            }.get(self.options[self.selected_option])
 
             self.input_cooldown = 20  # Prevent rapid selection
 

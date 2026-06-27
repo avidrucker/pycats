@@ -18,7 +18,14 @@ import os
 from .display import WINDOWED_SCALE_PRESETS
 
 SCHEMA_VERSION = 1
-_DEFAULTS = {"version": SCHEMA_VERSION, "windowed_scale": 1.0, "fullscreen": False}
+_DEFAULTS = {
+    "version": SCHEMA_VERSION,
+    "windowed_scale": 1.0,
+    "fullscreen": False,
+    # HUD overlay toggle (#111), migrated from a config.py constant into persisted
+    # prefs by #121 so the Options menu can flip it live + remember it.
+    "show_status_timer_bars": True,
+}
 
 
 def defaults():
@@ -54,6 +61,9 @@ def _validated(raw):
     if scale in WINDOWED_SCALE_PRESETS:  # snap invalid scales to a valid preset
         out["windowed_scale"] = float(scale)
     out["fullscreen"] = bool(raw.get("fullscreen", out["fullscreen"]))
+    out["show_status_timer_bars"] = bool(
+        raw.get("show_status_timer_bars", out["show_status_timer_bars"])
+    )
     return out
 
 
@@ -73,11 +83,16 @@ def load():
 
 
 def save(prefs):
-    """Write `prefs` (validated, stamped with the schema version) as JSON,
-    creating the config dir if needed. No-op when persistence is disabled."""
+    """Write `prefs` merged over the currently-persisted prefs (validated, stamped
+    with the schema version) as JSON, creating the config dir if needed. No-op when
+    persistence is disabled.
+
+    Merge-over-current (not over bare defaults) so a *partial* save — e.g. the
+    Options menu flipping one HUD toggle — preserves the other saved keys instead
+    of resetting them (#121)."""
     if _persist_disabled():
         return
-    data = _validated(prefs)
+    data = _validated({**load(), **prefs})
     data["version"] = SCHEMA_VERSION
     path = config_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)

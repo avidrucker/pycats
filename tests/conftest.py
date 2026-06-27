@@ -30,3 +30,16 @@ def render_isolation():
     text_utils.text_renderer.font_cache.clear()
     rb._body_cache.clear()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_runtime_settings():
+    """Reset the live (present-layer) settings to schema defaults before each test.
+
+    runtime_settings._state is module-global (#121); a test that flips the HUD
+    toggle would otherwise leak a False into later render tests that assume the
+    on-by-default behaviour. Cheap, so applied automatically to every test."""
+    from pycats import runtime_settings, settings
+
+    runtime_settings.seed(settings.defaults())
+    yield

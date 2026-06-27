@@ -67,7 +67,8 @@ def test_shield_takes_precedence_over_stun():
 
 
 def test_toggle_off_suppresses_bar(monkeypatch):
-    monkeypatch.setattr(rb, "SHOW_STATUS_TIMER_BARS", False)
+    # Toggle migrated from a config constant to the live runtime accessor (#121).
+    monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
     assert rb.status_bar_spec(_fake(stun_timer=200)) is None
     assert rb.status_bar_spec(_fake(state="shield", shield_hp=40)) is None
 

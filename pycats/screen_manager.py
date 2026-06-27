@@ -13,12 +13,13 @@ from .main_menu import MainMenuManager
 from .char_select import CharacterSelector
 from .win_screen import WinScreenManager
 from .pause_menu import PauseMenuManager
+from .options_menu import OptionsMenu
 
 
 class ScreenStateManager:
     """Manages screen states and transitions using FSM."""
 
-    def __init__(self, p1_controls, p2_controls):
+    def __init__(self, p1_controls, p2_controls, display_hooks=None):
         # Player controls
         self.p1_controls = p1_controls
         self.p2_controls = p2_controls
@@ -28,6 +29,11 @@ class ScreenStateManager:
         self.char_selector = CharacterSelector(p1_controls, p2_controls)
         self.win_screen_manager = WinScreenManager(p1_controls, p2_controls)
         self.pause_menu = PauseMenuManager(p1_controls, p2_controls)
+        # Options sub-menu (#121). display_hooks wires its display rows to game.py
+        # (None in headless/tests → those rows are inert; the HUD toggle still works).
+        self.options_menu = OptionsMenu(
+            p1_controls, p2_controls, display_hooks=display_hooks
+        )
 
         # Back to menu timer for character select
         self.back_timer = 0
@@ -38,6 +44,7 @@ class ScreenStateManager:
             state="main_menu",
             on_enter={
                 "main_menu": self._on_enter_main_menu,
+                "options": self._on_enter_options,
                 "char_select": self._on_enter_char_select,
                 "playing": self._on_enter_playing,
                 "pause": self._on_enter_pause,
@@ -45,6 +52,7 @@ class ScreenStateManager:
             },
             on_update={
                 "main_menu": self._update_main_menu,
+                "options": self._update_options,
                 "char_select": self._update_char_select,
                 "playing": self._update_playing,
                 "pause": self._update_pause,
@@ -53,6 +61,10 @@ class ScreenStateManager:
             table={
                 "main_menu": [
                     Transition("char_select", self._guard_menu_to_char_select),
+                    Transition("options", self._guard_menu_to_options),
+                ],
+                "options": [
+                    Transition("main_menu", self._guard_options_to_main_menu),
                 ],
                 "char_select": [
                     Transition("playing", self._guard_char_select_to_playing),
@@ -87,6 +99,8 @@ class ScreenStateManager:
         """Render the current screen."""
         if self.fsm.state == "main_menu":
             self.main_menu.render(surface)
+        elif self.fsm.state == "options":
+            self.options_menu.render(surface)
         elif self.fsm.state == "char_select":
             self.char_selector.render(surface)
         elif self.fsm.state == "win_screen":
@@ -137,6 +151,10 @@ class ScreenStateManager:
         """Called when entering main menu state."""
         self.main_menu.reset()
 
+    def _on_enter_options(self, fsm, ctx):
+        """Called when entering the Options sub-menu state."""
+        self.options_menu.reset()
+
     def _on_enter_char_select(self, fsm, ctx):
         """Called when entering character select state."""
         # Reset character selector if coming from main menu
@@ -171,6 +189,11 @@ class ScreenStateManager:
         """Update main menu state."""
         frame_input = ctx["frame_input"]
         self.main_menu.update(frame_input.pressed)
+
+    def _update_options(self, fsm, ctx):
+        """Update the Options sub-menu state."""
+        frame_input = ctx["frame_input"]
+        self.options_menu.update(frame_input.pressed)
 
     def _update_char_select(self, fsm, ctx):
         """Update character select state."""
@@ -221,6 +244,26 @@ class ScreenStateManager:
             self.main_menu.action_requested = None
             self.should_quit = True
             return False
+        return False
+
+    def _guard_menu_to_options(self, fsm, ctx):
+        """Enter the Options sub-menu when the main menu requests it."""
+        if (
+            hasattr(self.main_menu, "action_requested")
+            and self.main_menu.action_requested == "options"
+        ):
+            self.main_menu.action_requested = None
+            return True
+        return False
+
+    def _guard_options_to_main_menu(self, fsm, ctx):
+        """Return to the main menu when the Options sub-menu backs out."""
+        if (
+            hasattr(self.options_menu, "action_requested")
+            and self.options_menu.action_requested == "back"
+        ):
+            self.options_menu.action_requested = None
+            return True
         return False
 
     def _guard_char_select_to_playing(self, fsm, ctx):
