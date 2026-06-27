@@ -6,6 +6,7 @@ back into game.py through injected hooks (faked here). Navigation wraps; B backs
 out; the FSM gains an `options` state reachable from and returning to the menu.
 """
 import pygame
+import pytest
 
 from pycats import runtime_settings, settings
 from pycats.options_menu import OptionsMenu
@@ -59,11 +60,21 @@ def test_fullscreen_row_calls_injected_hook():
     assert calls == ["toggle_fs"]
 
 
-def test_esc_quit_row_is_an_inert_slot_until_113():
+@pytest.mark.xfail(
+    reason="#151 review: #113 leaves Hold-ESC Quit Options row inert",
+    strict=True,
+)
+def test_esc_quit_row_toggles_setting_and_persists(tmp_path, monkeypatch):
+    monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
+    settings.save({"esc_hold_to_quit": True})
     m = _opts()
     m.selected_option = m.rows.index("esc_quit")
-    m.update({ATTACK})  # must not crash, must not request anything
-    assert m.action_requested is None
+    m.update({ATTACK})
+    assert settings.load()["esc_hold_to_quit"] is False
+
+    m.input_cooldown = 0
+    m.update({ATTACK})
+    assert settings.load()["esc_hold_to_quit"] is True
 
 
 def test_back_row_requests_back():

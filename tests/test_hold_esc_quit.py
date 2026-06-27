@@ -13,6 +13,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
+import pytest
 
 # Initialize pygame before importing pycats modules
 pygame.init()
@@ -22,6 +23,10 @@ from pycats.settings import load, save, defaults
 
 class TestSettingsToggle:
     """Test the esc_hold_to_quit settings key."""
+
+    @pytest.fixture(autouse=True)
+    def _isolated_config(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
 
     def test_default_is_true(self):
         """esc_hold_to_quit should default to True (on by default)."""
