@@ -247,48 +247,8 @@ MAIN_MENU_SELECTED_COLOR = YELLOW
 MAIN_MENU_PADDING = 60
 MAIN_MENU_OPTION_SPACING = 50
 
-# Cat character definitions
-CAT_CHARACTERS = {
-    "ghost": {
-        "name": "Ghost",
-        "color": WHITE,
-        "stripe_color": (220, 220, 220),
-        "eye_color": (100, 100, 255),
-        "description": "White ghost cat",
-    },
-    "calico": {
-        "name": "Calico",
-        "color": (255, 160, 64),  # orange
-        "stripe_color": (204, 102, 0),  # dark orange
-        "eye_color": (34, 139, 34),  # forest green
-        "description": "Orange calico cat",
-    },
-    "tabby": {
-        "name": "Tabby",
-        "color": (128, 128, 128),  # gray
-        "stripe_color": (64, 64, 64),  # dark gray
-        "eye_color": (255, 215, 0),  # gold
-        "description": "Gray tabby cat",
-    },
-    "void": {
-        "name": "Void",
-        "color": (20, 20, 20),  # very dark gray/black
-        "stripe_color": (0, 0, 0),  # black
-        "eye_color": (0, 255, 0),  # bright green
-        "description": "Black void cat",
-    },
-    "tiger": {
-        "name": "Tiger",
-        "color": (255, 140, 0),  # dark orange
-        "stripe_color": (0, 0, 0),  # black stripes
-        "eye_color": (255, 215, 0),  # gold
-        "description": "Orange tiger cat",
-    },
-    "bengal": {
-        "name": "Bengal",
-        "color": (245, 245, 220),  # beige/cream
-        "stripe_color": (139, 69, 19),  # brown
-        "eye_color": (0, 191, 255),  # deep sky blue
-        "description": "Bengal spotted cat",
-    },
-}
+# Cat character definitions.
+# Archived to pycats/characters/og_skins.py (#131, Part 1 of epic #127): these six
+# entries are colour-skins of one cat, not characters. CAT_CHARACTERS re-exports the
+# archive so existing consumers (char_select, game, sim/runner) read the one source.
+from .characters.og_skins import OG_SKINS as CAT_CHARACTERS  # noqa: E402
