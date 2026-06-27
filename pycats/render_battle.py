@@ -87,9 +87,10 @@ def draw_cat_features(surface, p: Player):
         left_ear_points = [(x + EAR_PADDING, y) for x, y in left_ear_points]
         right_ear_points = [(x + EAR_PADDING, y) for x, y in right_ear_points]
 
-    # Draw ears
-    pygame.draw.polygon(surface, p.char_color, left_ear_points)
-    pygame.draw.polygon(surface, p.char_color, right_ear_points)
+    # Draw ears — tinted with the body so the whole head flashes (#109).
+    ear_color = _blend(p.char_color, getattr(p, "tint", None))
+    pygame.draw.polygon(surface, ear_color, left_ear_points)
+    pygame.draw.polygon(surface, ear_color, right_ear_points)
 
     # Draw whiskers (lines)
     whisker_start_x = (
@@ -120,8 +121,9 @@ def draw_cat_features(surface, p: Player):
         start_pos = (whisker_start_x, whisker_start_y)
         end_pos = (whisker_start_x + x_offset, whisker_start_y + y_offset)
 
-        # Use WHITE color for all whiskers instead of eye_color
-        pygame.draw.line(surface, WHITE, start_pos, end_pos, WHISKER_THICKNESS)
+        # Whiskers are WHITE, blended with the body flash so they tint too (#109)
+        whisker_color = _blend(WHITE, getattr(p, "tint", None))
+        pygame.draw.line(surface, whisker_color, start_pos, end_pos, WHISKER_THICKNESS)
 
 
 def draw_stripes(surface, p: Player):
@@ -166,8 +168,9 @@ def draw_stripes(surface, p: Player):
                 ),  # Front point
             ]
 
-        # Draw the triangular stripe
-        pygame.draw.polygon(surface, p.stripe_color, stripe_points)
+        # Draw the triangular stripe — tinted with the body flash (#109)
+        pygame.draw.polygon(surface, _blend(p.stripe_color, getattr(p, "tint", None)),
+                            stripe_points)
 
 
 def draw_player_name(surface, p: Player):
@@ -201,25 +204,32 @@ class _CatShim:
     """Minimal stand-in exposing the attributes the draw_* helpers read, with a
     virtual rect positioned inside the composite surface."""
     __slots__ = ("rect", "facing_right", "char_color", "eye_color",
-                 "stripe_color", "char_name")
+                 "stripe_color", "char_name", "tint")
 
     def __init__(self, rect, facing_right, char_color, eye_color, stripe_color,
-                 char_name):
+                 char_name, tint=None):
         self.rect = rect
         self.facing_right = facing_right
         self.char_color = char_color
         self.eye_color = eye_color
         self.stripe_color = stripe_color
         self.char_name = char_name
+        # #109: the active flash overlay (RED/YELLOW/WHITE) or None. The draw_*
+        # helpers blend it 50% over each part's base colour via `_blend`, so the
+        # whole sprite flashes from one source instead of per-part char_color.
+        self.tint = tint
 
 
-def body_tint(p):
-    """The body fill colour for a fighter this frame (#75 / D1 slice 1).
+TINT_STRENGTH = 0.5  # #109: blend the flash 50% over each part's base colour
+
+
+def active_tint(p):
+    """The flash *overlay* colour for a fighter this frame, or None when calm.
 
     Pure function of observable state: RED while hurt, YELLOW while stunned,
-    WHITE while dodging, else the character colour. Replaces the old
-    Player.image.fill(...) adapter mutations — the entity no longer carries its
-    own pixels; the tint is computed here at render time. Timer-driven (not
+    WHITE while dodging (#75), else None. The single source of truth for *which*
+    flash (if any) is live; `tinted()` blends it over a part's base colour and
+    `body_tint()` resolves it for the body fill. Timer-driven (not
     state-label-driven) to match the old fill exactly: the flash is present
     while the timer is live and clears the frame it hits 0.
     """
@@ -229,7 +239,37 @@ def body_tint(p):
         return YELLOW
     if p.fighter.dodge_timer > 0:
         return WHITE
-    return p.char_color
+    return None
+
+
+def _blend(base, overlay, strength=TINT_STRENGTH):
+    """`base` blended `strength` of the way toward `overlay`; `base` if overlay
+    is None. The low-level mix every tinted part shares (#109)."""
+    if overlay is None:
+        return tuple(base)
+    return tuple(round(b + (o - b) * strength) for b, o in zip(base, overlay))
+
+
+def tinted(base_color, p, strength=TINT_STRENGTH):
+    """A part's drawn colour this frame: `base_color` softened ~50% toward the
+    active hurt/stun/dodge flash, or unchanged when the fighter is calm (#109).
+
+    The one helper every body part derives its colour from — body fill, ears,
+    whiskers, stripes (via the body composite) and the tail (`tail.draw`) — so
+    no part keeps a hardcoded `char_color` path that can drift out of the flash.
+    """
+    return _blend(base_color, active_tint(p), strength)
+
+
+def body_tint(p):
+    """The body fill *selector* for a fighter this frame (#75 / D1 slice 1).
+
+    Returns the solid overlay (RED hurt / YELLOW stun / WHITE dodge) or the
+    character colour when calm — unchanged contract: callers and the composite
+    cache key still distinguish the four states by this value. The 50% softening
+    lives in `tinted()`, applied where the body is actually filled.
+    """
+    return active_tint(p) or p.char_color
 
 
 def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
@@ -248,10 +288,11 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
         ch = _BODY_PAD_TOP + h + _BODY_PAD_BOT
         surf = pygame.Surface((cw, ch), pygame.SRCALPHA)
         vrect = pygame.Rect(_BODY_PAD_X, _BODY_PAD_TOP, w, h)
+        overlay = active_tint(p)
         shim = _CatShim(vrect, p.fighter.facing_right, p.char_color, p.eye_color,
-                        p.stripe_color, p.char_name)
+                        p.stripe_color, p.char_name, tint=overlay)
         body = pygame.Surface((w, h))
-        body.fill(tint)
+        body.fill(_blend(p.char_color, overlay))
         surf.blit(body, vrect)
         draw_stripes(surf, shim)
         # Face: a glyph style replaces the primitive eyes + ears + whiskers;

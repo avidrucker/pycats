@@ -14,12 +14,13 @@ pytestmark = pytest.mark.usefixtures("render_isolation")
 
 
 def _direct(surface, p):
-    """Replicate the original per-frame body draw sequence (pre-cache)."""
+    """Replicate the per-frame body draw sequence (pre-cache)."""
+    overlay = rb.active_tint(p)
     body = pygame.Surface(p.rect.size)
-    body.fill(rb.body_tint(p))  # tint is render-time now (#75), not p.image
+    body.fill(rb._blend(p.char_color, overlay))  # softened flash, render-time (#75/#109)
     surface.blit(body, p.rect)
     shim = rb._CatShim(p.rect, p.fighter.facing_right, p.char_color, p.eye_color,
-                       p.stripe_color, p.char_name)
+                       p.stripe_color, p.char_name, tint=overlay)
     rb.draw_stripes(surface, shim)
     rb.draw_eye(surface, shim)
     rb.draw_eye(surface, shim, eye=False)

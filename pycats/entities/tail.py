@@ -239,15 +239,22 @@ class Tail:
 
     def draw(self, screen):
         """Draw the segments as cached, rotated, tapering rects."""
+        # #109: the tail flashes with the body. `tinted` softens char_color ~50%
+        # toward the active hurt/stun/dodge flash (or leaves it unchanged), from
+        # the same single source as the body composite. Local import avoids the
+        # render_battle → entities.Player import cycle.
+        from ..render_battle import tinted
         cache = self._seg_cache
-        color = self.player.char_color
+        color = tuple(tinted(self.player.char_color, self.player))
         length = TAIL_SEGMENT_LENGTH
         n = len(self.segments)
         blit = screen.blit
         for i, segment in enumerate(self.segments):
             width = int(TAIL_SEGMENT_WIDTH * (1.0 - (i / n) * TAPER_MODIFER))
             deg = int(round(-math.degrees(segment.angle))) % 360
-            key = (width, deg)
+            # `color` is in the key so a flash doesn't serve stale untinted
+            # segment surfaces (the cache spans tint states across frames).
+            key = (width, deg, color)
             surf = cache.get(key)
             if surf is None:
                 base = pg.Surface((length, width), pg.SRCALPHA)
