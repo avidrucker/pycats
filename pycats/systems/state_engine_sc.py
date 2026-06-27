@@ -6,8 +6,8 @@ from typing import Any
 # Flat labels whose chart leaf id equals the label. "attack" is NOT here: the
 # attacking region was split into startup/active/recovery sub-phases (Task 4),
 # so it is mapped separately via in_state("attacking") -> "attack".
-LABELS = ("idle", "run", "jump", "fall", "shield", "dodge", "ko", "hurt",
-          "stun")
+LABELS = ("idle", "run", "crouch", "jump", "fall", "shield", "dodge", "ko",
+          "hurt", "stun")
 
 
 class StatechartEngine:

@@ -206,6 +206,19 @@ class Player(pygame.sprite.Sprite):
         if not self._pressed(held, "shield") and not self._pressed(pressed, "shield"):
             self.fighter.shield_attempting = False
 
+        # crouch intent (#124): hold down on solid ground, no shield (shield+down
+        # is a spot dodge), for a cat that can crouch. Read raw held input (not
+        # the shield_attempting flag, which is set later this frame) so the
+        # shield/crouch split is order-independent. The state machine reacts to
+        # this flag; _apply_crouch_geometry resizes the body from the resulting
+        # state label (so both engine backends stay byte-identical).
+        self.fighter.crouch_attempting = (
+            self._pressed(held, "down")
+            and not self._pressed(held, "shield")
+            and self.fighter.on_ground
+            and self.fighter.crouch_size is not None
+        )
+
         # input / movement / state logic --------------------------------------
         # Issue #8: hits are resolved AFTER this frame's engine.tick (game.py
         # runs process_hits after player.update), so hurt_timer/stun_timer are
@@ -277,6 +290,27 @@ class Player(pygame.sprite.Sprite):
 
         # FSM state transitions -----------------------------------
         self.engine.tick(None)
+
+        # Crouch body resize (#124): derived from the final state label so both
+        # engine backends produce byte-identical geometry.
+        self._apply_crouch_geometry()
+
+    def _apply_crouch_geometry(self):
+        """Resize the body Rect to match the crouch state, feet planted.
+
+        Crouching shrinks the collision box to the per-cat ``crouch_size``
+        (anchored at midbottom so the feet stay put); standing restores
+        ``stand_size``. No-op for cats without crouch data. Keyed off
+        ``self.state`` (not the input) so legacy and statechart backends, which
+        compute the same label, resize identically — preserving parity."""
+        f = self.fighter
+        if f.crouch_size is None:
+            return
+        target = f.crouch_size if self.state == "crouch" else f.stand_size
+        if (self.rect.width, self.rect.height) != tuple(target):
+            midbottom = self.rect.midbottom
+            self.rect.size = target
+            self.rect.midbottom = midbottom
 
     # ============================================================== helpers
     # Input handling lives in FighterInput (#73 / D1 slice 3); Player delegates

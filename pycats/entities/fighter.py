@@ -65,6 +65,14 @@ class Fighter:
         self.jump_vel = fighter_data.jump_vel
         self.max_jumps = fighter_data.max_jumps
 
+        # ---------- crouch geometry (#124) ----------
+        # stand_size is the body's full standing box; crouch_size/_hurtbox are
+        # the per-cat crouch geometry (None = this fighter can't crouch).
+        self.stand_size = (owner.SIZE[0], owner.SIZE[1])
+        self.crouch_size = fighter_data.crouch_size
+        self.crouch_hurtbox = fighter_data.crouch_hurtbox
+        self.crouch_attempting = False  # set per-frame by input (down on ground)
+
         # ---------- kinematics (#84 / 6b-3a) ----------
         # The authoritative body box + velocity now live on the domain object;
         # Player exposes them as delegating get/set properties (pygame value

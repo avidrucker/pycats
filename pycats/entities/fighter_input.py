@@ -36,7 +36,7 @@ class FighterInput:
             self._pressed(keys, "left"),
             self._pressed(keys, "right"),
             locked=p.state
-            == "shield",  # prevents moving while shielding, this may need to change when dodging is implemented
+            in ("shield", "crouch"),  # no walking while shielding or crouching (#124)
             move_speed=p.fighter.move_speed,
         )
 
@@ -68,7 +68,9 @@ class FighterInput:
         #### TODO: prevent repeated dodges by holding down shield and a directional, what happens instead is that the player will enter a shield state, and then can press a direction to dodge again
         #### DONE: make player rect flash semi-transparent white while in dodge state
         # Shield-plus-direction = dodge
-        can_dodge_state = p.state in ("idle", "jump", "fall", "shield")
+        # "crouch" is dodge-able (#124): shield+down from a crouch spot-dodges,
+        # preserving the #6 down-then-shield ordering now that down first crouches.
+        can_dodge_state = p.state in ("idle", "jump", "fall", "shield", "crouch")
         # Special case: allow adding direction to neutral air dodges
         can_modify_air_dodge = (
             p.state == "dodge"

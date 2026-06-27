@@ -68,6 +68,7 @@ def build_fighter_chart(p):
             {"id": "idle"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.crouch_attempting and p.fighter.on_ground, "crouch"),
             _tick(lambda e, d: p.fighter.vel.x != 0 and p.fighter.on_ground, "run"),
             _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
             _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
@@ -78,11 +79,23 @@ def build_fighter_chart(p):
             {"id": "run"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.crouch_attempting and p.fighter.on_ground, "crouch"),
             _tick(lambda e, d: p.fighter.vel.x == 0, "idle"),
             _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
             _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
             _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
             _tick(lambda e, d: p.fighter.shield_attempting and p.fighter.on_ground, "shield"),
+        ),
+        # Crouch (#124): hold down on solid ground. Movement is locked (see
+        # fighter_input), the body Rect resizes + the hurtbox lowers (Player).
+        state(
+            {"id": "crouch"},
+            _tick(lambda e, d: p.attack_timer > 0, "attacking"),
+            _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
+            _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
+            _tick(lambda e, d: not p.fighter.on_ground, "fall"),
+            _tick(lambda e, d: not p.fighter.crouch_attempting, "idle"),
         ),
         state(
             {"id": "shield"},

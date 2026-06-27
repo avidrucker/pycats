@@ -89,8 +89,22 @@ _ATTACK_MOVE = MoveData(
     hitboxes=(_ATTACK_HITBOX,),
 )
 
+# --- Crouch geometry (#124) --------------------------------------------------
+# The default cat crouches too (so the playable cosmetic cats can crouch in the
+# live game). 40×60 stand box → squarish 40×40 crouch box, feet planted, with a
+# lower/shorter hurtbox. Golden-safe: the headless replay never presses down.
+_CROUCH_SIZE = (40, 40)
+_CROUCH_HURTBOX = Hurtbox(
+    circles=(
+        Circle(dx=20, dy=20, r=14),
+        Circle(dx=20, dy=32, r=12),
+    )
+)
+
 # --- Assembled FighterData ---------------------------------------------------
 DEFAULT_FIGHTER_DATA = FighterData(
     hurtbox=_HURTBOX,
     moves={"attack": _ATTACK_MOVE},
+    crouch_size=_CROUCH_SIZE,
+    crouch_hurtbox=_CROUCH_HURTBOX,
 )

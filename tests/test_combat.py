@@ -49,6 +49,8 @@ def _make_player(rect, *, hurtbox_circles, facing_right=True,
         invulnerable=invulnerable,
         is_alive=is_alive,
         fighter_data=_make_fighter_data(hurtbox_circles),
+        state="idle",            # combat reads .state for the crouch hurtbox (#124)
+        crouch_hurtbox=None,     # via p.fighter (set below) — None = no crouch box
         hits_received=0,
         hits_landed=0,
     )

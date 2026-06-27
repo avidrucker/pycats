@@ -29,6 +29,10 @@ def build_fighter_fsm(player) -> FSM:
                     "dodge", lambda f, ctx: player.fighter.dodge_timer > 0
                 ),  # Dodge should take priority
                 Transition(
+                    "crouch",
+                    lambda f, ctx: player.fighter.crouch_attempting and player.fighter.on_ground,
+                ),
+                Transition(
                     "run", lambda f, ctx: player.fighter.vel.x != 0 and player.fighter.on_ground
                 ),
                 Transition("jump", lambda f, ctx: player.fighter.vel.y < 0),
@@ -43,6 +47,10 @@ def build_fighter_fsm(player) -> FSM:
                 Transition(
                     "dodge", lambda f, ctx: player.fighter.dodge_timer > 0
                 ),  # Dodge should take priority
+                Transition(
+                    "crouch",
+                    lambda f, ctx: player.fighter.crouch_attempting and player.fighter.on_ground,
+                ),
                 Transition("idle", lambda f, ctx: player.fighter.vel.x == 0),
                 Transition("jump", lambda f, ctx: player.fighter.vel.y < 0),
                 Transition(
@@ -53,6 +61,16 @@ def build_fighter_fsm(player) -> FSM:
                     "shield",
                     lambda f, ctx: player.fighter.shield_attempting and player.fighter.on_ground,
                 ),  # can enter shield state while running on the ground
+            ],
+            # Crouch (#124): hold down on solid ground; mirrors the statechart
+            # crouch leaf transition order exactly (parity).
+            "crouch": [
+                Transition("attack", lambda f, ctx: player.attack_timer > 0),
+                Transition("dodge", lambda f, ctx: player.fighter.dodge_timer > 0),
+                Transition("jump", lambda f, ctx: player.fighter.vel.y < 0),
+                Transition("hurt", lambda f, ctx: player.fighter.hurt_timer > 0),
+                Transition("fall", lambda f, ctx: not player.fighter.on_ground),
+                Transition("idle", lambda f, ctx: not player.fighter.crouch_attempting),
             ],
             "jump": [
                 Transition("attack", lambda f, ctx: player.attack_timer > 0),

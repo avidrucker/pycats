@@ -78,9 +78,25 @@ _DOWN_TILT = MoveData(
     ),
 )
 
+# --- Crouch geometry (#124) ---------------------------------------------------
+# PM Mario's crouch is a moderate lower (not a Kirby-style ground-hug). The body
+# Rect resizes from the 40×60 stand box to a squarish 40×40 crouch box (feet
+# planted), and the hurtbox swaps to a lower/shorter pair of circles so high
+# attacks whiff. Coords are relative to the crouched rect top-left. ⚠ playtest
+# starting points (per-cat tuning, like the other archetype numbers).
+_CROUCH_SIZE = (40, 40)
+_CROUCH_HURTBOX = Hurtbox(
+    circles=(
+        Circle(dx=20, dy=20, r=14),   # lowered torso
+        Circle(dx=20, dy=32, r=12),   # legs (near the planted feet)
+    )
+)
+
 # --- Assembled FighterData ----------------------------------------------------
 NALIO_FIGHTER_DATA = FighterData(
     weight=100,            # PM3.6 Mario (== pycats default → no KB change)
     hurtbox=_HURTBOX,
     moves={"attack": _DOWN_TILT},
+    crouch_size=_CROUCH_SIZE,
+    crouch_hurtbox=_CROUCH_HURTBOX,
 )

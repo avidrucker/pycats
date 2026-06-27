@@ -113,11 +113,16 @@ def process_hits(players, attacks):
                 continue
 
             # Resolve defender hurtbox circles to absolute coordinates.
-            # Origin convention: rect top-left (rect.x, rect.y).
+            # Origin convention: rect top-left (rect.x, rect.y). A crouching
+            # defender uses its lower/shorter crouch hurtbox (#124), so high
+            # attacks whiff — relative to the (resized) crouch rect.
+            hurtbox = defender.fighter_data.hurtbox
+            if defender.state == "crouch" and defender.fighter.crouch_hurtbox is not None:
+                hurtbox = defender.fighter.crouch_hurtbox
             resolved_hurtbox = [
                 resolve_circle(c, defender.rect.x, defender.rect.y,
                                defender.fighter.facing_right, defender.rect.width)
-                for c in defender.fighter_data.hurtbox.circles
+                for c in hurtbox.circles
             ]
 
             # First box (priority order) that overlaps this defender wins — a

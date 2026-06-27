@@ -197,6 +197,10 @@ def draw_player_name(surface, p: Player):
 _BODY_PAD_X = 48
 _BODY_PAD_TOP = 56
 _BODY_PAD_BOT = 12
+
+# Crouch squash easing (#124): fraction of the stand→crouch transition covered
+# per rendered frame (~3 frames to settle). Render-only; not part of the sim.
+_CROUCH_ANIM_RATE = 0.34
 _body_cache: dict = {}
 
 
@@ -419,7 +423,25 @@ def render_battle(surface, players, platforms):
         p.tail.draw(surface)
         # Body composite (rect + stripes + eyes + ears + whiskers + name).
         body = _cat_body_surface(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
-        surface.blit(body, (p.rect.x - _BODY_PAD_X, p.rect.y - _BODY_PAD_TOP))
+        # Crouch squash (#124): vertically scale the body toward the crouch
+        # height, feet planted, eased over a few frames. Purely visual — driven
+        # by a render-only progress var, so the deterministic sim is untouched
+        # (the collision Rect itself snaps in Player._apply_crouch_geometry).
+        stand_h = p.fighter.stand_size[1]
+        crouch_h = p.fighter.crouch_size[1] if p.fighter.crouch_size else stand_h
+        target = 1.0 if p.state == "crouch" else 0.0
+        anim = getattr(p, "_crouch_anim", 0.0)
+        anim = (min(target, anim + _CROUCH_ANIM_RATE) if anim < target
+                else max(target, anim - _CROUCH_ANIM_RATE))
+        p._crouch_anim = anim
+        if anim > 0.0 and crouch_h != stand_h:
+            s = (stand_h + (crouch_h - stand_h) * anim) / stand_h
+            body = pygame.transform.scale(
+                body, (body.get_width(), max(1, round(body.get_height() * s))))
+            blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s)
+        else:
+            blit_y = p.rect.y - _BODY_PAD_TOP
+        surface.blit(body, (p.rect.x - _BODY_PAD_X, blit_y))
         if p.fighter.stun_timer > 0:
             draw_dizzy_stars(surface, p)
         if p.state == "shield":

@@ -113,6 +113,12 @@ class FighterData:
                   per-character movement constants (#126), read per-fighter by
                   the physics/input layer. Each defaults to the matching config
                   global, so data that omits them behaves exactly as before.
+        crouch_size / crouch_hurtbox — per-character crouch geometry (#124): the
+                  (w, h) the body Rect resizes to when crouching (feet planted)
+                  and the shorter/lower hurtbox used while crouched. Both default
+                  to None = this fighter cannot crouch. Crouch effectiveness is
+                  deliberately per-character (PM: Kirby hugs the ground, DK barely
+                  lowers) — see docs and the #124 research notes.
 
     The dict is not frozen; callers must not mutate it.
     """
@@ -124,6 +130,8 @@ class FighterData:
     move_speed: float = MOVE_SPEED
     jump_vel: float = JUMP_VEL
     max_jumps: int = MAX_JUMPS
+    crouch_size: tuple[int, int] | None = None
+    crouch_hurtbox: Hurtbox | None = None
 
 
 # ---------------------------------------------------------------------------
