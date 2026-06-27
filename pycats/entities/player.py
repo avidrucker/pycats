@@ -266,7 +266,7 @@ class Player(pygame.sprite.Sprite):
             # Task 5 / #130: pass the move's full hitbox tuple so Attack resolves
             # every circle (multi-hitbox moves activate all boxes at once).
             attack_group.add(
-                Attack(self, hitboxes=tick.spawn,
+                Attack(self, hitboxes=tick.spawn, in_air=tick.in_air,
                        disappear_on_hit=False, lifetime=tick.lifetime)
             )
         if self.attack_timer == 0 and self.state == "attack":

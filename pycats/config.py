@@ -86,6 +86,12 @@ HITSTUN_FLOOR = 1          # minimum hitstun frames for any clean hit. ⚠ tunin
 KNOCKBACK_LAUNCH_FACTOR = 0.085
 KNOCKBACK_DECAY = 0.145
 
+# Clank / priority (#38 4c). When two opposing GROUND hitboxes overlap, the Smash
+# "priority range" decides the outcome: if their damage differs by <= this many
+# percent, both attacks end (clank); otherwise the stronger continues and the
+# weaker ends. SmashWiki "Priority": 9% across the Melee/Brawl/PM family.
+CLANK_PRIORITY_RANGE = 9
+
 # ---------------- platform constants ------------
 # note: 300 is good for a 540 width map
 THICK_PLAT_WIDTH = 800

@@ -34,10 +34,13 @@ class MoveTick(NamedTuple):
                opens.
     lifetime — that move's active-frame count (only meaningful when spawn is not
                None); mirrors the legacy ``lifetime=move.active``.
+    in_air   — whether the spawning move is an aerial (#133: aerials don't clank);
+               False on no-spawn ticks.
     """
 
     spawn: Optional[tuple[Hitbox, ...]]
     lifetime: int
+    in_air: bool = False
 
 
 class MoveClock:
@@ -102,4 +105,4 @@ class MoveClock:
             spawn = m.hitboxes
         if self._frame >= m.startup + m.active + m.recovery:
             self._move = None
-        return MoveTick(spawn, m.active)
+        return MoveTick(spawn, m.active, m.in_air)

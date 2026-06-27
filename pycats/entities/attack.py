@@ -50,11 +50,13 @@ class Attack(pygame.sprite.Sprite):
         lifetime: int = 0,  # frames the hit-box persists (a move's active window)
         disappear_on_hit=False,
         hitboxes=None,      # #130: tuple[Hitbox, ...] for a multi-hitbox move
+        in_air=False,       # #133: is this an aerial move's hitbox? (aerials don't clank)
     ):
         super().__init__()
         self.owner = owner
         self.disappear_on_hit = disappear_on_hit
         self.active = True
+        self.in_air = in_air
 
         # lifetime: how many frames the hit-box persists. Task 4 spawns the
         # hit-box during a move's active window with lifetime == move.active.
