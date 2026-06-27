@@ -4,11 +4,9 @@
   "frames": 481,
   "players": {
     "P1": {
-      "ko_frames": [
-        267
-      ],
-      "lives_end": 2,
-      "lives_min": 2,
+      "ko_frames": [],
+      "lives_end": 3,
+      "lives_min": 3,
       "lives_start": 3,
       "percent_max": 0,
       "states": [
@@ -17,19 +15,18 @@
         "fall",
         "idle",
         "jump",
-        "ko",
         "run",
         "shield"
       ]
     },
     "P2": {
       "ko_frames": [
-        259
+        285
       ],
       "lives_end": 2,
       "lives_min": 2,
       "lives_start": 3,
-      "percent_max": 20.0,
+      "percent_max": 30.0,
       "states": [
         "attack",
         "fall",

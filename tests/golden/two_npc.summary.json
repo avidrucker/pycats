@@ -1,5 +1,5 @@
 {
-  "attack_active_frames": 4,
+  "attack_active_frames": 8,
   "final_phase": "in_play",
   "frames": 600,
   "players": {
@@ -20,8 +20,8 @@
     },
     "P2": {
       "ko_frames": [
-        128,
-        406
+        136,
+        422
       ],
       "lives_end": 1,
       "lives_min": 1,

@@ -42,7 +42,7 @@ from ..config import (
     DODGE_SPEED,
     KNOCKBACK_LAUNCH_FACTOR,
 )
-from ..combat.knockback import knockback, hitstun_frames
+from ..combat.knockback import knockback, hitstun_frames, hitlag_frames
 from ..combat.shield import shield_break_stun_frames
 
 
@@ -108,6 +108,7 @@ class Fighter:
         self.dodge_timer = 0
         self.hurt_timer = 0
         self.stun_timer = 0
+        self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
         # attack_timer is a derived property over owner._clock (#71).
         self.invulnerable_timer = 0  # invulnerability mid-dodge, post-respawn, or while ledge grabbing
         self.jumps_remaining = self.max_jumps
@@ -204,6 +205,15 @@ class Fighter:
             launch = kb * KNOCKBACK_LAUNCH_FACTOR
             self.vel.x += launch * math.cos(radians) * direction
             self.vel.y = launch * -math.sin(radians)  # up = negative y
+            # Hitlag / freeze frames (#138): BOTH fighters freeze for a few frames
+            # before the slide begins. The launch velocity + hurt_timer are set
+            # now but neither acts until the freeze ends — Player.update returns
+            # early while hitlag_timer > 0, so position is held, hitstun does not
+            # tick, and the attacker's move clock pauses. Knockback then proceeds
+            # intact. Percent (above) already applied, so damage shows at impact.
+            hl = hitlag_frames(atk.damage)
+            self.hitlag_timer = hl
+            atk.owner.fighter.hitlag_timer = hl
 
     def _handle_landing(self, was_airborne: bool):
         if self.on_ground and was_airborne:
@@ -269,6 +279,7 @@ class Fighter:
         self.dodge_timer = 0
         self.hurt_timer = 0
         self.stun_timer = 0
+        self.hitlag_timer = 0  # don't carry a freeze across a KO/respawn (#138)
         self.invulnerable_timer = 0
         self.invulnerable = False
         self.spot_dodge_shield_held = False

@@ -78,6 +78,14 @@ SHOW_STATUS_TIMER_BARS = True
 # per-move/character inputs.
 HITSTUN_MULTIPLIER = 0.4   # hitstun_frames = floor(KB * this). ⚠ verify (Brawl/PM ~0.4).
 HITSTUN_FLOOR = 1          # minimum hitstun frames for any clean hit. ⚠ tuning, not sourced.
+# Hitlag / freeze frames (#138). SmashWiki Hitlag (Brawl onward):
+# floor((d * HITLAG_DAMAGE_FACTOR + HITLAG_BASE) * h * e) * c, capped at HITLAG_CAP.
+# This slice uses h = e = c = 1 (per-move/electric/crouch-cancel multipliers are
+# deferred). Both attacker and defender freeze for this many frames on a clean
+# hit, then the knockback slide proceeds.
+HITLAG_DAMAGE_FACTOR = 0.3846154
+HITLAG_BASE = 5
+HITLAG_CAP = 30            # Brawl-onward cap (Melee was 20).
 # Knockback decay model (#44, from #43 research). A hit sets an initial launch
 # velocity of KB * KNOCKBACK_LAUNCH_FACTOR (px/frame), which then bleeds off by
 # KNOCKBACK_DECAY (px/frame) every frame during hitstun — mirroring Smash's

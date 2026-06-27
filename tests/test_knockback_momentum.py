@@ -119,7 +119,13 @@ def test_launch_decays_each_hitstun_frame_not_constant():
     defender.fighter.receive_hit(_jab(attacker))
     v0 = defender.fighter.vel.x
     assert v0 > 0
-    prev = v0
+    # #138: a clean hit now freezes both fighters for hitlag frames before the
+    # slide. Velocity is HELD (not decayed) during the freeze, so advance past it
+    # first; the ease-out assertion below is about the post-freeze hitstun slide.
+    for _ in range(defender.fighter.hitlag_timer):
+        defender.update(_frame([]), plats, empty)
+    assert defender.fighter.vel.x == pytest.approx(v0), "launch held through hitlag"
+    prev = defender.fighter.vel.x
     for _ in range(5):
         defender.update(_frame([]), plats, empty)
         # within hitstun, only knockback decay touches vel.x (friction is skipped)

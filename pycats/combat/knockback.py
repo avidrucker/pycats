@@ -6,7 +6,10 @@ Source: https://www.ssbwiki.com/Knockback  (see spec #39 §2).
 """
 import math
 
-from ..config import HITSTUN_MULTIPLIER, HITSTUN_FLOOR
+from ..config import (
+    HITSTUN_MULTIPLIER, HITSTUN_FLOOR,
+    HITLAG_DAMAGE_FACTOR, HITLAG_BASE, HITLAG_CAP,
+)
 
 
 def knockback(percent: float, damage: float, weight: int,
@@ -20,6 +23,17 @@ def knockback(percent: float, damage: float, weight: int,
 def hitstun_frames(kb: float) -> int:
     """Whole frames of hitstun for a knockback magnitude (floored, min HITSTUN_FLOOR)."""
     return max(HITSTUN_FLOOR, math.floor(kb * HITSTUN_MULTIPLIER))
+
+
+def hitlag_frames(damage: float) -> int:
+    """Whole frames of hitlag (freeze frames) for a clean hit of `damage`%.
+
+    SmashWiki Hitlag (Brawl/PM): floor(damage * HITLAG_DAMAGE_FACTOR + HITLAG_BASE),
+    capped at HITLAG_CAP. The per-move (h), electric (e) and crouch-cancel (c)
+    multipliers are 1 in this slice (#138). Both attacker and defender freeze for
+    this many frames before the knockback slide.
+    """
+    return min(HITLAG_CAP, math.floor(damage * HITLAG_DAMAGE_FACTOR + HITLAG_BASE))
 
 
 def decay_velocity(vx: float, decay: float) -> float:

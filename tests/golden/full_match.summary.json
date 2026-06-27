@@ -1,7 +1,7 @@
 {
-  "attack_active_frames": 22,
+  "attack_active_frames": 32,
   "final_phase": "match_over",
-  "frames": 692,
+  "frames": 732,
   "players": {
     "P1": {
       "ko_frames": [],
@@ -20,9 +20,9 @@
     },
     "P2": {
       "ko_frames": [
-        132,
-        410,
-        691
+        133,
+        431,
+        731
       ],
       "lives_end": 0,
       "lives_min": 0,

@@ -46,6 +46,12 @@ def _ko_while_damaged_then_respawn(kind):
         victim.fighter.receive_hit(Attack(owner=attacker, hitbox=hb, lifetime=1))
     else:  # stun
         victim.fighter._start_stun()
+    # #138: a clean hit now freezes the victim for hitlag frames (frozen in place,
+    # not yet KO-able). Let the freeze elapse so the victim is actionable again,
+    # as it was before hitlag — this test is about respawn clearing the damaged
+    # state, not about the freeze itself.
+    while victim.fighter.hitlag_timer > 0:
+        victim.update(_empty(), plats, empty)
     victim.update(_empty(), plats, empty)
     assert victim.fighter.hurt_timer > 0 or victim.fighter.stun_timer > 0  # genuinely damaged
 

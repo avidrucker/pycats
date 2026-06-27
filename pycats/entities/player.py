@@ -190,6 +190,17 @@ class Player(pygame.sprite.Sprite):
                 self.fighter._respawn()
             return  # nothing else while dead
 
+        # ---------- hitlag / freeze frames (#138) ----------
+        # On a clean hit both fighters freeze for hitlag_timer frames. Returning
+        # early here holds everything — position (no step_physics), velocity (no
+        # decay), the move clock, the hitstun timer, and the FSM — so the impact
+        # pause precedes the knockback slide, which then resumes intact. Placed
+        # after the dead check (a KO'd fighter is never frozen) and before the
+        # blast-zone check (a frozen fighter can't drift out).
+        if self.fighter.hitlag_timer > 0:
+            self.fighter.hitlag_timer -= 1
+            return
+
         # ---------- blast-zone KO check ----------
         if self.fighter._outside_blast_zone():
             self.fighter._ko()
