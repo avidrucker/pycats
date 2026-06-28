@@ -18,8 +18,25 @@ Why Nalio maps so cleanly to PM Mario:
 
 Scope of this slice (#123):
   - weight + body/hurtbox geometry + ONE PM-faithful move (down-tilt).
-  - Nalio's full moveset (jab multi-hit, smashes, aerials, specials) is gated on
-    the combat core #38; per-move claw/fist visuals are #125; crouch is #124.
+  - Nalio's full moveset (smashes, aerials, specials) is gated on later Phase 2
+    slices; per-move claw/fist visuals are #125; crouch is #124.
+
+Jab ("jab") — PM3.6 Mario `Attack11` (rukaidata), first neutral-A slice (#154).
+  Total 16f / IASA 16. Hitboxes active frames 2-3, modelled as startup 1 /
+  active 2 / recovery 13 in pycats' MoveData window.
+
+  rukaidata reports three same-set hitboxes:
+
+    id  bone  damage  size(u)  -> r px (×5.4)  angle  WDSK  BKB  KBG  x(u)
+    0   25    3       3.52     19              83     20    0    100  2.58
+    1   22    3       2.34     13              83     20    0    100  1.29
+    2   46    3       2.73     15              85     20    0    100  0.00
+
+  WDSK's special knockback formula is not represented in Hitbox yet, so this
+  slice records BKB/KBG raw and documents WDSK as deferred. Positions are
+  approximated like down-tilt: rukaidata offsets are bone-relative and pycats has
+  no Mario skeleton. The fist/primary hitbox is anchored just beyond the body at
+  dx=54, with arm/body boxes trailing inward.
 
 Down-tilt ("attack") — PM3.6 Mario `AttackLw3` (rukaidata), real 3-hitbox form
   (#132, on the #130 multi-hitbox engine; replaces #123's single-hit approx).
@@ -55,6 +72,25 @@ _HURTBOX = Hurtbox(
         Circle(dx=20, dy=15, r=14),   # upper body
         Circle(dx=20, dy=45, r=14),   # lower body
     )
+)
+
+# --- Jab, mapped to the canonical "jab" key (PM3.6 Mario Attack11) ------------
+# Real 3-hitbox first jab (#154). Active frames 2-3, IASA/total 16. WDSK 20 is
+# deferred because Hitbox has no weight-dependent-set-knockback field yet.
+_JAB = MoveData(
+    name="jab",
+    in_air=False,
+    startup=1,
+    active=2,
+    recovery=13,
+    hitboxes=(
+        Hitbox(circle=Circle(dx=54, dy=27, r=19), damage=3.0,
+               angle=83, base_knockback=0.0, knockback_growth=100.0),
+        Hitbox(circle=Circle(dx=44, dy=28, r=13), damage=3.0,
+               angle=83, base_knockback=0.0, knockback_growth=100.0),
+        Hitbox(circle=Circle(dx=34, dy=29, r=15), damage=3.0,
+               angle=85, base_knockback=0.0, knockback_growth=100.0),
+    ),
 )
 
 # --- Down-tilt, mapped to the "attack" slot (PM3.6 Mario AttackLw3) ------------
@@ -125,7 +161,7 @@ _CROUCH_HURTBOX = Hurtbox(
 NALIO_FIGHTER_DATA = FighterData(
     weight=100,            # PM3.6 Mario (== pycats default → no KB change)
     hurtbox=_HURTBOX,
-    moves={"attack": _DOWN_TILT, "nair": _NEUTRAL_AIR},
+    moves={"attack": _DOWN_TILT, "jab": _JAB, "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
 )

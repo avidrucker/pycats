@@ -3,9 +3,11 @@
 Ground/air attack-selection split (#38 slice, #136).
 
 Pressing attack while airborne selects the character's neutral aerial ("nair")
-when defined, else falls back to the ground "attack" move. Grounded always uses
-"attack". The selector lives in fighter_input.handle_actions and reads
-fighter.on_ground; we drive it directly with on_ground set.
+when defined, else falls back to the ground "attack" move. Grounded neutral
+attack selects "jab" when defined; directional ground normals fall back to the
+legacy "attack" alias until each named move lands. The selector lives in
+fighter_input.handle_actions and reads fighter.on_ground; we drive it directly
+with on_ground set.
 """
 import pygame
 
@@ -20,19 +22,34 @@ def _press_attack():
     return InputFrame(held=set(), pressed={P1["attack"]}, released=set())
 
 
+def _press_down_attack():
+    keys = {P1["attack"], P1["down"]}
+    return InputFrame(held=keys, pressed={P1["attack"]}, released=set())
+
+
 def _player(char_name):
     return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
                   char_name=char_name, facing_right=True)
 
 
-def test_grounded_nalio_attack_is_the_ground_down_tilt():
+def test_grounded_nalio_neutral_attack_is_jab():
     pygame.init()
     p = _player("nalio")
     p.fighter.on_ground = True
     p.handle_actions(_press_attack(), pygame.sprite.Group())
     assert p.current_move is not None
     assert p.current_move.in_air is False, "grounded attack should be the ground move"
-    assert p.current_move.hitboxes[0].damage == 9.0, "Nalio ground attack = down-tilt (9%)"
+    assert p.current_move.hitboxes[0].damage == 3.0, "Nalio neutral-A = jab (3%)"
+
+
+def test_grounded_nalio_down_attack_still_uses_down_tilt_alias():
+    pygame.init()
+    p = _player("nalio")
+    p.fighter.on_ground = True
+    p.handle_actions(_press_down_attack(), pygame.sprite.Group())
+    assert p.current_move is not None
+    assert p.current_move.in_air is False, "grounded attack should be the ground move"
+    assert p.current_move.hitboxes[0].damage == 9.0, "Nalio down-A = down-tilt (9%)"
 
 
 def test_airborne_nalio_attack_is_the_neutral_air():

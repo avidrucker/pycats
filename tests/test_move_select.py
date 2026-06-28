@@ -4,7 +4,7 @@ Move-selection seam (#143, Phase 2 epic #142).
 
 A small table maps (direction × ground/air × A-vs-B) -> a canonical move key;
 resolution then falls back to what the character actually defines so partial kits
-(default cat = {"attack"}; Nalio = {"attack","nair"}) behave exactly as before.
+(default cat = {"attack"}; Nalio = {"attack","jab","nair"}) behave incrementally.
 """
 import pygame as pg
 
@@ -85,6 +85,19 @@ def test_default_cat_neutral_attack_unchanged():
     pg.init()
     p = _mk("P1"); p.fighter.on_ground = True
     p.handle_actions(_press("attack"), pg.sprite.Group())
+    assert p.current_move is p.fighter_data.moves["attack"]
+
+
+def test_nalio_neutral_attack_uses_jab_and_down_attack_uses_dtilt_alias():
+    pg.init()
+    p = _mk("nalio")
+    p.fighter.on_ground = True
+    p.handle_actions(_press("attack"), pg.sprite.Group())
+    assert p.current_move is p.fighter_data.moves["jab"]
+
+    p = _mk("nalio")
+    p.fighter.on_ground = True
+    p.handle_actions(_press("attack", held_extra=("down",)), pg.sprite.Group())
     assert p.current_move is p.fighter_data.moves["attack"]
 
 

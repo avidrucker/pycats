@@ -51,6 +51,26 @@ def test_nalio_attack_is_pm_down_tilt():
     assert hb.knockback_growth == 80.0
 
 
+def test_nalio_jab_is_pm_attack11_single_hit_approx():
+    """Nalio's neutral-A key carries PM3.6 Mario Attack11 (#154).
+
+    rukaidata Attack11: total 16f / IASA 16, hitboxes active 2-3, three
+    same-set hitboxes. pycats can express simultaneous hitboxes, but not WDSK's
+    special knockback formula yet, so BKB/KBG are recorded raw as available.
+    Radii are round(size u × 5.4): 3.52->19, 2.34->13, 2.73->15.
+    """
+    move = load_fighter_data("nalio").moves["jab"]
+    assert move.name == "jab"
+    assert move.in_air is False
+    assert (move.startup, move.active, move.recovery) == (1, 2, 13)
+    assert len(move.hitboxes) == 3
+    assert tuple(hb.damage for hb in move.hitboxes) == (3.0, 3.0, 3.0)
+    assert tuple(hb.angle for hb in move.hitboxes) == (83, 83, 85)
+    assert tuple(hb.base_knockback for hb in move.hitboxes) == (0.0, 0.0, 0.0)
+    assert tuple(hb.knockback_growth for hb in move.hitboxes) == (100.0, 100.0, 100.0)
+    assert tuple(hb.circle.r for hb in move.hitboxes) == (19, 13, 15)
+
+
 def test_nalio_dtilt_is_three_hitboxes():
     """Nalio's down-tilt is PM3.6 Mario's real 3-hitbox AttackLw3 (#132, on the
     #130 multi-hitbox engine) — not the single-hit approximation. All three are

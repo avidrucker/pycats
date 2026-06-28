@@ -18,19 +18,19 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame  # type: ignore
-from ..config import ATTACK_SIZE  # render-only: sizes the drawn hit-box rect
+from ..config import ATTACK_SIZE  # legacy single-hitbox visual size
 from ..combat.geometry import resolve_circle
 
 
 class Attack(pygame.sprite.Sprite):
-    """Simple rectangular hit-box that disappears after N frames, and that can either vanish on hit or persist visually.
+    """Hit-box sprite that disappears after N frames.
 
     Task 5: Attack carries absolute hitbox circles resolved from the move's
     Hitbox.circle(s) at spawn time using the owner's rect top-left as origin and
     their facing direction. The circles are fixed at spawn (Phase 0: static
     hitbox — they do not follow the owner once launched). combat.process_hits
     uses these circles for hit detection instead of the rect; the rect is kept
-    for rendering only, centred on the primary (first) circle.
+    for rendering only and bounds all resolved hitbox circles.
 
     #130: a move may have MORE THAN ONE hitbox. Pass ``hitboxes=<tuple>`` for the
     full set (priority order = tuple order); ``hitbox=<one>`` stays as a single-
@@ -41,7 +41,8 @@ class Attack(pygame.sprite.Sprite):
     unchanged.
     """
 
-    COLOR = (255, 60, 60, 180)  # semi-transparent red
+    COLOR = (255, 60, 60, 120)  # semi-transparent red fill
+    OUTLINE_COLOR = (255, 230, 120, 220)
 
     def __init__(
         self,
@@ -94,12 +95,29 @@ class Attack(pygame.sprite.Sprite):
         self.hit_cy: float = prim_cy
         self.hit_r: float = prim_r
 
-        # ---------- rendering rect (kept for visuals only) ----------
-        # Centre the rect on the primary resolved circle so the drawn box tracks
-        # the hitbox position, regardless of how it was constructed.
-        self.image = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
-        self.image.fill(self.COLOR)
-        self.rect = self.image.get_rect(center=(int(prim_cx), int(prim_cy)))
+        # ---------- rendering surface (kept for visuals only) ----------
+        if len(self.resolved) == 1:
+            # Preserve the legacy default-cat rect exactly; golden snapshots record
+            # attack sprite rects even though combat uses circles.
+            self.image = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
+            self.image.fill((255, 60, 60, 180))
+            self.rect = self.image.get_rect(center=(int(prim_cx), int(prim_cy)))
+        else:
+            min_x = min(cx - r for cx, _cy, r, _hb in self.resolved)
+            max_x = max(cx + r for cx, _cy, r, _hb in self.resolved)
+            min_y = min(cy - r for _cx, cy, r, _hb in self.resolved)
+            max_y = max(cy + r for _cx, cy, r, _hb in self.resolved)
+            pad = 2
+            left = int(min_x) - pad
+            top = int(min_y) - pad
+            width = max(1, int(max_x - min_x) + pad * 2)
+            height = max(1, int(max_y - min_y) + pad * 2)
+            self.image = pygame.Surface((width, height), pygame.SRCALPHA)
+            for cx, cy, r, _hb in self.resolved:
+                local = (round(cx - left), round(cy - top))
+                pygame.draw.circle(self.image, self.COLOR, local, round(r))
+                pygame.draw.circle(self.image, self.OUTLINE_COLOR, local, round(r), 2)
+            self.rect = self.image.get_rect(topleft=(left, top))
 
     # called every frame by sprite.Group.update()
     def update(self):
