@@ -30,6 +30,7 @@ New here (human or agent)? Start with these:
 
 - [CONTEXT.md](./CONTEXT.md) — domain vocabulary + the determinism/headless contract.
 - [docs/adr/](./docs/adr/) — architecture decision records (the *why* behind design calls).
+- [docs/project-m-parity.md](./docs/project-m-parity.md) — where pycats deliberately diverges from Project M.
 - [RULES.md](./RULES.md) — project conventions (labels, filing, closing work).
 
 ## Development / benchmarking
