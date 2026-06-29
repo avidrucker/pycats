@@ -72,6 +72,17 @@
   your (possibly stale) base. The claim-time guard cannot cover mid-session drift, and
   `pmtools status` does not surface it today (#171). (Cousin of "merged ≠ what your
   tree has" under *Closing work* and the stale-tracker caution.)
+- **Verify a delegated/audit finding in the code before filing or acting on it.** A
+  subagent's or audit's finding is a *lead, not a fact* — it reads with the authority
+  of prose but is one model's read of a few files under time pressure. Before turning
+  any reported "X is broken / unwired / mis-wired" into a ticket or an outward-facing
+  change, open the named `file:func` and confirm it. In #189 two reported follow-ups —
+  an "unwired" `StatechartScreenEngine` (actually wired behind a `PYCATS_SCREEN_BACKEND`
+  env toggle) and a "mis-keyed" Nalio d-tilt (actually resolved via a documented
+  `"attack"` fallback) — were both wrong on inspection; filing them would have
+  duplicated #100/#142 and committed false claims to the tracker. (Same spirit as the
+  reconcile-before-filing rule above and "surface the contradiction before an
+  outward-facing close" under *Fixing bugs*.)
 - **Lazy decomposition for research epics.** A multi-thread investigation gets
   ONE umbrella `research` tracker issue listing the threads; file each child
   thread **one at a time**, finishing it before filing the next sibling. This
