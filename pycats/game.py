@@ -540,8 +540,7 @@ while running:
         screen_manager.should_quit = False
         # Reset game state and transition to main menu
         reset_game()
-        screen_manager.fsm.state = "main_menu"
-        screen_manager._on_enter_main_menu(screen_manager.fsm, {})
+        screen_manager.reset_to_main_menu()
         continue
 
     current_state = screen_manager.get_state()

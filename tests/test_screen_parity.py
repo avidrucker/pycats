@@ -49,6 +49,44 @@ def test_screen_engine_transition_order_priority_both_backends():
         assert eng.state == "b", backend
 
 
+def test_screen_engine_on_enter_and_on_update_fire_both_backends():
+    """on_enter fires on entry to a state (not for the initial state); on_update
+    fires each step for the current (post-transition) state — identical to the
+    legacy FSM, in both backends."""
+    for backend in BACKENDS:
+        log = []
+        flags = {"go": False}
+        transitions = {"a": [("b", lambda ctx: flags["go"])], "b": []}
+        on_enter = {"a": lambda ctx: log.append("enter_a"),
+                    "b": lambda ctx: log.append("enter_b")}
+        on_update = {"a": lambda ctx: log.append("update_a"),
+                     "b": lambda ctx: log.append("update_b")}
+        eng = make_screen_engine(transitions, "a", backend=backend,
+                                 on_enter=on_enter, on_update=on_update)
+        # initial state must NOT fire on_enter
+        assert "enter_a" not in log, backend
+        eng.update(None)                       # stay in a (guard false)
+        assert log == ["update_a"], (backend, log)
+        flags["go"] = True
+        eng.update(None)                       # a -> b: enter_b then update_b
+        assert log == ["update_a", "enter_b", "update_b"], (backend, log)
+
+
+def test_screen_engine_force_jumps_and_fires_on_enter_both_backends():
+    """force(label) jumps straight to a state (non-guard-driven, e.g. ESC-hold
+    return-to-menu) and fires that state's on_enter, in both backends."""
+    for backend in BACKENDS:
+        log = []
+        transitions = {"playing": [], "main_menu": []}
+        on_enter = {"main_menu": lambda ctx: log.append("enter_mm")}
+        eng = make_screen_engine(transitions, "playing", backend=backend,
+                                 on_enter=on_enter)
+        assert eng.state == "playing", backend
+        eng.force("main_menu")
+        assert eng.state == "main_menu", backend
+        assert log == ["enter_mm"], (backend, log)
+
+
 def _screen_like_table(sig):
     """The real screen-flow graph shape (main_menu/options/char_select/playing/
     pause/win_screen), with guards driven by a single controllable signal `sig`."""

@@ -8,8 +8,9 @@ This module handles:
 """
 
 import math
+import os
 import pygame  # type: ignore
-from .systems.fsm import FSM, Transition
+from .systems.screen_engine import make_screen_engine
 from .main_menu import MainMenuManager
 from .char_select import CharacterSelector
 from .win_screen import WinScreenManager
@@ -48,50 +49,55 @@ class ScreenStateManager:
         #                            False = return to menu (from playing).
         self.esc_quit_to_menu = False
 
-        # FSM setup
-        self.fsm = FSM(
-            state="main_menu",
-            on_enter={
-                "main_menu": self._on_enter_main_menu,
-                "options": self._on_enter_options,
-                "char_select": self._on_enter_char_select,
-                "playing": self._on_enter_playing,
-                "pause": self._on_enter_pause,
-                "win_screen": self._on_enter_win_screen,
-            },
-            on_update={
-                "main_menu": self._update_main_menu,
-                "options": self._update_options,
-                "char_select": self._update_char_select,
-                "playing": self._update_playing,
-                "pause": self._update_pause,
-                "win_screen": self._update_win_screen,
-            },
-            table={
-                "main_menu": [
-                    Transition("char_select", self._guard_menu_to_char_select),
-                    Transition("options", self._guard_menu_to_options),
-                ],
-                "options": [
-                    Transition("main_menu", self._guard_options_to_main_menu),
-                ],
-                "char_select": [
-                    Transition("playing", self._guard_char_select_to_playing),
-                    Transition("main_menu", self._guard_char_select_to_main_menu),
-                ],
-                "playing": [
-                    Transition("pause", self._guard_playing_to_pause),
-                    Transition("win_screen", self._guard_playing_to_win_screen),
-                ],
-                "pause": [
-                    Transition("playing", self._guard_pause_to_playing),
-                    Transition("win_screen", self._guard_pause_to_stats),
-                    Transition("main_menu", self._guard_pause_to_main_menu),
-                ],
-                "win_screen": [
-                    Transition("char_select", self._guard_win_screen_to_char_select),
-                ],
-            },
+        # Screen-flow engine (epic #100). Default legacy (the hand-rolled FSM);
+        # PYCATS_SCREEN_BACKEND=statechart opts into the statecharts-py twin. The
+        # transition spec + on_enter/on_update are backend-agnostic; guards/handlers
+        # now take (ctx) (the fsm arg was vestigial). See systems/screen_engine.py.
+        transitions = {
+            "main_menu": [
+                ("char_select", self._guard_menu_to_char_select),
+                ("options", self._guard_menu_to_options),
+            ],
+            "options": [
+                ("main_menu", self._guard_options_to_main_menu),
+            ],
+            "char_select": [
+                ("playing", self._guard_char_select_to_playing),
+                ("main_menu", self._guard_char_select_to_main_menu),
+            ],
+            "playing": [
+                ("pause", self._guard_playing_to_pause),
+                ("win_screen", self._guard_playing_to_win_screen),
+            ],
+            "pause": [
+                ("playing", self._guard_pause_to_playing),
+                ("win_screen", self._guard_pause_to_stats),
+                ("main_menu", self._guard_pause_to_main_menu),
+            ],
+            "win_screen": [
+                ("char_select", self._guard_win_screen_to_char_select),
+            ],
+        }
+        on_enter = {
+            "main_menu": self._on_enter_main_menu,
+            "options": self._on_enter_options,
+            "char_select": self._on_enter_char_select,
+            "playing": self._on_enter_playing,
+            "pause": self._on_enter_pause,
+            "win_screen": self._on_enter_win_screen,
+        }
+        on_update = {
+            "main_menu": self._update_main_menu,
+            "options": self._update_options,
+            "char_select": self._update_char_select,
+            "playing": self._update_playing,
+            "pause": self._update_pause,
+            "win_screen": self._update_win_screen,
+        }
+        backend = os.environ.get("PYCATS_SCREEN_BACKEND", "legacy")
+        self.engine = make_screen_engine(
+            transitions, "main_menu", backend=backend,
+            on_enter=on_enter, on_update=on_update,
         )
 
         # Game state data
@@ -101,20 +107,20 @@ class ScreenStateManager:
 
     def update(self, frame_input):
         """Update the screen state manager."""
-        # Update the FSM with input context
-        self.fsm.update({"frame_input": frame_input, "screen_manager": self})
+        # Update the screen engine with input context
+        self.engine.update({"frame_input": frame_input, "screen_manager": self})
 
     def render(self, surface):
         """Render the current screen."""
-        if self.fsm.state == "main_menu":
+        if self.engine.state == "main_menu":
             self.main_menu.render(surface)
-        elif self.fsm.state == "options":
+        elif self.engine.state == "options":
             self.options_menu.render(surface)
-        elif self.fsm.state == "char_select":
+        elif self.engine.state == "char_select":
             self.char_selector.render(surface)
-        elif self.fsm.state == "win_screen":
+        elif self.engine.state == "win_screen":
             self.win_screen_manager.render(surface)
-        elif self.fsm.state == "pause":
+        elif self.engine.state == "pause":
             # Pause menu rendering is handled by the main game loop
             pass
         # Note: "playing" state is handled by the main game loop
@@ -122,7 +128,13 @@ class ScreenStateManager:
 
     def get_state(self):
         """Get the current state."""
-        return self.fsm.state
+        return self.engine.state
+
+    def reset_to_main_menu(self):
+        """Force a return to the main menu (ESC-hold-to-menu from playing). Jumps
+        the engine to ``main_menu`` and runs its on_enter — the engine-backed
+        replacement for the old direct ``fsm.state = 'main_menu'`` + on_enter call."""
+        self.engine.force("main_menu")
 
     def set_winner(self, winner, loser):
         """Set the winner data for win screen."""
@@ -151,21 +163,21 @@ class ScreenStateManager:
         """Check if the game should be reset (when returning from win screen)."""
         # Check if we just transitioned from win screen to char select
         return (
-            self.fsm.state == "char_select"
+            self.engine.state == "char_select"
             and self.winner is None
             and self.loser is None
         )
 
     # FSM State Enter Handlers
-    def _on_enter_main_menu(self, fsm, ctx):
+    def _on_enter_main_menu(self, ctx):
         """Called when entering main menu state."""
         self.main_menu.reset()
 
-    def _on_enter_options(self, fsm, ctx):
+    def _on_enter_options(self, ctx):
         """Called when entering the Options sub-menu state."""
         self.options_menu.reset()
 
-    def _on_enter_char_select(self, fsm, ctx):
+    def _on_enter_char_select(self, ctx):
         """Called when entering character select state."""
         # Reset character selector if coming from main menu
         if hasattr(self.char_selector, "reset"):
@@ -174,17 +186,17 @@ class ScreenStateManager:
         self.esc_quit_timer = 0
         self.esc_quit_to_menu = False
 
-    def _on_enter_playing(self, fsm, ctx):
+    def _on_enter_playing(self, ctx):
         """Called when entering playing state."""
         self.esc_quit_timer = 0
         self.esc_quit_to_menu = False
 
-    def _on_enter_pause(self, fsm, ctx):
+    def _on_enter_pause(self, ctx):
         """Called when entering pause state."""
         # Reset pause menu state
         self.pause_menu.reset()
 
-    def _on_enter_win_screen(self, fsm, ctx):
+    def _on_enter_win_screen(self, ctx):
         """Called when entering win screen state."""
         if self.winner and self.loser:
             # Normal win condition
@@ -197,18 +209,18 @@ class ScreenStateManager:
             # This will be handled by the game loop providing the current players
 
     # FSM State Update Handlers
-    def _update_main_menu(self, fsm, ctx):
+    def _update_main_menu(self, ctx):
         """Update main menu state."""
         frame_input = ctx["frame_input"]
         self.main_menu.update(frame_input.pressed)
         self._tick_esc_quit_timer(frame_input)
 
-    def _update_options(self, fsm, ctx):
+    def _update_options(self, ctx):
         """Update the Options sub-menu state."""
         frame_input = ctx["frame_input"]
         self.options_menu.update(frame_input.pressed)
 
-    def _update_char_select(self, fsm, ctx):
+    def _update_char_select(self, ctx):
         """Update character select state."""
         frame_input = ctx["frame_input"]
         self.char_selector.update(frame_input.held, frame_input.pressed)
@@ -222,17 +234,17 @@ class ScreenStateManager:
         else:
             self.back_timer = 0
 
-    def _update_playing(self, fsm, ctx):
+    def _update_playing(self, ctx):
         """Update playing state."""
         frame_input = ctx["frame_input"]
         self._tick_esc_quit_timer(frame_input)
 
-    def _update_pause(self, fsm, ctx):
+    def _update_pause(self, ctx):
         """Update pause state."""
         frame_input = ctx["frame_input"]
         self.pause_menu.update(frame_input.pressed)
 
-    def _update_win_screen(self, fsm, ctx):
+    def _update_win_screen(self, ctx):
         """Update win screen state."""
         frame_input = ctx["frame_input"]
         self.win_screen_manager.update(frame_input.pressed)
@@ -292,7 +304,7 @@ class ScreenStateManager:
             self.esc_quit_timer += 1
             if self.esc_quit_timer >= self.esc_quit_hold_frames:
                 # Context-aware: playing -> quit-to-menu, anything else -> exit app
-                if self.fsm.state == "playing":
+                if self.engine.state == "playing":
                     self.esc_quit_to_menu = True
                 else:
                     self.should_quit = True
@@ -301,7 +313,7 @@ class ScreenStateManager:
             self.esc_quit_timer = 0
 
     # FSM Guard Functions
-    def _guard_menu_to_char_select(self, fsm, ctx):
+    def _guard_menu_to_char_select(self, ctx):
         """Check if should transition from main menu to character select."""
         if (
             hasattr(self.main_menu, "action_requested")
@@ -318,7 +330,7 @@ class ScreenStateManager:
             return False
         return False
 
-    def _guard_menu_to_options(self, fsm, ctx):
+    def _guard_menu_to_options(self, ctx):
         """Enter the Options sub-menu when the main menu requests it."""
         if (
             hasattr(self.main_menu, "action_requested")
@@ -328,7 +340,7 @@ class ScreenStateManager:
             return True
         return False
 
-    def _guard_options_to_main_menu(self, fsm, ctx):
+    def _guard_options_to_main_menu(self, ctx):
         """Return to the main menu when the Options sub-menu backs out."""
         if (
             hasattr(self.options_menu, "action_requested")
@@ -338,7 +350,7 @@ class ScreenStateManager:
             return True
         return False
 
-    def _guard_char_select_to_playing(self, fsm, ctx):
+    def _guard_char_select_to_playing(self, ctx):
         """Check if should transition from character select to playing."""
         frame_input = ctx["frame_input"]
         return (
@@ -346,17 +358,17 @@ class ScreenStateManager:
             and self.char_selector.ready_to_start(frame_input.pressed)
         )
 
-    def _guard_char_select_to_main_menu(self, fsm, ctx):
+    def _guard_char_select_to_main_menu(self, ctx):
         """Check if should go back to main menu from character select."""
         return self.back_timer >= self.back_hold_frames
 
-    def _guard_playing_to_pause(self, fsm, ctx):
+    def _guard_playing_to_pause(self, ctx):
         """Check if should transition from playing to pause."""
         frame_input = ctx["frame_input"]
         # Check if P key is pressed
         return pygame.K_p in frame_input.pressed
 
-    def _guard_pause_to_playing(self, fsm, ctx):
+    def _guard_pause_to_playing(self, ctx):
         """Check if should transition from pause to playing."""
         # Check if pause menu has a resume action (only through menu selection now)
         if (
@@ -368,7 +380,7 @@ class ScreenStateManager:
             return True
         return False
 
-    def _guard_pause_to_stats(self, fsm, ctx):
+    def _guard_pause_to_stats(self, ctx):
         """Check if should transition from pause to stats (win screen for stats)."""
         if (
             hasattr(self.pause_menu, "action_requested")
@@ -381,7 +393,7 @@ class ScreenStateManager:
             return True
         return False
 
-    def _guard_pause_to_main_menu(self, fsm, ctx):
+    def _guard_pause_to_main_menu(self, ctx):
         """Check if should transition from pause to main menu."""
         if (
             hasattr(self.pause_menu, "action_requested")
@@ -395,11 +407,11 @@ class ScreenStateManager:
             return True
         return False
 
-    def _guard_playing_to_win_screen(self, fsm, ctx):
+    def _guard_playing_to_win_screen(self, ctx):
         """Check if should transition from playing to win screen."""
         return self.winner is not None and self.loser is not None
 
-    def _guard_win_screen_to_char_select(self, fsm, ctx):
+    def _guard_win_screen_to_char_select(self, ctx):
         """Check if should transition from win screen to character select."""
         if self.win_screen_manager.ready_to_return():
             # Reset game state when transitioning back

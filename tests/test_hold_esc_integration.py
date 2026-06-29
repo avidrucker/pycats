@@ -32,7 +32,7 @@ def make_sm(state="main_menu"):
     sm.esc_quit_to_menu = False
     sm.esc_quit_timer = 0
     sm.esc_quit_hold_frames = 120
-    sm.fsm = type('FSM', (), {'state': state})()
+    sm.engine = type('Engine', (), {'state': state})()
     return sm
 
 
