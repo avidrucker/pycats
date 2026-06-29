@@ -99,7 +99,7 @@ Status: ✅ written · ⬜ planned ([epic #147](https://github.com/avidrucker/py
 | [`ledge-mechanics.md`](./ledge-mechanics.md) | Ledge grab/hang, getup, invincibility, edgeguarding, teching | ✅ |
 | [`character-data-and-archetypes.md`](./character-data-and-archetypes.md) | Per-character attributes, geometry, frame-data structure, roster/archetypes | ✅ |
 | [`moveset-and-frame-data.md`](./moveset-and-frame-data.md) | Move taxonomy + per-move frame-data fields, charge moves, projectiles | ✅ |
-| `stages-and-environment.md` | Stages, platform types, blast zones, ledges, camera | ⬜ |
+| [`stages-and-environment.md`](./stages-and-environment.md) | Stages, platform types, blast zones, ledges, camera | ✅ |
 | `menus-and-game-flow.md` | CSS, stage select, ruleset/match settings, results, options | ⬜ |
 | `items.md` | PM item set + behaviour (low priority; pycats has no items) | ⬜ |
 
