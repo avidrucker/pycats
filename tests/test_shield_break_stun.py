@@ -5,9 +5,8 @@ inputs for a damage-scaled duration, matching Project M / Melee. Three concerns:
 
 1. Duration formula (combat.shield.shield_break_stun_frames) — Melee/PM
    `(400 - p) + 90` frames, clamped [90, 490], DECREASING with damage.
-2. State wiring — the (previously dormant) `stun` state is now reachable, from
-   `shield`, in BOTH engine backends (legacy FSM + statechart), and exits to
-   idle/fall when the timer expires.
+2. State wiring — the (previously dormant) `stun` state is reachable from
+   `shield` and exits to idle/fall when the timer expires.
 3. Input lock — while stunned, held inputs neither move nor act on the fighter.
 """
 import pygame as pg
@@ -22,9 +21,9 @@ P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
           attack=pg.K_v, special=pg.K_c, shield=pg.K_x)
 
 
-def _mk_player(backend):
+def _mk_player():
     return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True, state_backend=backend)
+                  char_name="P1", facing_right=True)
 
 
 # ----------------------------------------------------------------- 1. formula
@@ -43,30 +42,29 @@ def test_formula_is_clamped_and_monotonic_decreasing():
     assert seq == sorted(seq, reverse=True)
 
 
-# ------------------------------------------------------ 2. state wiring (both)
+# ------------------------------------------------------------ 2. state wiring
 def test_shield_break_sets_timer_from_formula():
-    p = _mk_player("statechart")
+    p = _mk_player()
     p.fighter.percent = 100
     p.fighter._start_stun()
     assert p.fighter.stun_timer == shield_break_stun_frames(100) == 390
 
 
-def test_shield_to_stun_entry_and_exit_both_backends():
-    for backend in ("legacy", "statechart"):
-        p = _mk_player(backend)
-        # get into the shield state first
-        p.fighter.on_ground = True
-        p.fighter.shield_attempting = True
-        p.engine.tick(None)
-        assert p.state == "shield", (backend, p.state)
-        # shield breaks -> stun_timer set; next tick must enter `stun`
-        p.fighter.stun_timer = 30
-        p.engine.tick(None)
-        assert p.state == "stun", (backend, p.state)
-        # timer runs down; on_ground -> idle when it expires
-        p.fighter.stun_timer = 0
-        p.engine.tick(None)
-        assert p.state == "idle", (backend, p.state)
+def test_shield_to_stun_entry_and_exit():
+    p = _mk_player()
+    # get into the shield state first
+    p.fighter.on_ground = True
+    p.fighter.shield_attempting = True
+    p.engine.tick(None)
+    assert p.state == "shield", p.state
+    # shield breaks -> stun_timer set; next tick must enter `stun`
+    p.fighter.stun_timer = 30
+    p.engine.tick(None)
+    assert p.state == "stun", p.state
+    # timer runs down; on_ground -> idle when it expires
+    p.fighter.stun_timer = 0
+    p.engine.tick(None)
+    assert p.state == "idle", p.state
 
 
 # ------------------------------------------------------- 4. dizzy animation
@@ -81,7 +79,7 @@ def _nonblack_pixel_count(surf, bg=(0, 0, 0)):
 
 def test_draw_dizzy_stars_only_when_stunned():
     from pycats.render_battle import draw_dizzy_stars
-    p = _mk_player("statechart")
+    p = _mk_player()
     p.rect.topleft = (60, 60)   # leave room above the head on the surface
 
     blank = pg.Surface((160, 160)); blank.fill((0, 0, 0))
@@ -97,7 +95,7 @@ def test_draw_dizzy_stars_only_when_stunned():
 
 def test_draw_dizzy_stars_animate_between_frames():
     from pycats.render_battle import draw_dizzy_stars
-    p = _mk_player("statechart")
+    p = _mk_player()
     p.rect.topleft = (60, 60)
 
     def _frame(timer):
@@ -116,18 +114,18 @@ def test_render_battle_invokes_dizzy_for_stunned_player(monkeypatch):
     monkeypatch.setattr(rb, "draw_dizzy_stars", lambda surf, p: calls.append(p.fighter.stun_timer))
     surf = pg.Surface((400, 300))
 
-    calm = _mk_player("statechart"); calm.fighter.stun_timer = 0
+    calm = _mk_player(); calm.fighter.stun_timer = 0
     rb.render_battle(surf, [calm], pg.sprite.Group())
     assert calls == [], "dizzy drawn for a non-stunned fighter"
 
-    dizzy = _mk_player("statechart"); dizzy.fighter.stun_timer = 200
+    dizzy = _mk_player(); dizzy.fighter.stun_timer = 200
     rb.render_battle(surf, [dizzy], pg.sprite.Group())
     assert calls == [200], "render_battle did not draw dizzy for a stunned fighter"
 
 
 # ------------------------------------------------------------- 5. input lock
 def test_all_inputs_locked_while_stunned():
-    p = _mk_player("statechart")
+    p = _mk_player()
     plats = pg.sprite.Group(Platform(pg.Rect(0, 160, 400, 40), thin=False))
     # settle on ground
     noop = InputFrame(held=set(), pressed=set(), released=set())

@@ -6,7 +6,7 @@ new dependency, per #94) and **present-layer only**: the deterministic sim and
 golden tests never read it — game.py is the sole caller (a leaf entry), so this
 stays out of the sim path.
 
-Env overrides (mirroring PYCATS_STATE_BACKEND):
+Env overrides (PYCATS_* convention):
 - PYCATS_CONFIG_DIR — redirect the config dir (tests point this at a tmp_path).
 - PYCATS_NO_PERSIST=1 — disable all I/O (load returns defaults, save is a no-op).
 

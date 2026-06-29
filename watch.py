@@ -1,7 +1,7 @@
 # watch.py
 """Watch or record a deterministic battle replay.
-  python watch.py                                      # scripted replay, live window (statechart default)
-  python watch.py --backend legacy --video out.mp4     # frozen classic baseline, write video
+  python watch.py                                      # scripted replay, live window
+  python watch.py --video out.mp4                      # ...write video instead
   python watch.py --match                               # full battle to defeat (chase bot)
   python watch.py --match --video full_battle.mp4      # ...recorded to video
 """
@@ -49,7 +49,6 @@ def resolve_battle_plan(vs, match, frames):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--backend", choices=["legacy", "statechart"], default="statechart")
     ap.add_argument("--frames", type=int, default=None,
                     help="frame-cap override; defaults per mode (scripted 300, "
                          "--vs 1800 ≈ 30s, --match 6000). --match ignores this.")
@@ -91,7 +90,7 @@ def main():
     # A --vs demo runs up to 30s or until a 3-stock KO-out, whichever first (#61).
     frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
     try:
-        run_battle(backend=args.backend, frames=frames, presenter=presenter,
+        run_battle(frames=frames, presenter=presenter,
                    controller=controller, controllers=controllers,
                    stop_on_match_over=stop_on_match_over)
     except KeyboardInterrupt:

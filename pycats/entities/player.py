@@ -65,7 +65,7 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(
         self, x, y, controls: dict, color, eye_color, char_name, facing_right=True,
-        state_backend: str = "legacy", fighter_data=None,
+        fighter_data=None,
     ):
         super().__init__()
 
@@ -115,8 +115,8 @@ class Player(pygame.sprite.Sprite):
         # Input → action translator (jump/dodge/shield/attack/move); #73.
         self._input = FighterInput(self)
 
-        # Action-state engine (legacy FSM or statechart; legacy by default)
-        self.engine = make_state_engine(self, state_backend)
+        # Action-state engine (statechart; the sole backend per ADR-0002).
+        self.engine = make_state_engine(self)
 
         # Tail. facing_right/rect are Fighter-owned and set above, so the tail's
         # initial layout is correct.
@@ -132,23 +132,23 @@ class Player(pygame.sprite.Sprite):
     @property
     def defensive_status(self) -> str:
         """Defensive-status label, computed directly from the authoritative
-        invulnerability flag (backend-agnostic; the statechart engine mirrors
-        this same flag in its orthogonal defensive_status region)."""
+        invulnerability flag (computed without the engine; the statechart engine
+        mirrors this same flag in its orthogonal defensive_status region)."""
         return "intangible" if self.fighter.invulnerable else "vulnerable"
 
     def force_prone(self, frames: int) -> None:
         """Force the fighter into the prone/knockdown state for `frames` getup
         frames (#13). Force-entry only for now (the landing-velocity trigger is
         #145); the only self-initiated action out of prone is standing up, which
-        happens when prone_timer counts to 0. Drives both engine backends via the
-        same force() seam as force_ko / force_idle."""
+        happens when prone_timer counts to 0. Drives the engine via the same
+        force() seam as force_ko / force_idle."""
         self.fighter.prone_timer = max(0, int(frames))
         self.engine.force("prone")
 
     # ---- move-progress, delegated to MoveClock (#71) ----
-    # These three are read by the legacy FSM, the statechart (fighter_chart),
-    # and the runner snapshot; keeping the legacy names/values means no consumer
-    # changes and parity stays byte-identical.
+    # These three are read by the statechart (fighter_chart) and the runner
+    # snapshot; keeping the historical names/values means no consumer changes and
+    # the golden stays byte-identical.
     @property
     def attack_timer(self) -> int:
         """Frames remaining in the current move (0 when idle)."""
@@ -239,7 +239,7 @@ class Player(pygame.sprite.Sprite):
         # the shield_attempting flag, which is set later this frame) so the
         # shield/crouch split is order-independent. The state machine reacts to
         # this flag; _apply_crouch_geometry resizes the body from the resulting
-        # state label (so both engine backends stay byte-identical).
+        # state label (so the geometry stays byte-identical to the golden).
         self.fighter.crouch_attempting = (
             self._pressed(held, "down")
             and not self._pressed(held, "shield")
@@ -302,9 +302,9 @@ class Player(pygame.sprite.Sprite):
         # active window opens. The clock owns move_frame/current_move and clears
         # itself on completion (current_move -> None, attack_timer -> 0). Then
         # latch done_attacking when the move finishes while still in the attack
-        # state — verbatim legacy semantics (attack_timer is now
-        # self._clock.remaining), so both backends classify/exit on the same
-        # frame. The active window is startup < move_frame <= startup + active;
+        # state — verbatim historical semantics (attack_timer is now
+        # self._clock.remaining), so the move classifies/exits on the same frame
+        # (golden-stable). The active window is startup < move_frame <= startup + active;
         # the hitbox lives for `active` frames.
         tick = self._clock.tick()
         if tick.spawn is not None:
@@ -323,8 +323,8 @@ class Player(pygame.sprite.Sprite):
         # FSM state transitions -----------------------------------
         self.engine.tick(None)
 
-        # Crouch body resize (#124): derived from the final state label so both
-        # engine backends produce byte-identical geometry.
+        # Crouch body resize (#124): derived from the final state label so the
+        # geometry stays byte-identical (golden-stable).
         self._apply_crouch_geometry()
 
     def _apply_crouch_geometry(self):
@@ -333,8 +333,8 @@ class Player(pygame.sprite.Sprite):
         Crouching shrinks the collision box to the per-cat ``crouch_size``
         (anchored at midbottom so the feet stay put); standing restores
         ``stand_size``. No-op for cats without crouch data. Keyed off
-        ``self.state`` (not the input) so legacy and statechart backends, which
-        compute the same label, resize identically — preserving parity."""
+        ``self.state`` (not the input) so the resize follows the engine's
+        computed label — preserving the golden."""
         f = self.fighter
         if f.crouch_size is None:
             return

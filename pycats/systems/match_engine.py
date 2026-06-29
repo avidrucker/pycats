@@ -37,7 +37,6 @@ class StatechartMatchEngine:
                 self.winner = w
 
 
-def make_match_engine(players, backend: str = "statechart"):
-    # Statechart is the only backend (ADR-0002, #178). ``backend`` is retained
-    # for signature stability; collapsing it is slice 3 (#168).
+def make_match_engine(players):
+    # Statechart is the only backend (ADR-0002, #178/#183).
     return StatechartMatchEngine(players)

@@ -31,9 +31,9 @@ def _floor():
 
 def _two_players():
     p1 = Player(0, 0, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                char_name="P1", facing_right=True, state_backend="statechart")
+                char_name="P1", facing_right=True)
     p2 = Player(0, 0, P2, (160, 160, 160), eye_color=(0, 0, 0),
-                char_name="P2", facing_right=False, state_backend="statechart")
+                char_name="P2", facing_right=False)
     return p1, p2
 
 

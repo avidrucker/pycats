@@ -1,7 +1,7 @@
 # pycats/sim/runner.py
 """Headless deterministic battle runner. Drives the exact real per-frame loop
-(game.py:702-709) from a scripted input timeline, with a swappable state-engine
-backend, producing per-frame snapshots for parity checks and benchmarking."""
+(game.py:702-709) from a scripted input timeline through the statechart engine,
+producing per-frame snapshots for golden checks and benchmarking."""
 from __future__ import annotations
 
 import os
@@ -45,15 +45,13 @@ def build_stage():
     ]
 
 
-def build_players(backend="statechart"):
+def build_players():
     c1 = CAT_CHARACTERS["calico"]
     c2 = CAT_CHARACTERS["tabby"]
     p1 = Player(PLAYER1_START_X, PLAYER1_START_Y, P1_KEYS, c1["color"],
-                eye_color=c1["eye_color"], char_name="P1", facing_right=True,
-                state_backend=backend)
+                eye_color=c1["eye_color"], char_name="P1", facing_right=True)
     p2 = Player(PLAYER2_START_X, PLAYER2_START_Y, P2_KEYS, c2["color"],
-                eye_color=c2["eye_color"], char_name="P2", facing_right=False,
-                state_backend=backend)
+                eye_color=c2["eye_color"], char_name="P2", facing_right=False)
     p1.stripe_color = c1["stripe_color"]
     p2.stripe_color = c2["stripe_color"]
     return p1, p2, pygame.sprite.Group(p1, p2)
@@ -80,7 +78,7 @@ def snapshot(players, attacks, match):
     return (tuple(parts), atk, match.phase, match.winner)
 
 
-def run_battle(backend="statechart", frames=None, frame_inputs=None, presenter=None,
+def run_battle(frames=None, frame_inputs=None, presenter=None,
                controller=None, stop_on_match_over=False, controllers=None):
     """Run the headless battle.
 
@@ -105,9 +103,9 @@ def run_battle(backend="statechart", frames=None, frame_inputs=None, presenter=N
         frames = len(frame_inputs) if frame_inputs is not None else 0
 
     platforms = build_stage()
-    p1, p2, players = build_players(backend)
+    p1, p2, players = build_players()
     attacks = pygame.sprite.Group()
-    match = make_match_engine([p1, p2], backend)
+    match = make_match_engine([p1, p2])
 
     snaps = []
     for f in range(frames):

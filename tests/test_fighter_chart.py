@@ -9,20 +9,20 @@ P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
 
 
-def _mk_player(backend):
+def _mk_player():
     return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True, state_backend=backend)
+                  char_name="P1", facing_right=True)
 
 
 def test_initial_state_idle():
-    p = _mk_player("statechart")
+    p = _mk_player()
     assert isinstance(p.engine, StatechartEngine)
     assert p.state == "idle"
 
 
 def test_idle_to_run_on_velocity():
     # idle -> run requires vel.x != 0 and on_ground
-    p = _mk_player("statechart")
+    p = _mk_player()
     p.fighter.vel.x = 5
     p.fighter.on_ground = True
     p.engine.tick(None)
@@ -32,7 +32,7 @@ def test_idle_to_run_on_velocity():
 def test_single_hop_per_tick():
     # From idle mid-attack (move clock live -> attack_timer > 0), first tick ->
     # attack (not multi-hop onward).
-    p = _mk_player("statechart")
+    p = _mk_player()
     p._clock.start(p.fighter_data.moves["attack"])
     assert p.attack_timer > 0
     p.engine.tick(None)
@@ -40,7 +40,7 @@ def test_single_hop_per_tick():
 
 
 def test_force_ko_and_recover():
-    p = _mk_player("statechart")
+    p = _mk_player()
     p.engine.force("ko")
     assert p.state == "ko"
     # ko -> idle requires is_alive on next tick
@@ -51,7 +51,7 @@ def test_force_ko_and_recover():
 
 def test_in_state_nested_and_container_ids():
     # in_state is True for the active leaf AND its compound/parallel ancestors.
-    p = _mk_player("statechart")
+    p = _mk_player()
     sess = p.engine._session
     for sid in ("root", "action", "actionable", "grounded", "idle"):
         assert sess.in_state(sid), sid
@@ -62,7 +62,7 @@ def test_in_state_nested_and_container_ids():
 
 def test_both_regions_active_simultaneously():
     # The parallel root enters both regions: an action leaf + a defensive leaf.
-    p = _mk_player("statechart")
+    p = _mk_player()
     cfg = p.engine._session.configuration
     # action region leaf present
     assert "idle" in cfg
@@ -73,7 +73,7 @@ def test_both_regions_active_simultaneously():
 
 
 def test_defensive_status_tracks_invulnerable():
-    p = _mk_player("statechart")
+    p = _mk_player()
     assert p.engine.defensive_status == "vulnerable"
     assert p.defensive_status == "vulnerable"
     # vulnerable -> intangible when p.invulnerable, on tick.
@@ -92,7 +92,7 @@ def test_defensive_status_tracks_invulnerable():
 def test_player_defensive_status_is_direct_from_flag():
     # Player.defensive_status is computed from the flag (engine-agnostic),
     # without ticking.
-    p = _mk_player("statechart")
+    p = _mk_player()
     assert p.defensive_status == "vulnerable"
     p.fighter.invulnerable = True
     assert p.defensive_status == "intangible"
@@ -112,7 +112,7 @@ def test_reaches_expected_state_across_scenarios():
         (dict(dodge_timer=5), "dodge"),
     ]
     for sc, expected in scenarios:
-        p = _mk_player("statechart")
+        p = _mk_player()
         vx, vy = sc.get("vel", (0, 0))
         p.fighter.vel.x, p.fighter.vel.y = vx, vy
         p.fighter.on_ground = sc.get("on_ground", False)
@@ -130,7 +130,7 @@ def test_reaches_expected_state_across_scenarios():
 def test_run_to_idle_and_ko():
     # Multi-step paths exercising leaf-specific (non-hoisted) transitions and
     # the hoisted force_ko on the action parent.
-    p = _mk_player("statechart")
+    p = _mk_player()
     p.fighter.vel.x, p.fighter.on_ground = 5, True
     p.engine.tick(None)
     assert p.state == "run"

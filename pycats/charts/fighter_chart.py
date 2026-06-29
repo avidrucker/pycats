@@ -149,11 +149,11 @@ def build_fighter_chart(p):
     # The active window is therefore startup < move_frame <= startup+active,
     # identical to where the player spawns the hitbox.
     #
-    # The EXIT (-> idle / -> fall) stays on p.fighter.done_attacking, exactly as the
-    # legacy FSM. It is placed on each phase leaf (first, so it has priority and
-    # can fire from whichever phase is active when attack_timer hits 0). Because
-    # the total move duration == startup+active+recovery == attack_timer, the
-    # exit fires on the same frame for both backends, preserving parity.
+    # The EXIT (-> idle / -> fall) stays on p.fighter.done_attacking. It is placed
+    # on each phase leaf (first, so it has priority and can fire from whichever
+    # phase is active when attack_timer hits 0). Because the total move duration
+    # == startup+active+recovery == attack_timer, the exit fires on the frame
+    # attack_timer hits 0, preserving the golden.
     #
     # Each guard reading current_move first checks for None to avoid
     # AttributeError when no move is live.

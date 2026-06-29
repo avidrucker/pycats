@@ -27,7 +27,7 @@ TWO_NPC_FRAMES = 600
 
 def test_golden_default():
     """200-frame default timeline produces a stable golden snapshot."""
-    snaps = run_battle(backend="statechart", frames=DEFAULT_FRAMES)
+    snaps = run_battle(frames=DEFAULT_FRAMES)
     assert len(snaps) == DEFAULT_FRAMES
     check_or_update("default", snaps)
 
@@ -36,7 +36,7 @@ def test_golden_combat():
     """COMBAT_SCRIPT + tail: hurt and ko states must be reached; stable golden."""
     frame_inputs = compile_timeline(COMBAT_SCRIPT, KEYMAPS)
     frames = len(frame_inputs) + COMBAT_TAIL
-    snaps = run_battle(backend="statechart", frames=frames, frame_inputs=frame_inputs)
+    snaps = run_battle(frames=frames, frame_inputs=frame_inputs)
     assert len(snaps) == frames
 
     # verify hurt and ko are exercised (emergent assertion)
@@ -53,7 +53,7 @@ def _capture_full_match_inputs():
     # stay reproducible (Chase doesn't draw rng today, but make the seam explicit
     # — this is the most RNG-exposed golden).
     ctrl = ChaseController(attacker_num=1, rng=random.Random(0))
-    run_battle("statechart", frames=6000, controller=ctrl, stop_on_match_over=True)
+    run_battle(frames=6000, controller=ctrl, stop_on_match_over=True)
     return ctrl.emitted
 
 
@@ -66,7 +66,7 @@ def test_golden_full_match():
     """
     frame_inputs = _capture_full_match_inputs()
     n = len(frame_inputs)
-    snaps = run_battle(backend="statechart", frames=n, frame_inputs=frame_inputs)
+    snaps = run_battle(frames=n, frame_inputs=frame_inputs)
 
     # emergent assertion: the hurt -> ko arc is exercised and P2 loses a stock
     # (full 3-stock drain deferred to #46 — see docstring).
@@ -86,7 +86,7 @@ def test_golden_two_npc():
     # rng today, so the snapshot is unchanged — this makes the contract explicit).
     a = AttackerController(attacker_num=1, rng=random.Random(0))
     f = FollowerController(attacker_num=2, rng=random.Random(0))
-    snaps = run_battle(backend="statechart", frames=TWO_NPC_FRAMES, controllers=(a, f))
+    snaps = run_battle(frames=TWO_NPC_FRAMES, controllers=(a, f))
     assert len(snaps) == TWO_NPC_FRAMES
 
     # emergent: both players are actually driven (pre-contact window, input-only)

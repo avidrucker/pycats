@@ -3,18 +3,13 @@ from pycats.sim.runner import run_battle
 
 
 def test_runner_is_deterministic():
-    a = run_battle(backend="legacy", frames=120)
-    b = run_battle(backend="legacy", frames=120)
+    a = run_battle(frames=120)
+    b = run_battle(frames=120)
     assert a == b
 
 
 def test_runner_produces_one_snapshot_per_frame():
-    snaps = run_battle(backend="legacy", frames=80)
-    assert len(snaps) == 80
-
-
-def test_runner_runs_statechart_backend():
-    snaps = run_battle(backend="statechart", frames=80)
+    snaps = run_battle(frames=80)
     assert len(snaps) == 80
 
 
@@ -22,7 +17,7 @@ def test_runner_runs_statechart_backend():
 
 def test_snapshot_player_tuple_ends_with_defensive_status_and_move_frame():
     """Per-player tuple must end with defensive_status (str) and move_frame (int)."""
-    snaps = run_battle(backend="legacy", frames=10)
+    snaps = run_battle(frames=10)
     players, _atk, _phase, _winner = snaps[0]
     for p in players:
         # last two fields: defensive_status (str), move_frame (int)
@@ -45,7 +40,7 @@ def test_snapshot_attack_tuple_ends_with_hitbox_circle():
     from pycats.sim.runner import KEYMAPS
     frame_inputs = compile_timeline(COMBAT_SCRIPT, KEYMAPS)
     # Run enough frames that attacks actually appear
-    snaps = run_battle(backend="legacy", frames=len(frame_inputs), frame_inputs=frame_inputs)
+    snaps = run_battle(frames=len(frame_inputs), frame_inputs=frame_inputs)
     # Find a snap where an attack is active
     attack_snap = None
     for s in snaps:
@@ -65,11 +60,10 @@ def test_snapshot_attack_tuple_ends_with_hitbox_circle():
         assert hit_r > 0, f"hit_r should be positive, got {hit_r}"
 
 
-def test_default_backend_is_statechart():
-    """run_battle() with no backend arg must use statechart (deterministic)."""
-    a = run_battle(frames=120)
-    b = run_battle(frames=120)
-    assert a == b, "default-backend run_battle() is not deterministic"
-    # Must match explicit statechart run on same frames
-    c = run_battle(backend="statechart", frames=120)
-    assert a == c, "default run_battle() does not match explicit statechart run"
+def test_run_battle_has_no_backend_arg():
+    """ADR-0002 step 3 (#183): the backend-selection plumbing is gone — there is
+    one engine (statechart), so run_battle() no longer accepts a `backend` arg.
+    """
+    import pytest
+    with pytest.raises(TypeError):
+        run_battle(backend="statechart", frames=1)

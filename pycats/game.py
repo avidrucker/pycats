@@ -453,10 +453,7 @@ def create_players_from_selection():
     p1_data = CAT_CHARACTERS[p1_char]
     p2_data = CAT_CHARACTERS[p2_char]
 
-    # Create players with selected characters; default to the statechart engine.
-    # Override with PYCATS_STATE_BACKEND=legacy for the frozen classic baseline.
-    import os as _os
-    _backend = _os.environ.get("PYCATS_STATE_BACKEND", "statechart")
+    # Create players with selected characters (statechart engine, per ADR-0002).
     player1 = Player(
         PLAYER1_START_X,
         PLAYER1_START_Y,
@@ -465,7 +462,6 @@ def create_players_from_selection():
         eye_color=p1_data["eye_color"],
         char_name="P1",  # Use player ID instead of character name
         facing_right=True,
-        state_backend=_backend,
     )
 
     player2 = Player(
@@ -476,7 +472,6 @@ def create_players_from_selection():
         eye_color=p2_data["eye_color"],
         char_name="P2",  # Use player ID instead of character name
         facing_right=False,
-        state_backend=_backend,
     )
 
     # Update stripe colors based on character selection

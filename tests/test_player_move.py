@@ -18,9 +18,9 @@ P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
 
 
-def _mk_player(backend="legacy"):
+def _mk_player():
     return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True, state_backend=backend)
+                  char_name="P1", facing_right=True)
 
 
 def _ground():
@@ -166,16 +166,8 @@ def test_current_move_clears_at_move_end():
     )
 
 
-def test_state_is_attack_throughout_move_legacy():
-    _state_is_attack_throughout("legacy")
-
-
-def test_state_is_attack_throughout_move_statechart():
-    _state_is_attack_throughout("statechart")
-
-
-def _state_is_attack_throughout(backend):
-    p = _mk_player(backend)
+def test_state_is_attack_throughout_move():
+    p = _mk_player()
     platforms = _ground()
     _settle_grounded(p, platforms)
     m = p.fighter_data.moves["attack"]
@@ -183,18 +175,18 @@ def _state_is_attack_throughout(backend):
 
     grp = pygame.sprite.Group()
     p.update(_press_attack(), platforms, grp)
-    assert p.state == "attack", f"{backend}: not attack on press frame"
+    assert p.state == "attack", "not attack on press frame"
     # Throughout startup, active, recovery the flat label stays "attack".
     for _ in range(total - 2):
         p.update(_noop(), platforms, grp)
         assert p.state == "attack", (
-            f"{backend}: state={p.state} at move_frame={p.move_frame}"
+            f"state={p.state} at move_frame={p.move_frame}"
         )
 
 
 def test_chart_subphases_progress():
     """The statechart's attacking sub-phases progress as move_frame advances."""
-    p = _mk_player("statechart")
+    p = _mk_player()
     platforms = _ground()
     _settle_grounded(p, platforms)
     m = p.fighter_data.moves["attack"]

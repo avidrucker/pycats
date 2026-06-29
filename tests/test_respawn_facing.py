@@ -3,9 +3,9 @@
 When a player is KO'd and respawns, their facing must return to that player's
 *initial* direction (P1 faces right toward center, P2 faces left toward center)
 regardless of which way they happened to be facing when KO'd. The fix lives in
-``Player._respawn`` (restores ``original_facing_right``); these tests guard it on
-both state-engine backends through the real per-frame ``update`` loop so the
-behavior cannot silently regress.
+``Player._respawn`` (restores ``original_facing_right``); these tests guard it
+through the real per-frame ``update`` loop so the behavior cannot silently
+regress.
 """
 
 import os
@@ -29,19 +29,17 @@ def _noop():
     return InputFrame(held=set(), pressed=set(), released=set())
 
 
-def _mk_player(initial_facing_right, backend):
+def _mk_player(initial_facing_right):
     p = Player(100, 300, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=initial_facing_right,
-               state_backend=backend)
+               char_name="P1", facing_right=initial_facing_right)
     p.fighter.lives = 3
     return p
 
 
-@pytest.mark.parametrize("backend", ["legacy", "statechart"])
 @pytest.mark.parametrize("initial_facing_right", [True, False])
-def test_respawn_restores_initial_facing(initial_facing_right, backend):
+def test_respawn_restores_initial_facing(initial_facing_right):
     """A player KO'd while facing the opposite way respawns facing its initial direction."""
-    p = _mk_player(initial_facing_right, backend)
+    p = _mk_player(initial_facing_right)
     platforms = [Platform(pygame.Rect(0, 340, 600, 40), thin=False)]
     p.platforms = platforms
 
@@ -55,7 +53,7 @@ def test_respawn_restores_initial_facing(initial_facing_right, backend):
     # Facing is untouched while dead/waiting; the reset happens on respawn.
     assert p.fighter.facing_right == (not initial_facing_right)
 
-    # Tick through the respawn delay; _respawn fires from update() on both backends.
+    # Tick through the respawn delay; _respawn fires from update().
     for _ in range(RESPAWN_DELAY_FRAMES + 2):
         p.update(_noop(), platforms, pygame.sprite.Group())
 

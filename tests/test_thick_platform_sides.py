@@ -17,10 +17,10 @@ P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
 
 
-def _mk_player(backend="statechart"):
+def _mk_player():
     # midbottom anchor; placed just LEFT of a wall at x=300, inside its band.
     return Player(260, 200, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True, state_backend=backend)
+                  char_name="P1", facing_right=True)
 
 
 def _wall(thin=False):
@@ -63,7 +63,7 @@ def test_thick_platform_left_face_blocks_entry():
 def test_thick_platform_right_face_blocks_entry():
     # Player starts to the RIGHT of the wall, driving left into the right face.
     p = Player(420, 200, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=False, state_backend="statechart")
+               char_name="P1", facing_right=False)
     walls = _wall(thin=False)
     attacks = pygame.sprite.Group()
     penetrated = reached_face = False
@@ -93,7 +93,7 @@ def test_landing_on_thick_top_is_not_side_ejected():
     # A player dropping onto a thick platform's top must land normally and must
     # NOT be shoved off the side by the horizontal resolver.
     p = Player(300, 280, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=True, state_backend="statechart")
+               char_name="P1", facing_right=True)
     floor = [Platform(pygame.Rect(200, 300, 200, 40), thin=False)]  # top y=300
     attacks = pygame.sprite.Group()
     noop = InputFrame(set(), set(), set())

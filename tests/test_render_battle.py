@@ -12,7 +12,7 @@ pytestmark = pytest.mark.usefixtures("render_isolation")
 def test_render_battle_draws_without_error():
     surface = pygame.Surface((960, 540))
     platforms = build_stage()
-    p1, p2, players = build_players("legacy")
+    p1, p2, players = build_players()
     # advance one frame so players have valid rects/tails
     from pycats.core.input import InputFrame
     empty = InputFrame(held=set(), pressed=set(), released=set())

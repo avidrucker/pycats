@@ -34,7 +34,7 @@ def test_attacker_drives_the_ko_arc():
     """The extracted attacker still fights: hurt+ko states and a P2 stock loss.
     Fails if decide() dropped the close/standoff/attack policy."""
     ctrl = AttackerController(attacker_num=1)
-    snaps = run_battle("legacy", frames=6000, controller=ctrl, stop_on_match_over=True)
+    snaps = run_battle(frames=6000, controller=ctrl, stop_on_match_over=True)
     states = {p[1] for snap in snaps for p in snap[0]}
     assert "hurt" in states and "ko" in states, sorted(states)
     p2_lives = [next(p for p in s[0] if p[0] == "P2")[9] for s in snaps]
@@ -45,8 +45,8 @@ def test_attacker_and_chase_alias_emit_identically():
     """AttackerController and the ChaseController alias produce the same stream."""
     a = AttackerController(attacker_num=1)
     b = ChaseController(attacker_num=1)
-    run_battle("legacy", frames=400, controller=a)
-    run_battle("legacy", frames=400, controller=b)
+    run_battle(frames=400, controller=a)
+    run_battle(frames=400, controller=b)
     assert [(f.held, f.pressed, f.released) for f in a.emitted] == \
            [(f.held, f.pressed, f.released) for f in b.emitted]
 
@@ -61,14 +61,14 @@ def test_idler_default_is_a_true_noop_baseline():
     """A default idler emits nothing, so attacker-vs-idler is byte-identical to
     attacker-vs-idle (today's `controller=` path)."""
     idler = IdlerController(attacker_num=2)
-    run_battle("legacy", frames=300, controllers=(AttackerController(1), idler))
+    run_battle(frames=300, controllers=(AttackerController(1), idler))
     assert all(not (f.held or f.pressed or f.released) for f in idler.emitted), (
         "default IdlerController must emit no input"
     )
 
-    dual = run_battle("legacy", frames=300,
+    dual = run_battle(frames=300,
                       controllers=(AttackerController(1), IdlerController(2)))
-    single = run_battle("legacy", frames=300, controller=AttackerController(1))
+    single = run_battle(frames=300, controller=AttackerController(1))
     assert dual == single, "default idler is not a transparent baseline"
 
 
@@ -77,7 +77,7 @@ def test_idler_periodic_shield_is_deterministic_and_disjoint():
     on frames where `_f % period < hold`, and nothing otherwise."""
     period, hold = 10, 3
     idler = IdlerController(attacker_num=2, shield_period=period, shield_hold=hold)
-    run_battle("legacy", frames=50, controllers=(None, idler))
+    run_battle(frames=50, controllers=(None, idler))
 
     shield = P2_KEYS["shield"]
     for i, f in enumerate(idler.emitted):
@@ -98,7 +98,7 @@ def test_follower_never_attacks_and_emits_no_p1_keys():
     """Pressure without committing: a follower emits no attack key, ever — and
     only its own (P2) keycodes."""
     foll = FollowerController(attacker_num=2)
-    run_battle("legacy", frames=600, controllers=(None, foll))
+    run_battle(frames=600, controllers=(None, foll))
     emitted = set().union(
         *(f.held | f.pressed | f.released for f in foll.emitted)
     ) if foll.emitted else set()
@@ -113,7 +113,7 @@ def test_follower_settles_at_standoff_distance():
     (equal-width players ⇒ rect.x gap == centerx gap)."""
     standoff = 120
     foll = FollowerController(attacker_num=2, standoff=standoff)
-    snaps = run_battle("legacy", frames=1500, controllers=(None, foll))
+    snaps = run_battle(frames=1500, controllers=(None, foll))
 
     def gap(s):
         p1x = next(p for p in s[0] if p[0] == "P1")[2]

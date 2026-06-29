@@ -39,7 +39,7 @@ def _restore_global_font_state():
 
 def _settle():
     platforms = build_stage()
-    p1, p2, players = build_players("legacy")
+    p1, p2, players = build_players()
     empty = InputFrame(set(), set(), set())
     for _ in range(10):
         for p in players:

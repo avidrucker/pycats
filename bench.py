@@ -1,5 +1,5 @@
 # bench.py
-"""Benchmark the two state-engine backends over the headless battle.
+"""Benchmark the state engine over the headless battle.
 
 Reports per-frame timing and a per-bucket breakdown (state engine vs physics vs
 combat) so we can see whether the state machine is a meaningful slice of the
@@ -30,15 +30,15 @@ def _percentile(xs, q):
     return s[idx]
 
 
-def benchmark(backend, frames=10_000):
+def benchmark(frames=10_000):
     inputs = default_timeline(KEYMAPS)
     n = len(inputs)
     per_frame = []
     platforms = build_stage()
-    p1, p2, players = build_players(backend)
+    p1, p2, players = build_players()
     import pygame
     attacks = pygame.sprite.Group()
-    match = make_match_engine([p1, p2], backend)
+    match = make_match_engine([p1, p2])
     for f in range(frames):
         fi = inputs[f % n]
         t0 = time.perf_counter()
@@ -61,25 +61,23 @@ def benchmark(backend, frames=10_000):
     }
 
 
-def bucketed(backend, frames=10_000):
+def bucketed(frames=10_000):
     inputs = default_timeline(KEYMAPS)
     n = len(inputs)
     phys, push, comb = [], [], []
     platforms = build_stage()
-    p1, p2, players = build_players(backend)
+    p1, p2, players = build_players()
     import pygame
     attacks = pygame.sprite.Group()
-    match = make_match_engine([p1, p2], backend)
+    match = make_match_engine([p1, p2])
     plist = list(players)
     for f in range(frames):
         fi = inputs[f % n]
         # The state engine's tick() is fused inside Player.update, so it cannot
         # be timed separately post-hoc. We therefore bucket the frame as:
-        #   physics_us = Player.update (physics + the engine tick, both backends)
-        #   push_us    = resolve_player_push (identical across backends)
+        #   physics_us = Player.update (physics + the engine tick)
+        #   push_us    = resolve_player_push
         #   combat_us  = attacks.update + process_hits + match.tick
-        # The engine's true cost is isolated by the mean_us delta between
-        # backends in benchmark(), where everything but the engine is identical.
         t0 = time.perf_counter()
         for p in players:
             p.update(fi, platforms, attacks)
@@ -102,32 +100,30 @@ def bucketed(backend, frames=10_000):
 
 
 def collect(frames):
-    """Run both backends and return a single results dict (also what --json writes)."""
-    rows = {b: benchmark(b, frames) for b in ("legacy", "statechart")}
-    delta = rows["statechart"]["mean_us"] - rows["legacy"]["mean_us"]
+    """Run the benchmark and return a single results dict (also what --json writes)."""
+    row = benchmark(frames)
     return {
         "frames": frames,
         "budget_us_per_frame": BUDGET_US,
-        "backends": rows,
-        "statechart_minus_legacy_us": delta,
-        "statechart_overhead_pct_of_budget": delta / BUDGET_US * 100,
-        "buckets_statechart_us": bucketed("statechart", frames),
+        "engine": row,
+        "overhead_pct_of_budget": row["mean_us"] / BUDGET_US * 100,
+        "buckets_us": bucketed(frames),
     }
 
 
 def print_report(results):
     frames = results["frames"]
-    rows = results["backends"]
-    print(f"\nBattle benchmark — {frames} frames\n" + "=" * 56)
-    print(f"{'metric':<14}{'legacy':>14}{'statechart':>16}")
-    print("-" * 56)
+    row = results["engine"]
+    print(f"\nBattle benchmark — {frames} frames\n" + "=" * 40)
+    print(f"{'metric':<14}{'statechart':>16}")
+    print("-" * 40)
     for k in ("mean_us", "median_us", "p95_us", "p99_us", "fps"):
-        print(f"{k:<14}{rows['legacy'][k]:>14.2f}{rows['statechart'][k]:>16.2f}")
-    print("-" * 56)
-    print(f"statechart - legacy: {results['statechart_minus_legacy_us']:+.2f} us/frame "
-          f"({results['statechart_overhead_pct_of_budget']:+.3f}% of 16.67ms budget)")
-    print("\nper-bucket mean us/frame (statechart):")
-    for k, v in results["buckets_statechart_us"].items():
+        print(f"{k:<14}{row[k]:>16.2f}")
+    print("-" * 40)
+    print(f"mean {row['mean_us']:.2f} us/frame "
+          f"({results['overhead_pct_of_budget']:.3f}% of 16.67ms budget)")
+    print("\nper-bucket mean us/frame:")
+    for k, v in results["buckets_us"].items():
         print(f"  {k:<12}{v:>10.2f}")
 
 

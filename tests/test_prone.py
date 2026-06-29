@@ -1,6 +1,6 @@
 """Prone / knockdown state (#13).
 
-Prone is a new driven state (both engine backends, in parity): force-entry via
+Prone is a driven state: force-entry via
 `Player.force_prone(frames)` (mirroring how shield-break drives `stun`), the only
 self-initiated action is standing up, and the getup window is the `prone_timer`
 counting to 0 -> stand to idle (on ground) / fall (airborne). The automatic
@@ -20,9 +20,9 @@ _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  shield=pygame.K_x)
 
 
-def _mk(backend="legacy"):
+def _mk():
     return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True, state_backend=backend)
+                  char_name="P1", facing_right=True)
 
 
 def _ground():
@@ -47,71 +47,62 @@ def _run(p, plats, frame, n=1):
         p.update(frame, plats, grp)
 
 
-# --- Slice 1: force-entry into prone (both backends) -------------------------
+# --- Slice 1: force-entry into prone -----------------------------------------
 
-def test_force_prone_enters_prone_both_backends():
-    for backend in ("legacy", "statechart"):
-        p = _mk(backend)
-        plats = _ground()
-        _settle(p, plats)
-        assert p.state == "idle", backend
-        p.force_prone(20)
-        assert p.state == "prone", backend
+def test_force_prone_enters_prone():
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    assert p.state == "idle"
+    p.force_prone(20)
+    assert p.state == "prone"
 
 
 # --- Slice 2: getup window — prone persists, then stands to idle --------------
 
-def test_prone_persists_then_stands_up_both_backends():
-    for backend in ("legacy", "statechart"):
-        p = _mk(backend)
-        plats = _ground()
-        _settle(p, plats)
-        p.force_prone(5)
-        # holds prone while the getup window runs down...
-        for _ in range(4):
-            _run(p, plats, _frame())
-            assert p.state == "prone", backend
-        # ...then the window elapses and the fighter stands up.
+def test_prone_persists_then_stands_up():
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    p.force_prone(5)
+    # holds prone while the getup window runs down...
+    for _ in range(4):
         _run(p, plats, _frame())
-        assert p.state == "idle", backend
+        assert p.state == "prone"
+    # ...then the window elapses and the fighter stands up.
+    _run(p, plats, _frame())
+    assert p.state == "idle"
 
 
 # --- Slice 3: only stand-up is allowed — actions are locked out --------------
 
-def test_prone_locks_out_actions_both_backends():
-    for backend in ("legacy", "statechart"):
-        p = _mk(backend)
-        plats = _ground()
-        _settle(p, plats)
-        p.force_prone(10)
-        # Mashing attack must not start a move...
-        _run(p, plats, _frame("attack"), n=3)
-        assert p.state == "prone", backend
-        assert p.attack_timer == 0, backend
-        # ...and mashing jump ('up') must not launch the fighter off the ground.
-        _run(p, plats, _frame("up"), n=3)
-        assert p.state == "prone", backend
-        assert p.fighter.on_ground, backend
-
-
-# --- Slice 4: prone runtime is byte-identical across both backends ------------
-
-def test_prone_state_sequence_parity_both_backends():
-    """A force_prone + getup scenario must produce the same per-frame state
-    label on legacy and statechart, and must actually reach prone (so the
-    parity check is meaningful)."""
-    legacy = _mk("legacy")
-    state = _mk("statechart")
+def test_prone_locks_out_actions():
+    p = _mk()
     plats = _ground()
-    _settle(legacy, plats)
-    _settle(state, plats)
-    legacy.force_prone(6)
-    state.force_prone(6)
-    seq_legacy, seq_state = [], []
+    _settle(p, plats)
+    p.force_prone(10)
+    # Mashing attack must not start a move...
+    _run(p, plats, _frame("attack"), n=3)
+    assert p.state == "prone"
+    assert p.attack_timer == 0
+    # ...and mashing jump ('up') must not launch the fighter off the ground.
+    _run(p, plats, _frame("up"), n=3)
+    assert p.state == "prone"
+    assert p.fighter.on_ground
+
+
+# --- Slice 4: prone runtime drives a stable state sequence -------------------
+
+def test_prone_state_sequence_reaches_prone_then_stands():
+    """A force_prone + getup scenario produces a prone run that stands back up
+    (the golden in test_golden.py guards byte-stability)."""
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    p.force_prone(6)
+    seq = []
     for _ in range(10):
-        _run(legacy, plats, _frame())
-        _run(state, plats, _frame())
-        seq_legacy.append(legacy.state)
-        seq_state.append(state.state)
-    assert seq_legacy == seq_state, f"{seq_legacy} != {seq_state}"
-    assert "prone" in seq_legacy, "scenario never reached prone — parity is vacuous"
+        _run(p, plats, _frame())
+        seq.append(p.state)
+    assert "prone" in seq, "scenario never reached prone"
+    assert seq[-1] == "idle", f"fighter never stood up: {seq}"

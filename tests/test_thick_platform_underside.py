@@ -27,11 +27,11 @@ def _stage():
     return [ceiling, floor], ceiling, floor
 
 
-def _jump_into_ceiling(backend):
+def _jump_into_ceiling():
     platforms, ceiling, floor = _stage()
     # Stand centred under the ceiling (x-band); midbottom on the floor top (y=300).
     p = Player(300, 300, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=True, state_backend=backend)
+               char_name="P1", facing_right=True)
     attacks = pygame.sprite.Group()
     noop = InputFrame(set(), set(), set())
     jump = InputFrame(held={P1["up"]}, pressed={P1["up"]}, released=set())
@@ -54,12 +54,11 @@ def _jump_into_ceiling(backend):
 
 
 def test_thick_platform_underside_blocks_upward_entry():
-    for backend in ("legacy", "statechart"):
-        p, ceiling, min_top, penetrated = _jump_into_ceiling(backend)
-        # Non-vacuous: the jump must actually carry the head up to the ceiling.
-        assert min_top <= ceiling.rect.bottom + 4, (
-            f"[{backend}] jump never reached the ceiling (min_top={min_top}, "
-            f"ceiling bottom={ceiling.rect.bottom}) — fixture too weak")
-        # The body must never clip up through the underside.
-        assert not penetrated, (
-            f"[{backend}] fighter clipped up through the thick platform underside")
+    p, ceiling, min_top, penetrated = _jump_into_ceiling()
+    # Non-vacuous: the jump must actually carry the head up to the ceiling.
+    assert min_top <= ceiling.rect.bottom + 4, (
+        f"jump never reached the ceiling (min_top={min_top}, "
+        f"ceiling bottom={ceiling.rect.bottom}) — fixture too weak")
+    # The body must never clip up through the underside.
+    assert not penetrated, (
+        "fighter clipped up through the thick platform underside")

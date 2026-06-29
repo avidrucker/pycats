@@ -69,7 +69,6 @@ def test_vs_battle_runs_headless_and_is_bounded():
 
     cap = 40
     snaps = run_battle(
-        backend="statechart",
         frames=cap,
         controllers=(AttackerController(attacker_num=1),
                      AttackerController(attacker_num=2)),

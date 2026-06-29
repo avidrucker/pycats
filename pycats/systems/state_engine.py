@@ -24,12 +24,10 @@ class StateEngine(Protocol):
     def force(self, label: str) -> None: ...
 
 
-def make_state_engine(player, backend: str = "statechart") -> StateEngine:
+def make_state_engine(player) -> StateEngine:
     """Build the state engine for a Player.
 
-    The statechart engine is the only backend (ADR-0002, #178). ``backend`` is
-    retained for signature stability; collapsing the now single-valued
-    parameter and its plumbing is slice 3 (#168).
+    The statechart engine is the only backend (ADR-0002, #178/#183).
     """
     from statecharts import Session
     from ..charts.fighter_chart import build_fighter_chart

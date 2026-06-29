@@ -42,9 +42,9 @@ use a project virtualenv:
     .venv/bin/python -m pip install pytest pygame-ce
     .venv/bin/python -m pip install -e ../statecharts-py   # sibling repo
 
-**The statechart engine is now the default** for the live game, `watch.py`, and
-`bench_render.py`. Pass `--backend legacy` (or set `PYCATS_STATE_BACKEND=legacy`)
-to run the frozen classic baseline instead.
+**The statechart engine is the sole state engine** for the live game, `watch.py`,
+and the benchmarks (ADR-0002: the legacy backend and its `--backend` /
+`PYCATS_STATE_BACKEND` selection were removed in #178/#183).
 
 Phase-0 introduced a **data-driven attack system** with circle hitboxes (see
 `pycats/combat/` and `pycats/characters/`). Golden snapshots in `tests/golden/`
@@ -55,8 +55,7 @@ Run tests:        SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. .venv
                       # green (skips OK). Add -m "not slow" to skip the benchmark tests.
 Run benchmark:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py
 Store results:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
-Watch a replay:   .venv/bin/python watch.py                    # statechart (default)
-  ...legacy:      .venv/bin/python watch.py --backend legacy   # frozen classic baseline
+Watch a replay:   .venv/bin/python watch.py                    # scripted replay
 Watch full match: .venv/bin/python watch.py --match            # P1 defeats P2 (3 stocks)
   ...uncapped:    .venv/bin/python watch.py --match --uncapped  # FPS readout = true rate
 Record a video:   .venv/bin/python watch.py --match --video media/full_battle.mp4

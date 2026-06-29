@@ -1,6 +1,6 @@
 """Crouch state + body resize (#124).
 
-Crouch is a new grounded state (both engine backends, in parity): hold down on
+Crouch is a grounded state: hold down on
 solid ground -> the body resizes to a per-cat squarish crouch box (feet planted)
 and swaps to a shorter crouch hurtbox; release -> stand. Crouch-cancel (KB
 reduction) is a separate follow-up.
@@ -20,9 +20,9 @@ _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  shield=pygame.K_x)
 
 
-def _mk(backend="legacy"):
+def _mk():
     return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True, state_backend=backend)
+                  char_name="P1", facing_right=True)
 
 
 def _ground():
@@ -69,16 +69,15 @@ def test_nalio_has_crouch_geometry():
     assert crouch_top > stand_top, "crouch hurtbox should be lower/shorter"
 
 
-# --- Slices 2+3: crouch state (both backends) + collision-Rect resize --------
+# --- Slices 2+3: crouch state + collision-Rect resize ------------------------
 
-def test_down_on_solid_ground_enters_crouch_both_backends():
-    for backend in ("legacy", "statechart"):
-        p = _mk(backend)
-        plats = _ground()
-        _settle(p, plats)
-        assert p.state == "idle", backend
-        _run(p, plats, _frame("down"))
-        assert p.state == "crouch", backend
+def test_down_on_solid_ground_enters_crouch():
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    assert p.state == "idle"
+    _run(p, plats, _frame("down"))
+    assert p.state == "crouch"
 
 
 def test_crouch_resizes_collision_rect_feet_planted():
@@ -143,20 +142,16 @@ def test_crouch_lowers_hurtbox_high_attack_whiffs():
     assert crouched.fighter.percent == 0.0, "high hit should whiff over the crouch"
 
 
-# --- Slice 5: crouch is byte-identical across both engine backends ------------
+# --- Slice 5: crouch scenario reaches the crouch state in the sim ------------
 
-def test_crouch_scenario_parity_both_backends():
-    """A down-holding scenario must be byte-identical legacy vs statechart, and
-    must actually reach the crouch state (so the parity is meaningful)."""
+def test_crouch_scenario_reaches_crouch():
+    """A down-holding scenario actually reaches the crouch state through the full
+    sim loop (the golden in test_golden.py guards byte-stability)."""
     from pycats.sim.runner import run_battle, KEYMAPS
     from pycats.sim.input_script import compile_timeline, InputSpan
     spans = [InputSpan(start=10, end=120, player=1, action="down")]
     frame_inputs = compile_timeline(spans, KEYMAPS)
-    legacy = run_battle(backend="legacy", frames=len(frame_inputs),
-                        frame_inputs=frame_inputs)
-    state = run_battle(backend="statechart", frames=len(frame_inputs),
-                       frame_inputs=frame_inputs)
-    assert legacy == state, "crouch scenario diverged between backends"
-    assert any(p[1] == "crouch" for snap in legacy for p in snap[0]), (
-        "scenario never reached crouch — parity check is vacuous"
+    snaps = run_battle(frames=len(frame_inputs), frame_inputs=frame_inputs)
+    assert any(p[1] == "crouch" for snap in snaps for p in snap[0]), (
+        "scenario never reached crouch"
     )

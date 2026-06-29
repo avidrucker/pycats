@@ -2,8 +2,8 @@
 
 These are NOT in-game AI — they are scripted, RNG-free policies used to drive
 demo/benchmark battles and to *generate* fixed input timelines. Capture a
-controller's `emitted` frames and replay that list through both backends to keep
-parity tests a clean byte-identical comparison on identical inputs.
+controller's `emitted` frames and replay that list to keep golden tests a clean
+byte-identical comparison on identical inputs.
 """
 from __future__ import annotations
 

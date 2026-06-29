@@ -4,8 +4,8 @@
 remaining transient action state: a player KO'd mid-dodge or mid-attack must not
 carry dodge/attack/invulnerable timers (or the dodge/attack flags) into its next
 life. ``_ko`` early-returns, so these never tick down during death — only the
-respawn can clear them. Guards both state-engine backends through the real
-per-frame ``update`` loop.
+respawn can clear them. Guards the behaviour through the real per-frame
+``update`` loop.
 """
 
 import os
@@ -14,7 +14,6 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # type: ignore
-import pytest
 
 from pycats.entities.player import Player
 from pycats.entities.platform import Platform
@@ -29,17 +28,16 @@ def _noop():
     return InputFrame(held=set(), pressed=set(), released=set())
 
 
-def _mk_player(backend):
+def _mk_player():
     p = Player(100, 300, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=True, state_backend=backend)
+               char_name="P1", facing_right=True)
     p.fighter.lives = 3
     return p
 
 
-@pytest.mark.parametrize("backend", ["legacy", "statechart"])
-def test_respawn_clears_transient_action_state(backend):
+def test_respawn_clears_transient_action_state():
     """A player KO'd mid-dodge/mid-attack respawns with a clean transient slate."""
-    p = _mk_player(backend)
+    p = _mk_player()
     platforms = [Platform(pygame.Rect(0, 340, 600, 40), thin=False)]
     p.platforms = platforms
 
