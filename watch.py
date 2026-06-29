@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import random
 
 from pycats.config import FPS
 from pycats.sim.runner import run_battle
@@ -65,20 +66,28 @@ def main():
                          "the true achievable rate (default paces to 60)")
     ap.add_argument("--no-overlay", dest="overlay", action="store_false",
                     help="hide the live FPS / stocks / damage overlay")
+    ap.add_argument("--seed", type=int, default=None,
+                    help="PRNG seed for the NPC controllers (#166): pass an int "
+                         "for a reproducible run; omit for a clocktime seed so a "
+                         "live match varies run-to-run.")
     args = ap.parse_args()
 
     presenter = (VideoPresenter(args.video) if args.video
                  else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay))
+    # Seed home is this CLI edge (#166): an explicit --seed is reproducible; absent
+    # is clocktime (live variation). Injected into the controllers so the seed is
+    # caller-controlled — controllers never import-and-call a module-level random.
+    rng = random.Random(args.seed) if args.seed is not None else random.Random()
     # `--vs <archetype>` drives BOTH players (controllers=): P1 is always an
     # attacker, P2 is the chosen archetype. Otherwise the classic single-bot
     # `--match` (P1 attacker vs idle P2) or the scripted replay.
     controller = None
     controllers = None
     if args.vs in VS_CONTROLLERS:
-        controllers = (AttackerController(attacker_num=1),
-                       VS_CONTROLLERS[args.vs](attacker_num=2))
+        controllers = (AttackerController(attacker_num=1, rng=rng),
+                       VS_CONTROLLERS[args.vs](attacker_num=2, rng=rng))
     elif args.match:
-        controller = AttackerController(attacker_num=1)
+        controller = AttackerController(attacker_num=1, rng=rng)
     # A --vs demo runs up to 30s or until a 3-stock KO-out, whichever first (#61).
     frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
     try:

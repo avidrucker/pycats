@@ -12,6 +12,8 @@ in tests/golden/<name>.summary.json.  Set PYCATS_UPDATE_GOLDENS=1 to (re)record
 them — but a regen must be REVIEWED, not rubber-stamped: see
 tests/golden/REGEN_PROTOCOL.md (S4).
 """
+import random
+
 from pycats.sim.runner import run_battle, KEYMAPS
 from pycats.sim.input_script import compile_timeline, COMBAT_SCRIPT
 from pycats.sim.controllers import ChaseController, AttackerController, FollowerController
@@ -47,7 +49,10 @@ def test_golden_combat():
 
 def _capture_full_match_inputs():
     """Run once with ChaseController; freeze its emitted inputs."""
-    ctrl = ChaseController(attacker_num=1)
+    # #166: pin a fixed seed at this live-controller site so the captured inputs
+    # stay reproducible (Chase doesn't draw rng today, but make the seam explicit
+    # — this is the most RNG-exposed golden).
+    ctrl = ChaseController(attacker_num=1, rng=random.Random(0))
     run_battle("statechart", frames=6000, controller=ctrl, stop_on_match_over=True)
     return ctrl.emitted
 
@@ -77,8 +82,10 @@ def test_golden_two_npc():
     """Dual-controller battle (#58): attacker (P1) vs follower (P2), BOTH players
     driven via controllers=. Locks the dual-controller path against a golden.
     """
-    a = AttackerController(attacker_num=1)
-    f = FollowerController(attacker_num=2)
+    # #166: fixed seed pinned at the live two-NPC golden (neither archetype draws
+    # rng today, so the snapshot is unchanged — this makes the contract explicit).
+    a = AttackerController(attacker_num=1, rng=random.Random(0))
+    f = FollowerController(attacker_num=2, rng=random.Random(0))
     snaps = run_battle(backend="statechart", frames=TWO_NPC_FRAMES, controllers=(a, f))
     assert len(snaps) == TWO_NPC_FRAMES
 

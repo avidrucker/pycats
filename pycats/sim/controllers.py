@@ -7,7 +7,14 @@ parity tests a clean byte-identical comparison on identical inputs.
 """
 from __future__ import annotations
 
+import random
+
 from ..core.input import InputFrame
+
+# #166: the default controller seed. rng=None resolves to random.Random(this) so
+# every sim/golden/parity run is reproducible by construction; live variation is
+# strictly opt-in (watch.py injects a clocktime/`--seed` Random instead).
+DEFAULT_CONTROLLER_SEED = 0
 
 
 class BaseController:
@@ -25,11 +32,16 @@ class BaseController:
     `run_battle` creates the players.
     """
 
-    def __init__(self, attacker_num=1):
+    def __init__(self, attacker_num=1, rng=None):
         self.attacker_num = attacker_num
         self._prev = set()
         self._f = 0
         self.emitted = []  # recorded InputFrames, for freezing into a fixed list
+        # #166: injected seeded PRNG. Default is a FIXED seed so sims/goldens/
+        # parity stay reproducible; live callers inject a clocktime-seeded Random.
+        # The RNG lives ONLY at the controller edge — it can influence the chosen
+        # InputFrame but never reaches the (input-only) FSM backends.
+        self.rng = rng if rng is not None else random.Random(DEFAULT_CONTROLLER_SEED)
 
     def decide(self, a, t, frame) -> set:
         """Return the set of keys to HOLD this frame. `a` is this controller's
@@ -57,8 +69,8 @@ class AttackerController(BaseController):
     """
 
     def __init__(self, attacker_num=1, attack_period=12, standoff=30,
-                 attack_range=45, safe_x=(110, 850), drop_threshold=20):
-        super().__init__(attacker_num)
+                 attack_range=45, safe_x=(110, 850), drop_threshold=20, rng=None):
+        super().__init__(attacker_num, rng=rng)
         # safe_x is the range the attacker will walk to — the thick platform's
         # standing extent (x[80..880]) minus a body-margin. Widened from the old
         # 770 for #44: realistic knockback decay no longer launches the target
@@ -135,16 +147,26 @@ ChaseController = AttackerController
 class IdlerController(BaseController):
     """A deterministic baseline opponent. By default a true no-op (emits nothing),
     so it stands in for an idle player transparently. Optionally performs minimal
-    RNG-free activity: with `shield_period > 0`, holds `shield` for `shield_hold`
-    frames at the start of each `shield_period`-frame cycle. Position-independent.
+    activity: with `shield_period > 0`, holds `shield` for `shield_hold` frames at
+    the start of each `shield_period`-frame cycle (RNG-free, deterministic). With
+    `shield_chance > 0` (#166), instead rolls the injected PRNG each frame and
+    holds `shield` with that probability — the first consumer of the seeded-RNG
+    seam, so a seed change visibly changes shield timing. Position-independent.
     """
 
-    def __init__(self, attacker_num=1, shield_period=0, shield_hold=0):
-        super().__init__(attacker_num)
+    def __init__(self, attacker_num=1, shield_period=0, shield_hold=0,
+                 shield_chance=0.0, rng=None):
+        super().__init__(attacker_num, rng=rng)
         self.shield_period = shield_period
         self.shield_hold = shield_hold
+        self.shield_chance = shield_chance
 
     def decide(self, a, t, frame) -> set:
+        # #166 first consumer: an rng-jittered shield. A real PRNG roll per frame,
+        # so two seeds diverge while a fixed seed repeats — the end-to-end proof
+        # that the injected RNG reaches a chosen InputFrame (and nothing else).
+        if self.shield_chance > 0.0:
+            return {a.controls["shield"]} if self.rng.random() < self.shield_chance else set()
         if self.shield_period > 0 and (self._f % self.shield_period) < self.shield_hold:
             return {a.controls["shield"]}
         return set()
@@ -159,8 +181,8 @@ class FollowerController(BaseController):
     distinct from the attacker.
     """
 
-    def __init__(self, attacker_num=1, standoff=120, safe_x=(110, 850)):
-        super().__init__(attacker_num)
+    def __init__(self, attacker_num=1, standoff=120, safe_x=(110, 850), rng=None):
+        super().__init__(attacker_num, rng=rng)
         self.standoff = standoff
         self.safe_x = safe_x
 
