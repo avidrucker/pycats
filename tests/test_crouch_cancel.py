@@ -29,7 +29,7 @@ _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
 
 def _mk():
     return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P", facing_right=True, state_backend="legacy")
+                  char_name="P", facing_right=True)
 
 
 def _ground():
