@@ -109,6 +109,7 @@ class Fighter:
         self.dodge_timer = 0
         self.hurt_timer = 0
         self.stun_timer = 0
+        self.prone_timer = 0  # knockdown/getup window (#13); prone while > 0
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
         self.shieldstun_timer = 0  # locked-in-shield frames after a block (#140)
         # attack_timer is a derived property over owner._clock (#71).

@@ -143,6 +143,19 @@ def build_fighter_fsm(player) -> FSM:
                     lambda f, ctx: player.fighter.stun_timer <= 0 and not player.fighter.on_ground,
                 ),
             ],
+            # Prone / knockdown (#13): force-entry only (no natural trigger yet;
+            # landing-velocity is #145). The only self-initiated action is standing
+            # up, expressed as the getup window: prone_timer counts to 0 -> stand.
+            # Mirrors the statechart prone leaf transition order exactly (parity).
+            "prone": [
+                Transition(
+                    "idle", lambda f, ctx: player.fighter.prone_timer <= 0 and player.fighter.on_ground
+                ),
+                Transition(
+                    "fall",
+                    lambda f, ctx: player.fighter.prone_timer <= 0 and not player.fighter.on_ground,
+                ),
+            ],
             "attack": [
                 Transition(
                     "idle", lambda f, ctx: player.fighter.done_attacking and player.fighter.on_ground

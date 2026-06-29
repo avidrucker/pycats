@@ -136,6 +136,15 @@ class Player(pygame.sprite.Sprite):
         this same flag in its orthogonal defensive_status region)."""
         return "intangible" if self.fighter.invulnerable else "vulnerable"
 
+    def force_prone(self, frames: int) -> None:
+        """Force the fighter into the prone/knockdown state for `frames` getup
+        frames (#13). Force-entry only for now (the landing-velocity trigger is
+        #145); the only self-initiated action out of prone is standing up, which
+        happens when prone_timer counts to 0. Drives both engine backends via the
+        same force() seam as force_ko / force_idle."""
+        self.fighter.prone_timer = max(0, int(frames))
+        self.engine.force("prone")
+
     # ---- move-progress, delegated to MoveClock (#71) ----
     # These three are read by the legacy FSM, the statechart (fighter_chart),
     # and the runner snapshot; keeping the legacy names/values means no consumer
@@ -247,7 +256,7 @@ class Player(pygame.sprite.Sprite):
         # speed when a direction is held.
         in_hitstun = self.fighter.hurt_timer > 0 or self.fighter.stun_timer > 0
         dodge_initiated = False
-        if not in_hitstun and not in_shieldstun and self.state not in ("dodge", "hurt", "stun"):
+        if not in_hitstun and not in_shieldstun and self.state not in ("dodge", "hurt", "stun", "prone"):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
@@ -269,6 +278,8 @@ class Player(pygame.sprite.Sprite):
             self.fighter.hurt_timer -= 1
         if self.fighter.stun_timer > 0:
             self.fighter.stun_timer -= 1
+        if self.fighter.prone_timer > 0:
+            self.fighter.prone_timer -= 1  # getup window (#13)
         if self.fighter.shieldstun_timer > 0:
             self.fighter.shieldstun_timer -= 1
         if self.fighter.dodge_timer > 0:

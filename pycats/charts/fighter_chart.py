@@ -212,17 +212,29 @@ def build_fighter_chart(p):
         _tick(lambda e, d: p.fighter.is_alive, "idle"),
     )
 
+    # Prone / knockdown (#13): force-entry only (entered via force_prone, hoisted
+    # below; the landing-velocity trigger is #145). The only self-initiated action
+    # is standing up — the getup window is prone_timer counting to 0 -> idle (on
+    # ground) / fall (airborne). Mirrors the flat FSM "prone" order (parity).
+    prone = state(
+        {"id": "prone"},
+        _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.on_ground, "idle"),
+        _tick(lambda e, d: p.fighter.prone_timer <= 0 and not p.fighter.on_ground, "fall"),
+    )
+
     action = state(
         {"id": "action", "initial": "idle"},
-        # force_ko / force_idle hoisted to the action parent: they fire on
-        # distinct events, so they never reorder the per-leaf tick transitions.
+        # force_ko / force_idle / force_prone hoisted to the action parent: they
+        # fire on distinct events, so they never reorder the per-leaf tick transitions.
         on("force_ko", "ko"),
         on("force_idle", "idle"),
+        on("force_prone", "prone"),
         actionable,
         attacking,
         dodging,
         hitstun,
         ko,
+        prone,
     )
 
     defensive_status = state(
