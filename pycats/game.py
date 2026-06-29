@@ -44,12 +44,10 @@ from .config import (
     CAT_CHARACTERS,
 )
 from .entities import Platform, Player
-from .systems import combat
-from .systems.win_condition import winner_loser
 from .core import input as inp
-from .core.physics import resolve_player_push
 from . import stats_print
 from .screen_manager import ScreenStateManager
+from .battle_screen import BattleScreen
 from . import text_utils
 from . import display
 from . import settings
@@ -111,10 +109,9 @@ P2_KEYS = dict(
 )
 
 # Players will be created after character selection
-player1 = None
-player2 = None
-players = pygame.sprite.Group()
-attacks = pygame.sprite.Group()
+# Battle state + per-frame sim are owned by BattleScreen (#193); game.py reads
+# battle.player1/player2/players/attacks instead of module globals.
+battle = BattleScreen(P1_KEYS, P2_KEYS)
 
 # ------------------------------------------------ pygame set-up
 # Restore persisted display preferences (#95); defaults if none/invalid.
@@ -271,32 +268,14 @@ def draw_controls(surface, p: Player, label, topright=False):
 
 
 def reset_game():
-    """Reset the game state for a new match"""
-    global player1, player2, players, attacks
-
-    # Only reset if players exist (they may not exist if coming from character selection)
-    if player1 and player2:
-        # Per-life/spawn state is owned by Player.reset_to_spawn() (#34) so the
-        # new-match path and the per-life respawn cannot drift. reset_game adds
-        # only the match-scoped resets: full lives, cleared statistics, and a
-        # hard FSM reset to idle (the per-life respawn lets the chart transition
-        # ko -> idle on its own instead).
-        for p in (player1, player2):
-            p.fighter.reset_to_spawn()
-            p.fighter.lives = INITIAL_LIVES
-            p.fighter.attacks_made = 0
-            p.fighter.hits_landed = 0
-            p.fighter.suicides = 0
-            p.engine.force("idle")
-
-    # Clear all attacks
-    attacks.empty()
+    """Reset the battle for a new match (delegates to BattleScreen, #193)."""
+    battle.reset()
 
 
 def check_win_condition():
-    """(winner, loser) or (None, None) — delegates to the single win-condition
-    rule (systems.win_condition), shared with the headless match_engine."""
-    return winner_loser((player1, player2))
+    """(winner, loser) or (None, None) — delegates to BattleScreen.winner(), the
+    single win-condition rule shared with the headless match_engine."""
+    return battle.winner()
 
 
 def toggle_fullscreen():
@@ -444,42 +423,9 @@ loser = None
 
 
 def create_players_from_selection():
-    """Create players based on character selection"""
-    global player1, player2, players
-
+    """Create players from character selection (delegates to BattleScreen, #193)."""
     p1_char, p2_char = screen_manager.get_selected_characters()
-
-    # Get character data from config
-    p1_data = CAT_CHARACTERS[p1_char]
-    p2_data = CAT_CHARACTERS[p2_char]
-
-    # Create players with selected characters (statechart engine, per ADR-0002).
-    player1 = Player(
-        PLAYER1_START_X,
-        PLAYER1_START_Y,
-        P1_KEYS,
-        p1_data["color"],
-        eye_color=p1_data["eye_color"],
-        char_name="P1",  # Use player ID instead of character name
-        facing_right=True,
-    )
-
-    player2 = Player(
-        PLAYER2_START_X,
-        PLAYER2_START_Y,
-        P2_KEYS,
-        p2_data["color"],
-        eye_color=p2_data["eye_color"],
-        char_name="P2",  # Use player ID instead of character name
-        facing_right=False,
-    )
-
-    # Update stripe colors based on character selection
-    player1.stripe_color = p1_data["stripe_color"]
-    player2.stripe_color = p2_data["stripe_color"]
-
-    # Recreate player group
-    players = pygame.sprite.Group(player1, player2)
+    battle.create_from_selection(p1_char, p2_char)
 
 
 while running:
@@ -513,18 +459,18 @@ while running:
                     set_windowed_scale(display.cycle_preset(windowed_scale))
                     zoom_toast.show(display.format_scale_label(windowed_scale))
                     save_prefs()
-            elif ev.key == pygame.K_e and player1 is not None:
+            elif ev.key == pygame.K_e and battle.player1 is not None:
                 # Debug (#108): cycle P1's cat-face style; toast the new style.
-                player1.face_style = cat_faces.cycle_face_style(
-                    getattr(player1, "face_style", cat_faces.PRIMITIVES)
+                battle.player1.face_style = cat_faces.cycle_face_style(
+                    getattr(battle.player1, "face_style", cat_faces.PRIMITIVES)
                 )
-                zoom_toast.show("P1 face: " + cat_faces.face_style_label(player1.face_style))
-            elif ev.key == pygame.K_SEMICOLON and player2 is not None:
+                zoom_toast.show("P1 face: " + cat_faces.face_style_label(battle.player1.face_style))
+            elif ev.key == pygame.K_SEMICOLON and battle.player2 is not None:
                 # Debug (#108): cycle P2's cat-face style; toast the new style.
-                player2.face_style = cat_faces.cycle_face_style(
-                    getattr(player2, "face_style", cat_faces.PRIMITIVES)
+                battle.player2.face_style = cat_faces.cycle_face_style(
+                    getattr(battle.player2, "face_style", cat_faces.PRIMITIVES)
                 )
-                zoom_toast.show("P2 face: " + cat_faces.face_style_label(player2.face_style))
+                zoom_toast.show("P2 face: " + cat_faces.face_style_label(battle.player2.face_style))
 
     # Update screen state manager
     screen_manager.update(frame_input)
@@ -552,8 +498,8 @@ while running:
     # Handle state transitions
     if previous_state == "pause" and current_state == "win_screen":
         # Transitioning from pause to win screen (stats view)
-        if player1 and player2:
-            screen_manager.set_stats_data(player1, player2)
+        if battle.player1 and battle.player2:
+            screen_manager.set_stats_data(battle.player1, battle.player2)
     
     previous_state = current_state
 
@@ -596,15 +542,11 @@ while running:
 
     elif current_state == "playing":
         # Check if we need to create players (first time entering playing state)
-        if player1 is None or player2 is None:
+        if battle.player1 is None or battle.player2 is None:
             create_players_from_selection()
 
-        # ---- update
-        for p in players:
-            p.update(frame_input, platforms, attacks)
-        resolve_player_push(list(players))
-        attacks.update()
-        combat.process_hits(players, attacks)
+        # ---- update (the per-frame battle sim is owned by BattleScreen, #193)
+        battle.step(frame_input, platforms)
 
         # Check for win condition
         winner, loser = check_win_condition()
@@ -614,22 +556,22 @@ while running:
         # ---- render
         render_surface = get_render_surface()
         render_surface.fill(BG_COLOR)
-        render_battle(render_surface, players, platforms)
-        render_attacks(render_surface, attacks)
+        render_battle(render_surface, battle.players, platforms)
+        render_attacks(render_surface, battle.attacks)
 
         # Draw HUD only if players exist
-        if player1 and player2:
+        if battle.player1 and battle.player2:
             draw_hud(
-                render_surface, player1, "P1"
+                render_surface, battle.player1, "P1"
             )  # drawn by default in upper-left corner
-            draw_hud(render_surface, player2, "P2", topright=True)
+            draw_hud(render_surface, battle.player2, "P2", topright=True)
 
             # Draw player controls below the HUD
             draw_controls(
-                render_surface, player1, "P1"
+                render_surface, battle.player1, "P1"
             )  # drawn by default below P1 HUD
             draw_controls(
-                render_surface, player2, "P2", topright=True
+                render_surface, battle.player2, "P2", topright=True
             )  # drawn below P2 HUD
 
         # draw keys pressed for debugging
@@ -689,13 +631,13 @@ while running:
         background_surface.fill(BG_COLOR)
         
         # Draw the game state (frozen) to background
-        render_battle(background_surface, players, platforms)
-        render_attacks(background_surface, attacks)
+        render_battle(background_surface, battle.players, platforms)
+        render_attacks(background_surface, battle.attacks)
 
         # Draw HUD (frozen state)
-        if player1 and player2:
-            draw_hud(background_surface, player1, "P1")
-            draw_hud(background_surface, player2, "P2", topright=True)
+        if battle.player1 and battle.player2:
+            draw_hud(background_surface, battle.player1, "P1")
+            draw_hud(background_surface, battle.player2, "P2", topright=True)
 
         # Render pause menu with background
         pause_menu = screen_manager.get_pause_menu()
