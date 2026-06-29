@@ -104,6 +104,15 @@ KNOCKBACK_DECAY = 0.145
 # stays deferred this slice — knockback only. A single global factor for v1;
 # per-character/game tweaks can move it into FighterData later.
 CROUCH_CANCEL_FACTOR = 0.67
+# Auto landing-velocity knockdown (#145). A fighter that lands while still in
+# hitstun (tumble) and hits the ground at/above KNOCKDOWN_VY_THRESHOLD downward
+# px/frame is knocked down — forced into `prone` (#13) for KNOCKDOWN_PRONE_FRAMES
+# getup frames. The hitstun gate is the real discriminator (normal jumps land at
+# the same MAX_FALL_SPEED but with hurt_timer == 0); the velocity threshold filters
+# out gentle pops. Teching (a tech input window that cancels the knockdown) is out
+# of scope — #146 sibling. ⚠ tuning starting points, not sourced — playtest.
+KNOCKDOWN_VY_THRESHOLD = 8.0   # downward impact speed (px/frame); MAX_FALL_SPEED is 13
+KNOCKDOWN_PRONE_FRAMES = 30    # getup window the auto-knockdown sets (~0.5s @ 60 FPS)
 
 # Clank / priority (#38 4c). When two opposing GROUND hitboxes overlap, the Smash
 # "priority range" decides the outcome: if their damage differs by <= this many

@@ -83,6 +83,10 @@ def step_physics(p, platforms, held):
         or (p.state == "shield" and is_shield_down_held)
     )
 
+    # Record the downward impact speed before solve_vertical zeroes vel.y on a
+    # landing — the auto-knockdown trigger (#145) reads it in _handle_landing.
+    p.fighter.land_impact_vy = p.fighter.vel.y
+
     p.fighter.vel, p.fighter.on_ground, p.fighter.drop_platform = solve_vertical(
         p.rect,
         p.fighter.vel,

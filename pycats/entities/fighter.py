@@ -42,6 +42,8 @@ from ..config import (
     DODGE_SPEED,
     KNOCKBACK_LAUNCH_FACTOR,
     CROUCH_CANCEL_FACTOR,
+    KNOCKDOWN_VY_THRESHOLD,
+    KNOCKDOWN_PRONE_FRAMES,
 )
 from ..combat.knockback import knockback, hitstun_frames, hitlag_frames
 from ..combat.shield import shieldstun_frames
@@ -115,6 +117,7 @@ class Fighter:
         self.hurt_timer = 0
         self.stun_timer = 0
         self.prone_timer = 0  # knockdown/getup window (#13); prone while > 0
+        self.land_impact_vy = 0.0  # downward speed at last ground contact (#145)
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
         self.shieldstun_timer = 0  # locked-in-shield frames after a block (#140)
         # attack_timer is a derived property over owner._clock (#71).
@@ -242,6 +245,15 @@ class Fighter:
         if self.on_ground and was_airborne:
             self.jumps_remaining = self.max_jumps  # reset jumps when landing
             self.air_dodge_ok = True  # reset air dodge availability
+            # Auto landing-velocity knockdown (#145): landing hard while still in
+            # hitstun (tumble) without teching forces `prone` (#13). The hurt-timer
+            # gate is what separates this from a normal jump landing (same impact
+            # speed, but hurt_timer == 0). Clear hurt_timer so the getup exit
+            # (prone -> idle when prone_timer hits 0) doesn't pop back into hurt.
+            if (self.hurt_timer > 0
+                    and self.land_impact_vy >= KNOCKDOWN_VY_THRESHOLD):
+                self.hurt_timer = 0
+                self.owner.force_prone(KNOCKDOWN_PRONE_FRAMES)
 
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:

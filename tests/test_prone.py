@@ -211,3 +211,46 @@ def test_prone_pose_renders_without_error():
     assert p.state == "prone"
     surf = pygame.Surface((400, 300))
     render_battle.render_battle(surf, [p], pygame.sprite.Group())
+
+
+# --- #145: auto landing-velocity knockdown -> prone --------------------------
+
+def _land_in_hitstun(vy, hurt, frames=8):
+    """Drop a fighter onto the ground from just above it, airborne, with the given
+    downward velocity and hitstun, then run a few frames. Returns (player, states)."""
+    p = _mk()
+    plats = _ground()                 # solid platform, top at y=100
+    p.rect.bottom = 90                # airborne, just above the platform top
+    p.fighter.on_ground = False
+    p.fighter.vel.y = vy
+    p.fighter.hurt_timer = hurt
+    grp = pygame.sprite.Group()
+    states = []
+    for _ in range(frames):
+        p.update(_frame(), plats, grp)
+        states.append(p.state)
+    return p, states
+
+
+def test_hard_landing_in_hitstun_knocks_down_to_prone():
+    """Landing hard (impact >= threshold) while still in hitstun forces prone."""
+    p, states = _land_in_hitstun(vy=11, hurt=12)
+    assert p.fighter.on_ground, "fixture: fighter should have landed"
+    assert "prone" in states, f"hard landing in hitstun did not knock down: {states}"
+    assert p.state == "prone", f"expected to stay prone after knockdown: {p.state}"
+
+
+def test_normal_landing_not_in_hitstun_does_not_knock_down():
+    """Same hard impact but NOT in hitstun (hurt_timer == 0) — an ordinary landing,
+    no knockdown. This is the gate that separates knockdown from a normal jump."""
+    p, states = _land_in_hitstun(vy=11, hurt=0)
+    assert p.fighter.on_ground
+    assert "prone" not in states, f"normal landing wrongly knocked down: {states}"
+
+
+def test_soft_landing_in_hitstun_below_threshold_does_not_knock_down():
+    """In hitstun but landing gently (impact below KNOCKDOWN_VY_THRESHOLD) — the
+    velocity gate suppresses the knockdown."""
+    p, states = _land_in_hitstun(vy=2, hurt=12)
+    assert p.fighter.on_ground
+    assert "prone" not in states, f"soft landing wrongly knocked down: {states}"
