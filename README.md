@@ -24,6 +24,14 @@ A game inspired by Super Smash Bros, written in Python using Pygame.
    python -m pycats.game
    ```
 
+# Project docs
+
+New here (human or agent)? Start with these:
+
+- [CONTEXT.md](./CONTEXT.md) — domain vocabulary + the determinism/headless contract.
+- [docs/adr/](./docs/adr/) — architecture decision records (the *why* behind design calls).
+- [RULES.md](./RULES.md) — project conventions (labels, filing, closing work).
+
 ## Development / benchmarking
 
 Headless tests and the battle benchmark need pytest, pygame-ce, and the sibling
