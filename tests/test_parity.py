@@ -1,50 +1,54 @@
 # tests/test_parity.py
+"""Backend equivalence, anchored on the recorded golden (ADR-0002 step 1, #176).
+
+Previously this asserted the **legacy** and **statechart** backends were
+byte-identical to each *other* — two live engines cross-checked per frame. ADR-0002
+(#174) deletes the legacy backend, so that live cross-check is going away. To keep
+the equivalence from lapsing we anchor it on the **committed golden** instead:
+
+  * `tests/test_golden.py` already asserts **statechart == golden** for the same two
+    scenarios (`default`, `combat`).
+  * this file asserts **legacy == the SAME golden**.
+
+Together they still prove legacy == statechart (both == golden) for as long as legacy
+exists — but via the frozen record, not a live second engine. So when the next slice
+deletes the legacy backend (and this file with it), the statechart-vs-golden coverage
+in `test_golden.py` carries on with nothing lost. This also verifies the golden
+*faithfully froze legacy's behaviour* before legacy is removed (it was recorded from
+statechart; this proves it equals legacy too).
+
+Reuses the `default` / `combat` golden files maintained by `test_golden.py` (single
+source of truth; `PYCATS_UPDATE_GOLDENS=1` regen is byte-identical from either backend
+while parity holds).
+"""
 from pycats.sim.runner import run_battle, KEYMAPS
 from pycats.sim.input_script import compile_timeline, COMBAT_SCRIPT
+from tests.golden_util import check_or_update
 
-FRAMES = 200
-
-
-def test_backends_are_byte_identical():
-    legacy = run_battle(backend="legacy", frames=FRAMES)
-    statechart = run_battle(backend="statechart", frames=FRAMES)
-    assert len(legacy) == len(statechart) == FRAMES
-    for f, (a, b) in enumerate(zip(legacy, statechart)):
-        assert a == b, f"divergence at frame {f}:\n legacy={a}\n  state={b}"
+DEFAULT_FRAMES = 200
+COMBAT_TAIL = 240
 
 
-def test_combat_scenario_byte_identical_and_reaches_hurt_and_ko():
-    """Parity test for hurt->fall/idle and ko->respawn->idle arcs.
+def test_legacy_matches_default_golden():
+    """The legacy backend still reproduces the committed `default` golden."""
+    snaps = run_battle(backend="legacy", frames=DEFAULT_FRAMES)
+    assert len(snaps) == DEFAULT_FRAMES
+    check_or_update("default", snaps)
 
-    COMBAT_SCRIPT drives P1 to land several grounded hits on P2, building up
-    enough knockback for P2 to be sent off the right blast zone (ko).  Both
-    backends must produce byte-identical per-frame snapshots, AND the run must
-    contain at least one frame where a player is in 'hurt' and at least one
-    where a player is in 'ko'.
-    """
+
+def test_legacy_matches_combat_golden_and_reaches_hurt_and_ko():
+    """Legacy reproduces the `combat` golden, and the run still exercises hurt+ko."""
     frame_inputs = compile_timeline(COMBAT_SCRIPT, KEYMAPS)
-    frames = len(frame_inputs) + 240  # run long enough for ko + respawn
-    legacy = run_battle(backend="legacy", frames=frames, frame_inputs=frame_inputs)
-    statechart = run_battle(backend="statechart", frames=frames,
-                            frame_inputs=frame_inputs)
+    frames = len(frame_inputs) + COMBAT_TAIL
+    snaps = run_battle(backend="legacy", frames=frames, frame_inputs=frame_inputs)
+    assert len(snaps) == frames
 
-    assert len(legacy) == len(statechart) == frames, (
-        f"snapshot count mismatch: legacy={len(legacy)}, statechart={len(statechart)}"
-    )
-
-    for f, (a, b) in enumerate(zip(legacy, statechart)):
-        assert a == b, f"divergence at frame {f}:\n legacy={a}\n  state={b}"
-
-    # Verify that hurt and ko states are actually reached
-    all_states = set()
-    for snap in legacy:
-        players, _atk, _phase, _winner = snap
-        for p in players:
-            all_states.add(p[1])  # state label is index 1 in each player tuple
-
+    all_states = {p[1] for snap in snaps for p in snap[0]}
     assert "hurt" in all_states, (
-        f"'hurt' state never reached in combat scenario; visited states: {sorted(all_states)}"
+        f"'hurt' state never reached in combat scenario; visited: {sorted(all_states)}"
     )
     assert "ko" in all_states, (
-        f"'ko' state never reached in combat scenario; visited states: {sorted(all_states)}"
+        f"'ko' state never reached in combat scenario; visited: {sorted(all_states)}"
     )
+
+    check_or_update("combat", snaps)
