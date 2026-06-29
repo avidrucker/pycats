@@ -37,7 +37,7 @@ the per-subsystem tables are authoritative). The split by subsystem:
 | **Movement/states** | ✅ jumps, dodges (spot/roll), crouch, drop-through. 🟡 air dodge is a **Brawl-style hybrid, not PM Melee-style** (no helpless). ⬜ short-hop/fast-fall/DJC/dash-dance/pivot/**ledge**/**wavedash**/**L-cancel** — most PM movement tech. |
 | **Fighters** | ✅ the per-character **infrastructure** (weight + 5 movement constants + crouch geometry, proven able-to-fail). 🟡/⬜ the **content**: only **2 distinct fighters** (default + partial Nalio); 4 of 5 archetypes are names-in-comments; the 6 selectable "cats" are recolor skins. |
 | **AI / CPU** | ✅ seeded-RNG seam (#166); determinism (intentional divergence). 🟡 three demo/benchmark controller archetypes. ⬜ **no player-facing CPU opponent at all**, no 1–9 difficulty ladder (research-only). |
-| **Screens/flow** | ✅ pause, win/results screen. 🟡 minimal main-menu/CSS/options + intentional rematch divergence. ⬜ **battle isn't a real game-state** yet (#100 port mid-flight: seam exists, not wired), stage/time/match settings absent. |
+| **Screens/flow** | ✅ pause, win/results screen. 🟡 minimal main-menu/CSS/options + intentional rematch divergence; the statechart screen engine is wired behind the `PYCATS_SCREEN_BACKEND` toggle (legacy default). ⬜ **battle isn't a real game-state** yet (#100 port mid-flight), stage/time/match settings absent. |
 
 **The three biggest structural gaps:** (1) PM **movement tech** (ledge + wavedash +
 L-cancel + dash/fast-fall), (2) **moveset content** beyond one cat's 3 moves, and
@@ -84,7 +84,7 @@ shield-poke and shield-priority-by-geometry are simplified. Shield drain/regen
 | Multiple hitboxes per move | ✅ | `MoveData.hitboxes: tuple`; `move_clock.tick` spawns all; `combat.process_hits` walks boxes; `test_multi_hitbox.py` | #130 | high |
 | Per-hitbox damage/angle/BKB/KBG | ✅ | `data.py:Hitbox` fields; `combat.process_hits` applies connecting box | #130/#117 | high |
 | Jab | 🟡 | Nalio only (`nalio_cat.py:_JAB`, PM Attack11, 3 boxes); default cat has only generic `"attack"` | spec-119; #154 | high |
-| D-tilt | 🟡 | Nalio `_DOWN_TILT` (3 boxes) keyed as `"attack"` not `"dtilt"` → down+A doesn't canonically resolve it | spec-119; #132/#123 | high |
+| D-tilt | 🟡 | Nalio `_DOWN_TILT` (3 boxes) sits in the generic `"attack"` alias slot, not its canonical `"dtilt"` key (deliberate bootstrap, `nalio_cat.py:41-43`). down+A *does* play it via the `"attack"` fallback (`move_select.py:58`) — but so do up/forward+A, since none of ftilt/utilt/dtilt are defined. Re-key under #142 when ground normals land | spec-119; #132/#142 | high |
 | Aerials (n/f/b/u/d-air) | 🟡 | only `nair` (Nalio); `move_select._AIR_A` maps all five but fair/bair/uair/dair undefined | spec-119; #136 | high |
 | F-tilt / U-tilt | ⬜ | keys reserved in `move_select.py`, no MoveData | analysis §2.1; #142 | high |
 | Smashes (chargeable) | ⬜ | no charge state, no smash keys, no charge field | analysis §8; #142 | high |
@@ -190,7 +190,7 @@ reserved for future golden-safe stochastic difficulty.
 | Rematch / play-again | 🟡 *(intentional)* | `win_screen.py` **both players confirm** + 30f delay → char_select; diverges from PM single-press | #10/#11 | high |
 | Stock match setting | 🟡 | `INITIAL_LIVES=3` hardcoded, applied in `reset_game`; no in-menu selector | PM Rules | high |
 | Options / settings menu | 🟡 *(intentional)* | `options_menu.py` (status bars/scale/fullscreen/hold-ESC); consolidated+persisted vs PM distributed/ephemeral | #116/#121/#122 | high |
-| Statechart screen engine wiring (#100/#181) | 🟡 | `systems/screen_engine.py:StatechartScreenEngine`/`make_screen_engine` + `test_screen_parity.py` exist (slice 1, #181), but **nothing wires it into the live game** | #100/#181 | high |
+| Statechart screen engine wiring (#100/#181) | 🟡 | `StatechartScreenEngine`/`make_screen_engine` (slice 1, #181) IS wired into the live game — `screen_manager.py:97-101` builds the engine with `backend=os.environ.get("PYCATS_SCREEN_BACKEND","legacy")` (used by `game.py:439,530`), so `PYCATS_SCREEN_BACKEND=statechart` runs the whole live flow on it. **Legacy is just the default**; flipping it = #100 slice 4 (after parity proven) | #100/#181 | high |
 | Match/battle as a real game-state | ⬜ | `game.py` `if current_state=="playing":` inline ladder; battle state module-global; FSM `playing` empty | screen-flow-statecharts-port-findings.md; #100 | high |
 | Screen flow on statecharts vs hand-rolled | ⬜ | live flow on hand-rolled `systems/fsm.py` (6-state guard table); statecharts only in fighter + match_engine | #100 | high |
 | Stage select | ⬜ | single hardcoded stage; `game.py` TODO "NOT YET" | menu-architecture §4 | high |
@@ -217,7 +217,7 @@ parity guard exist (#181) but the live flow and battle-as-a-state refactor are n
 **Biggest gaps (ranked by structural weight):**
 1. **PM movement tech** — ledge (#14), wavedash + L-cancel (gated on PM air dodge #184), dash/dash-dance/pivot, fast-fall/short-hop. Mostly ⬜.
 2. **Moveset content** — tilts/smashes/dash/aerials/specials beyond Nalio's ~3 moves; plus the two engine gates (sequential multi-hit, Sakurai-angle) — #142 Phase 2.
-3. **Battle-as-a-state / statecharts screen-flow port** — #100 (seam landed #181, not wired).
+3. **Battle-as-a-state / statecharts screen-flow port** — #100 (engine wired behind the `PYCATS_SCREEN_BACKEND` toggle #181; battle-as-a-state + flipping the default to statechart remain — slices 2 & 4).
 4. **Defense cluster** — DI/SDI/ASDI/tech (Phase 3); shield geometry/poke + shield pushback.
 5. **Roster content** — 4 of 5 archetypes absent; the one real archetype isn't live-selectable (#117).
 6. **Player-facing CPU** — no in-game opponent or difficulty ladder (research-ready, #148).
@@ -242,9 +242,11 @@ report only links it.
 - **PM target is secondary-tier:** the oracle is SmashWiki + community docs +
   `docs/pm-reference/*` + the repo's research docs, not PM decompilation — provenance
   caveats from umbrella #24 apply.
-- **Follow-ups:** several ⬜/🟡 rows already have tracking issues (linked inline);
-  rows lacking one (e.g. d-tilt mis-keyed to `"attack"`; the unwired
-  `StatechartScreenEngine`) are candidates to file one at a time, on go-ahead.
+- **Follow-ups:** several ⬜/🟡 rows already have tracking issues (linked inline).
+  Two near-misses flagged during this audit were verified to be **already tracked**,
+  not new bugs: the Nalio d-tilt alias re-key (annotated on #142) and flipping the
+  screen-engine default to statechart (annotated on #100, slice 4). Genuinely
+  untracked rows are candidates to file one at a time, on go-ahead.
 
 ## Sources (PM oracle)
 
