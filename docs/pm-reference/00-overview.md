@@ -85,7 +85,7 @@ emit structured JSON. Ranked source detail (incl. Melee/Brawl fallbacks): #120.
 
 ## Index — sub-domain docs
 
-Status: ✅ written · ⬜ planned ([epic #147](https://github.com/avidrucker/pycats/issues/147) files each as its own ticket, one at a time).
+Status: ✅ written. **All 13 sub-domain docs are complete** ([epic #147](https://github.com/avidrucker/pycats/issues/147) — each was filed and written as its own ticket).
 
 | Doc | Sub-domain | Status |
 |---|---|---|
@@ -101,7 +101,7 @@ Status: ✅ written · ⬜ planned ([epic #147](https://github.com/avidrucker/py
 | [`moveset-and-frame-data.md`](./moveset-and-frame-data.md) | Move taxonomy + per-move frame-data fields, charge moves, projectiles | ✅ |
 | [`stages-and-environment.md`](./stages-and-environment.md) | Stages, platform types, blast zones, ledges, camera | ✅ |
 | [`menus-and-game-flow.md`](./menus-and-game-flow.md) | CSS, stage select, ruleset/match settings, results, options | ✅ |
-| `items.md` | PM item set + behaviour (low priority; pycats has no items) | ⬜ |
+| [`items.md`](./items.md) | PM item set + behaviour (low priority; pycats has no items) | ✅ |
 
 ## pycats status
 
