@@ -96,7 +96,7 @@ Status: ✅ written · ⬜ planned ([epic #147](https://github.com/avidrucker/py
 | [`movement-and-tech.md`](./movement-and-tech.md) | Walk/dash/run, jumps, fast-fall, wavedash, dash-dance, pivot, L-cancel | ✅ |
 | [`defense-shield-dodge.md`](./defense-shield-dodge.md) | Shield (HP/drain/shieldstun/poke/powershield/parry), spot/roll/air dodge | ✅ |
 | [`grabs-throws.md`](./grabs-throws.md) | Grab, pummel, throws, release, mash-escape | ✅ |
-| `ledge-mechanics.md` | Ledge grab/hang, getup, invincibility, edgeguarding, teching | ⬜ |
+| [`ledge-mechanics.md`](./ledge-mechanics.md) | Ledge grab/hang, getup, invincibility, edgeguarding, teching | ✅ |
 | [`character-data-and-archetypes.md`](./character-data-and-archetypes.md) | Per-character attributes, geometry, frame-data structure, roster/archetypes | ✅ |
 | [`moveset-and-frame-data.md`](./moveset-and-frame-data.md) | Move taxonomy + per-move frame-data fields, charge moves, projectiles | ✅ |
 | `stages-and-environment.md` | Stages, platform types, blast zones, ledges, camera | ⬜ |
