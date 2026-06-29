@@ -91,7 +91,7 @@ Status: ✅ written · ⬜ planned ([epic #147](https://github.com/avidrucker/py
 |---|---|---|
 | `00-overview.md` | This file — conventions, sources, index | ✅ |
 | [`combat-knockback-hitstun.md`](./combat-knockback-hitstun.md) | Knockback formula, hitstun, hitlag, launch+decay, DI/SDI, angles | ✅ |
-| `combat-hitboxes-priority.md` | Hit/hurtbox model, multi-hitbox, clank/priority, stale-move negation | ⬜ |
+| [`combat-hitboxes-priority.md`](./combat-hitboxes-priority.md) | Hit/hurtbox model, multi-hitbox, clank/priority, stale-move negation | ✅ |
 | `fighter-states.md` | Action-state graph + transitions | ⬜ |
 | `movement-and-tech.md` | Walk/dash/run, jumps, fast-fall, wavedash, dash-dance, pivot, L-cancel | ⬜ |
 | `defense-shield-dodge.md` | Shield (HP/drain/shieldstun/poke/powershield/parry), spot/roll/air dodge | ⬜ |
