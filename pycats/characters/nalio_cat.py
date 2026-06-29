@@ -157,6 +157,18 @@ _CROUCH_HURTBOX = Hurtbox(
     )
 )
 
+# --- Prone geometry (#173) ----------------------------------------------------
+# Knocked down, Nalio lies flat — lower than the crouch (40×40) to a short 40×22
+# box, feet planted, with a low/flat hurtbox so high attacks whiff over the downed
+# fighter. ⚠ playtest starting points (per-cat tuning, like the crouch numbers).
+_PRONE_SIZE = (40, 22)
+_PRONE_HURTBOX = Hurtbox(
+    circles=(
+        Circle(dx=18, dy=12, r=11),   # torso, lying low
+        Circle(dx=26, dy=14, r=9),    # legs along the ground
+    )
+)
+
 # --- Assembled FighterData ----------------------------------------------------
 NALIO_FIGHTER_DATA = FighterData(
     weight=100,            # PM3.6 Mario (== pycats default → no KB change)
@@ -164,4 +176,6 @@ NALIO_FIGHTER_DATA = FighterData(
     moves={"attack": _DOWN_TILT, "jab": _JAB, "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
+    prone_size=_PRONE_SIZE,
+    prone_hurtbox=_PRONE_HURTBOX,
 )

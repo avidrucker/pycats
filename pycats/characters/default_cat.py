@@ -101,10 +101,24 @@ _CROUCH_HURTBOX = Hurtbox(
     )
 )
 
+# --- Prone geometry (#173) ---------------------------------------------------
+# A downed fighter lies flat: the body drops further than crouch (40x40) to a
+# short 40x22 box, feet planted, with a low hurtbox so high attacks whiff over
+# it. Golden-safe: the headless replay never forces prone.
+_PRONE_SIZE = (40, 22)
+_PRONE_HURTBOX = Hurtbox(
+    circles=(
+        Circle(dx=18, dy=12, r=11),
+        Circle(dx=26, dy=14, r=9),
+    )
+)
+
 # --- Assembled FighterData ---------------------------------------------------
 DEFAULT_FIGHTER_DATA = FighterData(
     hurtbox=_HURTBOX,
     moves={"attack": _ATTACK_MOVE},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
+    prone_size=_PRONE_SIZE,
+    prone_hurtbox=_PRONE_HURTBOX,
 )

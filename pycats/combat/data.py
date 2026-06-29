@@ -119,6 +119,13 @@ class FighterData:
                   to None = this fighter cannot crouch. Crouch effectiveness is
                   deliberately per-character (PM: Kirby hugs the ground, DK barely
                   lowers) — see docs and the #124 research notes.
+        prone_size / prone_hurtbox — per-character prone/knockdown geometry (#173):
+                  the lying-down counterpart of the crouch pair. While prone the
+                  body Rect lowers further than crouch (a downed fighter lies flat)
+                  and the hurtbox drops with it so high attacks whiff. Both default
+                  to None = this fighter has no prone posture (it keeps the stand
+                  box while prone). New fields, NOT reused crouch fields: prone is a
+                  lower posture than crouch.
 
     The dict is not frozen; callers must not mutate it.
     """
@@ -132,6 +139,8 @@ class FighterData:
     max_jumps: int = MAX_JUMPS
     crouch_size: tuple[int, int] | None = None
     crouch_hurtbox: Hurtbox | None = None
+    prone_size: tuple[int, int] | None = None
+    prone_hurtbox: Hurtbox | None = None
 
 
 # ---------------------------------------------------------------------------

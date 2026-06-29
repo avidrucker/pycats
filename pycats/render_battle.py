@@ -424,19 +424,25 @@ def render_battle(surface, players, platforms):
         p.tail.draw(surface)
         # Body composite (rect + stripes + eyes + ears + whiskers + name).
         body = _cat_body_surface(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
-        # Crouch squash (#124): vertically scale the body toward the crouch
-        # height, feet planted, eased over a few frames. Purely visual — driven
-        # by a render-only progress var, so the deterministic sim is untouched
-        # (the collision Rect itself snaps in Player._apply_crouch_geometry).
+        # Posture squash (#124 crouch / #173 prone): vertically scale the body
+        # toward the active lowered height, feet planted, eased over a few frames.
+        # Purely visual — driven by a render-only progress var, so the
+        # deterministic sim is untouched (the collision Rect itself snaps in
+        # Player._apply_posture_geometry).
         stand_h = p.fighter.stand_size[1]
-        crouch_h = p.fighter.crouch_size[1] if p.fighter.crouch_size else stand_h
-        target = 1.0 if p.state == "crouch" else 0.0
+        if p.state == "crouch" and p.fighter.crouch_size:
+            low_h = p.fighter.crouch_size[1]
+        elif p.state == "prone" and p.fighter.prone_size:
+            low_h = p.fighter.prone_size[1]
+        else:
+            low_h = stand_h
+        target = 1.0 if low_h != stand_h else 0.0
         anim = getattr(p, "_crouch_anim", 0.0)
         anim = (min(target, anim + _CROUCH_ANIM_RATE) if anim < target
                 else max(target, anim - _CROUCH_ANIM_RATE))
         p._crouch_anim = anim
-        if anim > 0.0 and crouch_h != stand_h:
-            s = (stand_h + (crouch_h - stand_h) * anim) / stand_h
+        if anim > 0.0 and low_h != stand_h:
+            s = (stand_h + (low_h - stand_h) * anim) / stand_h
             body = pygame.transform.scale(
                 body, (body.get_width(), max(1, round(body.get_height() * s))))
             blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s)

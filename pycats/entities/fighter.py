@@ -74,6 +74,10 @@ class Fighter:
         self.crouch_size = fighter_data.crouch_size
         self.crouch_hurtbox = fighter_data.crouch_hurtbox
         self.crouch_attempting = False  # set per-frame by input (down on ground)
+        # Prone/knockdown geometry (#173): lying-down counterpart of crouch, used
+        # while state == "prone" (entered via Player.force_prone). None = no posture.
+        self.prone_size = fighter_data.prone_size
+        self.prone_hurtbox = fighter_data.prone_hurtbox
 
         # ---------- kinematics (#84 / 6b-3a) ----------
         # The authoritative body box + velocity now live on the domain object;

@@ -106,3 +106,108 @@ def test_prone_state_sequence_reaches_prone_then_stands():
         seq.append(p.state)
     assert "prone" in seq, "scenario never reached prone"
     assert seq[-1] == "idle", f"fighter never stood up: {seq}"
+
+
+# --- #173: prone posture geometry — body lowers, high attacks whiff -----------
+
+def test_prone_resizes_collision_rect_feet_planted():
+    """While prone the body Rect is shorter than the 40x60 stand box AND shorter
+    than the 40x40 crouch box (lying-down posture), with the bottom unchanged."""
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    stand_bottom = p.rect.bottom
+    assert p.rect.height == 60
+    p.force_prone(20)
+    _run(p, plats, _frame())                   # one update applies the resize
+    assert p.state == "prone"
+    assert p.rect.height < 40                   # lower than the crouch box (40)
+    assert p.rect.bottom == stand_bottom        # feet planted
+
+
+def test_prone_stands_back_up_restores_box():
+    """When the getup window elapses the stand box is restored, feet planted."""
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    bottom = p.rect.bottom
+    p.force_prone(3)
+    for _ in range(6):                          # run past the getup window
+        _run(p, plats, _frame())
+    assert p.state == "idle"
+    assert p.rect.height == 60
+    assert p.rect.bottom == bottom
+
+
+def _high_attack(owner, cx, cy, r=8):
+    from types import SimpleNamespace
+    return SimpleNamespace(active=True, owner=owner, hit_cx=cx, hit_cy=cy,
+                           hit_r=r, disappear_on_hit=False, damage=10.0,
+                           base_knockback=0.0, knockback_growth=0.0, angle=0)
+
+
+def test_prone_lowers_hurtbox_high_attack_whiffs():
+    """A high hit that connects on a standing fighter whiffs over a prone one
+    (mirrors test_crouch_lowers_hurtbox_high_attack_whiffs)."""
+    from pycats.systems import combat
+    plats = _ground()
+    attacker = _mk()
+
+    standing = _mk(); _settle(standing, plats)
+    cx, cy = standing.rect.centerx, standing.rect.top + 5
+    combat.process_hits([standing], [_high_attack(attacker, cx, cy)])
+    assert standing.fighter.percent == 10.0, "high hit should connect standing"
+
+    downed = _mk(); _settle(downed, plats)
+    downed.force_prone(20)
+    _run(downed, plats, _frame())
+    assert downed.state == "prone"
+    # Same world-space point now sits above the lowered prone hurtbox -> whiff.
+    combat.process_hits([downed], [_high_attack(attacker, cx, cy)])
+    assert downed.fighter.percent == 0.0, "high hit should whiff over the prone fighter"
+
+
+def test_prone_uses_purpose_built_hurtbox_not_resized_standing():
+    """Load-bearing on the prone_hurtbox SELECTION (#173 combat.py branch): a hit
+    just below the planted feet falls OUTSIDE the short purpose-built prone hurtbox
+    but INSIDE the tall standing hurtbox mis-resolved against the shrunk prone Rect.
+    It must whiff — so disabling the combat.py prone branch makes this connect."""
+    from pycats.systems import combat
+    plats = _ground()
+    attacker = _mk()
+    downed = _mk(); _settle(downed, plats)
+    downed.force_prone(20)
+    _run(downed, plats, _frame())
+    assert downed.state == "prone"
+    near_ground_cy = downed.rect.bottom + 6
+    combat.process_hits(
+        [downed], [_high_attack(attacker, downed.rect.centerx, near_ground_cy, r=2)])
+    assert downed.fighter.percent == 0.0, (
+        "near-ground hit must whiff the short prone hurtbox (not the mis-resolved "
+        "standing box)"
+    )
+
+
+def test_nalio_has_prone_geometry():
+    """Nalio (Mario archetype) defines a prone box lower than its crouch box, with
+    a hurtbox that sits lower than the standing one (mirrors the crouch data test)."""
+    from pycats.combat.data import load_fighter_data, Hurtbox
+    fd = load_fighter_data("nalio")
+    assert fd.prone_size is not None
+    w, h = fd.prone_size
+    assert w == 40 and h < fd.crouch_size[1]      # lower than the crouch box
+    assert isinstance(fd.prone_hurtbox, Hurtbox)
+    stand_top = min(c.dy - c.r for c in fd.hurtbox.circles)
+    prone_top = min(c.dy - c.r for c in fd.prone_hurtbox.circles)
+    assert prone_top >= stand_top, "prone hurtbox should not sit above the standing one"
+
+
+def test_prone_pose_renders_without_error():
+    """The prone render pose draws without raising (visual-only / playtested)."""
+    import pygame
+    from pycats import render_battle
+    p = _mk(); plats = _ground(); _settle(p, plats)
+    p.force_prone(20); _run(p, plats, _frame())
+    assert p.state == "prone"
+    surf = pygame.Surface((400, 300))
+    render_battle.render_battle(surf, [p], pygame.sprite.Group())

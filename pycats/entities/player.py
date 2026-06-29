@@ -238,7 +238,7 @@ class Player(pygame.sprite.Sprite):
         # is a spot dodge), for a cat that can crouch. Read raw held input (not
         # the shield_attempting flag, which is set later this frame) so the
         # shield/crouch split is order-independent. The state machine reacts to
-        # this flag; _apply_crouch_geometry resizes the body from the resulting
+        # this flag; _apply_posture_geometry resizes the body from the resulting
         # state label (so the geometry stays byte-identical to the golden).
         self.fighter.crouch_attempting = (
             self._pressed(held, "down")
@@ -323,22 +323,25 @@ class Player(pygame.sprite.Sprite):
         # FSM state transitions -----------------------------------
         self.engine.tick(None)
 
-        # Crouch body resize (#124): derived from the final state label so the
-        # geometry stays byte-identical (golden-stable).
-        self._apply_crouch_geometry()
+        # Posture body resize (#124 crouch / #173 prone): derived from the final
+        # state label so the geometry stays byte-identical (golden-stable).
+        self._apply_posture_geometry()
 
-    def _apply_crouch_geometry(self):
-        """Resize the body Rect to match the crouch state, feet planted.
+    def _apply_posture_geometry(self):
+        """Resize the body Rect to match a lowered posture, feet planted.
 
-        Crouching shrinks the collision box to the per-cat ``crouch_size``
-        (anchored at midbottom so the feet stay put); standing restores
-        ``stand_size``. No-op for cats without crouch data. Keyed off
-        ``self.state`` (not the input) so the resize follows the engine's
-        computed label — preserving the golden."""
+        Crouching (#124) shrinks the box to the per-cat ``crouch_size``; prone
+        (#173) shrinks it further to ``prone_size`` (a downed fighter lies flat);
+        any other state restores ``stand_size``. Anchored at midbottom so the feet
+        stay put, and a missing per-cat size for the active posture is a no-op (the
+        box stays as-is). Keyed off ``self.state`` (not the input) so the resize
+        follows the engine's computed label — preserving the golden."""
         f = self.fighter
-        if f.crouch_size is None:
-            return
-        target = f.crouch_size if self.state == "crouch" else f.stand_size
+        target = f.stand_size
+        if self.state == "crouch" and f.crouch_size is not None:
+            target = f.crouch_size
+        elif self.state == "prone" and f.prone_size is not None:
+            target = f.prone_size
         if (self.rect.width, self.rect.height) != tuple(target):
             midbottom = self.rect.midbottom
             self.rect.size = target

@@ -121,9 +121,15 @@ def process_hits(players, attacks):
             # is simply treated as not crouching, mirroring the `resolved` getattr
             # fallback above.
             hurtbox = defender.fighter_data.hurtbox
-            if (getattr(defender, "state", None) == "crouch"
+            d_state = getattr(defender, "state", None)
+            if (d_state == "crouch"
                     and getattr(defender.fighter, "crouch_hurtbox", None) is not None):
                 hurtbox = defender.fighter.crouch_hurtbox
+            elif (d_state == "prone"
+                    and getattr(defender.fighter, "prone_hurtbox", None) is not None):
+                # Prone lowers the hurtbox further (#173) so high attacks whiff
+                # over a downed fighter, exactly as crouch does.
+                hurtbox = defender.fighter.prone_hurtbox
             resolved_hurtbox = [
                 resolve_circle(c, defender.rect.x, defender.rect.y,
                                defender.fighter.facing_right, defender.rect.width)
