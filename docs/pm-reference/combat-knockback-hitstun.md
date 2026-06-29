@@ -105,9 +105,11 @@ completeness (pycats has not implemented them — see footer).
 Angles are degrees (0° = forward, 90° = straight up), **except special sentinel
 codes** that are interpreted, not taken literally:
 
-- **361 — the Sakurai angle:** the most common code. Behaves as ~44° when the
-  victim is grounded-ish / low-KB and flattens toward horizontal as KB rises (it
-  keeps weak hits from popping grounded opponents straight up). Not a literal 361°.
+- **361 — the Sakurai angle:** the most common code. An *airborne* victim is
+  launched at a fixed angle (~40° Brawl/PM, ~44° Melee). A *grounded* victim
+  scales from ~horizontal (0°) for weak/low-KB hits up to that same angle as KB
+  rises — so weak hits don't pop grounded opponents straight up. Not a literal
+  361°. Implemented in pycats by `knockback.sakurai_angle` (#203).
 - **365 / 366 — autolink angles:** scale with the attacker's own motion to keep
   multi-hit moves connecting.
 
@@ -141,7 +143,7 @@ Implemented in Phase 1 ([#38](https://github.com/avidrucker/pycats/issues/38)):
 **Deferred / divergent in pycats:**
 - **DI / SDI** — not implemented (Phase 3).
 - **Hitlag `h`/`e`/`c` multipliers** (per-move / electric / crouch-cancel) — fixed at 1; crouch-cancel KB reduction is a separate follow-up ([#135](https://github.com/avidrucker/pycats/issues/135)).
-- **Sakurai angle (361)** — treated as a literal placeholder where it appears (e.g. Nalio nair used 45°); real interpretation not yet built.
+- **Sakurai angle (361)** — resolved by `knockback.sakurai_angle` (#203): airborne-fixed, grounded scales flat→max with KB. The angle/KB-threshold constants (`SAKURAI_*` in config) are unsourced ⚠ playtest starting points, not exact PM values.
 - **Brawl vertical-KB gravity term** — pycats has one global gravity; not modelled.
 - Launch/decay constants are **tuned to the pixel stage**, not the raw 0.03/0.051 — a deliberate scale divergence (see [#99](https://github.com/avidrucker/pycats/issues/99) when logged).
 - Open questions: [#24](https://github.com/avidrucker/pycats/issues/24).

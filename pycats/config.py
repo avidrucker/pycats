@@ -103,6 +103,21 @@ HITLAG_CAP = 30            # Brawl-onward cap (Melee was 20).
 # preserving the 1.7 decay/launch ratio. ⚠ tuning — playtest and adjust.
 KNOCKBACK_LAUNCH_FACTOR = 0.085
 KNOCKBACK_DECAY = 0.145
+# Sakurai angle (#203, a #142 gate). The angle id 361 is a SENTINEL, not a literal
+# degree (SmashWiki "Sakurai angle"). Resolved in Fighter.receive_hit via
+# knockback.sakurai_angle(kb, on_ground):
+#   - airborne victim  -> SAKURAI_AIRBORNE_DEG (fixed), regardless of KB;
+#   - grounded victim   -> 0° below LOW_KB, scaling LINEARLY up to
+#     SAKURAI_GROUNDED_MAX_DEG at HIGH_KB (weak grounded hits stay flat so they
+#     don't pop a grounded opponent straight up).
+# Angles/thresholds are Brawl/PM-derived ⚠ playtest starting points (KB here is
+# the pycats knockback() magnitude, not raw Smash units), tunable like the
+# crouch/prone numbers.
+SAKURAI_ANGLE_CODE = 361
+SAKURAI_AIRBORNE_DEG = 40.0
+SAKURAI_GROUNDED_MAX_DEG = 40.0
+SAKURAI_GROUNDED_LOW_KB = 60.0
+SAKURAI_GROUNDED_HIGH_KB = 88.0
 # Crouch-cancel (#135). A hit taken while in the `crouch` state (#124) has its
 # knockback magnitude scaled by this factor before launch + hitstun are derived
 # — Melee/PM's signature defensive use of crouch. 0.67x is the Melee/PM value;

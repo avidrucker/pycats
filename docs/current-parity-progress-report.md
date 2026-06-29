@@ -91,7 +91,7 @@ shield-poke and shield-priority-by-geometry are simplified. Shield drain/regen
 | Dash attack | ⬜ | absent (needs a dash state) | analysis §2.1; #142 | high |
 | Specials (neutral/side/up/down-B) | ⬜ | `move_select._SPECIAL` maps 4 keys; `resolve_move_key` no-ops (no character defines any) | #67/#142 | high |
 | Sequential multi-hit (jab1-2-3) | ⬜ | `MoveClock` holds ONE MoveData; no chain linkage | analysis §2.2; #142 | high |
-| Sakurai angle (361) handling | ⬜ | `fighter.py:receive_hit` `math.radians(atk.angle)` treats 361 literally (≡1°); Nalio uses literal-45 placeholder | analysis §2.2; #38 | high |
+| Sakurai angle (361) handling | ✅ | `fighter.receive_hit` resolves 361 via `knockback.sakurai_angle` (airborne-fixed, grounded scales flat→max with KB); thresholds are ⚠ playtest starting points | #203 | high |
 | Stale-move negation | ⬜ | no staleness queue/table; `knockback()` takes no stale multiplier | analysis §8; #142 | high |
 
 **Notes:** the moveset **engine is real**; the **content is one cat, ~3 moves**

@@ -43,10 +43,13 @@ from ..config import (
     DODGE_AIR_SPEED,
     KNOCKBACK_LAUNCH_FACTOR,
     CROUCH_CANCEL_FACTOR,
+    SAKURAI_ANGLE_CODE,
     KNOCKDOWN_VY_THRESHOLD,
     KNOCKDOWN_PRONE_FRAMES,
 )
-from ..combat.knockback import knockback, hitstun_frames, hitlag_frames
+from ..combat.knockback import (
+    knockback, hitstun_frames, hitlag_frames, sakurai_angle,
+)
 from ..combat.shield import shieldstun_frames
 from ..combat.shield import shield_break_stun_frames
 
@@ -225,7 +228,12 @@ class Fighter:
             direction = (
                 1 if atk.owner.fighter.facing_right else -1
             )  # the direction of the attack
-            radians = math.radians(atk.angle)
+            # Sakurai-angle sentinel (#203): 361 is a code, not literal degrees —
+            # resolve it from this hit's knockback + whether we're grounded.
+            angle_deg = atk.angle
+            if angle_deg == SAKURAI_ANGLE_CODE:
+                angle_deg = sakurai_angle(kb, self.on_ground)
+            radians = math.radians(angle_deg)
             # Initial launch velocity (#44): KB * launch factor. It then bleeds
             # off via decay_velocity each hitstun frame in update() — Smash-style
             # ease-out rather than a constant slide (#43). Issue #8: COMBINE the
