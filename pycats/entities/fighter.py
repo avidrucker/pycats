@@ -41,6 +41,7 @@ from ..config import (
     DODGE_TIME,
     DODGE_SPEED,
     KNOCKBACK_LAUNCH_FACTOR,
+    CROUCH_CANCEL_FACTOR,
 )
 from ..combat.knockback import knockback, hitstun_frames, hitlag_frames
 from ..combat.shield import shieldstun_frames
@@ -202,6 +203,12 @@ class Fighter:
             atk.owner.fighter.record_damage_given(atk.damage)
             kb = knockback(self.percent, atk.damage, self.weight,
                            atk.base_knockback, atk.knockback_growth)
+            # Crouch-cancel (#135): a hit taken while in the `crouch` state (#124)
+            # has its knockback scaled down by CROUCH_CANCEL_FACTOR (0.67x, PM)
+            # before launch + hitstun are derived — crouch as a defensive tool.
+            # Hitlag scaling (the "c" multiplier) stays deferred this slice.
+            if self.owner.state == "crouch":
+                kb *= CROUCH_CANCEL_FACTOR
             self.hurt_timer = hitstun_frames(kb)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
             direction = (

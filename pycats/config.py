@@ -97,6 +97,13 @@ HITLAG_CAP = 30            # Brawl-onward cap (Melee was 20).
 # preserving the 1.7 decay/launch ratio. ⚠ tuning — playtest and adjust.
 KNOCKBACK_LAUNCH_FACTOR = 0.085
 KNOCKBACK_DECAY = 0.145
+# Crouch-cancel (#135). A hit taken while in the `crouch` state (#124) has its
+# knockback magnitude scaled by this factor before launch + hitstun are derived
+# — Melee/PM's signature defensive use of crouch. 0.67x is the Melee/PM value;
+# ⚠ tuning starting point. Hitlag scaling (the "c" multiplier in knockback.py)
+# stays deferred this slice — knockback only. A single global factor for v1;
+# per-character/game tweaks can move it into FighterData later.
+CROUCH_CANCEL_FACTOR = 0.67
 
 # Clank / priority (#38 4c). When two opposing GROUND hitboxes overlap, the Smash
 # "priority range" decides the outcome: if their damage differs by <= this many
