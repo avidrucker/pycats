@@ -10,7 +10,7 @@ Critical rules:
   feature priority — assign features directly instead.
 - **A question/suggestion is not authorization to create work** — answer first;
   file/claim/code only on an explicit go-ahead. See [RULES.md](./RULES.md) → "Filing work".
-- **Repro/spec-first:** if a bug's symptom isn't crisp, file a `research` ticket to
+- **Repro/spec-first:** if a bug's symptom isn't specific, file a `research` ticket to
   reproduce/spec it before a DEV ticket.
 - **Every bugfix lands a regression test in the same commit**, and that test must
   be **able to fail** (red without the fix, green with it — revert-the-fix check).

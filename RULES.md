@@ -58,7 +58,7 @@
   "surface the contradiction before an outward-facing close" under *Fixing bugs*.)
 - Shape every ticket as a complaint: **have X / should have Y / repro**
   (yegor-bdd).
-- **Repro/spec-first for unclear bugs.** If a bug's symptom isn't crisp enough to
+- **Repro/spec-first for unclear bugs.** If a bug's symptom isn't specific enough to
   write have/should/repro, file a **`research`** ticket to validate / spec /
   reproduce it first, then create the DEV bug ticket once the repro is known.
   Never file a half-specified DEV ticket.
