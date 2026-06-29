@@ -52,6 +52,12 @@ SHIELD_BREAK_STUN_MIN = 90   # frames at >= 400% damage
 SHIELDSTUN_FACTOR = 0.345
 DODGE_TIME = 14
 DODGE_SPEED = 14  # horizontal boost for a roll
+# PM-faithful (Melee-style) air dodge directional burst (#184). The air dodge
+# *sets* (replaces) velocity to this magnitude in the stick direction, unlike the
+# ground roll which the sim reads separately. GUESS — no PM value exists in
+# pycats px/frame; reuses DODGE_SPEED as a starting point, derivable via #192/#195
+# (PM units/frame × PX_PER_UNIT≈5.4). See GUESSED_VALUES_TO_RESEARCH.md.
+DODGE_AIR_SPEED = 14
 
 # ---------------- combat / attacks ----------------
 PLAYER_ATTACK_DURATION = 12  # this can be different than the lifetime of an attack, for example, a fireball could take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames

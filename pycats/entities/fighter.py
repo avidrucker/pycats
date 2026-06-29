@@ -40,6 +40,7 @@ from ..config import (
     RESPAWN_DELAY_FRAMES,
     DODGE_TIME,
     DODGE_SPEED,
+    DODGE_AIR_SPEED,
     KNOCKBACK_LAUNCH_FACTOR,
     CROUCH_CANCEL_FACTOR,
     KNOCKDOWN_VY_THRESHOLD,
@@ -132,6 +133,9 @@ class Fighter:
         self.drop_platform = None  # platform drop-through reference
         self.dodge_blocked_by_edge = False  # current dodge is blocked by an edge
         self.spot_dodge_shield_held = False  # shield was held during a spot dodge
+        # PM-faithful air dodge (#184): True while an air dodge is in progress, so the
+        # statechart routes the dodge's exit to `helpless` (not `fall`); cleared on land.
+        self.air_dodge_active = False
 
         # ---------- facing ----------
         self.facing_right = facing_right
@@ -245,6 +249,7 @@ class Fighter:
         if self.on_ground and was_airborne:
             self.jumps_remaining = self.max_jumps  # reset jumps when landing
             self.air_dodge_ok = True  # reset air dodge availability
+            self.air_dodge_active = False  # landing ends helpless/special-fall (#184)
             # Auto landing-velocity knockdown (#145): landing hard while still in
             # hitstun (tumble) without teching forces `prone` (#13). The hurt-timer
             # gate is what separates this from a normal jump landing (same impact
@@ -301,6 +306,7 @@ class Fighter:
         self.facing_right = self.original_facing_right
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True
+        self.air_dodge_active = False  # clear helpless/special-fall on respawn (#184)
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
         self.shield_attempting = False
@@ -354,11 +360,12 @@ class Fighter:
             # debugging
             # print(f"GROUND SPOT DODGE START: {self.owner.char_name} ground spot dodge initiated")
         elif dir_x == 0 and not self.on_ground:
-            # Air dodge - preserve Y velocity, no horizontal movement
-            # self.vel.x = 0  # Only reset horizontal velocity for air dodge
+            # Neutral air dodge (PM/Melee, #184): HALT momentum — replace velocity
+            # with ~zero (hover), not Brawl-style preserve. Gravity still applies
+            # over the dodge frames. Routes to `helpless` on exit via air_dodge_active.
+            self.vel.update(0, 0)
+            self.air_dodge_active = True
             self.spot_dodge_shield_held = False
-            # debugging
-            # print(f"AIR DODGE START: {self.owner.char_name} air dodge initiated (preserving Y velocity)")
         else:
             # Directional dodge (ground roll) - set horizontal velocity, preserve or reset Y
             if self.on_ground:
@@ -372,7 +379,9 @@ class Fighter:
                 # research #23 — so only the grounded branch sets facing.)
                 self.facing_right = dir_x < 0
             else:
-                self.vel.x = (
-                    dir_x * DODGE_SPEED + self.vel.x
-                )  # Air directional dodge - preserve Y velocity
+                # Directional air dodge (PM/Melee, #184): SET (replace) velocity to a
+                # fixed burst in the stick direction and zero vertical — not Brawl-style
+                # additive/preserve. Routes to `helpless` on exit via air_dodge_active.
+                self.vel.update(dir_x * DODGE_AIR_SPEED, 0)
+                self.air_dodge_active = True
             self.spot_dodge_shield_held = False

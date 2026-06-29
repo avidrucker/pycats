@@ -7,7 +7,7 @@ from typing import Any
 # attacking region was split into startup/active/recovery sub-phases (Task 4),
 # so it is mapped separately via in_state("attacking") -> "attack".
 LABELS = ("idle", "run", "crouch", "jump", "fall", "shield", "dodge", "ko",
-          "hurt", "stun", "prone")
+          "hurt", "stun", "prone", "helpless")
 
 
 class StatechartEngine:

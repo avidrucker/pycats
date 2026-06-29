@@ -10,15 +10,17 @@ public API: drive `Player.update(...)` and assert on `player.state`,
 Two dodge families:
   - GROUND spot dodge (shield+down): special physics — no gravity, no fall-through;
     returns to shield while shield stays held.
-  - AIR dodge (shield[+direction]): sets ±DODGE_SPEED horizontally (or preserves
-    momentum when neutral), keeps normal gravity, consumes the air dodge.
+  - AIR dodge (shield[+direction]): PM/Melee model (#184) — SETS ±DODGE_AIR_SPEED
+    horizontally and HALTS vertical momentum (neutral → ~zero), consumes the air
+    dodge, and exits into `helpless` (special-fall) until landing. Gravity still
+    acts over the dodge frames. (Helpless behaviour: tests/test_air_dodge_helpless.py.)
 """
 import pygame as pg
 
 from pycats.entities.player import Player
 from pycats.entities.platform import Platform
 from pycats.core.input import InputFrame
-from pycats.config import P1_COLOR, WHITE, DODGE_SPEED, DODGE_TIME
+from pycats.config import P1_COLOR, WHITE, DODGE_SPEED, DODGE_AIR_SPEED, DODGE_TIME
 
 CONTROLS = {
     "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
@@ -88,14 +90,14 @@ def test_right_air_dodge_applies_positive_dodge_speed():
     p, plats = _airborne_player()
     p.update(_frame({SHIELD, RIGHT}, {SHIELD, RIGHT}), plats, pg.sprite.Group())
     assert p.state == "dodge"
-    assert p.fighter.vel.x == DODGE_SPEED, f"expected +{DODGE_SPEED}, got {p.fighter.vel.x}"
+    assert p.fighter.vel.x == DODGE_AIR_SPEED, f"expected +{DODGE_AIR_SPEED}, got {p.fighter.vel.x}"
 
 
 def test_left_air_dodge_applies_negative_dodge_speed():
     p, plats = _airborne_player()
     p.update(_frame({SHIELD, LEFT}, {SHIELD, LEFT}), plats, pg.sprite.Group())
     assert p.state == "dodge"
-    assert p.fighter.vel.x == -DODGE_SPEED, f"expected -{DODGE_SPEED}, got {p.fighter.vel.x}"
+    assert p.fighter.vel.x == -DODGE_AIR_SPEED, f"expected -{DODGE_AIR_SPEED}, got {p.fighter.vel.x}"
 
 
 def test_neutral_air_dodge_adds_no_horizontal_velocity():
@@ -107,23 +109,28 @@ def test_neutral_air_dodge_adds_no_horizontal_velocity():
     assert p.fighter.vel.x == 0, f"neutral air dodge imparted vel.x={p.fighter.vel.x}"
 
 
-def test_neutral_air_dodge_preserves_existing_horizontal_momentum():
-    """A neutral (directionless) air dodge must NOT zero pre-existing horizontal
-    momentum (the bug `test_dodge_issues` was chasing)."""
+def test_neutral_air_dodge_halts_existing_horizontal_momentum():
+    """PM/Melee air dodge (#184) HALTS momentum: a neutral air dodge replaces
+    horizontal velocity with ~zero, not Brawl-style preserve. (Was
+    test_neutral_air_dodge_preserves_existing_horizontal_momentum.)"""
     p, plats = _airborne_player()
     p.fighter.vel.x = 8.0
     p.update(_frame({SHIELD}, {SHIELD}), plats, pg.sprite.Group())
-    assert p.fighter.vel.x == 8.0, f"neutral air dodge zeroed momentum: vel.x={p.fighter.vel.x}"
+    assert p.fighter.vel.x == 0, f"neutral air dodge should halt momentum: vel.x={p.fighter.vel.x}"
 
 
-def test_air_dodge_preserves_vertical_velocity():
-    """Air dodge keeps normal physics: it does not reset vertical velocity to 0;
-    gravity keeps acting (unlike the gravity-suppressed ground spot dodge)."""
+def test_air_dodge_halts_vertical_velocity():
+    """PM/Melee air dodge (#184) REPLACES vertical momentum (halt), not Brawl-style
+    preserve: vel.y drops well below the pre-dodge falling speed. (Was
+    test_air_dodge_preserves_vertical_velocity.) Gravity still acts over the dodge
+    frames, so vel.y need not be exactly 0 — just halted relative to before."""
     p, plats = _airborne_player()
     vy_before = p.fighter.vel.y
     assert vy_before > 0
     p.update(_frame({SHIELD, RIGHT}, {SHIELD, RIGHT}), plats, pg.sprite.Group())
-    assert p.fighter.vel.y >= vy_before, f"air dodge reset vel.y to {p.fighter.vel.y} (was {vy_before})"
+    assert p.fighter.vel.y < vy_before, (
+        f"air dodge should halt vel.y below {vy_before}, got {p.fighter.vel.y}"
+    )
 
 
 def test_air_dodge_is_not_a_ground_spot_dodge():

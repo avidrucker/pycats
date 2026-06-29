@@ -190,7 +190,13 @@ def build_fighter_chart(p):
                   and p.fighter.on_ground, "shield"),
             _tick(lambda e, d: not p.fighter.shield_attempting and p.fighter.dodge_timer <= 0
                   and p.fighter.on_ground and not p.fighter.spot_dodge_shield_held, "idle"),
-            _tick(lambda e, d: p.fighter.dodge_timer <= 0 and not p.fighter.on_ground, "fall"),
+            # PM air dodge (#184): an air dodge exits into `helpless` (special-fall),
+            # not straight to `fall` — locked out of actions until landing. A
+            # non-air (ground) dodge that somehow ends airborne still falls.
+            _tick(lambda e, d: p.fighter.dodge_timer <= 0 and not p.fighter.on_ground
+                  and p.fighter.air_dodge_active, "helpless"),
+            _tick(lambda e, d: p.fighter.dodge_timer <= 0 and not p.fighter.on_ground
+                  and not p.fighter.air_dodge_active, "fall"),
         ),
     )
 
@@ -223,6 +229,16 @@ def build_fighter_chart(p):
         _tick(lambda e, d: p.fighter.prone_timer <= 0 and not p.fighter.on_ground, "fall"),
     )
 
+    # Helpless / special-fall (#184): entered after an air dodge's timer expires
+    # (air_dodge_active). No self-initiated transitions — normal actions are locked
+    # out here (also gated in fighter_input); the fighter falls under normal gravity
+    # and only recovers on landing -> idle. Wavedash (air dodge into the ground) is
+    # deferred to #184b.
+    helpless = state(
+        {"id": "helpless"},
+        _tick(lambda e, d: p.fighter.on_ground, "idle"),
+    )
+
     action = state(
         {"id": "action", "initial": "idle"},
         # force_ko / force_idle / force_prone hoisted to the action parent: they
@@ -236,6 +252,7 @@ def build_fighter_chart(p):
         hitstun,
         ko,
         prone,
+        helpless,
     )
 
     defensive_status = state(

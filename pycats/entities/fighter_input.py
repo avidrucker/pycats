@@ -41,7 +41,7 @@ class FighterInput:
             self._pressed(keys, "left"),
             self._pressed(keys, "right"),
             locked=p.state
-            in ("shield", "crouch"),  # no walking while shielding or crouching (#124)
+            in ("shield", "crouch", "helpless"),  # no walking while shielding/crouching (#124) or helpless (#184)
             move_speed=p.fighter.move_speed,
         )
 
@@ -76,7 +76,7 @@ class FighterInput:
         if (
             jump_pressed
             and p.fighter.jumps_remaining
-            and p.state not in ("dodge", "hurt", "stun")
+            and p.state not in ("dodge", "hurt", "stun", "helpless")  # helpless locks jump (#184)
         ):
             p.fighter.vel.y = p.fighter.jump_vel
             p.fighter.jumps_remaining -= 1
@@ -174,7 +174,7 @@ class FighterInput:
         #### TODO: implement attack buffering, that attacks can be chained
         atk_pressed = self._pressed(pressed, "attack")
         sp_pressed = self._pressed(pressed, "special")
-        if (atk_pressed or sp_pressed) and p.state not in ("shield", "dodge"):
+        if (atk_pressed or sp_pressed) and p.state not in ("shield", "dodge", "helpless"):
             # Map (direction × ground/air × A-vs-B) -> a move key, falling back to
             # whatever the character defines (#143). Data-driven (Task 4 / #71):
             # start the move clock; the hitbox spawns later in update() when the

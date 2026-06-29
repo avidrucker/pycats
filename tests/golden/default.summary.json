@@ -13,6 +13,7 @@
         "attack",
         "dodge",
         "fall",
+        "helpless",
         "idle",
         "jump",
         "run",
