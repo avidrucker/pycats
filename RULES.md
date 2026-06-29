@@ -126,6 +126,21 @@ Study tree do not inherit this rule.
   fails with `No such file or directory`. If unsure, the README "How to Run"
   section is authoritative — read it rather than guessing a conventional path.
 
+## Claiming work
+
+- **Run the full suite right after `pmtools claim`, before you change anything.** A
+  fresh worktree branches off whatever `main` is *right now*, and in fleet mode
+  another agent may have just merged a mid-flight (or even red) change. Confirm
+  green first:
+
+      SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
+        /abs/path/to/pycats/.venv/bin/python -m pytest -q
+
+  If it's red, the failure is **not yours** — fix `main` first (or `git merge
+  origin/main` to pull in a fix that landed after you branched) before building, so
+  you never attribute a pre-existing failure to your change, or ship on top of a
+  broken baseline. (#177; fleet merge race.)
+
 ## Closing work
 
 The fleet closes via **`pmtools close`**, which owns the racy push to `main` and
@@ -158,3 +173,22 @@ incident"). Hand-closing also leaves a dangling `refs/claims/issue-N` that
   there is nothing to delete in the close commit; just include `Closes #N`.
 - **Fallback only if `pmtools` is unavailable:** `gh issue close <N>` plus a
   closing comment. Prefer the tool whenever it is installed.
+
+**Close-time caveats (learned after the protocol was first written):**
+
+- **`pmtools close` exits 1 even after a successful close — trust the banner, not
+  the exit code.** Its final step deletes the worktree you are standing in, so the
+  shell's `getcwd` fails and the process returns **1** *after* printing
+  `CLOSE OK …` and `commit <sha> … on origin/main`. The close succeeded; do not
+  retry it. (Upstream: pmtools#8.)
+- **Post the closing comment from the main checkout.** Because the worktree is gone
+  after `CLOSE OK`, `cd` back to the main repo to comment:
+
+      cd /abs/path/to/pycats && gh issue comment <N> --body "Closed in <sha>. <summary>"
+
+  (`pmtools close` prints this exact hint in its final lines.)
+- **No-code tickets close differently.** `pmtools close` needs a `Closes #N`
+  *commit* to land and verify; a **decision / research / comment-only** ticket has
+  none. Close those with `gh issue close <N>` (after posting the ruling/finding as
+  a comment), then **`pmtools release <N>`** to drop the claim ref + worktree. Do
+  **not** fabricate a no-op commit just to satisfy `pmtools close`.

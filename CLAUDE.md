@@ -22,7 +22,11 @@ Critical rules:
 - **Closing work:** commit with **`Closes #N` in the body**, then close via
   **`pmtools close <N>`** from the worktree. Never `git push` to `main` or
   `git merge` your branch into `main` by hand — the tool owns the race-safe push
-  + teardown. See [RULES.md](./RULES.md) → "Closing work".
+  + teardown. **Trust the `CLOSE OK` banner — `close` exits 1 after success (cwd
+  deleted); post the closing comment from the main checkout.** No-code
+  (decision/research) tickets close via `gh issue close` + **`pmtools release`**.
+  See [RULES.md](./RULES.md) → "Closing work". And **run the suite right after
+  claiming** (fleet merge race) — see "Claiming work".
 - **Surface the run/sim command for runnable changes.** Any change to the live
   game / render / input / screens / sim must end the final response with the exact
   full-path run command — a `REPO=`/`PY=` block pointing at the main repo's venv,
