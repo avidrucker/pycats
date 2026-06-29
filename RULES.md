@@ -94,6 +94,21 @@
   commit that fixed it, add the can-fail guard), not a no-op close. Surface the
   contradiction to the reporter before an outward-facing close.
 
+## Code conventions
+
+- **Read the optional `Player`/control surface defensively in shared combat/input
+  code.** `systems/combat.py::process_hits` and `entities/fighter_input.py` are
+  exercised by lightweight test stubs that model only the documented *minimal*
+  contract (rect, facing, hurtbox, `receive_hit`, …), not the full `Player`. Any
+  new read of an optional attribute or key — `defender.state`, `controls["special"]`,
+  … — must use `getattr(obj, "attr", default)` / `dict.get(key, default)` with a
+  safe default, never a bare `obj.attr` / `controls[key]`. The safe default is the
+  inert reading: an unbound action is "unpressable"; a defender without `.state` is
+  "not crouching". Precedent — this bit twice: **#137** (`process_hits` read
+  `defender.state == "crouch"` → `AttributeError` reddened `main` via the stub-based
+  `test_multi_hitbox`/`test_clank`) and **#143** (the move-selection seam read
+  `controls["special"]` → `KeyError` on the 16 test control maps that omit it).
+
 ## Surfacing run/sim commands
 
 When a change would **benefit from or require a live run or simulation** to verify
