@@ -1,5 +1,6 @@
-"""Hierarchical + parallel fighter statechart (behavior-equivalent to the
-flat chart / systems.fighter_fsm.build_fighter_fsm).
+"""Hierarchical + parallel fighter statechart. This is the sole fighter-FSM
+(ADR-0002: the behavior-equivalent flat FSM, systems.fighter_fsm, was removed
+in #178).
 
 Structure (Task 3 of PM Phase 0):
 

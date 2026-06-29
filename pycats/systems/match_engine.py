@@ -1,24 +1,12 @@
 # pycats/systems/match_engine.py
-"""Match/stage state with swappable backends. The win-condition rule (by lives)
-is the single source in win_condition.winner_index; this drives match phase."""
+"""Match/stage state. The win-condition rule (by lives) is the single source in
+win_condition.winner_index; this drives match phase. The statechart engine is
+the only backend (ADR-0002: the legacy match engine was removed in #178)."""
 from __future__ import annotations
 
 from statecharts import state, statechart, transition, Session
 
 from .win_condition import winner_index
-
-
-class LegacyMatchEngine:
-    def __init__(self, players) -> None:
-        self._players = players
-        self.phase = "in_play"
-        self.winner = 0
-
-    def tick(self) -> None:
-        w = winner_index(self._players)
-        if w:
-            self.phase = "match_over"
-            self.winner = w
 
 
 class StatechartMatchEngine:
@@ -49,7 +37,7 @@ class StatechartMatchEngine:
                 self.winner = w
 
 
-def make_match_engine(players, backend: str = "legacy"):
-    if backend == "statechart":
-        return StatechartMatchEngine(players)
-    return LegacyMatchEngine(players)
+def make_match_engine(players, backend: str = "statechart"):
+    # Statechart is the only backend (ADR-0002, #178). ``backend`` is retained
+    # for signature stability; collapsing it is slice 3 (#168).
+    return StatechartMatchEngine(players)

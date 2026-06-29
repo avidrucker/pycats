@@ -8,23 +8,21 @@ class _P:
         self.fighter = self
 
 
-def _run(backend, p1_lives, p2_lives):
+def _run(p1_lives, p2_lives):
+    # ADR-0002 (#178): statechart is the only match-engine backend.
     players = [_P(p1_lives), _P(p2_lives)]
-    eng = make_match_engine(players, backend)
+    eng = make_match_engine(players)
     eng.tick()
     return eng.phase, eng.winner
 
 
 def test_in_play_when_both_alive():
-    for backend in ("legacy", "statechart"):
-        assert _run(backend, 3, 3) == ("in_play", 0)
+    assert _run(3, 3) == ("in_play", 0)
 
 
 def test_p1_out_means_p2_wins():
-    for backend in ("legacy", "statechart"):
-        assert _run(backend, 0, 2) == ("match_over", 2)
+    assert _run(0, 2) == ("match_over", 2)
 
 
 def test_p2_out_means_p1_wins():
-    for backend in ("legacy", "statechart"):
-        assert _run(backend, 1, 0) == ("match_over", 1)
+    assert _run(1, 0) == ("match_over", 1)
