@@ -62,6 +62,16 @@
   write have/should/repro, file a **`research`** ticket to validate / spec /
   reproduce it first, then create the DEV bug ticket once the repro is known.
   Never file a half-specified DEV ticket.
+- **Reconcile a worktree-found failure against current `origin/main` before filing
+  it.** `pmtools claim` guarantees a fresh base *at claim time* (it fetches and
+  hard-blocks a claim when local `main` is behind `origin/main`), but sibling agents
+  keep merging *during* your session, so a long-lived worktree base drifts behind and
+  a failure you see may already be fixed upstream. Before filing a regression found
+  in a worktree, `git fetch origin main` and check the open-issue list / `git log
+  origin/main` — confirm it still reproduces on **current** `origin/main`, not just
+  your (possibly stale) base. The claim-time guard cannot cover mid-session drift, and
+  `pmtools status` does not surface it today (#171). (Cousin of "merged ≠ what your
+  tree has" under *Closing work* and the stale-tracker caution.)
 - **Lazy decomposition for research epics.** A multi-thread investigation gets
   ONE umbrella `research` tracker issue listing the threads; file each child
   thread **one at a time**, finishing it before filing the next sibling. This
