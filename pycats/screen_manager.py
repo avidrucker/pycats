@@ -8,7 +8,6 @@ This module handles:
 """
 
 import math
-import os
 import pygame  # type: ignore
 from .systems.screen_engine import make_screen_engine
 from .main_menu import MainMenuManager
@@ -49,10 +48,10 @@ class ScreenStateManager:
         #                            False = return to menu (from playing).
         self.esc_quit_to_menu = False
 
-        # Screen-flow engine (epic #100). Default legacy (the hand-rolled FSM);
-        # PYCATS_SCREEN_BACKEND=statechart opts into the statecharts-py twin. The
-        # transition spec + on_enter/on_update are backend-agnostic; guards/handlers
-        # now take (ctx) (the fsm arg was vestigial). See systems/screen_engine.py.
+        # Screen-flow engine (epic #100): runs on statecharts-py, the sole screen
+        # engine (the legacy FSM was retired across slices 4a/4b/4c, ADR-0002). The
+        # transition spec + on_enter/on_update are engine-agnostic; guards/handlers
+        # take (ctx). See systems/screen_engine.py.
         transitions = {
             "main_menu": [
                 ("char_select", self._guard_menu_to_char_select),
@@ -94,9 +93,8 @@ class ScreenStateManager:
             "pause": self._update_pause,
             "win_screen": self._update_win_screen,
         }
-        backend = os.environ.get("PYCATS_SCREEN_BACKEND", "legacy")
         self.engine = make_screen_engine(
-            transitions, "main_menu", backend=backend,
+            transitions, "main_menu",
             on_enter=on_enter, on_update=on_update,
         )
 

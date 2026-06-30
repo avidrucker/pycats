@@ -37,7 +37,7 @@ the per-subsystem tables are authoritative). The split by subsystem:
 | **Movement/states** | ✅ jumps, dodges (spot/roll), crouch, drop-through. 🟡 air dodge is a **Brawl-style hybrid, not PM Melee-style** (no helpless). ⬜ short-hop/fast-fall/DJC/dash-dance/pivot/**ledge**/**wavedash**/**L-cancel** — most PM movement tech. |
 | **Fighters** | ✅ the per-character **infrastructure** (weight + 5 movement constants + crouch geometry, proven able-to-fail). 🟡/⬜ the **content**: only **2 distinct fighters** (default + partial Nalio); 4 of 5 archetypes are names-in-comments; the 6 selectable "cats" are recolor skins. |
 | **AI / CPU** | ✅ seeded-RNG seam (#166); determinism (intentional divergence). 🟡 three demo/benchmark controller archetypes. ⬜ **no player-facing CPU opponent at all**, no 1–9 difficulty ladder (research-only). |
-| **Screens/flow** | ✅ pause, win/results screen. 🟡 minimal main-menu/CSS/options + intentional rematch divergence; the statechart screen engine is wired behind the `PYCATS_SCREEN_BACKEND` toggle (legacy default). ⬜ **battle isn't a real game-state** yet (#100 port mid-flight), stage/time/match settings absent. |
+| **Screens/flow** | ✅ pause, win/results screen; the screen flow runs on the statechart engine (legacy `systems/fsm.py` retired, #100 closed). 🟡 minimal main-menu/CSS/options + intentional rematch divergence. ⬜ battle's sim step still runs in `game.py`'s loop (the winner-set / `battle.step`-into-engine de-loop is post-#100 follow-up), stage/time/match settings absent. |
 
 **The three biggest structural gaps:** (1) PM **movement tech** (ledge + wavedash +
 L-cancel + dash/fast-fall), (2) **moveset content** beyond one cat's 3 moves, and
@@ -190,7 +190,7 @@ reserved for future golden-safe stochastic difficulty.
 | Rematch / play-again | 🟡 *(intentional)* | `win_screen.py` **both players confirm** + 30f delay → char_select; diverges from PM single-press | #10/#11 | high |
 | Stock match setting | 🟡 | `INITIAL_LIVES=3` hardcoded, applied in `reset_game`; no in-menu selector | PM Rules | high |
 | Options / settings menu | 🟡 *(intentional)* | `options_menu.py` (status bars/scale/fullscreen/hold-ESC); consolidated+persisted vs PM distributed/ephemeral | #116/#121/#122 | high |
-| Statechart screen engine wiring (#100/#181) | 🟡 | `StatechartScreenEngine`/`make_screen_engine` (slice 1, #181) IS wired into the live game — `screen_manager.py:97-101` builds the engine with `backend=os.environ.get("PYCATS_SCREEN_BACKEND","legacy")` (used by `game.py:439,530`), so `PYCATS_SCREEN_BACKEND=statechart` runs the whole live flow on it. **Legacy is just the default**; flipping it = #100 slice 4 (after parity proven) | #100/#181 | high |
+| Statechart screen engine wiring (#100/#181) | ✅ | `StatechartScreenEngine`/`make_screen_engine` is the **sole** screen engine — `screen_manager.py` builds it unconditionally. The legacy FSM and the `backend` selection were retired across slices 4a/4b/4c (#234/#235/#236, ADR-0002); epic #100 closed. | #100/#181 | done |
 | Match/battle as a real game-state | ⬜ | `game.py` `if current_state=="playing":` inline ladder; battle state module-global; FSM `playing` empty | screen-flow-statecharts-port-findings.md; #100 | high |
 | Screen flow on statecharts vs hand-rolled | ⬜ | live flow on hand-rolled `systems/fsm.py` (6-state guard table); statecharts only in fighter + match_engine | #100 | high |
 | Stage select | ⬜ | single hardcoded stage; `game.py` TODO "NOT YET" | menu-architecture §4 | high |
@@ -217,7 +217,7 @@ parity guard exist (#181) but the live flow and battle-as-a-state refactor are n
 **Biggest gaps (ranked by structural weight):**
 1. **PM movement tech** — ledge (#14), wavedash + L-cancel (gated on PM air dodge #184), dash/dash-dance/pivot, fast-fall/short-hop. Mostly ⬜.
 2. **Moveset content** — tilts/smashes/dash/aerials/specials beyond Nalio's ~3 moves; plus the two engine gates (sequential multi-hit, Sakurai-angle) — #142 Phase 2.
-3. **Battle-as-a-state / statecharts screen-flow port** — #100 (engine wired behind the `PYCATS_SCREEN_BACKEND` toggle #181; battle-as-a-state + flipping the default to statechart remain — slices 2 & 4).
+3. **Battle-as-a-state de-loop** — the screen-flow port off `systems/fsm.py` onto statecharts is **done** (#100 closed: slices 1/1b/2/2b/3/4). Remaining post-#100 follow-up: move `battle.step` (and the winner-set) into the engine so the loop fully de-globalizes — needs its own ticket.
 4. **Defense cluster** — DI/SDI/ASDI/tech (Phase 3); shield geometry/poke + shield pushback.
 5. **Roster content** — 4 of 5 archetypes absent; the one real archetype isn't live-selectable (#117).
 6. **Player-facing CPU** — no in-game opponent or difficulty ladder (research-ready, #148).

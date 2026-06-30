@@ -84,13 +84,12 @@ class StatechartScreenEngine:
             self._on_enter[label](None)
 
 
-def make_screen_engine(transitions: ScreenTable, initial: str, backend: str = "statechart",
+def make_screen_engine(transitions: ScreenTable, initial: str,
                        on_enter: Optional[ScreenActions] = None,
                        on_update: Optional[ScreenActions] = None):
-    """Build the screen-flow engine (statecharts-py only).
+    """Build the screen-flow engine — statecharts-py is the sole screen engine.
 
-    The `backend` parameter is now single-valued — the legacy engine was deleted in
-    slice 4b of #100 — and is removed entirely in slice 4c along with the
-    `PYCATS_SCREEN_BACKEND` selection plumbing.
+    The legacy engine was deleted in slice 4b of #100; the backend-selection
+    parameter and its env toggle were stripped in slice 4c.
     """
     return StatechartScreenEngine(transitions, initial, on_enter, on_update)

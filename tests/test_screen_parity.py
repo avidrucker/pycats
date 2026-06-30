@@ -23,9 +23,6 @@ from pathlib import Path
 
 from pycats.systems.screen_engine import make_screen_engine
 
-BACKENDS = ("statechart",)
-
-
 def _table(flags):
     # 'a' has two ORDERED transitions; first matching guard wins (break-after-first).
     return {
@@ -35,69 +32,72 @@ def _table(flags):
     }
 
 
-def test_screen_engine_initial_state_both_backends():
-    for backend in BACKENDS:
-        flags = {"go": False, "alt": False, "back": False}
-        eng = make_screen_engine(_table(flags), initial="a", backend=backend)
-        assert eng.state == "a", backend
+def test_screen_engine_initial_state():
+    flags = {"go": False, "alt": False, "back": False}
+    eng = make_screen_engine(_table(flags), initial="a")
+    assert eng.state == "a"
 
 
-def test_screen_engine_fires_first_matching_transition_both_backends():
-    for backend in BACKENDS:
-        flags = {"go": False, "alt": False, "back": False}
-        eng = make_screen_engine(_table(flags), initial="a", backend=backend)
-        eng.update(None)
-        assert eng.state == "a", backend          # no guard true -> stay
-        flags["go"] = True
-        eng.update(None)
-        assert eng.state == "b", backend          # first transition fires
+def test_screen_engine_fires_first_matching_transition():
+    flags = {"go": False, "alt": False, "back": False}
+    eng = make_screen_engine(_table(flags), initial="a")
+    eng.update(None)
+    assert eng.state == "a"          # no guard true -> stay
+    flags["go"] = True
+    eng.update(None)
+    assert eng.state == "b"          # first transition fires
 
 
-def test_screen_engine_transition_order_priority_both_backends():
-    # Both guards true: the FIRST listed ("b") must win in both backends.
-    for backend in BACKENDS:
-        flags = {"go": True, "alt": True, "back": False}
-        eng = make_screen_engine(_table(flags), initial="a", backend=backend)
-        eng.update(None)
-        assert eng.state == "b", backend
+def test_screen_engine_transition_order_priority():
+    # Both guards true: the FIRST listed ("b") must win.
+    flags = {"go": True, "alt": True, "back": False}
+    eng = make_screen_engine(_table(flags), initial="a")
+    eng.update(None)
+    assert eng.state == "b"
 
 
-def test_screen_engine_on_enter_and_on_update_fire_both_backends():
+def test_screen_engine_on_enter_and_on_update_fire():
     """on_enter fires on entry to a state (not for the initial state); on_update
-    fires each step for the current (post-transition) state — identical to the
-    legacy FSM, in both backends."""
-    for backend in BACKENDS:
-        log = []
-        flags = {"go": False}
-        transitions = {"a": [("b", lambda ctx: flags["go"])], "b": []}
-        on_enter = {"a": lambda ctx: log.append("enter_a"),
-                    "b": lambda ctx: log.append("enter_b")}
-        on_update = {"a": lambda ctx: log.append("update_a"),
-                     "b": lambda ctx: log.append("update_b")}
-        eng = make_screen_engine(transitions, "a", backend=backend,
-                                 on_enter=on_enter, on_update=on_update)
-        # initial state must NOT fire on_enter
-        assert "enter_a" not in log, backend
-        eng.update(None)                       # stay in a (guard false)
-        assert log == ["update_a"], (backend, log)
-        flags["go"] = True
-        eng.update(None)                       # a -> b: enter_b then update_b
-        assert log == ["update_a", "enter_b", "update_b"], (backend, log)
+    fires each step for the current (post-transition) state."""
+    log = []
+    flags = {"go": False}
+    transitions = {"a": [("b", lambda ctx: flags["go"])], "b": []}
+    on_enter = {"a": lambda ctx: log.append("enter_a"),
+                "b": lambda ctx: log.append("enter_b")}
+    on_update = {"a": lambda ctx: log.append("update_a"),
+                 "b": lambda ctx: log.append("update_b")}
+    eng = make_screen_engine(transitions, "a",
+                             on_enter=on_enter, on_update=on_update)
+    # initial state must NOT fire on_enter
+    assert "enter_a" not in log
+    eng.update(None)                       # stay in a (guard false)
+    assert log == ["update_a"], log
+    flags["go"] = True
+    eng.update(None)                       # a -> b: enter_b then update_b
+    assert log == ["update_a", "enter_b", "update_b"], log
 
 
-def test_screen_engine_force_jumps_and_fires_on_enter_both_backends():
+def test_screen_engine_force_jumps_and_fires_on_enter():
     """force(label) jumps straight to a state (non-guard-driven, e.g. ESC-hold
-    return-to-menu) and fires that state's on_enter, in both backends."""
-    for backend in BACKENDS:
-        log = []
-        transitions = {"playing": [], "main_menu": []}
-        on_enter = {"main_menu": lambda ctx: log.append("enter_mm")}
-        eng = make_screen_engine(transitions, "playing", backend=backend,
-                                 on_enter=on_enter)
-        assert eng.state == "playing", backend
-        eng.force("main_menu")
-        assert eng.state == "main_menu", backend
-        assert log == ["enter_mm"], (backend, log)
+    return-to-menu) and fires that state's on_enter."""
+    log = []
+    transitions = {"playing": [], "main_menu": []}
+    on_enter = {"main_menu": lambda ctx: log.append("enter_mm")}
+    eng = make_screen_engine(transitions, "playing", on_enter=on_enter)
+    assert eng.state == "playing"
+    eng.force("main_menu")
+    assert eng.state == "main_menu"
+    assert log == ["enter_mm"], log
+
+
+def test_make_screen_engine_has_no_backend_param():
+    """Slice 4c (#236): the backend-selection plumbing is gone — `make_screen_engine`
+    builds the statechart engine unconditionally, with no `backend` parameter to
+    select a (nonexistent) legacy engine. Able-to-fail: re-adding the param turns
+    this red."""
+    import inspect
+    params = inspect.signature(make_screen_engine).parameters
+    assert "backend" not in params, sorted(params)
 
 
 # --------------------------------------------------------------------------- #
@@ -133,10 +133,10 @@ def _screen_like_table(sig):
     }
 
 
-def _run_trace(backend):
-    """Drive `backend` through SCRIPT, returning the per-step state sequence."""
+def _run_trace():
+    """Drive the screen engine through SCRIPT, returning the per-step state sequence."""
     sig = {"v": None}
-    eng = make_screen_engine(_screen_like_table(sig), "main_menu", backend)
+    eng = make_screen_engine(_screen_like_table(sig), "main_menu")
     trace = []
     for ev in SCRIPT:
         sig["v"] = ev
@@ -157,7 +157,7 @@ def test_statechart_screen_trace_matches_golden():
     """THE GATE: the statechart engine — now the sole screen engine — reproduces the
     recorded golden screen-flow transition sequence (the frozen legacy record, #234).
     Doubles as the recorder under PYCATS_UPDATE_GOLDENS=1."""
-    trace = _run_trace("statechart")
+    trace = _run_trace()
     if os.environ.get("PYCATS_UPDATE_GOLDENS") == "1":
         GOLDEN_PATH.parent.mkdir(parents=True, exist_ok=True)
         GOLDEN_PATH.write_text(json.dumps(trace, indent=2) + "\n", encoding="utf-8")
