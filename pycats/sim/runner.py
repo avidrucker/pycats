@@ -20,6 +20,7 @@ from ..config import (  # noqa: E402
     CAT_CHARACTERS,
 )
 from ..entities import Platform, Player  # noqa: E402
+from ..combat.data import load_fighter_data  # noqa: E402
 from ..systems import combat  # noqa: E402
 from ..core.physics import resolve_player_push  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
@@ -45,13 +46,21 @@ def build_stage():
     ]
 
 
-def build_players():
+def build_players(p1_char=None, p2_char=None):
+    # #244: an optional per-player character loads that archetype's FighterData
+    # (e.g. "nalio" → Nalio's moveset). None keeps the default cat — char_name
+    # "P1"/"P2" resolves to the shared default in Player, so the no-arg call is
+    # byte-identical to before (golden-safe). Colour skins are unchanged.
     c1 = CAT_CHARACTERS["calico"]
     c2 = CAT_CHARACTERS["tabby"]
+    fd1 = load_fighter_data(p1_char) if p1_char else None
+    fd2 = load_fighter_data(p2_char) if p2_char else None
     p1 = Player(PLAYER1_START_X, PLAYER1_START_Y, P1_KEYS, c1["color"],
-                eye_color=c1["eye_color"], char_name="P1", facing_right=True)
+                eye_color=c1["eye_color"], char_name="P1", facing_right=True,
+                fighter_data=fd1)
     p2 = Player(PLAYER2_START_X, PLAYER2_START_Y, P2_KEYS, c2["color"],
-                eye_color=c2["eye_color"], char_name="P2", facing_right=False)
+                eye_color=c2["eye_color"], char_name="P2", facing_right=False,
+                fighter_data=fd2)
     p1.stripe_color = c1["stripe_color"]
     p2.stripe_color = c2["stripe_color"]
     return p1, p2, pygame.sprite.Group(p1, p2)
@@ -79,7 +88,8 @@ def snapshot(players, attacks, match):
 
 
 def run_battle(frames=None, frame_inputs=None, presenter=None,
-               controller=None, stop_on_match_over=False, controllers=None):
+               controller=None, stop_on_match_over=False, controllers=None,
+               p1_char=None, p2_char=None):
     """Run the headless battle.
 
     Inputs come from `controller(p1, p2, frame) -> InputFrame` when given,
@@ -103,7 +113,7 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
         frames = len(frame_inputs) if frame_inputs is not None else 0
 
     platforms = build_stage()
-    p1, p2, players = build_players()
+    p1, p2, players = build_players(p1_char, p2_char)
     attacks = pygame.sprite.Group()
     match = make_match_engine([p1, p2])
 

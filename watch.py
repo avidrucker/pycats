@@ -31,6 +31,18 @@ VS_FRAMES = 30 * FPS   # #61: a --vs demo runs up to 30s (1800 @ 60 FPS)...
 MATCH_FRAMES = 6000    # ...a full --match plays to defeat...
 REPLAY_FRAMES = 300    # ...the scripted replay default (~5s).
 
+# Characters selectable per player (#244). Extend as #117 archetypes land; None =
+# the default cat. (load_fighter_data falls through to the default for any other key.)
+CHARACTERS = ["nalio"]
+
+
+def cpu_controllers(p1_level, p2_level, rng):
+    """Leveled `AttackerController`s for a per-player CPU-difficulty battle (#244).
+    A `None` level leaves that player uncontrolled (idle). Returns `(c1, c2)`."""
+    c1 = AttackerController(attacker_num=1, level=p1_level, rng=rng) if p1_level is not None else None
+    c2 = AttackerController(attacker_num=2, level=p2_level, rng=rng) if p2_level is not None else None
+    return (c1, c2)
+
 
 def resolve_battle_plan(vs, match, frames):
     """Map the CLI mode flags to ``(frames, stop_on_match_over)`` (#61).
@@ -72,6 +84,14 @@ def main():
                     help="PRNG seed for the NPC controllers (#166): pass an int "
                          "for a reproducible run; omit for a clocktime seed so a "
                          "live match varies run-to-run.")
+    ap.add_argument("--p1-char", choices=CHARACTERS, default=None,
+                    help="P1 character/archetype (e.g. nalio); default cat if omitted. (#244)")
+    ap.add_argument("--p2-char", choices=CHARACTERS, default=None,
+                    help="P2 character/archetype.")
+    ap.add_argument("--p1-level", type=int, choices=range(1, 10), default=None,
+                    help="P1 CPU difficulty 1-9 (#231/#148); makes P1 a leveled bot.")
+    ap.add_argument("--p2-level", type=int, choices=range(1, 10), default=None,
+                    help="P2 CPU difficulty 1-9; makes P2 a leveled bot.")
     args = ap.parse_args()
 
     presenter = (VideoPresenter(args.video) if args.video
@@ -85,17 +105,26 @@ def main():
     # `--match` (P1 attacker vs idle P2) or the scripted replay.
     controller = None
     controllers = None
-    if args.vs in VS_CONTROLLERS:
+    leveled = args.p1_level is not None or args.p2_level is not None
+    if leveled:
+        # #244: per-player CPU-difficulty battle (overrides --vs). Runs like a --vs
+        # demo (≤30s or KO, or --frames). Pair with --p1-char/--p2-char to pick who.
+        controllers = cpu_controllers(args.p1_level, args.p2_level, rng)
+        frames = args.frames if args.frames is not None else VS_FRAMES
+        stop_on_match_over = True
+    elif args.vs in VS_CONTROLLERS:
         controllers = (AttackerController(attacker_num=1, rng=rng),
                        VS_CONTROLLERS[args.vs](attacker_num=2, rng=rng))
-    elif args.match:
-        controller = AttackerController(attacker_num=1, rng=rng)
-    # A --vs demo runs up to 30s or until a 3-stock KO-out, whichever first (#61).
-    frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
+        frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
+    else:
+        if args.match:
+            controller = AttackerController(attacker_num=1, rng=rng)
+        frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
     try:
         run_battle(frames=frames, presenter=presenter,
                    controller=controller, controllers=controllers,
-                   stop_on_match_over=stop_on_match_over)
+                   stop_on_match_over=stop_on_match_over,
+                   p1_char=args.p1_char, p2_char=args.p2_char)
     except KeyboardInterrupt:
         presenter.close()
     if args.video:
