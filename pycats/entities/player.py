@@ -34,7 +34,7 @@ from ..config import (
     LEDGE_HANG_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
 )
-from .attack import Attack
+from .attack import Attack, Projectile
 from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
@@ -411,21 +411,30 @@ class Player(pygame.sprite.Sprite):
             # detached projectile — velocity in the facing direction, its own
             # lifetime, vanishing on hit. Normal moves keep the static hitbox.
             mv = self.current_move
-            velocity = None
-            disappear = False
-            lifetime = tick.lifetime
-            if getattr(mv, "projectile_speed", None) is not None:
-                facing = 1 if self.fighter.facing_right else -1
-                velocity = (facing * mv.projectile_speed, 0)
-                disappear = True
-                lifetime = mv.projectile_lifetime or tick.lifetime
-            # Task 5 / #130: pass the move's full hitbox tuple so Attack resolves
+            # Task 5 / #130: pass the move's full hitbox tuple so the hit-box resolves
             # every circle (multi-hitbox moves activate all boxes at once).
-            attack_group.add(
-                Attack(self, hitboxes=tick.spawn, in_air=tick.in_air,
-                       disappear_on_hit=disappear, lifetime=lifetime,
-                       rehit_rate=mv.rehit_rate, velocity=velocity)  # #213 looping; #223 projectile
-            )
+            if getattr(mv, "projectile_speed", None) is not None:
+                # #223/#266: a projectile move spawns a MOVING, detached Projectile —
+                # velocity in the facing direction, gravity + ground-bounce physics
+                # (Mario-faithful, #263), its own lifetime, vanishing on hit. Physics
+                # knobs are per-move overridable (getattr), else the Projectile defaults.
+                facing = 1 if self.fighter.facing_right else -1
+                attack_group.add(
+                    Projectile(self, hitboxes=tick.spawn, in_air=tick.in_air,
+                               disappear_on_hit=True,
+                               lifetime=mv.projectile_lifetime or tick.lifetime,
+                               rehit_rate=mv.rehit_rate,
+                               velocity=(facing * mv.projectile_speed, 0),
+                               gravity=getattr(mv, "projectile_gravity", 0.5),
+                               restitution=getattr(mv, "projectile_restitution", 0.6),
+                               max_bounces=getattr(mv, "projectile_max_bounces", 3))
+                )
+            else:
+                attack_group.add(
+                    Attack(self, hitboxes=tick.spawn, in_air=tick.in_air,
+                           disappear_on_hit=False, lifetime=tick.lifetime,
+                           rehit_rate=mv.rehit_rate)  # #213 looping; static hit-box
+                )
         if self.attack_timer == 0 and self.state == "attack":
             self.fighter.done_attacking = True
 

@@ -137,7 +137,7 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
         for p in players:
             p.update(fi, platforms, attacks, ledges)
         resolve_player_push(list(players))
-        attacks.update()
+        attacks.update(platforms)  # #266: projectiles need platforms to bounce
         combat.process_hits(players, attacks)
         match.tick()
         snaps.append(snapshot(players, attacks, match))

@@ -91,7 +91,7 @@ class BattleScreen:
         for p in self.players:
             p.update(frame_input, platforms, self.attacks, self._ledges)
         resolve_player_push(list(self.players))
-        self.attacks.update()
+        self.attacks.update(platforms)  # #266: projectiles need platforms to bounce
         combat.process_hits(self.players, self.attacks)
 
     def winner(self):

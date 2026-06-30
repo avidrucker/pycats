@@ -18,7 +18,7 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame  # type: ignore
-from ..config import ATTACK_SIZE, SCREEN_WIDTH  # legacy single-hitbox visual size; stage width (#223 off-stage despawn)
+from ..config import ATTACK_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT  # visual size; stage bounds (#223/#266 despawn)
 from ..combat.geometry import resolve_circle
 
 
@@ -131,8 +131,9 @@ class Attack(pygame.sprite.Sprite):
                 pygame.draw.circle(self.image, self.OUTLINE_COLOR, local, round(r), 2)
             self.rect = self.image.get_rect(topleft=(left, top))
 
-    # called every frame by sprite.Group.update()
-    def update(self):
+    # called every frame by sprite.Group.update(*args) — #266 forwards `platforms`
+    # to every sprite; a static Attack ignores it (a Projectile uses it to bounce).
+    def update(self, platforms=None):
         if self.velocity is not None:  # #223: advance the moving projectile
             vx, vy = self.velocity
             self.resolved = [(cx + vx, cy + vy, r, hb)
@@ -145,6 +146,63 @@ class Attack(pygame.sprite.Sprite):
                 self.kill()
                 return
         if self._rehit_timer > 0:  # #213: drain the looping-rehit cooldown
+            self._rehit_timer -= 1
+        self.frames_left -= 1
+        if self.frames_left <= 0:
+            self.kill()
+
+
+class Projectile(Attack):
+    """A MOVING hit-box with physics (#266): gravity pulls it down and it bounces off
+    platform tops, losing momentum each bounce, until it expires (max_bounces or
+    lifetime). Mario-faithful per #263 — a *flat* projectile is the Luigi model, so
+    pass ``gravity=0`` for that. It IS an ``Attack``, so ``combat.process_hits`` treats
+    it exactly like any other hit-box; only the per-frame motion differs.
+
+    ``gravity`` / ``restitution`` / ``max_bounces`` are ⚠ GUESS tuning starting points
+    (no measured PM values exist — see docs/research/2026-06-30-nalio-fireball-…md).
+    """
+
+    def __init__(self, *args, gravity=0.5, restitution=0.6, max_bounces=3, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gravity = gravity          # ⚠ GUESS px/frame² downward accel
+        self.restitution = restitution  # ⚠ GUESS vertical energy kept per bounce (<1)
+        self.max_bounces = max_bounces  # ⚠ GUESS bounces before despawn
+        self._bounces = 0
+        if self.velocity is None:       # a Projectile is always moving
+            self.velocity = (0, 0)
+
+    def update(self, platforms=None):
+        vx, vy = self.velocity
+        vy += self.gravity              # gravity acts this frame
+        dx, dy = vx, vy
+        # Ground-bounce: a falling projectile whose BOTTOM would cross a platform top
+        # this frame (while horizontally over it) lands on the surface and reflects up,
+        # keeping `restitution` of its vertical speed (so successive bounces shrink).
+        if platforms is not None and dy > 0:
+            bottom_before = self.hit_cy + self.hit_r
+            x_after = self.hit_cx + dx
+            for plat in platforms:
+                pr = plat.rect
+                if pr.left <= x_after <= pr.right and bottom_before <= pr.top <= bottom_before + dy:
+                    dy = (pr.top - self.hit_r) - self.hit_cy  # land exactly on the surface
+                    vy = -vy * self.restitution               # reflect, losing momentum
+                    self._bounces += 1
+                    break
+        # Integrate: move the anchor AND every resolved circle by the same delta
+        # (keeps multi-box projectiles consistent; the fireball is single-box).
+        self.hit_cx += dx
+        self.hit_cy += dy
+        self.resolved = [(cx + dx, cy + dy, r, hb) for (cx, cy, r, hb) in self.resolved]
+        self.rect.center = (int(self.hit_cx), int(self.hit_cy))
+        self.velocity = (vx, vy)
+        # Despawn: too many bounces, or off the stage (either side / below the floor).
+        if (self._bounces > self.max_bounces
+                or not (-self.rect.width <= self.hit_cx <= SCREEN_WIDTH + self.rect.width)
+                or self.hit_cy > SCREEN_HEIGHT + self.rect.height):
+            self.kill()
+            return
+        if self._rehit_timer > 0:       # #213: drain the looping-rehit cooldown
             self._rehit_timer -= 1
         self.frames_left -= 1
         if self.frames_left <= 0:
