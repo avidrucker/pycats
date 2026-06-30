@@ -84,6 +84,28 @@ _NARZ_DTILT = MoveData(
     ),
 )
 
+# --- Up-tilt (slice 5, #305): an anti-air, disjoint, tippered overhead arc ---------
+# Marth's anti-air: the 2-box tipper shape (tip box FIRST, stronger; priority = tuple
+# order) hitting ABOVE the head (negative/low dy) and sending UP (angle ~90 — the
+# juggle use), distinct from the f-tilt (forward 361) and d-tilt (low 30). The disjoint
+# here is VERTICAL — the tip reaches above the hurtbox top. PM3.6 Marth `AttackHi3`,
+# ⚠ playtest / rukaidata-confirm. Completes the #294 ground normals.
+_NARZ_UTILT = MoveData(
+    name="utilt",
+    in_air=False,
+    startup=6,
+    active=3,
+    recovery=14,  # 6 + 3 + 14 = 23
+    hitboxes=(
+        # TIP (box 0): above the head + strong.
+        Hitbox(circle=Circle(dx=24, dy=-8, r=14), damage=12.0, angle=90,
+               base_knockback=25.0, knockback_growth=80.0),
+        # BASE (box 1): head level + weak.
+        Hitbox(circle=Circle(dx=24, dy=8, r=12), damage=9.0, angle=90,
+               base_knockback=18.0, knockback_growth=60.0),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
@@ -91,7 +113,7 @@ NARZ_FIGHTER_DATA = FighterData(
     # the default cat until their slices land (#294). Body still the default (#290 v1).
     hurtbox=_DEFAULT.hurtbox,
     moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
-           "dtilt": _NARZ_DTILT},
+           "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
