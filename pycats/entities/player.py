@@ -262,7 +262,7 @@ class Player(pygame.sprite.Sprite):
         dodge_initiated = False
         if (not in_hitstun and not in_shieldstun and not in_landing_lag
                 and self.state not in ("dodge", "hurt", "stun", "prone",
-                                       "getup_roll", "getup_attack")):
+                                       "getup_roll", "getup_attack", "ledge_hang")):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
@@ -281,9 +281,37 @@ class Player(pygame.sprite.Sprite):
             self.fighter.vel = apply_horizontal_friction(
                 self.fighter.vel, self.fighter.on_ground)
 
+        # ---------- ledge-hang driving (#14) ----------
+        # While hanging: pin position (skip gravity), tick the hang timer, and read
+        # the two options. Up = neutral getup (climb on). Down or away = drop. The
+        # timer reaching 0 auto-releases like a drop. Every release frees the edge.
+        if self.fighter.grabbed_ledge is not None:
+            ledge = self.fighter.grabbed_ledge
+            self.fighter.vel.x = 0
+            self.fighter.vel.y = 0
+            if self.fighter.ledge_hang_timer > 0:
+                self.fighter.ledge_hang_timer -= 1
+            up = self._pressed(held, "up")
+            down = self._pressed(held, "down")
+            away = ledge.away_held(self._pressed(held, "left"),
+                                   self._pressed(held, "right"))
+            if up:                                   # neutral getup
+                self.rect.topleft = ledge.getup_topleft(self.rect.size)
+                self.fighter.invulnerable = False
+                ledge.occupied_by = None
+                self.fighter.grabbed_ledge = None
+            elif down or away or self.fighter.ledge_hang_timer == 0:  # drop / timeout
+                self.fighter.invulnerable = False
+                self.fighter.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
+                ledge.occupied_by = None
+                self.fighter.grabbed_ledge = None
+                self.fighter.vel.y = 1               # nudge so next frame is airborne
+
         # physics: gravity, edge-aware dodge clamping, movement, drop-through,
         # vertical/horizontal collision, and landing — see fighter_physics (#77).
-        step_physics(self, platforms, held)
+        # Skipped while hanging — the fighter is pinned to the ledge.
+        if self.fighter.grabbed_ledge is None:
+            step_physics(self, platforms, held)
 
         # ---------- ledge grab (#14): automatic, PM-faithful ----------
         # After physics so on_ground/vel/pos are final. Grab when airborne +
@@ -345,6 +373,8 @@ class Player(pygame.sprite.Sprite):
                 self.fighter.invulnerable = False  # intangibility ends with the swing
         if self.fighter.landing_lag_timer > 0:
             self.fighter.landing_lag_timer -= 1  # waveland lock window (#202)
+        if self.fighter.ledge_regrab_lockout_timer > 0:
+            self.fighter.ledge_regrab_lockout_timer -= 1  # post-release regrab gate (#14)
         if self.fighter.shieldstun_timer > 0:
             self.fighter.shieldstun_timer -= 1
         if self.fighter.dodge_timer > 0:

@@ -155,3 +155,66 @@ def test_rising_does_not_grab():
     p.update(_empty_frame(), plats, p_attack_group(), ledges)
     assert p.state != "ledge_hang"
     assert p.fighter.grabbed_ledge is None
+
+
+# --- Task 4: hang getup / drop / timeout + lockout ---------------------------
+
+def _grab_left(p, plats, ledges):
+    p.rect.topleft = (80 - 40, 420)
+    p.fighter.vel.x, p.fighter.vel.y = 0, 5
+    p.fighter.on_ground = False
+    p.update(_empty_frame(), plats, p_attack_group(), ledges)
+    assert p.state == "ledge_hang"
+
+
+def test_getup_climbs_onto_stage_and_idles():
+    plats = _stage(); ledges = ledges_from_platforms(plats)
+    p = _player()
+    _grab_left(p, plats, ledges)
+    p.update(_frame_up(p), plats, p_attack_group(), ledges)   # press up -> getup
+    assert p.fighter.grabbed_ledge is None
+    assert all(l.occupied_by is None for l in ledges)
+    assert p.fighter.invulnerable is False
+    assert p.state == "idle"
+
+
+def test_drop_releases_into_fall_with_lockout():
+    plats = _stage(); ledges = ledges_from_platforms(plats)
+    p = _player()
+    _grab_left(p, plats, ledges)
+    p.update(_frame_down(p), plats, p_attack_group(), ledges)  # press down -> drop
+    assert p.fighter.grabbed_ledge is None
+    # lockout armed (set to LEDGE_REGRAB_LOCKOUT_FRAMES, then ticked once this same
+    # frame); the blocking contract itself is pinned by the regrab test below.
+    assert p.fighter.ledge_regrab_lockout_timer > 0
+    assert p.state == "fall"
+
+
+def test_away_also_drops():
+    plats = _stage(); ledges = ledges_from_platforms(plats)
+    p = _player()
+    _grab_left(p, plats, ledges)              # LEFT edge -> "away" is left
+    p.update(_frame_left(p), plats, p_attack_group(), ledges)
+    assert p.fighter.grabbed_ledge is None
+    assert p.state == "fall"
+
+
+def test_timeout_auto_releases():
+    plats = _stage(); ledges = ledges_from_platforms(plats)
+    p = _player()
+    _grab_left(p, plats, ledges)
+    p.fighter.ledge_hang_timer = 1                              # imminent timeout
+    p.update(_empty_frame(), plats, p_attack_group(), ledges)  # tick to 0 -> release
+    assert p.fighter.grabbed_ledge is None
+    assert p.state == "fall"
+
+
+def test_regrab_lockout_blocks_immediate_regrab():
+    plats = _stage(); ledges = ledges_from_platforms(plats)
+    p = _player()
+    _grab_left(p, plats, ledges)
+    p.update(_frame_down(p), plats, p_attack_group(), ledges)   # drop -> lockout armed
+    p.rect.topleft = (80 - 40, 420)
+    p.fighter.vel.y = 5; p.fighter.on_ground = False
+    p.update(_empty_frame(), plats, p_attack_group(), ledges)   # in region again
+    assert p.fighter.grabbed_ledge is None                      # blocked by lockout
