@@ -87,6 +87,8 @@ emit structured JSON. Ranked source detail (incl. Melee/Brawl fallbacks): #120.
 
 Status: ✅ written. **All 13 sub-domain docs are complete** ([epic #147](https://github.com/avidrucker/pycats/issues/147) — each was filed and written as its own ticket).
 
+> Looking up a single term? See the [**glossary**](../glossary.md) — one-line definitions of every mechanics + project term, each linking back to the sub-domain doc below that owns it.
+
 | Doc | Sub-domain | Status |
 |---|---|---|
 | `00-overview.md` | This file — conventions, sources, index | ✅ |
