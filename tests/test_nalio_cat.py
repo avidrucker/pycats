@@ -87,6 +87,24 @@ def test_nalio_dtilt_is_three_hitboxes():
         assert hb.knockback_growth == 80.0
 
 
+def test_nalio_ftilt_is_pm_attacks3():
+    """Nalio's forward tilt is PM3.6 Mario AttackS3 (forward/mid angle) — the
+    FIRST move to use the Sakurai-angle sentinel (361, #203). rukaidata: active
+    5-7 (startup 4 / active 3), FAF 30 (recovery 23); 3 hitboxes in priority order
+    (id 0->2), all damage 9 / angle 361 / BKB 6 / KBG 100; radii 21/17/15 (sizes
+    3.91/3.13/2.73 u × 5.4). Able-to-fail: an absent ftilt key falls back to the
+    d-tilt alias (angle 80, BKB 30) and reds this."""
+    move = load_fighter_data("nalio").moves["ftilt"]
+    assert move.in_air is False
+    assert (move.startup, move.active, move.recovery) == (4, 3, 23)
+    assert len(move.hitboxes) == 3
+    assert tuple(hb.damage for hb in move.hitboxes) == (9.0, 9.0, 9.0)
+    assert tuple(hb.angle for hb in move.hitboxes) == (361, 361, 361)
+    assert tuple(hb.base_knockback for hb in move.hitboxes) == (6.0, 6.0, 6.0)
+    assert tuple(hb.knockback_growth for hb in move.hitboxes) == (100.0, 100.0, 100.0)
+    assert tuple(hb.circle.r for hb in move.hitboxes) == (21, 17, 15)
+
+
 def test_nalio_nair_is_pm_neutral_air():
     """Nalio's neutral-air is PM3.6 Mario AttackAirN (#136), clean-hit form on the
     #130 multi-hitbox engine: 2 simultaneous hitboxes, in_air, damage 12, BKB 20,

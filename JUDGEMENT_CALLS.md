@@ -57,3 +57,22 @@ Each entry: what was decided, why, and how to undo/revisit.
    - *Why:* a schema with no spawn-wiring is a non-functional dead-field
      intermediate; the two can't ship independently. ~50m fits the microtasks
      budget. (architect rung-5 + objective budget.)
+
+---
+
+## B1 — Nalio f-tilt (#206, PM3.6 Mario AttackS3)
+
+1. **Hitbox values are rukaidata-sourced; FAF/total is the one inference.**
+   - rukaidata gave damage 9, angle **361 (Sakurai)**, BKB 6, KBG 100, WDSK 0,
+     sizes 3.91/3.13/2.73 u, active frames 5-7 directly. The **FAF (30 → recovery
+     23)** wasn't in that result; used Mario f-tilt's well-known FAF 30 (Melee/PM),
+     consistent with how d-tilt recorded its total. *Revisit:* confirm against the
+     rukaidata move page if exact endlag ever matters.
+2. **Only the forward/mid angle variant is authored.**
+   - *Why:* `move_select` has a single ground-forward key (`ftilt`); the angled
+     up/down AttackS3 variants have no input to reach them. Mid variant = 9 dmg.
+3. **Positions approximated (no skeleton), same convention as jab/d-tilt.**
+   - Along the forward arm at dy 28; mid box at the #64 reach dx 46; fist (id0,
+     r21) outermost → dx 57/46/37. Documented in the move's code comment.
+4. **First real consumer of the A1 Sakurai gate** — f-tilt uses `angle=361`, no
+   literal placeholder (unlike n-air's 45). End-to-end validation that #203 works.

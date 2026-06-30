@@ -101,6 +101,18 @@ def test_nalio_neutral_attack_uses_jab_and_down_attack_uses_dtilt_alias():
     assert p.current_move is p.fighter_data.moves["attack"]
 
 
+def test_nalio_forward_ground_uses_ftilt_not_the_attack_alias():
+    """Now that Nalio defines a real f-tilt (#206), forward-on-the-ground + A
+    selects "ftilt" instead of falling back to the "attack" alias (d-tilt)."""
+    pg.init()
+    p = _mk("nalio")  # faces right, so held "right" == "forward"
+    p.fighter.on_ground = True
+    p.handle_actions(_press("attack", held_extra=("right",)), pg.sprite.Group())
+    assert "ftilt" in p.fighter_data.moves
+    assert p.current_move is p.fighter_data.moves["ftilt"]
+    assert p.current_move is not p.fighter_data.moves["attack"]
+
+
 def test_b_button_starts_a_defined_special():
     pg.init()
     sb = MoveData(name="neutral b", in_air=False, startup=3, active=2, recovery=5,

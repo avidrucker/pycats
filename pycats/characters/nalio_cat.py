@@ -114,6 +114,33 @@ _DOWN_TILT = MoveData(
     ),
 )
 
+# --- Forward-tilt, mapped to the canonical "ftilt" key (PM3.6 Mario AttackS3) --
+# Forward/mid angle variant (move_select has one ground forward key, so the
+# angled up/down variants aren't authored). The FIRST Nalio move to use the real
+# Sakurai-angle sentinel 361 (#203) — no literal-angle placeholder needed.
+# rukaidata AttackS3 (forward): active 5-7 -> startup 4 / active 3; FAF 30 ->
+# recovery 23. Three same-set hitboxes (priority id 0->2), all damage 9, angle
+# 361, BKB 6, KBG 100, WDSK 0 (so nothing deferred). Radii = round(size u × 5.4):
+# 3.91->21, 3.13->17, 2.73->15. Positions approximated like jab/d-tilt (bones not
+# modelled): along the forward arm at mid-body height (dy 28), mid box at the
+# #64-validated reach dx=46, fist (id0, r21) outermost.
+def _ftilt_box(dx, r):
+    return Hitbox(circle=Circle(dx=dx, dy=28, r=r), damage=9.0,
+                  angle=361, base_knockback=6.0, knockback_growth=100.0)
+
+_FORWARD_TILT = MoveData(
+    name="forward tilt",
+    in_air=False,
+    startup=4,
+    active=3,
+    recovery=23,
+    hitboxes=(
+        _ftilt_box(dx=57, r=21),   # id0 (fist) — outermost, priority
+        _ftilt_box(dx=46, r=17),   # id1 — mid (#64 reach)
+        _ftilt_box(dx=37, r=15),   # id2 — inner
+    ),
+)
+
 # --- Neutral-air, mapped to the "nair" slot (PM3.6 Mario AttackAirN) -----------
 # Nalio's first aerial (#136), authored as the CLEAN-HIT form on the #130 engine.
 # A "sex kick" — 2 simultaneous hitboxes around the body (rukaidata ids 0 & 1,
@@ -173,7 +200,8 @@ _PRONE_HURTBOX = Hurtbox(
 NALIO_FIGHTER_DATA = FighterData(
     weight=100,            # PM3.6 Mario (== pycats default → no KB change)
     hurtbox=_HURTBOX,
-    moves={"attack": _DOWN_TILT, "jab": _JAB, "nair": _NEUTRAL_AIR},
+    moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
+           "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,
