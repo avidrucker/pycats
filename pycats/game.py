@@ -402,7 +402,7 @@ while running:
                 zoom_toast.show("P2 face: " + cat_faces.face_style_label(battle.player2.face_style))
 
     # Update screen state manager
-    screen_manager.update(frame_input)
+    screen_manager.update(frame_input, battle)
 
     # Check if we should quit
     if screen_manager.should_quit_game():
@@ -419,28 +419,18 @@ while running:
         continue
 
     current_state = screen_manager.get_state()
-    
-    # Track previous state to detect transitions
-    if 'previous_state' not in locals():
-        previous_state = current_state
-    
-    # Handle state transitions
-    if previous_state == "pause" and current_state == "win_screen":
-        # Transitioning from pause to win screen (stats view)
-        if battle.player1 and battle.player2:
-            screen_manager.set_stats_data(battle.player1, battle.player2)
-    
-    previous_state = current_state
+    # (#230) The pause->win_screen stats wiring + char_select reset are now engine
+    # entry/update actions (screen_manager._on_enter_win_screen / _update_char_select),
+    # fed by the battle threaded into the engine ctx above — the previous_state loop
+    # hack and the should_reset_game poll are retired.
 
     if current_state == "main_menu":
         # Render main menu
         screen_manager.render(get_render_surface())
 
     elif current_state == "char_select":
-        # Check if we need to reset the game (coming from win screen)
-        if screen_manager.should_reset_game():
-            reset_game()
-
+        # (#230) battle reset on char-select-with-no-winner moved to
+        # screen_manager._update_char_select (engine action).
         # Render character selection
         screen_manager.render(get_render_surface())
 

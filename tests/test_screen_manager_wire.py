@@ -57,3 +57,41 @@ def test_reset_to_main_menu_force_path_both_backends(backend, monkeypatch):
     assert sm.get_state() == "char_select", backend
     sm.reset_to_main_menu()
     assert sm.get_state() == "main_menu", backend
+
+
+# --- #230 (slice 3 of #100): transition side-effects via entry/update actions ---
+import types
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_pause_to_win_screen_wires_stats_from_battle_via_on_enter(backend, monkeypatch):
+    """pause -> win_screen (the 'end_match' stats view) wires the stats from the
+    battle threaded into ctx, via _on_enter_win_screen — replacing game.py's
+    previous_state loop hack. winner/loser unset => the from-pause stats branch."""
+    sm = _mk(backend, monkeypatch)
+    sm.engine.force("pause")
+    assert sm.get_state() == "pause", backend
+    sm.pause_menu.action_requested = "end_match"
+    battle = types.SimpleNamespace(player1=object(), player2=object(),
+                                   reset=lambda: None)
+    sm.update(_empty(), battle)                      # battle now threaded into ctx
+    assert sm.get_state() == "win_screen", backend
+    wsm = sm.win_screen_manager
+    assert wsm.from_pause is True, backend
+    assert wsm.winner is battle.player1, backend
+    assert wsm.loser is battle.player2, backend
+
+
+@pytest.mark.parametrize("backend", BACKENDS)
+def test_char_select_resets_battle_via_update_action(backend, monkeypatch):
+    """Entering char_select with no winner resets the battle through
+    _update_char_select (ctx battle) — replacing game.py's should_reset_game poll."""
+    sm = _mk(backend, monkeypatch)
+    sm.main_menu.action_requested = "play"
+    sm.update(_empty())
+    assert sm.get_state() == "char_select", backend
+    reset_calls = []
+    battle = types.SimpleNamespace(player1=None, player2=None,
+                                   reset=lambda: reset_calls.append(1))
+    sm.update(_empty(), battle)                      # winner/loser are None
+    assert reset_calls, "char_select with no winner should reset the battle"

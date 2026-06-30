@@ -105,10 +105,16 @@ class ScreenStateManager:
         self.loser = None
         self.should_quit = False
 
-    def update(self, frame_input):
-        """Update the screen state manager."""
-        # Update the screen engine with input context
-        self.engine.update({"frame_input": frame_input, "screen_manager": self})
+    def update(self, frame_input, battle=None):
+        """Update the screen state manager.
+
+        ``battle`` (the BattleScreen, #193) is threaded into the engine ctx so the
+        transition side-effects can run as entry/update actions instead of game.py
+        loop branches (#230, slice 3 of #100): win_screen's from-pause stats and
+        char_select's reset read ``ctx["battle"]``.
+        """
+        self.engine.update({"frame_input": frame_input, "screen_manager": self,
+                            "battle": battle})
 
     def render(self, surface):
         """Render the current screen."""
@@ -199,14 +205,17 @@ class ScreenStateManager:
     def _on_enter_win_screen(self, ctx):
         """Called when entering win screen state."""
         if self.winner and self.loser:
-            # Normal win condition
+            # Normal win condition (playing -> win_screen): winner/loser were set
+            # in the playing loop before the transition.
             self.win_screen_manager.set_match_data(self.winner, self.loser)
         else:
-            # Coming from pause menu - show stats for current match
-            # We need to get the current players from the game context
-            screen_manager = ctx.get("screen_manager", self)
-            # The game.py will need to provide player data, for now just set dummy data
-            # This will be handled by the game loop providing the current players
+            # From pause -> win_screen (the 'end_match' stats view): wire the stats
+            # from the live battle threaded into ctx (#230, replacing game.py's
+            # previous_state hack). No battle (or no players) => nothing to show.
+            battle = ctx.get("battle")
+            if battle is not None and battle.player1 and battle.player2:
+                self.win_screen_manager.set_match_data(
+                    battle.player1, battle.player2, from_pause=True)
 
     # FSM State Update Handlers
     def _update_main_menu(self, ctx):
@@ -222,6 +231,15 @@ class ScreenStateManager:
 
     def _update_char_select(self, ctx):
         """Update character select state."""
+        # Reset the battle when at char_select with no win recorded (#230, replacing
+        # game.py's should_reset_game poll). State is char_select here by definition,
+        # so the old guard's extra state check is implicit; winner/loser None is the
+        # discriminator (a fresh selection, or returning before a match finished).
+        if self.winner is None and self.loser is None:
+            battle = ctx.get("battle")
+            if battle is not None:
+                battle.reset()
+
         frame_input = ctx["frame_input"]
         self.char_selector.update(frame_input.held, frame_input.pressed)
 
