@@ -109,4 +109,6 @@ def step_physics(p, platforms, held):
             if current_platform:
                 p.rect.bottom = current_platform.rect.top
 
-    p.fighter._handle_landing(was_airborne)
+    # Returns True on a #145 auto-knockdown landing; Player.update applies
+    # force_prone on it (the domain no longer drives the engine — #298/S5).
+    return p.fighter._handle_landing(was_airborne)

@@ -324,3 +324,40 @@ def test_soft_landing_in_hitstun_below_threshold_does_not_knock_down():
     p, states = _land_in_hitstun(vy=2, hurt=12)
     assert p.fighter.on_ground
     assert "prone" not in states, f"soft landing wrongly knocked down: {states}"
+
+
+# --- #145 auto-knockdown-on-landing + S5/#298 engine-inversion guards ----------
+def test_hard_landing_in_hitstun_forces_prone_through_update():
+    """#145: landing while in hitstun (hurt_timer > 0) at/above
+    KNOCKDOWN_VY_THRESHOLD downward forces prone — exercised THROUGH update /
+    step_physics (this path had no test). Guards the S5/#298 wiring: able-to-fail
+    if Player drops the force_prone after step_physics, the fighter won't be prone.
+    """
+    from pycats.config import KNOCKDOWN_VY_THRESHOLD
+    plats = _ground()
+    p = _mk()
+    p.fighter.on_ground = False
+    p.rect.bottom = plats[0].rect.top - 2     # just above the ground
+    p.fighter.vel.y = KNOCKDOWN_VY_THRESHOLD + 4  # hard downward impact
+    p.fighter.hurt_timer = 10                  # in hitstun / tumble
+    _run(p, plats, _frame())                   # one update -> land -> knockdown
+    assert p.state == "prone"
+
+
+def test_fighter_does_not_drive_the_player_engine():
+    """#298/S5: Fighter rules return intent; the Player adapter applies the FSM
+    transition. `entities/fighter.py` must make no `owner.engine` / `owner.force_prone`
+    reach. AST-checked. Able-to-fail: re-adding either reach reds this."""
+    import ast
+    import pathlib
+    import pycats.entities.fighter as fm
+
+    tree = ast.parse(pathlib.Path(fm.__file__).read_text(encoding="utf-8"))
+    bad = {"engine", "force_prone"}
+    offenders = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute) and node.attr in bad:
+            base = node.value
+            if isinstance(base, ast.Attribute) and base.attr == "owner":
+                offenders.append(f"line {node.lineno}: owner.{node.attr}")
+    assert offenders == [], "Fighter drives the Player engine: " + "; ".join(offenders)

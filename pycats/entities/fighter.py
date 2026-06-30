@@ -50,7 +50,6 @@ from ..config import (
     GETUP_ROLL_FRAMES,
     GETUP_ROLL_SPEED,
     KNOCKDOWN_VY_THRESHOLD,
-    KNOCKDOWN_PRONE_FRAMES,
 )
 from ..combat.knockback import (
     knockback, hitstun_frames, hitlag_frames, sakurai_angle, set_knockback,
@@ -338,7 +337,10 @@ class Fighter:
             self.hitlag_timer = hl
             atk.owner.fighter.hitlag_timer = hl
 
-    def _handle_landing(self, was_airborne: bool):
+    def _handle_landing(self, was_airborne: bool) -> bool:
+        """Resolve a landing. Returns True when the #145 auto-knockdown triggers
+        (the caller, via step_physics -> Player.update, applies force_prone — the
+        domain no longer reaches the Player engine, #298/S5)."""
         if self.on_ground and was_airborne:
             self.jumps_remaining = self.max_jumps  # reset jumps when landing
             self.air_dodge_ok = True  # reset air dodge availability
@@ -364,7 +366,8 @@ class Fighter:
             if (self.hurt_timer > 0
                     and self.land_impact_vy >= KNOCKDOWN_VY_THRESHOLD):
                 self.hurt_timer = 0
-                self.owner.force_prone(KNOCKDOWN_PRONE_FRAMES)
+                return True  # caller applies force_prone (#298/S5)
+        return False
 
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
@@ -392,7 +395,8 @@ class Fighter:
         # hide sprite off-screen
         self.rect.center = (-1000, -1000)
         self.vel.update(0, 0)
-        self.owner.engine.force("ko")
+        # FSM transition applied by the caller (Player.update) — the domain no
+        # longer drives the Player engine (#298/S5).
 
     def reset_to_spawn(self):
         """Domain half of the per-life reset to a clean spawn state (#34).

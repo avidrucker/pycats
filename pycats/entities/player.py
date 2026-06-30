@@ -31,6 +31,7 @@ from enum import Enum, auto
 from ..config import (
     PLAYER_SIZE,
     KNOCKBACK_DECAY,
+    KNOCKDOWN_PRONE_FRAMES,
     LEDGE_HANG_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
 )
@@ -225,6 +226,7 @@ class Player(pygame.sprite.Sprite):
         # ---------- blast-zone KO check ----------
         if self.fighter._outside_blast_zone():
             self.fighter._ko()
+            self.engine.force("ko")  # #298/S5: adapter applies the FSM transition
             return
 
         # ---------- shield tick ----------
@@ -319,7 +321,10 @@ class Player(pygame.sprite.Sprite):
         # vertical/horizontal collision, and landing — see fighter_physics (#77).
         # Skipped while hanging — the fighter is pinned to the ledge.
         if self.fighter.grabbed_ledge is None:
-            step_physics(self, platforms, held)
+            # step_physics returns True on a #145 auto-knockdown landing; the
+            # adapter applies force_prone (the domain returns intent — #298/S5).
+            if step_physics(self, platforms, held):
+                self.force_prone(KNOCKDOWN_PRONE_FRAMES)
 
         # ---------- ledge grab (#14): automatic, PM-faithful ----------
         # After physics so on_ground/vel/pos are final. Grab when airborne +
