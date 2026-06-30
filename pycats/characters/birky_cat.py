@@ -184,13 +184,34 @@ _BIRKY_BAIR = MoveData(
     ),
 )
 
+# --- Up-air (slice 3, #259): PM3.6 Kirby AttackAirHi — 2-window juggle -------------
+# rukaidata PM3.6 Kirby AttackAirHi: 48f total, IASA 36, active 10-15. Early f10-12
+# (dmg 15, angle 75, BKB 5, KBG 115), late f13-15 (dmg 12, angle 30, BKB 10, KBG 90);
+# radius round(4.32×5.4) ≈ 23. Above the cat (low dy). Approximated/playtest per #120.
+_BIRKY_UAIR = MoveData(
+    name="uair",
+    in_air=True,
+    startup=9,
+    active=6,
+    recovery=21,  # active f10-15; 9 + 6 + 21 = 36 (PM3.6 IASA)
+    hitboxes=(
+        Hitbox(circle=Circle(dx=20, dy=6, r=23), damage=15.0, angle=75,
+               base_knockback=5.0, knockback_growth=115.0, active_start=10, active_end=12),
+        Hitbox(circle=Circle(dx=28, dy=6, r=23), damage=15.0, angle=75,
+               base_knockback=5.0, knockback_growth=115.0, active_start=10, active_end=12),
+        Hitbox(circle=Circle(dx=24, dy=6, r=23), damage=12.0, angle=30,
+               base_knockback=10.0, knockback_growth=90.0, active_start=13, active_end=15),
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
     # hurtbox/posture still reuse the default cat (body geometry is a separate concern);
-    # ground normals (#240/#245/#247/#249) + nair (#255) + fair (#256) + bair (#258).
+    # ground normals (#240/#245/#247/#249) + nair (#255) + fair (#256) + bair (#258)
+    # + uair (#259).
     hurtbox=_DEFAULT.hurtbox,
     moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT,
            "utilt": _BIRKY_UTILT, "nair": _BIRKY_NAIR, "fair": _BIRKY_FAIR,
-           "bair": _BIRKY_BAIR},
+           "bair": _BIRKY_BAIR, "uair": _BIRKY_UAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,

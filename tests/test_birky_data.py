@@ -40,7 +40,8 @@ def test_birky_reuses_default_hurtbox_but_has_no_placeholder_moves():
     assert birky.hurtbox == default.hurtbox            # body geometry not per-fighter
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
-    assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair", "fair", "bair"}
+    assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair", "fair",
+                                "bair", "uair"}
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():
@@ -148,3 +149,17 @@ def test_birky_bair_is_two_window():
     assert all(h.damage == 14.0 for h in early)
     assert all(h.damage == 10.0 for h in late)
     assert all(h.angle == 361 and h.circle.dx < 0 for h in bair.hitboxes)
+
+
+def test_birky_uair_is_two_window_juggle():
+    """Birky's uair = PM3.6 Kirby AttackAirHi: IASA 36, early f10-12 (dmg 15,
+    angle 75) + late f13-15 (dmg 12, angle 30)."""
+    birky = load_fighter_data("birky")
+    uair = birky.moves["uair"]
+    assert uair.in_air is True
+    assert uair.startup + uair.active + uair.recovery == 36  # PM3.6 IASA
+    early = [h for h in uair.hitboxes if h.active_end == 12]
+    late = [h for h in uair.hitboxes if h.active_start == 13]
+    assert early and late
+    assert all(h.damage == 15.0 and h.angle == 75 for h in early)
+    assert all(h.damage == 12.0 and h.angle == 30 for h in late)
