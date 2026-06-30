@@ -34,12 +34,28 @@ def test_birky_diverges_from_default_on_every_scalar():
     assert birky.jump_vel != default.jump_vel
 
 
-def test_birky_reuses_default_hurtbox_and_attack_placeholder():
+def test_birky_reuses_default_hurtbox_but_has_no_placeholder_moves():
     birky = load_fighter_data("birky")
     default = load_fighter_data("default")
     assert birky.hurtbox == default.hurtbox            # body geometry not per-fighter
-    # "attack" is still the slice-1 placeholder; "jab" is now Birky's own (slice 2, #240)
-    assert birky.moves["attack"] == default.moves["attack"]
+    # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
+    assert birky.moves["attack"] != default.moves["attack"]
+    assert set(birky.moves) == {"attack", "jab"}
+
+
+def test_birky_attack_slot_is_kirby_down_tilt():
+    """Birky's "attack" slot = PM3.6 Kirby d-tilt (AttackLw3): IASA 21, active 4-7,
+    dmg 10, angle 20, BKB 40, KBG 30; a low, short-reach poke."""
+    birky = load_fighter_data("birky")
+    dtilt = birky.moves["attack"]
+    assert dtilt.in_air is False
+    assert dtilt.startup + dtilt.active + dtilt.recovery == 21  # PM3.6 IASA
+    assert dtilt.hitboxes
+    hb = dtilt.hitboxes[0]
+    assert hb.damage == 10.0
+    assert hb.angle == 20
+    assert hb.base_knockback == 40.0 and hb.knockback_growth == 30.0
+    assert hb.circle.dy > 30   # low (below body centre) — it's a down-tilt
 
 
 def test_birky_jab_is_authored_short_range_and_weak():

@@ -42,11 +42,33 @@ _BIRKY_JAB = MoveData(
     ),
 )
 
+# --- Down-tilt, mapped to the "attack" slot (slice 2, #245): PM3.6 Kirby AttackLw3 -
+# rukaidata PM3.6 Kirby AttackLw3: 30f total, IASA 21, active 4-7; four hitboxes
+# (skip the r=0 one), all damage 10, angle 20, BKB 40, KBG 30. #120 units: scalars
+# RAW; radii round(size×5.4) for 3.91/4.69/3.55u ≈ 21/25/19. A low poke → high dy
+# (near the feet); dx short (featherweight). dx/dy approximated by convention
+# (bone-relative offsets not mapped), flagged for playtest — per nalio_cat.py.
+_BIRKY_DTILT = MoveData(
+    name="dtilt",
+    in_air=False,
+    startup=3,
+    active=4,
+    recovery=14,  # active f4-7; 3 + 4 + 14 = 21 (PM3.6 IASA)
+    hitboxes=(
+        Hitbox(circle=Circle(dx=42, dy=48, r=25), damage=10.0, angle=20,
+               base_knockback=40.0, knockback_growth=30.0),
+        Hitbox(circle=Circle(dx=34, dy=49, r=21), damage=10.0, angle=20,
+               base_knockback=40.0, knockback_growth=30.0),
+        Hitbox(circle=Circle(dx=28, dy=50, r=19), damage=10.0, angle=20,
+               base_knockback=40.0, knockback_growth=30.0),
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
-    # placeholders reused from the default cat (hurtbox + the "attack" slot until its
-    # own slice); "jab" is Birky's first real move (#240).
+    # hurtbox/posture still reuse the default cat (body geometry is a separate concern);
+    # both moves are now Birky's own — d-tilt in the "attack" slot (#245) + jab (#240).
     hurtbox=_DEFAULT.hurtbox,
-    moves={**_DEFAULT.moves, "jab": _BIRKY_JAB},
+    moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
