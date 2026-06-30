@@ -1,7 +1,7 @@
 {
-  "attack_active_frames": 28,
+  "attack_active_frames": 42,
   "final_phase": "match_over",
-  "frames": 639,
+  "frames": 812,
   "players": {
     "P1": {
       "ko_frames": [],
@@ -21,18 +21,19 @@
     "P2": {
       "ko_frames": [
         133,
-        389,
-        638
+        530,
+        811
       ],
       "lives_end": 0,
       "lives_min": 0,
       "lives_start": 3,
-      "percent_max": 30.0,
+      "percent_max": 40.0,
       "states": [
         "fall",
         "hurt",
         "idle",
         "ko",
+        "ledge_hang",
         "prone",
         "run"
       ]

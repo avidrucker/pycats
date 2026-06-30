@@ -1,5 +1,5 @@
 {
-  "attack_active_frames": 8,
+  "attack_active_frames": 40,
   "final_phase": "in_play",
   "frames": 600,
   "players": {
@@ -20,11 +20,10 @@
     },
     "P2": {
       "ko_frames": [
-        136,
-        422
+        250
       ],
-      "lives_end": 1,
-      "lives_min": 1,
+      "lives_end": 2,
+      "lives_min": 2,
       "lives_start": 3,
       "percent_max": 10.0,
       "states": [
@@ -32,6 +31,7 @@
         "hurt",
         "idle",
         "ko",
+        "ledge_hang",
         "run"
       ]
     }

@@ -22,7 +22,7 @@
     },
     "P2": {
       "ko_frames": [
-        285
+        399
       ],
       "lives_end": 2,
       "lives_min": 2,
@@ -34,6 +34,7 @@
         "hurt",
         "idle",
         "ko",
+        "ledge_hang",
         "run"
       ]
     }

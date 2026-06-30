@@ -20,6 +20,7 @@ from ..config import (  # noqa: E402
     CAT_CHARACTERS,
 )
 from ..entities import Platform, Player  # noqa: E402
+from ..entities.ledge import ledges_from_platforms  # noqa: E402
 from ..combat.data import load_fighter_data  # noqa: E402
 from ..systems import combat  # noqa: E402
 from ..core.physics import resolve_player_push  # noqa: E402
@@ -113,6 +114,7 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
         frames = len(frame_inputs) if frame_inputs is not None else 0
 
     platforms = build_stage()
+    ledges = ledges_from_platforms(platforms)  # solid-edge ledges (#14)
     p1, p2, players = build_players(p1_char, p2_char)
     attacks = pygame.sprite.Group()
     match = make_match_engine([p1, p2])
@@ -133,7 +135,7 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
         else:
             fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
         for p in players:
-            p.update(fi, platforms, attacks)
+            p.update(fi, platforms, attacks, ledges)
         resolve_player_push(list(players))
         attacks.update()
         combat.process_hits(players, attacks)
