@@ -111,13 +111,33 @@ _BIRKY_UTILT = MoveData(
     ),
 )
 
+# --- Neutral-air (slice 3, #255): PM3.6 Kirby AttackAirN — a lingering sex-kick ----
+# rukaidata PM3.6 Kirby AttackAirN: 56f total, IASA 43, active 3-29. Two windows
+# (per-hitbox active_start/active_end): early f3-6 (dmg 12, BKB 15), late f7-29
+# (dmg 9, BKB 0); both angle 55, KBG 100; radii 4.0/2.5u × 5.4 ≈ 22/14, centred
+# (offset 0). 4 identical boxes per window collapse to one. Approximated/playtest.
+_BIRKY_NAIR = MoveData(
+    name="nair",
+    in_air=True,
+    startup=2,
+    active=27,
+    recovery=14,  # active f3-29; 2 + 27 + 14 = 43 (PM3.6 IASA)
+    hitboxes=(
+        Hitbox(circle=Circle(dx=20, dy=30, r=22), damage=12.0, angle=55,
+               base_knockback=15.0, knockback_growth=100.0,
+               active_start=3, active_end=6),
+        Hitbox(circle=Circle(dx=20, dy=30, r=14), damage=9.0, angle=55,
+               base_knockback=0.0, knockback_growth=100.0,
+               active_start=7, active_end=29),
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
     # hurtbox/posture still reuse the default cat (body geometry is a separate concern);
-    # all four ground normals are Birky's own — d-tilt in "attack" (#245), jab (#240),
-    # f-tilt (#247), u-tilt (#249).
+    # ground normals (#240/#245/#247/#249) + nair (#255).
     hurtbox=_DEFAULT.hurtbox,
     moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT,
-           "utilt": _BIRKY_UTILT},
+           "utilt": _BIRKY_UTILT, "nair": _BIRKY_NAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,

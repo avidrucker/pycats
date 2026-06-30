@@ -40,7 +40,7 @@ def test_birky_reuses_default_hurtbox_but_has_no_placeholder_moves():
     assert birky.hurtbox == default.hurtbox            # body geometry not per-fighter
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
-    assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt"}
+    assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair"}
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():
@@ -103,3 +103,18 @@ def test_birky_jab_is_authored_short_range_and_weak():
     assert hb.base_knockback == 8.0 and hb.knockback_growth == 50.0
     # short reach: jab sits closer to the body than the default attack (dx=46)
     assert hb.circle.dx < default.moves["attack"].hitboxes[0].circle.dx
+
+
+def test_birky_nair_is_two_window_sex_kick():
+    """Birky's nair = PM3.6 Kirby AttackAirN: IASA 43, lingering — early f3-6
+    (dmg 12, BKB 15) and late f7-29 (dmg 9, BKB 0), both angle 55."""
+    birky = load_fighter_data("birky")
+    nair = birky.moves["nair"]
+    assert nair.in_air is True
+    assert nair.startup + nair.active + nair.recovery == 43  # PM3.6 IASA
+    early = [h for h in nair.hitboxes if h.active_end == 6]
+    late = [h for h in nair.hitboxes if h.active_start == 7]
+    assert early and late
+    assert all(h.damage == 12.0 and h.base_knockback == 15.0 for h in early)
+    assert all(h.damage == 9.0 and h.base_knockback == 0.0 for h in late)
+    assert all(h.angle == 55 for h in nair.hitboxes)
