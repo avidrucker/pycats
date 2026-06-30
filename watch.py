@@ -19,6 +19,7 @@ from pycats.sim.presenters import LivePresenter, VideoPresenter
 from pycats.sim.controllers import (
     AttackerController, IdlerController, FollowerController,
 )
+from pycats.characters.roster import ARCHETYPE_ROSTER
 
 # P2 controller per `--vs` archetype (P1 is always an attacker).
 VS_CONTROLLERS = {
@@ -31,9 +32,10 @@ VS_FRAMES = 30 * FPS   # #61: a --vs demo runs up to 30s (1800 @ 60 FPS)...
 MATCH_FRAMES = 6000    # ...a full --match plays to defeat...
 REPLAY_FRAMES = 300    # ...the scripted replay default (~5s).
 
-# Characters selectable per player (#244). Extend as #117 archetypes land; None =
-# the default cat. (load_fighter_data falls through to the default for any other key.)
-CHARACTERS = ["nalio"]
+# Characters selectable per player (#244) — sourced from the single roster source of
+# truth (#272) so it can't drift as #117 archetypes land. None = the default cat.
+# (load_fighter_data falls through to the default for any other key.)
+CHARACTERS = list(ARCHETYPE_ROSTER)
 
 
 def cpu_controllers(p1_level, p2_level, rng):
