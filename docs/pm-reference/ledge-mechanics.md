@@ -110,19 +110,20 @@ PM deliberately **reworked Brawl's ledge mechanics** — this is a defining chan
 
 ## pycats status
 
-**Not implemented — deferred** ([Phase 5 roadmap](../research/pm-mechanics-implementation-analysis.md); tracked by [#14](https://github.com/avidrucker/pycats/issues/14) "Add ledge-hang state"). There is no ledge grab, ledge-hang, getup, edge-hog, trump, or tech today.
+**v1 implemented** ([#14](https://github.com/avidrucker/pycats/issues/14)): automatic
+grab at a **solid** stage edge (thin platforms are NOT grabbable — owner ruling),
+**ledge-hang** with full-window intangibility (reusing the `invulnerable` flag), and
+three exits — **neutral getup** (up, climb on), **drop** (down or away → fall with a
+regrab lockout), and **timeout** (auto-release). Occupancy is a **one-occupant lockout**
+per edge (no trump yet). The state lives in the fighter chart
+([fighter-states](./fighter-states.md)) as `ledge_hang`; design +
+plan in `docs/superpowers/specs/2026-06-30-ledge-hang-design.md` /
+`docs/superpowers/plans/2026-06-30-ledge-hang.md`.
 
-Intent is captured as a source TODO in `pycats/entities/player.py`:
-> implement ledge grabbing — grab the ledge when falling off a platform, press up
-> to get back on / down to drop, limited-time invulnerability while hanging,
-> eventually fall off if you don't act. **(Open Q: can thin platforms be
-> ledge-grabbed, or only thick ones?)**
-
-When built, the ledge-hang **state** belongs in the fighter chart
-([fighter-states](./fighter-states.md)), the intangibility reuses the existing
-`invulnerable` flag, recoveries are up-B specials
-([moveset-and-frame-data](./moveset-and-frame-data.md)), and the thin-vs-thick
-grabbable-edge question is a [stages-and-environment](./00-overview.md) +
-[#14](https://github.com/avidrucker/pycats/issues/14) decision.
+**Deferred** (epic [#267](https://github.com/avidrucker/pycats/issues/267)): the other
+getup options (**ledge roll / attack / jump**), **intangibility decay** on repeated
+grabs, **ledge-trump** (flips the one-occupant lockout) + **edge-hog**, the **"2-frame"**,
+**teching**, **up-B sweetspot** recovery, and hold-away-to-decline + a frame-accurate
+getup window. Per-character/longer hang tuning is ⚠ playtest (`LEDGE_HANG_FRAMES` et al.).
 
 Divergences: [#99](https://github.com/avidrucker/pycats/issues/99). Open questions: [#24](https://github.com/avidrucker/pycats/issues/24).

@@ -24,7 +24,7 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: implement grabs which are combo regular-attack + shield, and can be initiated from idle or shielding, and can be used against an opponent who is in idle, walking, running, or shielding state, and the grab will put the opponent into a grabbed state where they cannot move or attack, and the grabber can then throw them off the stage or do a follow-up attack
 #### TODO: research and implement move/input buffering
 #### TODO: implement fast fall by holding down which will cause the player to fall faster
-#### TODO: implement ledge grabbing mechanics where the player can grab the ledge when falling off of a platform, and then can press up to get back on the platform, or down to drop down from the ledge, they get limited time invulnerability while hanging on the ledge, and eventually fall off the ledge if they don't get back on the platform (Q: can thin platforms be grabbed as well as thick platforms?)
+#### DONE (#14 v1): ledge grab/hang/getup(up)/drop(down or away)/timeout + ledge intangibility; thin platforms are NOT grabbable (only solid edges). See update() ledge-grab + ledge-hang blocks. Deferred follow-ups (roll/attack/jump getups, intangibility decay, trump, 2-frame, tech): #267.
 
 import pygame  # type: ignore
 from enum import Enum, auto
