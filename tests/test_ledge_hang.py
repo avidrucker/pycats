@@ -218,3 +218,19 @@ def test_regrab_lockout_blocks_immediate_regrab():
     p.fighter.vel.y = 5; p.fighter.on_ground = False
     p.update(_empty_frame(), plats, p_attack_group(), ledges)   # in region again
     assert p.fighter.grabbed_ledge is None                      # blocked by lockout
+
+
+# --- Task 5: one-occupant lockout across two fighters ------------------------
+
+def test_occupied_edge_blocks_second_grabber():
+    plats = _stage(); ledges = ledges_from_platforms(plats)
+    p1 = _player(); p2 = _player()
+    # p1 grabs the LEFT edge
+    p1.rect.topleft = (80 - 40, 420); p1.fighter.vel.y = 5; p1.fighter.on_ground = False
+    p1.update(_empty_frame(), plats, p_attack_group(), ledges)
+    assert p1.state == "ledge_hang"
+    # p2 enters the SAME left catch region while p1 holds it
+    p2.rect.topleft = (80 - 40, 420); p2.fighter.vel.y = 5; p2.fighter.on_ground = False
+    p2.update(_empty_frame(), plats, p_attack_group(), ledges)
+    assert p2.fighter.grabbed_ledge is None     # blocked: one occupant per edge
+    assert p2.state != "ledge_hang"
