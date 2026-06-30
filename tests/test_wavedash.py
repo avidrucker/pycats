@@ -12,6 +12,12 @@ This pins the additive wavedash layer:
 
 Pure-horizontal and neutral air dodges (no down component) keep their #184 behaviour
 and are pinned in tests/test_air_dodge_helpless.py.
+
+Canon source (#215): the Melee decomp `ftCo_EscapeAir.c` + meleelight `ESCAPEAIR.js`
+give the air-dodge model — neutral → (0,0); directional → `escapeair_force × (cosθ,sinθ)`
+with `escapeair_force` = 3.1 u/f → `DODGE_AIR_SPEED` = round(3.1 × 5.4) = 17 (pinned #222).
+These tests assert magnitude *relative to* DODGE_AIR_SPEED, so they pin the model, not a
+literal — robust across a future tuning change.
 """
 import pygame as pg
 

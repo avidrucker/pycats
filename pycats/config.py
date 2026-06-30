@@ -54,10 +54,12 @@ DODGE_TIME = 14
 DODGE_SPEED = 14  # horizontal boost for a roll
 # PM-faithful (Melee-style) air dodge directional burst (#184). The air dodge
 # *sets* (replaces) velocity to this magnitude in the stick direction, unlike the
-# ground roll which the sim reads separately. GUESS — no PM value exists in
-# pycats px/frame; reuses DODGE_SPEED as a starting point, derivable via #192/#195
-# (PM units/frame × PX_PER_UNIT≈5.4). See GUESSED_VALUES_TO_RESEARCH.md.
-DODGE_AIR_SPEED = 14
+# ground roll which the sim reads separately. FOUND (#215): Melee's hardcoded
+# air-dodge speed `escapeair_force` = 3.1 units/frame — corroborated by the
+# meleelight reimplementation (ESCAPEAIR.js: `3.1 * cos(ang)`) and the doldecomp
+# /melee model (`escapeair_force × (cosθ,sinθ)`); PM restored Melee's air dodge.
+# px/frame = round(3.1 × PX_PER_UNIT≈5.4) = 17. (PX_PER_UNIT named-const = #195.)
+DODGE_AIR_SPEED = 17
 # Wavedash (#202, follow-up to #184): a *diagonal-down* air dodge sets the
 # DODGE_AIR_SPEED burst at an angle below horizontal so it drives into the ground
 # and cancels into a grounded slide (the waveland). FOUND — SmashWiki gives the

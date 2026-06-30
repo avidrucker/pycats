@@ -44,7 +44,10 @@ def _air_dodge(p, plats, keys=(SHIELD,)):
 
 def test_directional_air_dodge_sets_burst_not_adds():
     """A right air dodge SETS vel.x to +DODGE_AIR_SPEED even from leftward momentum
-    (replace, not Brawl-style add)."""
+    (replace, not Brawl-style add). Canon: the Melee decomp `ftCo_EscapeAir.c` sets
+    `self_vel = escapeair_force × (cosθ,sinθ)`; DODGE_AIR_SPEED is the PM-faithful
+    magnitude (3.1 u/f × PX_PER_UNIT≈5.4 = 17, pinned #215/#222). This assertion is
+    relative to the constant, so it is robust to the exact value."""
     p, plats = _high_airborne()
     p.fighter.vel.x = -5.0
     _air_dodge(p, plats, (SHIELD, RIGHT))
