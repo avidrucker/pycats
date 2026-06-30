@@ -40,7 +40,7 @@ def test_birky_reuses_default_hurtbox_but_has_no_placeholder_moves():
     assert birky.hurtbox == default.hurtbox            # body geometry not per-fighter
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
-    assert set(birky.moves) == {"attack", "jab"}
+    assert set(birky.moves) == {"attack", "jab", "ftilt"}
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():
@@ -56,6 +56,20 @@ def test_birky_attack_slot_is_kirby_down_tilt():
     assert hb.angle == 20
     assert hb.base_knockback == 40.0 and hb.knockback_growth == 30.0
     assert hb.circle.dy > 30   # low (below body centre) — it's a down-tilt
+
+
+def test_birky_ftilt_is_authored():
+    """Birky's f-tilt = PM3.6 Kirby AttackS3S: IASA 28, active 5-8, dmg 11,
+    angle 361 (Sakurai), BKB 8, KBG 100; a forward poke."""
+    birky = load_fighter_data("birky")
+    ftilt = birky.moves["ftilt"]
+    assert ftilt.in_air is False
+    assert ftilt.startup + ftilt.active + ftilt.recovery == 28  # PM3.6 IASA
+    assert ftilt.hitboxes
+    hb = ftilt.hitboxes[0]
+    assert hb.damage == 11.0
+    assert hb.angle == 361
+    assert hb.base_knockback == 8.0 and hb.knockback_growth == 100.0
 
 
 def test_birky_jab_is_authored_short_range_and_weak():

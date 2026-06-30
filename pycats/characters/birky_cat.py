@@ -64,11 +64,32 @@ _BIRKY_DTILT = MoveData(
     ),
 )
 
+# --- Forward-tilt (slice 2, #247): PM3.6 Kirby AttackS3S -----------------------
+# rukaidata PM3.6 Kirby AttackS3S: 33f total, IASA 28, active 5-8; three hitboxes,
+# all damage 11, angle 361 (Sakurai), BKB 8, KBG 100 (no WDSK). #120 units: scalars
+# RAW; radii round(size×5.4) for 3.52/3.91/3.75u ≈ 19/21/20. A forward poke → dx
+# increasing (offsets 0/3.95/7.7u), mid-height dy. Approximated/playtest per precedent.
+_BIRKY_FTILT = MoveData(
+    name="ftilt",
+    in_air=False,
+    startup=4,
+    active=4,
+    recovery=20,  # active f5-8; 4 + 4 + 20 = 28 (PM3.6 IASA)
+    hitboxes=(
+        Hitbox(circle=Circle(dx=38, dy=34, r=19), damage=11.0, angle=361,
+               base_knockback=8.0, knockback_growth=100.0),
+        Hitbox(circle=Circle(dx=46, dy=33, r=21), damage=11.0, angle=361,
+               base_knockback=8.0, knockback_growth=100.0),
+        Hitbox(circle=Circle(dx=52, dy=33, r=20), damage=11.0, angle=361,
+               base_knockback=8.0, knockback_growth=100.0),
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
     # hurtbox/posture still reuse the default cat (body geometry is a separate concern);
-    # both moves are now Birky's own — d-tilt in the "attack" slot (#245) + jab (#240).
+    # all moves are Birky's own — d-tilt in "attack" (#245), jab (#240), f-tilt (#247).
     hurtbox=_DEFAULT.hurtbox,
-    moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB},
+    moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
