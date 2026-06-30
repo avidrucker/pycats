@@ -34,8 +34,27 @@ def test_birky_diverges_from_default_on_every_scalar():
     assert birky.jump_vel != default.jump_vel
 
 
-def test_birky_reuses_default_hurtbox_and_moves_as_placeholders():
+def test_birky_reuses_default_hurtbox_and_attack_placeholder():
     birky = load_fighter_data("birky")
     default = load_fighter_data("default")
-    assert birky.hurtbox == default.hurtbox   # body geometry not per-fighter this slice
-    assert birky.moves == default.moves        # real moves are slice 2
+    assert birky.hurtbox == default.hurtbox            # body geometry not per-fighter
+    # "attack" is still the slice-1 placeholder; "jab" is now Birky's own (slice 2, #240)
+    assert birky.moves["attack"] == default.moves["attack"]
+
+
+def test_birky_jab_is_authored_short_range_and_weak():
+    """Birky's jab = PM3.6 Kirby jab1 (Attack11): 16f total, active ~f3, dmg 3,
+    angle 361 (Sakurai), BKB 8, KBG 50; short reach (featherweight)."""
+    birky = load_fighter_data("birky")
+    default = load_fighter_data("default")
+    jab = birky.moves["jab"]
+    assert jab.in_air is False
+    assert jab.startup > 0 and jab.active > 0 and jab.recovery > 0
+    assert jab.startup + jab.active + jab.recovery == 16  # PM3.6 total / IASA 16
+    assert jab.hitboxes, "jab must have at least one hitbox"
+    hb = jab.hitboxes[0]
+    assert hb.damage == 3.0
+    assert hb.angle == 361                 # Sakurai-angle sentinel
+    assert hb.base_knockback == 8.0 and hb.knockback_growth == 50.0
+    # short reach: jab sits closer to the body than the default attack (dx=46)
+    assert hb.circle.dx < default.moves["attack"].hitboxes[0].circle.dx

@@ -19,12 +19,34 @@ slow-featherweight identity. The genuine `fast-fall` mechanic is a separate, sha
 engine ticket; selectability (making Birky human-pickable) is gated on #117/#127.
 """
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
-from pycats.combat.data import FighterData
+from pycats.combat.data import Circle, FighterData, Hitbox, MoveData
+
+# --- Jab (slice 2, #240): PM3.6 Kirby jab 1 (Attack11) ------------------------
+# rukaidata PM3.6 Kirby Attack11: 16 frames total (IASA 16), hitbox active ~frame 3,
+# damage 3.0, angle 361 (Sakurai sentinel), BKB 8, KBG 50 (normal knockback, not
+# WDSK). #120 units: frames/%/angle/BKB/KBG RAW; radius 3.13u × 5.4 ≈ 17 px. Active
+# widened to 2f (rukaidata is 1f on f3) for pycats hit detection — playtest. dx/dy
+# approximated by the short-reach convention (featherweight: closer than the default
+# attack's dx=46), per the nalio_cat.py precedent (bone-relative offsets not mapped).
+_BIRKY_JAB = MoveData(
+    name="jab",
+    in_air=False,
+    startup=2,
+    active=2,
+    recovery=12,  # 2 + 2 + 12 = 16 (PM3.6 total / IASA)
+    hitboxes=(
+        Hitbox(circle=Circle(dx=38, dy=27, r=17), damage=3.0, angle=361,
+               base_knockback=8.0, knockback_growth=50.0),
+        Hitbox(circle=Circle(dx=30, dy=28, r=17), damage=3.0, angle=361,
+               base_knockback=8.0, knockback_growth=50.0),
+    ),
+)
 
 BIRKY_FIGHTER_DATA = FighterData(
-    # placeholders reused from the default cat (this slice diverges on scalars only)
+    # placeholders reused from the default cat (hurtbox + the "attack" slot until its
+    # own slice); "jab" is Birky's first real move (#240).
     hurtbox=_DEFAULT.hurtbox,
-    moves=_DEFAULT.moves,
+    moves={**_DEFAULT.moves, "jab": _BIRKY_JAB},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
