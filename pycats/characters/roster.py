@@ -12,19 +12,21 @@ from .palettes import load_palettes
 
 _PAL = load_palettes()
 
-# Implemented archetypes only (Nalio #142, Birky #228). Tuple order = grid order.
-ARCHETYPE_ROSTER = ("nalio", "birky")
+# Implemented archetypes only (Nalio #142, Birky #228, Narz #294). Tuple order = grid order.
+ARCHETYPE_ROSTER = ("nalio", "birky", "narz")
 
 # Default cosmetic palette per archetype (an OG skin; cosmetic only, playtest-TBD).
 ARCHETYPE_PALETTE = {
     "nalio": _PAL["calico"],  # balanced all-rounder → warm orange
     "birky": _PAL["ghost"],   # floaty featherweight → light/round
+    "narz": _PAL["void"],     # disjointed swordfighter → sleek/dark
 }
 
 # Display name shown on the char-select tile (the archetype, not the palette).
 ARCHETYPE_NAME = {
     "nalio": "Nalio",
     "birky": "Birky",
+    "narz": "Narz",
 }
 
 # Neutral fallback cosmetic for any key with no archetype/OG palette.

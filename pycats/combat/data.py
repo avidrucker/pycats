@@ -241,6 +241,9 @@ def load_fighter_data(character: str) -> FighterData:
     if character == "birky":
         from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA
         return BIRKY_FIGHTER_DATA
+    if character == "narz":
+        from pycats.characters.narz_cat import NARZ_FIGHTER_DATA
+        return NARZ_FIGHTER_DATA
     # default cat for every other key (incl. the "P1"/"P2" sim path)
     from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
     return DEFAULT_FIGHTER_DATA
