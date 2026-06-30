@@ -7,11 +7,13 @@
 
 ---
 
-## Executive summary (provisional — DDD only so far)
+## Executive summary (provisional — DDD + Hexagonal so far)
 
 The prior review's headline was that all three lenses converged on **one root cause: the 896-line `Player` god-aggregate (D1)**. Since #56, the team executed almost the entire DDD follow-up list. **Every ranked DDD finding (D1–D4) and the dual-backend debt is resolved**, the value-object layer held, and the ubiquitous language is now captured in `CONTEXT.md` + ADRs. The DDD lens moves from **~6/10 → ~8.5/10**.
 
-What remains is no longer structural rot but two *coupling* smells introduced by the decomposition itself: a bidirectional `Fighter`↔`Player` link (domain rules reach back into the adapter) and a `Player.update()` that still ticks domain timers directly. Both are narrow, well-localized, and a natural next refinement — not a god-object.
+What remains on DDD is no longer structural rot but two *coupling* smells introduced by the decomposition itself: a bidirectional `Fighter`↔`Player` link (domain rules reach back into the adapter) and a `Player.update()` that still ticks domain timers directly. Both are narrow, well-localized, and a natural next refinement — not a god-object.
+
+**Hexagonal (~6/10 → ~7/10):** the same #69 decomposition that fixed D1 also extracted **Player's** rendering into the adapter (`render_battle`), the largest of #56's "entity owns a Surface" leaks. But the extraction is **partial** — `Attack`, `Platform`, and `Tail` still own their rendering (Surface/`image.fill`/self-draw), and `Tail` even imports the adapter (`from ..render_battle import tinted`), a layering inversion. The two prior architect decisions — **#9 split the input port** and **#10 sanction `pygame.math` value types** — remain open; `core/input.py` still binds the pure `InputFrame` port to the `poll()` pygame adapter in one module, leaking pygame into otherwise-pure consumers. The rules core itself (Fighter/combat/statecharts) is clean.
 
 ---
 
@@ -54,6 +56,45 @@ What remains is no longer structural rot but two *coupling* smells introduced by
 
 ---
 
+## Lens 2 (re-review) — Hexagonal (ports & adapters)
+
+### Diff vs #56 — prior findings
+
+| Concern | #56 | Status now | Evidence |
+|---|---|---|---|
+| **Rules core purity** | ✅ pure interior | ✅ **held** | `Fighter` is Sprite-free (`fighter.py` no `Sprite`/`Surface`); `combat/`, `statecharts/`, `sim/controllers` import no pygame (`controllers.py` fully pure — `InputFrame` + injected seeded RNG only). |
+| **Input port** | ✅ port, ⚠ wart: port+adapter share `core/input.py` | ◐ **unchanged — decision #9 open** | `InputFrame` + `merge_frames` (pure, `core/input.py:9-39`) still share the module with the `poll()` pygame adapter (`:45-65`) and a module-level `import pygame` (`:3`) — so even the pure `controllers.py` transitively imports pygame. |
+| **Rendering port** | ❌ absent (Player/Attack/Platform/Tail own `Surface`/`image.fill`) | ◐ **partial — Player done, 3 entities lag** | **Player ✅** rendering extracted to `render_battle` (`_cat_body_surface` `:435-460`; "no longer owns a Surface" `player.py:93`). **Attack ❌** still owns `self.image`/`image.fill`/`draw.circle` (`attack.py:114-132`, render-only; combat uses circles). **Platform ❌** still `image.fill(color)` state-as-colour (`platform.py:25-27`). **Tail ❌** draws itself in `Tail.draw` (`tail.py:240-266`). |
+| **Sprite coupling** | ❌ entities inherit `Sprite` | ◐ **domain freed; adapters still Sprite** | Domain `Fighter` is Sprite-free ✅. `Player` (`player.py:64`), `Attack` (`attack.py:25`), `Platform` (`platform.py:15`) still subclass `pygame.sprite.Sprite`; `Tail` is a plain class. Acceptable for an adapter layer, but Attack/Platform are domain-ish entities still bound to the framework. |
+| **Geometry value types** | ◐ `Vector2`/`Rect` in `physics`(13)/`movement`/`player` | ◐ **unchanged — decision #10 open** | `core/physics.py` (`Rect`/`Vector2`, value-type-only), `systems/movement.py` (`Vector2` only), `fighter.py` (`Rect`/`Vector2`). Pure geometry — deterministic, display-free — but literally `import pygame`. |
+| **Time / RNG** | ✅ n/a | ✅ **held** | Frame-counter timing, no `pygame.time`; RNG only as an injected seeded seam in `controllers.py`. |
+
+### New / refined hexagonal findings
+
+- **H1 — Rendering port is half-built.** The #69 pattern (entity holds no Surface; `render_battle` composites it) was applied to `Player` but **not** to `Attack`, `Platform`, `Tail`. Those three still own presentation Surfaces / self-draw, so #56's "entity owns a Surface, state via `image.fill`" smell persists for them. Finishing the extraction would *complete* the rendering port and let `Attack`/`Platform` drop the `Sprite` base.
+- **H2 — Layering inversion in `Tail`.** `tail.py:247` does `from ..render_battle import tinted` — a domain/entity module importing the **adapter** (render) layer. This is a direct dependency-direction violation (the hexagon's interior reaching out to an adapter) and the sharpest single hexagonal defect found. Should invert (pass the tint in, or move `Tail.draw` into `render_battle`).
+- **H3 — Input port still not split (decision #9).** Because `core/input.py` does module-level `import pygame`, the pure port (`InputFrame`/`merge_frames`) cannot be imported without dragging pygame in — defeating part of the point of a port. Splitting the pure port into its own pygame-free module is small and unblocks a truly headless input contract.
+- **H4 (doc accuracy) — `CONTEXT.md` "pygame-free `systems/`" is slightly off.** The determinism contract lists `systems/` as importing no pygame, but `systems/movement.py:3` imports `pygame as pg` (for `Vector2`). The *spirit* holds (deterministic, display-free), but the wording should be "Sprite-free + display-free" rather than "import no pygame", pending decision #10.
+
+### Score
+
+**Hexagonal: ~7/10** (was ~6/10). The biggest leak (Player rendering) is gone; the core is clean and the input/sim seams work. Held back by the half-finished rendering port (H1), the `Tail`→adapter inversion (H2), and the two still-open architect decisions (#9 input split, #10 `pygame.math`).
+
+### Provisional follow-ups (NOT filed — file when worked)
+
+| Item | Finding | Size | Note |
+|---|---|---|---|
+| **H-a** | H2 — fix the `Tail` → `render_battle` upward import (invert: pass tint in, or move `Tail.draw` to the renderer) | S | Sharpest defect; cheap; do first. |
+| **H-b** | H1 — finish the rendering port: extract `Attack`/`Platform`/`Tail` Surfaces into `render_battle` (mirror the #69 Player pattern); drop their `Sprite` base where possible | M | Completes #56's rendering-port item; subsumes H-a if done together. |
+| **H-c** | H3 / decision #9 — split `core/input.py` into a pygame-free port module + a `poll()` adapter module | S | Makes the pure path importable without pygame. |
+| **H-d** | decision #10 — rule on `pygame.math` (`Vector2`/`Rect`) as sanctioned value types vs pure `Vec2`/`Rect`; then correct the `CONTEXT.md` wording (H4) | dec | Architect call; don't churn geometry until decided. |
+
+---
+
 ## Process note
 
-This DDD sub-spike was almost entirely a **diff**, and the diff is overwhelmingly green: #56's DDD/structure follow-ups (D1–D4 + dual-backend) were genuinely executed (#69, #70, #71, #178) and the recommended `CONTEXT.md`/ADR seeds landed. That is the system working as designed — a review that produced ranked follow-ups, which were worked, and a re-review that confirms it. The two new findings (N1/N2) are *consequences of the decomposition*, exactly the kind of second-order coupling a re-review is for. The Hexagonal sub-spike (#252 next) should re-check the rendering-port / Sprite-coupling items — `Player` no longer owns a Surface (`player.py:93`), so #56's hexagonal #1 may also be resolved; that needs its own pass. CONTEXT.md's architecture-review link should be repointed to this doc only once all three lenses are complete (final synthesis).
+Both completed sub-spikes were almost entirely **diffs**, and the diff is largely green: #56's DDD/structure follow-ups (D1–D4 + dual-backend) were genuinely executed (#69, #70, #71, #178), the recommended `CONTEXT.md`/ADR seeds landed, and the #69 decomposition *also* extracted Player's rendering — resolving the biggest hexagonal leak as a side effect, exactly as #56 predicted ("D1 subsumes hexagonal #1/#2"). That is the system working as designed: a review that produced ranked follow-ups, which were worked, confirmed by a re-review.
+
+The DDD findings (N1/N2) and the hexagonal findings (H1–H4) are mostly *consequences of, or remainders after, the decomposition* — second-order coupling and a half-finished rendering port — which is precisely what a re-review is for. The two architect decisions (#9 input-port split, #10 `pygame.math`) are still un-ruled and gate H-c/H-d; they should be settled in `docs/adr/` before churning that code.
+
+**Remaining:** the BDD sub-spike (3/3, #252) — able-to-fail Given/When/Then coverage, `yegor-unit-tests` anti-patterns, golden/render-parity brittleness, and the full S3 invariant-enforcement audit (DDD spike already noted `percent`/`shield_hp`/`lives` enforced at `Fighter` setters). `CONTEXT.md`'s architecture-review link should be repointed from the 2026-06 doc to this one **only after** the BDD section lands (final synthesis), so the link never points at a half-written doc.
