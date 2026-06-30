@@ -56,12 +56,37 @@ class Hitbox:
         angle            — launch angle in degrees (0 = directly right, 90 = up)
         base_knockback   — BKB: knockback at 0% (Phase 1)
         knockback_growth — KBG: how knockback scales with percent (Phase 1)
+        active_start     — per-hitbox temporal window (#204): inclusive START
+                           frame in the MoveClock 1-indexed frame coordinate.
+                           None = use the move's window [startup+1, startup+active]
+                           (today's behavior — the box spawns with the move's
+                           default group). Sequential multi-hit moves give boxes
+                           different windows so they fire on different frames.
+        active_end       — inclusive END frame of the window. Paired with
+                           active_start: set both or neither.
     """
     circle: Circle
     damage: float
     angle: int
     base_knockback: float = 0.0
     knockback_growth: float = 0.0
+    active_start: int | None = None
+    active_end: int | None = None
+
+    def __post_init__(self) -> None:
+        s, e = self.active_start, self.active_end
+        if (s is None) != (e is None):
+            raise ValueError(
+                "Hitbox active_start/active_end must be set together "
+                f"(got start={s!r}, end={e!r})"
+            )
+        if s is not None:
+            if s < 1:
+                raise ValueError(f"Hitbox active_start {s} must be >= 1")
+            if s > e:
+                raise ValueError(
+                    f"Hitbox window start {s} is after its end {e}"
+                )
 
 
 @dataclass(frozen=True)
@@ -84,6 +109,31 @@ class MoveData:
     active: int
     recovery: int
     hitboxes: tuple[Hitbox, ...]
+
+    def __post_init__(self) -> None:
+        # Per-hitbox temporal-window cross-checks (#204). Per-box shape (paired,
+        # non-inverted, start >= 1) is enforced on Hitbox; here we need the move's
+        # duration + the sibling boxes: a window must end within the move, and two
+        # boxes that start on the same frame must share the same window (v1: one
+        # window => one Attack; see move_clock._compute_windows).
+        total = self.startup + self.active + self.recovery
+        starts: dict[int, int] = {}
+        for hb in self.hitboxes:
+            if hb.active_start is None:
+                continue
+            if hb.active_end > total:
+                raise ValueError(
+                    f"Hitbox window [{hb.active_start}, {hb.active_end}] exceeds "
+                    f"move '{self.name}' duration {total}"
+                )
+            prev_end = starts.get(hb.active_start)
+            if prev_end is not None and prev_end != hb.active_end:
+                raise ValueError(
+                    f"move '{self.name}': two hitboxes share start frame "
+                    f"{hb.active_start} with different ends ({prev_end} != "
+                    f"{hb.active_end}); same start must share the same window"
+                )
+            starts[hb.active_start] = hb.active_end
 
 
 # ---------------------------------------------------------------------------

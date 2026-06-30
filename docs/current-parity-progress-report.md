@@ -90,7 +90,7 @@ shield-poke and shield-priority-by-geometry are simplified. Shield drain/regen
 | Smashes (chargeable) | ⬜ | no charge state, no smash keys, no charge field | analysis §8; #142 | high |
 | Dash attack | ⬜ | absent (needs a dash state) | analysis §2.1; #142 | high |
 | Specials (neutral/side/up/down-B) | ⬜ | `move_select._SPECIAL` maps 4 keys; `resolve_move_key` no-ops (no character defines any) | #67/#142 | high |
-| Sequential multi-hit (jab1-2-3) | ⬜ | `MoveClock` holds ONE MoveData; no chain linkage | analysis §2.2; #142 | high |
+| Sequential multi-hit (jab1-2-3) | 🟡 | engine supports it: per-hitbox temporal windows (`Hitbox.active_start/end`, `MoveClock` fires each window on its start frame) land in #204; no real move authored with them yet (n-air late hit etc. is Phase D) | #204; analysis §2.2; #142 | high |
 | Sakurai angle (361) handling | ✅ | `fighter.receive_hit` resolves 361 via `knockback.sakurai_angle` (airborne-fixed, grounded scales flat→max with KB); thresholds are ⚠ playtest starting points | #203 | high |
 | Stale-move negation | ⬜ | no staleness queue/table; `knockback()` takes no stale multiplier | analysis §8; #142 | high |
 
