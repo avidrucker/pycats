@@ -26,7 +26,7 @@ def _player(rect, *, hurtbox_circles, facing_right=True):
         hits_received=0, percent=0.0,
     )
 
-    def receive_hit(atk):
+    def receive_hit(atk, is_crouching=False):  # #283: combat now passes the crouch flag
         p.hits_received += 1
         p.percent += atk.damage
 

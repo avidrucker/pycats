@@ -153,7 +153,10 @@ def process_hits(players, attacks):
                 atk.base_knockback = hit_box.base_knockback
                 atk.knockback_growth = hit_box.knockback_growth
                 atk.set_knockback = getattr(hit_box, "set_knockback", None)  # WDSK (#211)
-                defender.fighter.receive_hit(atk)
+                # Crouch-cancel (#135/#283): pass the crouch fact in (reusing the
+                # d_state already computed for hurtbox selection) so the domain rule
+                # doesn't read the adapter's FSM state label.
+                defender.fighter.receive_hit(atk, is_crouching=(d_state == "crouch"))
                 atk.owner.fighter.record_hit_landed()  # Track successful hit
                 if getattr(atk, "rehit_rate", None) is not None:
                     # #213 looping multi-hit: stay active, just go on cooldown so

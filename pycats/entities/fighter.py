@@ -222,8 +222,13 @@ class Fighter:
                 setattr(self, name, v - 1)
 
     # ----------- hit processing ------------
-    def receive_hit(self, atk):
-        """Called by combat system when this player is struck."""
+    def receive_hit(self, atk, is_crouching=False):
+        """Called by combat system when this player is struck.
+
+        `is_crouching` is passed in by `combat.process_hits` (#283/S2) — the domain
+        rule no longer reaches up into the adapter's FSM state label. Defaults
+        False so the "no `.state` ⇒ not crouching" contract holds for minimal
+        combat stand-ins and non-crouch callers."""
         self.record_hit_received()  # Track that this player was hit
         if self.shield_attempting and self.shield_hp > 0:
             self.shield_hp = self.shield_hp - atk.damage  # setter clamps >= 0
@@ -261,7 +266,7 @@ class Fighter:
             # has its knockback scaled down by CROUCH_CANCEL_FACTOR (0.67x, PM)
             # before launch + hitstun are derived — crouch as a defensive tool.
             # Hitlag scaling (the "c" multiplier) stays deferred this slice.
-            if self.owner.state == "crouch":
+            if is_crouching:
                 kb *= CROUCH_CANCEL_FACTOR
             self.hurt_timer = hitstun_frames(kb)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
