@@ -38,7 +38,9 @@ The reason the test oracle works — preserve these when changing the core:
 ## Architecture / layer map
 
 The full layer map, port/adapter analysis, and DDD/hexagonal/spec scores live in
-the architecture review — **see** [`docs/research/architecture-review-2026-06.md`](./docs/research/architecture-review-2026-06.md).
+the architecture review. Latest: **[`docs/research/architecture-review-2026-06b.md`](./docs/research/architecture-review-2026-06b.md)**
+(re-review, #252 — DDD ~8.5 · Hexagonal ~7 · BDD ~8.5), building on the original
+[`architecture-review-2026-06.md`](./docs/research/architecture-review-2026-06.md) (#56).
 (Linked, not duplicated, so the two don't drift.)
 
 ## Decisions

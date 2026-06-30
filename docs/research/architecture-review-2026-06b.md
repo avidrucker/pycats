@@ -1,13 +1,21 @@
 # pycats architecture review (re-review) — DDD · Hexagonal · BDD (2026-06b)
 
-**Umbrella:** #252 · **This section:** #253 (sub-spike 1/3, DDD) · **Reviewer:** GRAPE · **Date:** 2026-06-30
+**Umbrella:** #252 · **Sub-spikes:** #253 (DDD) · #257 (Hexagonal) · #262 (BDD) · **Reviewer:** GRAPE · **Date:** 2026-06-30
 **Method:** three bounded read-only sub-spikes, one per lens, building on the prior pass [`architecture-review-2026-06.md`](./architecture-review-2026-06.md) (#56). Each section **diffs the prior findings** (resolved / regressed / new) rather than re-deriving from scratch.
 
-> **Status:** DDD lens complete (this doc). Hexagonal (sub-spike 2) and BDD (sub-spike 3) sections are appended later under #252. Follow-ups below are **provisional and not yet filed** — per yegor + the #50 lesson, file one at a time when about to be worked.
+> **Status: COMPLETE** — all three lenses reviewed; Final synthesis below. Follow-ups are **provisional and not yet filed** — per yegor + the #50 lesson, file one at a time when about to be worked.
 
 ---
 
-## Executive summary (provisional — DDD + Hexagonal so far)
+## Executive summary
+
+| Lens | #56 | Now | One-line |
+|---|---|---|---|
+| DDD (domain model) | ~6/10 | **~8.5/10** | God-object decomposed; D1–D4 + dual-backend all resolved; remaining = two coupling smells |
+| Hexagonal (ports & adapters) | ~6/10 | **~7/10** | Player rendering extracted; 3 entities + input port + value-types still leak |
+| BDD (spec quality & tests) | ~6/10 | **~8.5/10** | Suite green/guarded, invariants enforced, golden de-risked; only tuning provenance lags |
+
+**Headline:** #56 found all three lenses converging on **one root cause — the 896-line `Player` god-aggregate** — and scored ~6/10 across the board. A year-equivalent of focused work later, **almost every ranked #56 follow-up was genuinely executed** (D1/#69, D2/#71, D3/#70, S1+S2/#59, S3/#54/#81, dual-backend/#178, golden de-risk/S4), and the codebase is now demonstrably healthier on all three lenses. What remains is **refinement, not rot**: hexagonal polish (finish the rendering port, split the input port), DDD coupling cleanup (`Fighter`↔`Player` one-way), and tuning-provenance follow-through (ADR-0003 + drift-guard). This re-review is strong evidence the review→follow-up→re-review loop works.
 
 The prior review's headline was that all three lenses converged on **one root cause: the 896-line `Player` god-aggregate (D1)**. Since #56, the team executed almost the entire DDD follow-up list. **Every ranked DDD finding (D1–D4) and the dual-backend debt is resolved**, the value-object layer held, and the ubiquitous language is now captured in `CONTEXT.md` + ADRs. The DDD lens moves from **~6/10 → ~8.5/10**.
 
@@ -91,10 +99,62 @@ What remains on DDD is no longer structural rot but two *coupling* smells introd
 
 ---
 
-## Process note
+## Lens 3 (re-review) — BDD (spec quality, able-to-fail tests, invariants)
 
-Both completed sub-spikes were almost entirely **diffs**, and the diff is largely green: #56's DDD/structure follow-ups (D1–D4 + dual-backend) were genuinely executed (#69, #70, #71, #178), the recommended `CONTEXT.md`/ADR seeds landed, and the #69 decomposition *also* extracted Player's rendering — resolving the biggest hexagonal leak as a side effect, exactly as #56 predicted ("D1 subsumes hexagonal #1/#2"). That is the system working as designed: a review that produced ranked follow-ups, which were worked, confirmed by a re-review.
+### Diff vs #56 — prior findings (Lens 3 "Spec quality & robustness")
 
-The DDD findings (N1/N2) and the hexagonal findings (H1–H4) are mostly *consequences of, or remainders after, the decomposition* — second-order coupling and a half-finished rendering port — which is precisely what a re-review is for. The two architect decisions (#9 input-port split, #10 `pygame.math`) are still un-ruled and gate H-c/H-d; they should be settled in `docs/adr/` before churning that code.
+| # | #56 finding | Status now | Evidence |
+|---|---|---|---|
+| **S1** | Bare `pytest` unguarded — errored on legacy debug scripts; zero-byte stub collisions; sanctioned runner a hand-curated README list | ✅ **Resolved** (#59) | `pytest.ini` sets `testpaths = tests` + markers and notes legacy debug scripts moved to `scripts/`; bare `pytest -q` runs the whole suite green (573 passed, 1 xfailed). No zero-byte stubs. |
+| **S2** | Non-test artifacts in `tests/` (`debug_*`, `comprehensive_*`, `minimal_*`, `run_test.py`, `*_SUMMARY.md`) | ✅ **Resolved** (#59) | Dev scripts relocated to `scripts/`; `*_SUMMARY.md` → `docs/`. `tests/` now holds only test modules + `conftest.py`/`golden_util.py`/`golden/`. |
+| **S3** | Contracts emergent, not enforced — only **3 asserts/raises** in all source | ✅ **Resolved** | **12** real asserts/raises now. `Fighter` setters enforce `percent ≥ 0` / `0 ≤ shield_hp ≤ MAX` / `lives ≥ 0` (`fighter.py:166,179,184`); value objects validate in `__post_init__` (`combat/data.py:86-150`); `Attack` requires a hitbox (`attack.py:80`). **#54** (lives ≥ 0) now a setter clamp (#81), not emergent. |
+| **S4** | Golden rubber-stamp risk — 1.18 MB opaque `full_match.json`, trivial `PYCATS_UPDATE_GOLDENS=1` regen | ✅ **Resolved** | Segmented into `combat`/`default`/`two_npc`/`full_match` (~125 KB) each paired with a ~0.6 KB reviewable `*.summary.json` semantic digest; `golden_util.summarize` asserts the summary **first** (`golden_util.py:162-164`); `REGEN_PROTOCOL.md` documents the threat + a reviewer checklist for spotting laundered regressions; `summarize` is itself unit-tested. Parity converted to statechart-vs-frozen-golden (`test_screen_parity.py:156-167`). |
+| **S5** | Unsourced `⚠` tuning constants = no correctness spec (#51) | ◐ **Partial** | ~20 `⚠`/GUESS markers still inline across 7 files; **but** provenance is now governed — `ADR-0003` (tuning provenance + drift-guard, **Proposed**, gated on #226), `GUESSED_VALUES_TO_RESEARCH.md`, and a large `docs/research`/`docs/pm-reference` corpus. #51 still open/blocked. Drift-guard not yet implemented. |
 
-**Remaining:** the BDD sub-spike (3/3, #252) — able-to-fail Given/When/Then coverage, `yegor-unit-tests` anti-patterns, golden/render-parity brittleness, and the full S3 invariant-enforcement audit (DDD spike already noted `percent`/`shield_hp`/`lives` enforced at `Fighter` setters). `CONTEXT.md`'s architecture-review link should be repointed from the 2026-06 doc to this one **only after** the BDD section lands (final synthesis), so the link never points at a half-written doc.
+### BDD-specific quality (the sharpened lens)
+
+The test suite is **high quality** — among the more disciplined Python suites: **94 test modules / ~549 test functions**, broad and well-partitioned (combat/physics, entities/movement, render, golden/parity, data, settings, meta-guards).
+
+- **Behavioral naming + Given/When/Then docstrings, zero vague names.** e.g. `test_crouch_lowers_hurtbox_high_attack_whiffs` (`test_crouch.py:126`), `test_hitstun_never_below_floor` (`test_knockback.py:36`), `test_airborne_361_launches_up_not_flat` (`test_sakurai_angle.py:112`). Docstrings frame expected behaviour + issue links.
+- **Real assertions on boundaries & invariants, not happy-path-only.** Knockback monotonicity/floor + a 100-iteration sign-preservation invariant (`test_knockback.py:36-67`); shield sub-threshold edge (`test_shieldstun.py:48`); KO arcs reach `hurt→ko` and stocks drop (`test_golden.py:43-45`). Names match assertions (no "Liar"); no Giant/Free-Ride tests; healthy assert density.
+- **Clean isolation** via `conftest.py` — `render_isolation` (#63) + an autouse `runtime_settings` reset (#121) defend against global-state leakage.
+- **Exceptional able-to-fail / traceability discipline.** 82/94 files cite issue numbers; ~50 explicit "able-to-fail" annotations (e.g. `test_per_character_movement.py:98`, `test_controller_rng.py:47`); the `#112` strict-`xfail` self-completing guard is the canonical example — and the **only** suppression in the suite (no skip/xfail sprawl).
+- **Minor nits (non-structural):** a few tests are positionally coupled to snapshot tuple layout (`p[1]`/`[9]`), mitigated by centralizing that in `golden_util.summarize`; one signature-introspection guard (`test_screen_parity.py:93`) is structural by design (guards against re-adding deleted plumbing).
+
+### Score
+
+**BDD: ~8.5/10** (was ~6/10). Suite is green/guarded, invariants are enforced, and the golden oracle is genuinely de-risked. Held back only by S5 (tuning provenance: ADR-0003 still *Proposed*, drift-guard unbuilt) and the minor tuple-coupling nit.
+
+### Provisional follow-ups (NOT filed — file when worked)
+
+| Item | Finding | Size | Note |
+|---|---|---|---|
+| **B-a** | S5 — accept ADR-0003 (gated on #226) and implement the tuning drift-guard; source the ~20 `⚠` constants (broadens #51) | M/dec | Only materially-open Lens-3 item; decision-gated. |
+| **B-b** | Decouple goldens from snapshot tuple layout — assert via named accessors, not `p[1]`/`[9]` | S | Cheap robustness; shrinks blast radius of a layout change. |
+
+---
+
+## Final synthesis (cross-lens)
+
+### Overall: the #56 follow-ups were executed, and it shows
+
+pycats moved from "**~6/10 on all three lenses, one dominating root cause**" to **DDD ~8.5 · Hexagonal ~7 · BDD ~8.5**. The single highest-leverage #56 item — **decompose `Player` (D1)** — was done (#69) and, exactly as #56 predicted, *subsumed* the top hexagonal items (Player's rendering left the entity). The rest of the ranked list followed: test infra (S1/S2 → #59), invariants (S3 → #54/#81), the golden oracle (S4), the dual-backend endgame (#178/ADR-0002), and dead-code/duplication (D2/#71, D3/#70, D4). The protect-list strengths (pure rules core, frozen value objects, authentic language) all held and are now documented in `CONTEXT.md` + ADRs.
+
+### What's left — ranked, cross-lens (provisional, file when worked)
+
+| Rank | Item | Lens | Size | Why here |
+|---|---|---|---|---|
+| **1** | **H-a** — fix `Tail` → `render_battle` upward import (layering inversion) | Hex | S | Sharpest single defect; cheap; the only hard dependency-direction violation. |
+| **2** | **F1+F2** — make `Fighter`↔`Player` one-way (drop `owner` back-ref; move per-frame timer ticking into `Fighter`) | DDD | M | Top DDD remainder; the decomposition's residual coupling. One structural spike. |
+| **3** | **H-b** — finish the rendering port (extract `Attack`/`Platform`/`Tail` Surfaces; drop their `Sprite` base) | Hex | M | Completes #56's rendering-port item; subsumes H-a if done together. |
+| **4** | **H-c / decision #9** — split `core/input.py` into a pygame-free port module + `poll()` adapter | Hex | S | Makes the pure path importable without pygame. |
+| **5** | **B-a / S5** — accept ADR-0003 (#226) + build the drift-guard; source `⚠` constants (#51) | BDD | M/dec | Only materially-open spec item; decision-gated. |
+| **6** | **decision #10** — rule on `pygame.math` value types; then fix `CONTEXT.md` "systems/ pygame-free" wording (H4) | Hex | dec | Architect call; don't churn geometry until decided. |
+| **7** | **F3** — derive `done_attacking` off `MoveClock`/state | DDD | S | Cheap decomplect; after F1/F2. |
+| **8** | **B-b** — decouple goldens from tuple-index layout | BDD | S | Robustness; low urgency. |
+
+**Suggested next step:** the two architect decisions (#9, #10) and ADR-0003 (#226) are written-ruling-first, no-code items — settle them in `docs/adr/` so #4/#5/#6 unblock. The cheap structural wins (H-a, then F1+F2) pay for themselves first.
+
+### Process note
+
+All three sub-spikes were almost entirely **diffs**, and the diff is overwhelmingly green — the system working as designed: a review (#56) produced ranked follow-ups, the follow-ups were worked, and this re-review confirms it. The new findings (DDD N1/N2, Hex H1–H4, BDD's S5 remainder) are mostly *consequences of, or remainders after,* the big decomposition — second-order coupling and finishing touches — which is precisely what a re-review surfaces. Method note worth carrying forward: gathering each lens's evidence via parallel read-only investigations kept every claim file:line-cited and the spikes bounded.
