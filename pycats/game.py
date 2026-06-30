@@ -48,6 +48,7 @@ from .core import input as inp
 from . import stats_print
 from .screen_manager import ScreenStateManager
 from .battle_screen import BattleScreen
+from .render_battle import draw_shell_chrome
 from . import text_utils
 from . import display
 from . import settings
@@ -447,60 +448,13 @@ while running:
         # The per-frame update (player creation, battle.step, winner-set) is owned by
         # the playing state's engine action (screen_manager._update_playing, #246),
         # which ran above in screen_manager.update — the loop body only renders now.
-        # ---- render (battle composite owned by BattleScreen, #205 slice 2b)
+        # ---- render: battle composite + 'P: Pause Game' hint owned by BattleScreen
+        # (#205 slice 2b, #279); the shell overlays (FPS/fullscreen/debug) read loop
+        # state — not battle state — so they live in a render helper the loop calls
+        # (#279), keeping shell state out of the battle object (cf. #100 Risks, #246).
         render_surface = get_render_surface()
         battle.render(render_surface, platforms)
-
-        # @todo #100:30m/DEV Battle "chrome" (debug-input text, FPS, F10/F11 + pause
-        #  instructions, render_esc_quit_progress) still reads loop globals (clock,
-        #  is_fullscreen, frame_input) — NOT battle state — so it stayed out of slice
-        #  2b. Relocate with the slice-3 loop-state work.
-        # draw keys pressed for debugging
-        if frame_input:
-            # keys = ", ".join(
-            #     f"{k}: {v}" for k, v in frame_input.items() if v
-            # )
-            text_utils.render_text(
-                render_surface,
-                frame_input.__str__(),
-                (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-                24,
-                WHITE,
-            )
-        # draw FPS and fullscreen instructions
-        text_utils.render_text(
-            render_surface,
-            f"FPS: {clock.get_fps():.2f}",
-            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-            24,
-            WHITE,
-            right_align=True,
-        )
-
-        # Draw fullscreen instructions
-        fs_text = (
-            "F11: Toggle Fullscreen | "
-            + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
-            + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
-        )
-        text_utils.render_text(
-            render_surface,
-            fs_text,
-            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
-            24,
-            WHITE,
-            right_align=True,
-        )
-
-        # Draw pause instruction
-        text_utils.render_text(
-            render_surface,
-            "P: Pause Game",
-            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3),
-            24,
-            WHITE,
-            right_align=True,
-        )
+        draw_shell_chrome(render_surface, clock.get_fps(), is_fullscreen, frame_input)
         screen_manager.render_esc_quit_progress(render_surface)
 
     elif current_state == "pause":

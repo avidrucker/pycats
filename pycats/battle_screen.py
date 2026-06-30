@@ -31,6 +31,7 @@ from .entities.ledge import ledges_from_platforms
 from .render_battle import (
     draw_controls,
     draw_hud,
+    draw_pause_hint,
     render_attacks,
     render_battle,
     render_hitbox_overlay,
@@ -120,9 +121,11 @@ class BattleScreen:
 
     def render(self, surface, platforms):
         """Render one live battle frame onto `surface` (the playing branch's draw
-        block). Chrome (FPS/fullscreen/pause/debug text) stays in game.py — it reads
-        loop globals, not battle state."""
+        block) + the static 'P: Pause Game' battle-HUD hint (#279). The shell chrome
+        (FPS/fullscreen/debug text) reads loop globals, not battle state, so it stays
+        out of here — game.py calls render_battle.draw_shell_chrome for that."""
         self._draw_battle(surface, platforms)
+        draw_pause_hint(surface)
 
     def render_paused(self, surface, platforms, pause_menu):
         """Render the pause frame: composite the FROZEN battle + HUD (no controls)

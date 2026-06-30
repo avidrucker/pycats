@@ -12,7 +12,10 @@ home, beside their sibling drawers render_battle / render_attacks).
 import pygame
 
 from pycats.battle_screen import BattleScreen
-from pycats.config import BG_COLOR, SCREEN_WIDTH, SCREEN_HEIGHT
+from pycats.config import (
+    BG_COLOR, SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, WHITE,
+)
+from pycats import text_utils
 from pycats.render_battle import (
     render_battle, render_attacks, render_hitbox_overlay, draw_hud, draw_controls,
 )
@@ -36,10 +39,21 @@ def _battle():
     return bs
 
 
+def _draw_pause_hint(surface):
+    """The static 'P: Pause Game' battle-HUD hint (#279 moved it into render())."""
+    text_utils.render_text(
+        surface, "P: Pause Game",
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3), 24, WHITE,
+        right_align=True,
+    )
+
+
 def test_render_matches_inline_playing_composition():
     """render() == fill(BG) -> render_battle -> render_attacks ->
-    render_hitbox_overlay -> draw_hud x2 -> draw_controls x2 (the playing
-    branch's inline block), byte-for-byte."""
+    render_hitbox_overlay -> draw_hud x2 -> draw_controls x2 -> pause hint (the
+    playing branch's inline block), byte-for-byte. The 'P: Pause Game' hint is now
+    part of render() (battle HUD, #279) — the FPS/fullscreen/debug shell overlays
+    moved to draw_shell_chrome (see test_shell_chrome)."""
     bs = _battle()
     platforms = []
 
@@ -52,12 +66,40 @@ def test_render_matches_inline_playing_composition():
     draw_hud(expected, bs.player2, "P2", topright=True)
     draw_controls(expected, bs.player1, "P1")
     draw_controls(expected, bs.player2, "P2", topright=True)
+    _draw_pause_hint(expected)
 
     actual = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     actual.fill(_SENTINEL)  # proves render() fills BG over whatever was there
     bs.render(actual, platforms)
 
     assert _raw(actual) == _raw(expected)
+
+
+def test_render_paused_excludes_pause_hint():
+    """render_paused()'s frozen-battle background must NOT carry the 'P: Pause Game'
+    hint — you can't pause while already paused. Guards the #279 move: the hint went
+    into render() (playing only), not into the shared _draw_battle path."""
+    bs = _battle()
+    platforms = []
+
+    # background WITHOUT the pause hint (what render_paused should composite)
+    bg = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    bg.fill(BG_COLOR)
+    render_battle(bg, bs.players, platforms)
+    render_attacks(bg, bs.attacks)
+    render_hitbox_overlay(bg, bs.players, bs.attacks)
+    draw_hud(bg, bs.player1, "P1")
+    draw_hud(bg, bs.player2, "P2", topright=True)
+
+    captured = {}
+
+    class _FakePauseMenu:
+        def render(self, surface, background):
+            captured["background"] = background
+
+    display = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    bs.render_paused(display, platforms, _FakePauseMenu())
+    assert _raw(captured["background"]) == _raw(bg)
 
 
 def test_render_paused_freezes_battle_onto_intermediate_background():

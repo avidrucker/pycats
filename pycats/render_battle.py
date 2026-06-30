@@ -23,7 +23,7 @@ from .config import (
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME,
-    SCREEN_WIDTH, HUD_PADDING, HUD_SPACING,
+    SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING,
 )
 from . import runtime_settings
 from . import text_utils
@@ -586,3 +586,44 @@ def draw_controls(surface, p: Player, label, topright=False):
             text_utils.text_renderer.render_text_mixed(
                 txt, 24, WHITE, surface, (x_pos, y_pos)
             )
+
+
+def draw_pause_hint(surface):
+    """The static 'P: Pause Game' battle-HUD hint, drawn during the playing state.
+
+    It reads no shell state (a constant string), so it is battle HUD, not shell
+    chrome — BattleScreen.render owns it (#279), beside draw_hud/draw_controls."""
+    text_utils.render_text(
+        surface, "P: Pause Game",
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3), 24, WHITE,
+        right_align=True,
+    )
+
+
+def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
+    """Draw the playing-state SHELL overlays — debug input, FPS, fullscreen hints.
+
+    These read shell/loop state (fps, is_fullscreen, frame_input), NOT battle state,
+    so game.py's loop calls this helper with the state it owns instead of inlining the
+    draws (#279). Kept out of BattleScreen so the battle object stays free of shell
+    state (cf. #100 Risks, #246). Byte-identical to the old inline block."""
+    if frame_input:
+        text_utils.render_text(
+            surface, frame_input.__str__(),
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), 24, WHITE,
+        )
+    text_utils.render_text(
+        surface, f"FPS: {fps:.2f}",
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), 24, WHITE,
+        right_align=True,
+    )
+    fs_text = (
+        "F11: Toggle Fullscreen | "
+        + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
+        + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
+    )
+    text_utils.render_text(
+        surface, fs_text,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2), 24, WHITE,
+        right_align=True,
+    )
