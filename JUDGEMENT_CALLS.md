@@ -130,3 +130,17 @@ Each entry: what was decided, why, and how to undo/revisit.
 3. **Active window 6-17 (active 12) is the full envelope;** the per-box windows
    carve it into clean [6,8] and late [9,17]. recovery = IASA 29 − 5 − 12 = 12.
 4. **Landing-lag / L-cancel deferred** (no system), consistent with n-air/f-air.
+
+---
+
+## C3 — Nalio u-air (#210, PM3.6 Mario AttackAirHi)
+
+1. **Authored both windows even though they differ only in damage (11→10).**
+   - *Why:* rukaidata lists two windows ([4,5] and [6,9]); PM-faithful means
+     authoring them, consistent with f-air/b-air. Same angle 55 / BKB 0 / KBG 100.
+2. **total = IASA 28 (recovery 19), not the 34-frame full duration.**
+   - Consistent with the dominant convention (jab=16=IASA, f-air=45=IASA): recovery
+     ends at the interruptible point. rukaidata also lists a 34-frame total duration;
+     used IASA as the move's pycats total.
+3. **BKB 0 recorded faithfully** — u-air's knockback is pure KBG (juggle tool), so
+   base_knockback is genuinely 0, not a placeholder.

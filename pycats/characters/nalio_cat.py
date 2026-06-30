@@ -236,6 +236,33 @@ _BACK_AIR = MoveData(
     ),
 )
 
+# --- Up-air, mapped to the canonical "uair" key (PM3.6 Mario AttackAirHi) -------
+# A two-window upward juggle (#204). rukaidata AttackAirHi: active 4-9 -> startup 3
+# / active 6; IASA 28 -> recovery 19. Both windows angle 55 (up-and-forward flip),
+# BKB 0 (pure-growth — a combo/juggle tool), KBG 100; they differ only in damage:
+#   - CLEAN [4,5]: dmg 11.   - LATE [6,9]: dmg 10.
+# All WDSK 0. Radii = round(size u × 5.4): 3.52->19, 4.69->25. Positions
+# approximated above the head (small dy), same x/y for clean and late (bones
+# 16/17). Landing-lag/L-cancel deferred (no system — as the other aerials).
+def _uair_box(dx, dy, r, damage, start, end):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=55,
+                  base_knockback=0.0, knockback_growth=100.0,
+                  active_start=start, active_end=end)
+
+_UP_AIR = MoveData(
+    name="up air",
+    in_air=True,
+    startup=3,
+    active=6,
+    recovery=19,
+    hitboxes=(
+        _uair_box(dx=22, dy=4, r=19, damage=11.0, start=4, end=5),   # clean id0
+        _uair_box(dx=14, dy=8, r=25, damage=11.0, start=4, end=5),   # clean id1 (big)
+        _uair_box(dx=22, dy=4, r=19, damage=10.0, start=6, end=9),   # late id0
+        _uair_box(dx=14, dy=8, r=25, damage=10.0, start=6, end=9),   # late id1 (big)
+    ),
+)
+
 # --- Neutral-air, mapped to the "nair" slot (PM3.6 Mario AttackAirN) -----------
 # Nalio's first aerial (#136), authored as the CLEAN-HIT form on the #130 engine.
 # A "sex kick" — 2 simultaneous hitboxes around the body (rukaidata ids 0 & 1,
@@ -297,7 +324,7 @@ NALIO_FIGHTER_DATA = FighterData(
     hurtbox=_HURTBOX,
     moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
            "utilt": _UP_TILT, "fair": _FORWARD_AIR, "bair": _BACK_AIR,
-           "nair": _NEUTRAL_AIR},
+           "uair": _UP_AIR, "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,
