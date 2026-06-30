@@ -74,8 +74,8 @@ NPC battle (--vs): .venv/bin/python watch.py --vs chase            # P1 vs NPC: 
                       # omit --seed for a clocktime seed → the NPC battle varies run-to-run
 CPU Lv5 vs Lv9:   .venv/bin/python watch.py --p1-char nalio --p1-level 5 --p2-char nalio --p2-level 9 --seed 42
                       # two Nalios, CPU difficulty 1-9 per player (#231/#148): higher level
-                      # reacts faster, attacks more, shields & commits more. NB: bots use the
-                      # basic attack only until the moveset-aware-CPU slice (#142) lands.
+                      # reacts faster, attacks more, shields & commits more, and at Lv9 throws
+                      # fireballs (specials, #248); tilts/aerials emerge from movement.
                       # video needs: .venv/bin/python -m pip install imageio imageio-ffmpeg
 
 The live window shows an FPS counter + each fighter's stocks/damage (hide with

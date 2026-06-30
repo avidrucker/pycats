@@ -26,16 +26,21 @@ class LevelParams:
     # Seeded-RNG knobs (#238 / #148 step 2), rolled against self.rng (#166):
     follow_through_p: float = 1.0   # P(commit a chosen attack); 1.0 = always
     shield_chance: float = 0.0      # P(raise shield this frame); 0.0 = never
+    # Capability gate (#248 / #148 step 3). Only "specials" is wired today (the bot
+    # presses B → fireball); tilts/aerials emerge from the move-select seam when the
+    # bot attacks while moving/airborne, and smash/grab don't exist in pycats yet —
+    # they ride here as data for future gating.
+    enabled_moves: frozenset = frozenset({"jab", "tilts", "aerials"})
 
 
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
 # are pycats interpolations — tuning starting points, not measured PM data.
 LEVEL_PARAMS: dict[int, LevelParams] = {
-    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00),
-    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85),
+    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, enabled_moves=frozenset({"jab"})),
+    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, enabled_moves=frozenset({"jab", "tilts"})),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, enabled_moves=frozenset({"jab", "tilts", "aerials"})),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, enabled_moves=frozenset({"jab", "tilts", "aerials"})),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"})),
 }
 
 
@@ -110,10 +115,12 @@ class AttackerController(BaseController):
     def __init__(self, attacker_num=1, attack_period=12, standoff=30,
                  attack_range=45, safe_x=(110, 850), drop_threshold=20, rng=None,
                  reaction_delay=0, level=None,
-                 follow_through_p=1.0, shield_chance=0.0):
+                 follow_through_p=1.0, shield_chance=0.0,
+                 enabled_moves=frozenset({"jab", "tilts", "aerials"}),
+                 fireball_range=450):
         super().__init__(attacker_num, rng=rng)
-        # #232/#238: a difficulty `level` (1-9) overrides the knobs from the #148
-        # table; level=None keeps the explicit defaults (golden-safe).
+        # #232/#238/#248: a difficulty `level` (1-9) overrides the knobs from the
+        # #148 table; level=None keeps the explicit defaults (golden-safe).
         if level is not None:
             lp = level_params(level)
             attack_period = lp.attack_period
@@ -121,6 +128,11 @@ class AttackerController(BaseController):
             reaction_delay = lp.reaction_delay
             follow_through_p = lp.follow_through_p
             shield_chance = lp.shield_chance
+            enabled_moves = lp.enabled_moves
+        # #248: capability gate + ranged-special (fireball) poke distance. Default
+        # excludes "specials" → the ranged-special branch never fires (golden-safe).
+        self.enabled_moves = enabled_moves
+        self.fireball_range = fireball_range  # ⚠ GUESS px (ranged-poke band)
         # #238: seeded-RNG knobs (rolled against self.rng, #166). Defaults keep the
         # pre-#238 behaviour AND never touch the rng stream (always commit; never shield).
         self.follow_through_p = follow_through_p
@@ -151,14 +163,26 @@ class AttackerController(BaseController):
         held = set()
 
         if t.fighter.is_alive:
-            # #238: stochastic shield (seeded, #166). Default shield_chance 0.0 →
-            # no roll, no change. A shielding frame is purely defensive (no move/attack).
-            if self.shield_chance > 0.0 and self.rng.random() < self.shield_chance:
-                return {keys["shield"]}
             dx = t.rect.centerx - a.rect.centerx
             dy = t.rect.centery - a.rect.centery
             adx = abs(dx)
             cx = a.rect.centerx
+            # #248 (thread 3): ranged fireball poke (B), for a specials-enabled level.
+            # Checked BEFORE the shield roll so a specials bot zones/pokes rather than
+            # shielding it away; it still falls through to movement on non-poke frames,
+            # so it also closes in. Cadence + follow-through gated. Default enabled_moves
+            # has no "specials" → never fires (golden-safe).
+            if ("specials" in self.enabled_moves and abs(dy) < 60
+                    and self.attack_range < adx <= self.fireball_range
+                    and (self._f - self._last_attack) >= self.attack_period
+                    and (self.follow_through_p >= 1.0
+                         or self.rng.random() < self.follow_through_p)):
+                self._last_attack = self._f
+                return {keys["special"]}
+            # #238: stochastic shield (seeded, #166). Default shield_chance 0.0 →
+            # no roll, no change. A shielding frame is purely defensive (no move/attack).
+            if self.shield_chance > 0.0 and self.rng.random() < self.shield_chance:
+                return {keys["shield"]}
             lo, hi = self.safe_x
             toward = keys["right"] if dx > 0 else keys["left"]
             away = keys["left"] if dx > 0 else keys["right"]

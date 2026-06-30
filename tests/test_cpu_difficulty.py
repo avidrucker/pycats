@@ -125,3 +125,58 @@ def test_shield_chance_raises_shield_and_seed_changes_pattern():
     s1, s2 = shield_frames(1), shield_frames(2)
     assert len(s1) >= 1, "shield_chance>0 should raise shield on at least one frame"
     assert s1 != s2, "different seeds should change the shield pattern (#166)"
+
+
+# ---- #248: moveset-aware CPU (specials/fireball when enabled) ----
+
+def test_enabled_moves_anchors():
+    assert level_params(1).enabled_moves == frozenset({"jab"})
+    assert "aerials" in level_params(5).enabled_moves
+    assert "specials" not in level_params(5).enabled_moves
+    assert "specials" in level_params(9).enabled_moves
+
+
+def test_controller_enabled_moves_from_level():
+    assert "specials" in AttackerController(level=9).enabled_moves
+    assert "specials" not in AttackerController(level=1).enabled_moves
+    assert "specials" not in AttackerController().enabled_moves  # default golden-safe
+
+
+def _special_presses(enabled, adx=150, frames=40):
+    # isolate the capability: no shield/follow noise, target in the ranged band.
+    c = AttackerController(attacker_num=1, enabled_moves=enabled, shield_chance=0.0,
+                          follow_through_p=1.0, reaction_delay=0, rng=random.Random(0))
+    a, t = _stub(100, 300), _stub(100 + adx, 300)
+    return sum(1 for k in range(frames) if _CTRL["special"] in c(a, t, frame=k).held)
+
+
+def test_specials_capability_throws_fireball_at_range():
+    assert _special_presses(frozenset({"jab", "specials"})) >= 1, \
+        "a specials-enabled bot should poke with a fireball at range"
+    assert _special_presses(frozenset({"jab"})) == 0, \
+        "a bot without specials must never press the special key"
+
+
+def _battle_spawns_fireball(p1_level, frames=120, seed=3):
+    """Run a leveled two-Nalio battle; True if a moving projectile (fireball) spawns."""
+    import pygame
+    import watch
+    from pycats.sim import runner
+    from pycats.core.input import merge_frames
+    plats = runner.build_stage()
+    p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
+    c1, c2 = watch.cpu_controllers(p1_level, 1, random.Random(seed))
+    attacks = pygame.sprite.Group()
+    for f in range(frames):
+        fi = merge_frames(c(p1, p2, f) for c in (c1, c2))
+        for p in players:
+            p.update(fi, plats, attacks)
+        attacks.update()
+        if any(getattr(a, "velocity", None) for a in attacks):
+            return True
+    return False
+
+
+def test_lv9_nalio_throws_fireball_in_battle_lv1_does_not():
+    assert _battle_spawns_fireball(9) is True, "Lv9 (specials) should throw a fireball in a real battle"
+    assert _battle_spawns_fireball(1) is False, "Lv1 (no specials) should never throw one"
