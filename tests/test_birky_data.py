@@ -40,7 +40,7 @@ def test_birky_reuses_default_hurtbox_but_has_no_placeholder_moves():
     assert birky.hurtbox == default.hurtbox            # body geometry not per-fighter
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
-    assert set(birky.moves) == {"attack", "jab", "ftilt"}
+    assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt"}
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():
@@ -70,6 +70,21 @@ def test_birky_ftilt_is_authored():
     assert hb.damage == 11.0
     assert hb.angle == 361
     assert hb.base_knockback == 8.0 and hb.knockback_growth == 100.0
+
+
+def test_birky_utilt_is_two_window():
+    """Birky's u-tilt = PM3.6 Kirby AttackHi3: IASA 24, two windows — early f4-5
+    (dmg 8, angle 92) and late f6-10 (dmg 6, angle 88), both BKB 40."""
+    birky = load_fighter_data("birky")
+    utilt = birky.moves["utilt"]
+    assert utilt.in_air is False
+    assert utilt.startup + utilt.active + utilt.recovery == 24  # PM3.6 IASA
+    early = [h for h in utilt.hitboxes if h.active_end == 5]
+    late = [h for h in utilt.hitboxes if h.active_start == 6]
+    assert early and late, "u-tilt must have an early (f4-5) and a late (f6-10) window"
+    assert all(h.damage == 8.0 and h.angle == 92 for h in early)
+    assert all(h.damage == 6.0 and h.angle == 88 for h in late)
+    assert all(h.base_knockback == 40.0 for h in utilt.hitboxes)
 
 
 def test_birky_jab_is_authored_short_range_and_weak():

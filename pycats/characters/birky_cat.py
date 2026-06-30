@@ -85,11 +85,39 @@ _BIRKY_FTILT = MoveData(
     ),
 )
 
+# --- Up-tilt (slice 2, #249): PM3.6 Kirby AttackHi3 — a two-window upward poke -----
+# rukaidata PM3.6 Kirby AttackHi3: 24f total, IASA 24, active 4-10. Two windows
+# (per-hitbox active_start/active_end, like nalio_cat.py u-air): early f4-5 (dmg 8,
+# angle 92), late f6-10 (dmg 6, angle 88); both BKB 40, KBG 118/114; sizes 4.69/5.47u
+# → radii ≈ 25/30 (×5.4). Hits above the cat (low dy, near/over the head), centred dx.
+# Approximated/playtest per precedent. #120 units: scalars RAW, radius ×5.4.
+def _utilt_box(dx, dy, r, damage, angle, kbg, start, end):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=angle,
+                  base_knockback=40.0, knockback_growth=kbg,
+                  active_start=start, active_end=end)
+
+
+_BIRKY_UTILT = MoveData(
+    name="utilt",
+    in_air=False,
+    startup=3,
+    active=7,
+    recovery=14,  # active f4-10; 3 + 7 + 14 = 24 (PM3.6 IASA)
+    hitboxes=(
+        _utilt_box(dx=22, dy=8, r=25, damage=8.0, angle=92, kbg=118.0, start=4, end=5),
+        _utilt_box(dx=30, dy=10, r=30, damage=8.0, angle=92, kbg=114.0, start=4, end=5),
+        _utilt_box(dx=22, dy=8, r=25, damage=6.0, angle=88, kbg=118.0, start=6, end=10),
+        _utilt_box(dx=30, dy=10, r=30, damage=6.0, angle=88, kbg=114.0, start=6, end=10),
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
     # hurtbox/posture still reuse the default cat (body geometry is a separate concern);
-    # all moves are Birky's own — d-tilt in "attack" (#245), jab (#240), f-tilt (#247).
+    # all four ground normals are Birky's own — d-tilt in "attack" (#245), jab (#240),
+    # f-tilt (#247), u-tilt (#249).
     hurtbox=_DEFAULT.hurtbox,
-    moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT},
+    moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT,
+           "utilt": _BIRKY_UTILT},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
