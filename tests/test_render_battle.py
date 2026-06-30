@@ -1,6 +1,7 @@
 # tests/test_render_battle.py
 import pytest
 import pygame
+import pycats.entities.tail
 from pycats.sim.runner import build_stage, build_players
 from pycats.render_battle import render_battle
 
@@ -20,3 +21,27 @@ def test_render_battle_draws_without_error():
         p.update(empty, platforms, pygame.sprite.Group())
     render_battle(surface, players, platforms)  # must not raise
     assert surface.get_at((0, 0)) is not None
+
+
+def test_tail_entity_does_not_import_the_render_adapter():
+    """#265 (H-a): the render layer is an ADAPTER over the entities; the
+    dependency must point adapter→entity, never entity→adapter. `entities/tail.py`
+    must not import `render_battle` (it used to, for `tinted`; the tint is now
+    passed in by the caller). Able-to-fail: re-adding the import reds this."""
+    import ast
+    import pathlib
+
+    tail_src = pathlib.Path(pycats.entities.tail.__file__).read_text(encoding="utf-8")
+    tree = ast.parse(tail_src)
+    offenders = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and (node.module or "").endswith("render_battle"):
+            offenders.append(f"line {node.lineno}: from {'.' * node.level}{node.module} import ...")
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.endswith("render_battle"):
+                    offenders.append(f"line {node.lineno}: import {alias.name}")
+    assert offenders == [], (
+        "entities/tail.py imports the render adapter (layering inversion, #265):\n"
+        + "\n".join(offenders)
+    )

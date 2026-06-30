@@ -430,7 +430,7 @@ def render_battle(surface, players, platforms):
     for p in players:
         if not p.fighter.is_alive:
             continue
-        p.tail.draw(surface)
+        p.tail.draw(surface, tinted(p.char_color, p))  # #265: caller owns the tint
         # Body composite (rect + stripes + eyes + ears + whiskers + name).
         body = _cat_body_surface(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
         # Posture squash (#124 crouch / #173 prone): vertically scale the body

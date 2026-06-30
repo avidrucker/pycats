@@ -237,15 +237,16 @@ class Tail:
                     seg.y = top
                     seg.prev_y = top  # kill downward velocity -> rests on surface
 
-    def draw(self, screen):
-        """Draw the segments as cached, rotated, tapering rects."""
-        # #109: the tail flashes with the body. `tinted` softens char_color ~50%
-        # toward the active hurt/stun/dodge flash (or leaves it unchanged), from
-        # the same single source as the body composite. Local import avoids the
-        # render_battle → entities.Player import cycle.
-        from ..render_battle import tinted
+    def draw(self, screen, color):
+        """Draw the segments as cached, rotated, tapering rects in `color`.
+
+        #109: the tail flashes with the body — `color` is the already-resolved
+        tint the *caller* computes (`render_battle.tinted(p.char_color, p)`), from
+        the same single source as the body composite. #265: the colour is passed
+        in rather than importing `render_battle`, so the entity no longer reaches
+        up into the render adapter (dependency points adapter → entity only)."""
         cache = self._seg_cache
-        color = tuple(tinted(self.player.char_color, self.player))
+        color = tuple(color)
         length = TAIL_SEGMENT_LENGTH
         n = len(self.segments)
         blit = screen.blit
