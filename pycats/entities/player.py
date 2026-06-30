@@ -148,6 +148,15 @@ class Player(pygame.sprite.Sprite):
         self.fighter.prone_timer = max(0, int(frames))
         self.engine.force("prone")
 
+    def reset_to_spawn(self) -> None:
+        """Authoritative per-life reset (#34): the domain reset plus the
+        Player-owned wiring the Fighter used to reach for (#286/S3) — the move
+        clock and the Verlet tail. Used by the per-life respawn (update) and the
+        new-match reset (battle_screen)."""
+        self.fighter.reset_to_spawn()
+        self._clock.reset()   # attack_timer/current_move/move_frame derive from this
+        self.tail.reset()     # re-lay the tail at the spawn point (#41)
+
     # ---- move-progress, delegated to MoveClock (#71) ----
     # These three are read by the statechart (fighter_chart) and the runner
     # snapshot; keeping the historical names/values means no consumer changes and
@@ -199,7 +208,7 @@ class Player(pygame.sprite.Sprite):
         if not self.fighter.is_alive:
             self.fighter.respawn_timer -= 1
             if self.fighter.respawn_timer <= 0 and self.fighter.lives > 0:
-                self.fighter._respawn()
+                self.reset_to_spawn()  # #286: Player owns the clock/tail reset
             return  # nothing else while dead
 
         # ---------- hitlag / freeze frames (#138) ----------
@@ -485,10 +494,11 @@ class Player(pygame.sprite.Sprite):
         return self._input.handle_actions(input_frame, attack_group)
 
     # ============================================================= KO / respawn
-    # These rules live on Fighter (#83); Player keeps thin delegators so update()
-    # (`self.fighter._outside_blast_zone`/`self.fighter._ko`/`self.fighter._respawn`), game.reset_game
-    # (`reset_to_spawn`), fighter_input (`_start_dodge`) and the tests are
-    # unchanged.
+    # These rules live on Fighter (#83). update() reaches them via
+    # `self.fighter._outside_blast_zone`/`self.fighter._ko`; the per-life respawn
+    # now goes through `Player.reset_to_spawn` (#286, which calls
+    # `fighter.reset_to_spawn` + resets the Player-owned clock/tail), and
+    # fighter_input uses `_start_dodge`.
 
 
     # Stat counters live on the Fighter aggregate (#81); Player delegates so

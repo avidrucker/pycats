@@ -81,7 +81,7 @@ class BattleScreen:
         state is owned by Player.reset_to_spawn(). Mirrors game.py's reset_game."""
         if self.player1 and self.player2:
             for p in (self.player1, self.player2):
-                p.fighter.reset_to_spawn()
+                p.reset_to_spawn()  # #286: Player-level authoritative reset (clock/tail too)
                 p.fighter.lives = INITIAL_LIVES
                 p.fighter.attacks_made = 0
                 p.fighter.hits_landed = 0

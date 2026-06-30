@@ -32,6 +32,7 @@ import math
 import pygame  # type: ignore
 
 from ..config import (
+    PLAYER_SIZE,
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     INITIAL_LIVES,
@@ -81,8 +82,9 @@ class Fighter:
         # stand_size is the body's full standing box; crouch_size/_hurtbox are
         # the per-cat crouch geometry (None = this fighter can't crouch).
         # Per-fighter stand_size (#275): a small archetype (Kirby) overrides it;
-        # None falls back to the global owner.SIZE (config.PLAYER_SIZE).
-        self.stand_size = tuple(fighter_data.stand_size or (owner.SIZE[0], owner.SIZE[1]))
+        # None falls back to the global config.PLAYER_SIZE (#286: read config
+        # directly rather than reaching through the Player adapter's SIZE).
+        self.stand_size = tuple(fighter_data.stand_size or PLAYER_SIZE)
         self.crouch_size = fighter_data.crouch_size
         self.crouch_hurtbox = fighter_data.crouch_hurtbox
         self.crouch_attempting = False  # set per-frame by input (down on ground)
@@ -355,11 +357,13 @@ class Fighter:
         self.owner.engine.force("ko")
 
     def reset_to_spawn(self):
-        """Authoritative per-life reset to a clean spawn state (#34).
+        """Domain half of the per-life reset to a clean spawn state (#34).
 
-        Both the per-life respawn (`_respawn`) and the new-match reset
-        (`game.reset_game`) call this, so the two cannot silently drift. It
-        resets only per-life/spawn state; it does NOT touch match-scoped fields
+        Both reset paths go through `Player.reset_to_spawn` (#286) — the per-life
+        respawn (`Player.update`) and the new-match reset (`battle_screen`) — so
+        the two cannot silently drift; that wrapper calls this then resets the
+        Player-owned clock/tail. This resets only per-life/spawn state; it does
+        NOT touch match-scoped fields
         (`lives`, the `attacks_made`/`hits_landed`/`suicides` stats) or force the
         FSM state — callers own those. Facing is derived from
         `original_facing_right`, not hardcoded, so it stays correct if a player
@@ -401,18 +405,12 @@ class Fighter:
         self.invulnerable = False
         self.spot_dodge_shield_held = False
         self.dodge_blocked_by_edge = False
-        self.owner._clock.reset()  # attack_timer/current_move/move_frame all derive from this
         self.done_attacking = True
         # (visual reset is render-time now: render_battle.body_tint #75)
-        # Re-initialize the tail to its rest layout at the spawn point (#41): the
-        # Verlet tail keeps live position/velocity and freezes wherever the cat
-        # flew off-screen, so without this the chain whips in from there. facing
-        # and rect are set above, so the layout is correct.
-        self.owner.tail.reset()
-
-    def _respawn(self):
-        #### TODO: implement temporary respawn invulnerability
-        self.reset_to_spawn()
+        # The Player-owned wiring reset here — the move clock (attack_timer/
+        # current_move/move_frame derive from it) and the Verlet tail layout (#41)
+        # — now lives in Player.reset_to_spawn (#286/S3), which calls this then
+        # resets self._clock + self.tail. The aggregate no longer reaches `owner`.
 
     # state starters ----------------------------
     def _start_stun(self) -> None:
