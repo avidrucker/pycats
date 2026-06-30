@@ -43,7 +43,7 @@ from .config import (
     STRIPE_SPACING,
     CAT_CHARACTERS,
 )
-from .entities import Platform, Player
+from .entities import Platform
 from .core import input as inp
 from . import stats_print
 from .screen_manager import ScreenStateManager
@@ -53,7 +53,6 @@ from . import display
 from . import settings
 from . import runtime_settings
 from . import cat_faces
-from .render_battle import render_battle, render_attacks
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
@@ -197,76 +196,6 @@ font = pygame.font.SysFont(unicode_font_name, 24)
 
 #### TODO: split off damage % and stock lives rendering so that they are rendering last and at the bottom left and right corners of the screen
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
-def draw_hud(surface, p: Player, label, topright=False):
-    """Draws the HUD for a player, showing their state, jumps left, shield HP, lives, and damage percent."""
-    fsm = f"FSM: {p.state.capitalize()}"
-    jumps = f"{p.fighter.jumps_remaining} jump{'s' if p.fighter.jumps_remaining != 1 else ''} left"
-    shield = f"Shield HP: {p.fighter.shield_hp}"
-    shield_attempting = f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}"
-    stocks = f"Lives: {p.fighter.lives}"
-    percent = f"Damage: {int(p.fighter.percent)}%"
-    for i, txt in enumerate(
-        (label, fsm, jumps, shield, shield_attempting, stocks, percent)
-    ):
-        x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
-        y_pos = HUD_PADDING + i * HUD_SPACING
-
-        text_utils.render_text(
-            surface, txt, (x_pos, y_pos), 24, WHITE, right_align=topright
-        )
-
-
-def draw_controls(surface, p: Player, label, topright=False):
-    """Draws the control scheme for a player below the HUD."""
-    # Convert pygame key constants to readable strings with Unicode arrows where appropriate
-    key_names = {
-        pygame.K_a: "A",
-        pygame.K_d: "D",
-        pygame.K_w: "W",
-        pygame.K_s: "S",
-        pygame.K_v: "V",
-        pygame.K_c: "C",
-        pygame.K_x: "X",
-        pygame.K_LEFT: "←",
-        pygame.K_RIGHT: "→",
-        pygame.K_UP: "↑",
-        pygame.K_DOWN: "↓",
-        pygame.K_SLASH: "/",
-        pygame.K_PERIOD: ".",
-        pygame.K_COMMA: ",",
-    }
-
-    controls = [
-        f"{label} Controls:",
-        f"Move: {key_names.get(p.controls['left'], '?')}/{key_names.get(p.controls['right'], '?')}",
-        f"Jump: {key_names.get(p.controls['up'], '?')}",
-        f"Down: {key_names.get(p.controls['down'], '?')}",
-        f"Attack: {key_names.get(p.controls['attack'], '?')}",
-        f"Shield: {key_names.get(p.controls['shield'], '?')}",
-        f"Special: {key_names.get(p.controls['special'], '?')}",
-    ]
-
-    # Start drawing below the HUD (7 lines of HUD + some spacing)
-    start_y = HUD_PADDING + 7 * HUD_SPACING + 20
-
-    for i, txt in enumerate(controls):
-        x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
-        y_pos = start_y + i * HUD_SPACING
-
-        # Use mixed text rendering for Unicode arrow support
-        if topright:
-            # For right-aligned text, we need to calculate positioning differently
-            text_width = text_utils.text_renderer._get_font(None, 24).size(txt)[0]
-            adjusted_x = x_pos - text_width
-            text_utils.text_renderer.render_text_mixed(
-                txt, 24, WHITE, surface, (adjusted_x, y_pos)
-            )
-        else:
-            text_utils.text_renderer.render_text_mixed(
-                txt, 24, WHITE, surface, (x_pos, y_pos)
-            )
-
-
 def reset_game():
     """Reset the battle for a new match (delegates to BattleScreen, #193)."""
     battle.reset()
@@ -553,27 +482,14 @@ while running:
         if winner:
             screen_manager.set_winner(winner, loser)
 
-        # ---- render
+        # ---- render (battle composite owned by BattleScreen, #205 slice 2b)
         render_surface = get_render_surface()
-        render_surface.fill(BG_COLOR)
-        render_battle(render_surface, battle.players, platforms)
-        render_attacks(render_surface, battle.attacks)
+        battle.render(render_surface, platforms)
 
-        # Draw HUD only if players exist
-        if battle.player1 and battle.player2:
-            draw_hud(
-                render_surface, battle.player1, "P1"
-            )  # drawn by default in upper-left corner
-            draw_hud(render_surface, battle.player2, "P2", topright=True)
-
-            # Draw player controls below the HUD
-            draw_controls(
-                render_surface, battle.player1, "P1"
-            )  # drawn by default below P1 HUD
-            draw_controls(
-                render_surface, battle.player2, "P2", topright=True
-            )  # drawn below P2 HUD
-
+        # @todo #100:30m/DEV Battle "chrome" (debug-input text, FPS, F10/F11 + pause
+        #  instructions, render_esc_quit_progress) still reads loop globals (clock,
+        #  is_fullscreen, frame_input) — NOT battle state — so it stayed out of slice
+        #  2b. Relocate with the slice-3 loop-state work.
         # draw keys pressed for debugging
         if frame_input:
             # keys = ", ".join(
@@ -623,25 +539,11 @@ while running:
         screen_manager.render_esc_quit_progress(render_surface)
 
     elif current_state == "pause":
-        # Game is paused - render the pause menu with frozen game background
-        render_surface = get_render_surface()
-        
-        # Create background surface with frozen game state
-        background_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        background_surface.fill(BG_COLOR)
-        
-        # Draw the game state (frozen) to background
-        render_battle(background_surface, battle.players, platforms)
-        render_attacks(background_surface, battle.attacks)
-
-        # Draw HUD (frozen state)
-        if battle.player1 and battle.player2:
-            draw_hud(background_surface, battle.player1, "P1")
-            draw_hud(background_surface, battle.player2, "P2", topright=True)
-
-        # Render pause menu with background
-        pause_menu = screen_manager.get_pause_menu()
-        pause_menu.render(render_surface, background_surface)
+        # Game is paused — BattleScreen composites the frozen battle background and
+        # delegates to the pause menu (#205 slice 2b).
+        battle.render_paused(
+            get_render_surface(), platforms, screen_manager.get_pause_menu()
+        )
 
     elif current_state == "win_screen":
         # Render win screen

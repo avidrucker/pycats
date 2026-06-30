@@ -23,6 +23,7 @@ from .config import (
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME,
+    SCREEN_WIDTH, HUD_PADDING, HUD_SPACING,
 )
 from . import runtime_settings
 from . import text_utils
@@ -468,3 +469,73 @@ def render_battle(surface, players, platforms):
 def render_attacks(surface, attacks):
     for a in attacks:
         surface.blit(a.image, a.rect)
+
+
+def draw_hud(surface, p: Player, label, topright=False):
+    """Draws the HUD for a player, showing their state, jumps left, shield HP, lives, and damage percent."""
+    fsm = f"FSM: {p.state.capitalize()}"
+    jumps = f"{p.fighter.jumps_remaining} jump{'s' if p.fighter.jumps_remaining != 1 else ''} left"
+    shield = f"Shield HP: {p.fighter.shield_hp}"
+    shield_attempting = f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}"
+    stocks = f"Lives: {p.fighter.lives}"
+    percent = f"Damage: {int(p.fighter.percent)}%"
+    for i, txt in enumerate(
+        (label, fsm, jumps, shield, shield_attempting, stocks, percent)
+    ):
+        x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
+        y_pos = HUD_PADDING + i * HUD_SPACING
+
+        text_utils.render_text(
+            surface, txt, (x_pos, y_pos), 24, WHITE, right_align=topright
+        )
+
+
+def draw_controls(surface, p: Player, label, topright=False):
+    """Draws the control scheme for a player below the HUD."""
+    # Convert pygame key constants to readable strings with Unicode arrows where appropriate
+    key_names = {
+        pygame.K_a: "A",
+        pygame.K_d: "D",
+        pygame.K_w: "W",
+        pygame.K_s: "S",
+        pygame.K_v: "V",
+        pygame.K_c: "C",
+        pygame.K_x: "X",
+        pygame.K_LEFT: "←",
+        pygame.K_RIGHT: "→",
+        pygame.K_UP: "↑",
+        pygame.K_DOWN: "↓",
+        pygame.K_SLASH: "/",
+        pygame.K_PERIOD: ".",
+        pygame.K_COMMA: ",",
+    }
+
+    controls = [
+        f"{label} Controls:",
+        f"Move: {key_names.get(p.controls['left'], '?')}/{key_names.get(p.controls['right'], '?')}",
+        f"Jump: {key_names.get(p.controls['up'], '?')}",
+        f"Down: {key_names.get(p.controls['down'], '?')}",
+        f"Attack: {key_names.get(p.controls['attack'], '?')}",
+        f"Shield: {key_names.get(p.controls['shield'], '?')}",
+        f"Special: {key_names.get(p.controls['special'], '?')}",
+    ]
+
+    # Start drawing below the HUD (7 lines of HUD + some spacing)
+    start_y = HUD_PADDING + 7 * HUD_SPACING + 20
+
+    for i, txt in enumerate(controls):
+        x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
+        y_pos = start_y + i * HUD_SPACING
+
+        # Use mixed text rendering for Unicode arrow support
+        if topright:
+            # For right-aligned text, we need to calculate positioning differently
+            text_width = text_utils.text_renderer._get_font(None, 24).size(txt)[0]
+            adjusted_x = x_pos - text_width
+            text_utils.text_renderer.render_text_mixed(
+                txt, 24, WHITE, surface, (adjusted_x, y_pos)
+            )
+        else:
+            text_utils.text_renderer.render_text_mixed(
+                txt, 24, WHITE, surface, (x_pos, y_pos)
+            )

@@ -14,15 +14,24 @@ from __future__ import annotations
 import pygame
 
 from .config import (
+    BG_COLOR,
     CAT_CHARACTERS,
     INITIAL_LIVES,
     PLAYER1_START_X,
     PLAYER1_START_Y,
     PLAYER2_START_X,
     PLAYER2_START_Y,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
 )
 from .core.physics import resolve_player_push
 from .entities import Player
+from .render_battle import (
+    draw_controls,
+    draw_hud,
+    render_attacks,
+    render_battle,
+)
 from .systems import combat
 from .systems.win_condition import winner_loser
 
@@ -82,3 +91,34 @@ class BattleScreen:
     def winner(self):
         """(winner, loser) or (None, None) — the shared win-condition rule."""
         return winner_loser((self.player1, self.player2))
+
+    def _draw_battle(self, surface, platforms):
+        """Fill + fighters + attacks + HUD/controls — the shared battle composite.
+        SAME calls/order as game.py's old inline playing block (#205, slice 2b)."""
+        surface.fill(BG_COLOR)
+        render_battle(surface, self.players, platforms)
+        render_attacks(surface, self.attacks)
+        if self.player1 and self.player2:
+            draw_hud(surface, self.player1, "P1")
+            draw_hud(surface, self.player2, "P2", topright=True)
+            draw_controls(surface, self.player1, "P1")
+            draw_controls(surface, self.player2, "P2", topright=True)
+
+    def render(self, surface, platforms):
+        """Render one live battle frame onto `surface` (the playing branch's draw
+        block). Chrome (FPS/fullscreen/pause/debug text) stays in game.py — it reads
+        loop globals, not battle state."""
+        self._draw_battle(surface, platforms)
+
+    def render_paused(self, surface, platforms, pause_menu):
+        """Render the pause frame: composite the FROZEN battle + HUD (no controls)
+        onto an intermediate background surface, then delegate to the pause menu.
+        Mirrors game.py's pause branch."""
+        background = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        background.fill(BG_COLOR)
+        render_battle(background, self.players, platforms)
+        render_attacks(background, self.attacks)
+        if self.player1 and self.player2:
+            draw_hud(background, self.player1, "P1")
+            draw_hud(background, self.player2, "P2", topright=True)
+        pause_menu.render(surface, background)
