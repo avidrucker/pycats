@@ -91,3 +91,26 @@ def test_tick_action_timers_already_zero_never_re_expires():
     assert expired == set()
     for name in ACTION_TIMERS:
         assert getattr(f, name) == 0, name
+
+
+# --- S4b/#293: the two out-of-block timers (respawn unfloored, ledge_hang floored)
+def test_tick_respawn_decrements_unfloored():
+    f = _fighter()
+    f.respawn_timer = 2
+    f.tick_respawn()
+    assert f.respawn_timer == 1
+    # Unfloored: keeps counting past 0 (a lives==0 fighter waits forever) — matches
+    # the old inline `respawn_timer -= 1`. Able-to-fail: flooring it reds this.
+    f.respawn_timer = 0
+    f.tick_respawn()
+    assert f.respawn_timer == -1
+
+
+def test_tick_ledge_hang_decrements_and_floors():
+    f = _fighter()
+    f.ledge_hang_timer = 2
+    f.tick_ledge_hang()
+    assert f.ledge_hang_timer == 1
+    f.ledge_hang_timer = 0
+    f.tick_ledge_hang()
+    assert f.ledge_hang_timer == 0  # floored, never negative

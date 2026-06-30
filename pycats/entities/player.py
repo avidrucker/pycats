@@ -206,7 +206,7 @@ class Player(pygame.sprite.Sprite):
         """Master per-frame update; handles KO/respawn before usual logic."""
         # ---------- dead / waiting to respawn ----------
         if not self.fighter.is_alive:
-            self.fighter.respawn_timer -= 1
+            self.fighter.tick_respawn()  # #293/S4b: aggregate owns the decrement
             if self.fighter.respawn_timer <= 0 and self.fighter.lives > 0:
                 self.reset_to_spawn()  # #286: Player owns the clock/tail reset
             return  # nothing else while dead
@@ -298,8 +298,7 @@ class Player(pygame.sprite.Sprite):
             ledge = self.fighter.grabbed_ledge
             self.fighter.vel.x = 0
             self.fighter.vel.y = 0
-            if self.fighter.ledge_hang_timer > 0:
-                self.fighter.ledge_hang_timer -= 1
+            self.fighter.tick_ledge_hang()  # #293/S4b: aggregate owns the decrement
             up = self._pressed(held, "up")
             down = self._pressed(held, "down")
             away = ledge.away_held(self._pressed(held, "left"),

@@ -247,6 +247,20 @@ class Fighter:
                     expired.add(name)
         return expired
 
+    def tick_respawn(self) -> None:
+        """Advance the respawn countdown (#264/S4b). Unfloored — it keeps counting
+        past 0 while a permanently-dead fighter (lives == 0) waits, matching the
+        old inline `respawn_timer -= 1`. The reset trigger + early-return stay in
+        Player.update()."""
+        self.respawn_timer -= 1
+
+    def tick_ledge_hang(self) -> None:
+        """Advance the ledge-hang timeout while hanging (#264/S4b). Floored; the
+        caller only invokes it inside the `grabbed_ledge is not None` block, so the
+        drop/timeout logic stays in Player.update()."""
+        if self.ledge_hang_timer > 0:
+            self.ledge_hang_timer -= 1
+
     # ----------- hit processing ------------
     def receive_hit(self, atk, is_crouching=False):
         """Called by combat system when this player is struck.
