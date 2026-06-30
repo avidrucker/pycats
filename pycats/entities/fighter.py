@@ -204,6 +204,21 @@ class Fighter:
         """Record percent damage this fighter dealt to an opponent (#98)."""
         self.damage_given += amount
 
+    # ----------- per-frame timers ------------
+    def tick_timers(self) -> None:
+        """Advance the fighter's *stateless* per-frame timers (S1/#273).
+
+        These decrement with no transition side-effect, so the aggregate owns the
+        tick (was inline in `Player.update()`, N2). The transition-coupled timers
+        (prone/getup_roll/getup_attack/ledge_hang/dodge/respawn) and `hitlag`
+        (bound to the freeze early-return) stay in `Player.update()` until later
+        slices (#264 S4/S5)."""
+        for name in ("hurt_timer", "stun_timer", "landing_lag_timer",
+                     "ledge_regrab_lockout_timer", "shieldstun_timer"):
+            v = getattr(self, name)
+            if v > 0:
+                setattr(self, name, v - 1)
+
     # ----------- hit processing ------------
     def receive_hit(self, atk):
         """Called by combat system when this player is struck."""

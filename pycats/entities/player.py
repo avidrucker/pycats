@@ -336,11 +336,12 @@ class Player(pygame.sprite.Sprite):
                     self.engine.force("ledge_grab")
                     break
 
-        # Non-shield timers tick
-        if self.fighter.hurt_timer > 0:
-            self.fighter.hurt_timer -= 1
-        if self.fighter.stun_timer > 0:
-            self.fighter.stun_timer -= 1
+        # Non-shield timers tick. The stateless ones (hurt/stun/landing_lag/
+        # ledge_regrab_lockout/shieldstun) are owned by the Fighter (#273/S1);
+        # the transition-coupled ones below stay here until #264 S4. Placed at the
+        # top of the block so landing_lag_timer is already decremented before the
+        # dodge-end read of it (`landing_lag_timer == 0`) further down.
+        self.fighter.tick_timers()
         if self.fighter.prone_timer > 0:
             self.fighter.prone_timer -= 1  # getup window (#13)
             # Getup-roll (#146): the frame the window closes, a held left/right
@@ -371,12 +372,8 @@ class Player(pygame.sprite.Sprite):
             self.fighter.getup_attack_timer -= 1  # wake-up attack duration (#225)
             if self.fighter.getup_attack_timer == 0 and self.state == "getup_attack":
                 self.fighter.invulnerable = False  # intangibility ends with the swing
-        if self.fighter.landing_lag_timer > 0:
-            self.fighter.landing_lag_timer -= 1  # waveland lock window (#202)
-        if self.fighter.ledge_regrab_lockout_timer > 0:
-            self.fighter.ledge_regrab_lockout_timer -= 1  # post-release regrab gate (#14)
-        if self.fighter.shieldstun_timer > 0:
-            self.fighter.shieldstun_timer -= 1
+        # (landing_lag / ledge_regrab_lockout / shieldstun decremented above by
+        # Fighter.tick_timers() — #273/S1)
         if self.fighter.dodge_timer > 0:
             self.fighter.dodge_timer -= 1
         if self.fighter.dodge_timer == 0 and self.state == "dodge":
