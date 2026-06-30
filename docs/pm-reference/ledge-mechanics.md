@@ -63,6 +63,13 @@ vulnerability tradeoff:
 The defender picks based on what the edgeguarder is covering; the edgeguarder reads
 the option. (Intangibility from the grab can carry into the getup's early frames.)
 
+**Frame data** (all options have a **fast (<100%)** and a **slow (≥100%)** variant —
+SmashWiki). PM ledge-attack reference (Smashboards PM 3.6; **Mario → Nalio archetype**):
+~**55f** total <100% (intang 1–20, hitbox ~f24) / ~**69f** ≥100% (intang 1–36, hitbox
+~f40). Per-character neutral/roll/jump frame counts: pull from the Smashboards
+"Ledge Option Frame Data" thread at implementation. Full table + intangibility/decay:
+[2026-06-30-ledge-recovery-mechanics.md](../research/2026-06-30-ledge-recovery-mechanics.md) (#297).
+
 ## Dropping off & re-recovering
 
 You can **drop from the ledge** (down/back) into a fall, then **double-jump** or
@@ -73,14 +80,22 @@ is also how you go for an offensive **ledge-trump** (below).
 
 - **Edgeguarding** — attacking a recovering opponent off-stage (aerials, a move
   that covers the ledge, or simply taking the space).
-- **Edge-hog** — occupying the ledge yourself so the opponent **can't grab it**
-  (only one fighter holds a ledge). In Brawl/PM, ledge intangibility makes the
-  classic Melee-style invincible hog weaker, shifting toward...
-- **Ledge-trump** — grabbing a ledge an opponent is already holding **knocks them
-  off** (trumps them) into a vulnerable state, a strong offensive option PM
-  emphasises.
-- **The "2-frame"** — a recovering opponent is briefly vulnerable as they grab the
-  ledge; a well-timed hit catches that window.
+- **Edge-hog (PM's occupied-edge rule)** — occupy the ledge so the opponent **can't
+  grab it** (one fighter per ledge); a grab on an occupied ledge is **denied**. PM
+  specifics (#297): **ledge invincibility scales with the occupant's percent**
+  (higher % → longer), so a hog's success is gated by the **occupant's invincibility
+  timer** — hog **timing is percent-dependent** (too early and the recoverer takes the
+  ledge). A fighter can **act out of the grab sooner** than Brawl, and during **any**
+  getup the ledge is re-grabbable by others **only after ~half the animation**; tether
+  recoveries **ignore** hoggers.
+- **Ledge-trump** — grabbing a ledge an opponent holds **auto-removes** them. ⚠ **This
+  is a Smash-4/Ultimate mechanic and is NOT in Project M** (confirmed #297). PM uses
+  **edge-hogging** (above), the *opposite* system. Earlier text wrongly called trump
+  "first-class in the Brawl/PM family." **Do not implement trump for PM** — pycats'
+  one-occupant lockout is already the correct (hog) model.
+- **The "2-frame"** — a recovering opponent is briefly vulnerable (~**2 frames**) as
+  they grab the ledge, before intangibility activates; a well-timed hit catches that
+  window.
 
 ## Teching
 
@@ -96,8 +111,10 @@ PM deliberately **reworked Brawl's ledge mechanics** — this is a defining chan
 - **No infinite invincible hog:** ledge intangibility **decays with repeated
   grabs** (vs Melee's exploitable invincibility and Brawl's planking), curbing
   ledge-stalling.
-- **Ledge-trump** is a first-class offensive option in the Brawl/PM family (absent
-  in Melee).
+- **Occupied-edge rule:** Brawl/PM use **edge-hogging** (the grab is *denied*);
+  **auto-ledge-trump is Smash-4+** (corrected per #297). Melee also hogs (with
+  stronger invincibility). PM's contribution is *reduced* ledge intangibility, not
+  trump.
 - **Recovery feel** follows PM's Melee-leaning movement (fast-fall, wavedash,
   Melee-style up-Bs) — see [movement-and-tech](./movement-and-tech.md).
 - Getup-option frame data is PM-specific — use PM sources for numbers.
@@ -122,8 +139,19 @@ plan in `docs/superpowers/specs/2026-06-30-ledge-hang-design.md` /
 
 **Deferred** (epic [#267](https://github.com/avidrucker/pycats/issues/267)): the other
 getup options (**ledge roll / attack / jump**), **intangibility decay** on repeated
-grabs, **ledge-trump** (flips the one-occupant lockout) + **edge-hog**, the **"2-frame"**,
-**teching**, **up-B sweetspot** recovery, and hold-away-to-decline + a frame-accurate
-getup window. Per-character/longer hang tuning is ⚠ playtest (`LEDGE_HANG_FRAMES` et al.).
+grabs, the **"2-frame"**, **teching**, **up-B sweetspot** recovery, and
+hold-away-to-decline + a frame-accurate getup window. Per-character/longer hang tuning
+is ⚠ playtest (`LEDGE_HANG_FRAMES` et al.).
+
+**Researched values to apply** (#297, [findings](../research/2026-06-30-ledge-recovery-mechanics.md)):
+- Grab **intangibility** should be a **short burst (~23f, Brawl)** — pycats currently
+  grants the *whole* `LEDGE_HANG_FRAMES` (120f), which is over-generous.
+- **Hang auto-release** ≈ 360/300f in Brawl vs pycats' 120f (2s) — playtest.
+- Neutral getup is currently **instant**; needs a real frame window + the fast/slow
+  (<100% / ≥100%) variant. Ledge attack ≈ 55f/69f (Mario ref).
+- **Occupied-edge: pycats' one-occupant lockout already models PM edge-hogging
+  correctly** — keep the deny-lockout. **Ledge-trump is NOT a PM mechanic** (Smash-4+);
+  #267's trump slice was **removed** (#297). The PM fidelity gap to chase later is
+  **percent-scaled ledge invincibility** + hog timing, not trump.
 
 Divergences: [#99](https://github.com/avidrucker/pycats/issues/99). Open questions: [#24](https://github.com/avidrucker/pycats/issues/24).
