@@ -122,12 +122,14 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
         if controllers is not None:
             # Call every controller on the SAME frame-start snapshot, THEN merge
             # and apply — so neither sees the other's mutation mid-frame.
+            # #254: pass the live `attacks` group (frame-start state — opponent
+            # hitboxes/projectiles still alive) so threat-aware policies can react.
             fi = merge_frames(
-                c(p1, p2, f) if c is not None else _empty_frame()
+                c(p1, p2, f, attacks) if c is not None else _empty_frame()
                 for c in controllers
             )
         elif controller is not None:
-            fi = controller(p1, p2, f)
+            fi = controller(p1, p2, f, attacks)
         else:
             fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
         for p in players:

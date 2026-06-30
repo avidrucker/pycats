@@ -26,6 +26,11 @@ class LevelParams:
     # Seeded-RNG knobs (#238 / #148 step 2), rolled against self.rng (#166):
     follow_through_p: float = 1.0   # P(commit a chosen attack); 1.0 = always
     shield_chance: float = 0.0      # P(raise shield this frame); 0.0 = never
+    # #254/#251 Q2: shield REACTIVELY (only when a threat is detected incoming) vs
+    # randomly. High levels shield reactively (SmashWiki: "almost always defend from
+    # attacks"); low levels shield "at random times" (the #238 unconditional roll).
+    # When True, shield_chance is reused as the *reliability* of a reactive shield.
+    reactive_shield: bool = False
     # Capability gate (#248 / #148 step 3). Only "specials" is wired today (the bot
     # presses B → fireball); tilts/aerials emerge from the move-select seam when the
     # bot attacks while moving/airborne, and smash/grab don't exist in pycats yet —
@@ -36,11 +41,11 @@ class LevelParams:
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
 # are pycats interpolations — tuning starting points, not measured PM data.
 LEVEL_PARAMS: dict[int, LevelParams] = {
-    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, enabled_moves=frozenset({"jab"})),
-    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, enabled_moves=frozenset({"jab", "tilts"})),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, enabled_moves=frozenset({"jab", "tilts", "aerials"})),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, enabled_moves=frozenset({"jab", "tilts", "aerials"})),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"})),
+    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, enabled_moves=frozenset({"jab"})),
+    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, enabled_moves=frozenset({"jab", "tilts"})),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"})),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"})),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"})),
 }
 
 
@@ -87,14 +92,17 @@ class BaseController:
         # InputFrame but never reaches the (input-only) FSM backends.
         self.rng = rng if rng is not None else random.Random(DEFAULT_CONTROLLER_SEED)
 
-    def decide(self, a, t, frame) -> set:
+    def decide(self, a, t, frame, attacks=None) -> set:
         """Return the set of keys to HOLD this frame. `a` is this controller's
-        player, `t` the other. Override in an archetype."""
+        player, `t` the other. `attacks` (#254) is the live `Attack` sprite group
+        (opponent hitboxes + projectiles) for threat-aware policies; None when the
+        caller supplies no battle context (default → unchanged, golden-safe).
+        Override in an archetype."""
         raise NotImplementedError
 
-    def __call__(self, p1, p2, frame):
+    def __call__(self, p1, p2, frame, attacks=None):
         a, t = (p1, p2) if self.attacker_num == 1 else (p2, p1)
-        held = self.decide(a, t, frame)
+        held = self.decide(a, t, frame, attacks)
         pressed = held - self._prev
         released = self._prev - held
         self._prev = held
@@ -116,6 +124,8 @@ class AttackerController(BaseController):
                  attack_range=45, safe_x=(110, 850), drop_threshold=20, rng=None,
                  reaction_delay=0, level=None,
                  follow_through_p=1.0, shield_chance=0.0,
+                 reactive_shield=False,
+                 shield_threat_range=160, shield_threat_dy=80,
                  enabled_moves=frozenset({"jab", "tilts", "aerials"}),
                  fireball_range=450):
         super().__init__(attacker_num, rng=rng)
@@ -128,6 +138,7 @@ class AttackerController(BaseController):
             reaction_delay = lp.reaction_delay
             follow_through_p = lp.follow_through_p
             shield_chance = lp.shield_chance
+            reactive_shield = lp.reactive_shield
             enabled_moves = lp.enabled_moves
         # #248: capability gate + ranged-special (fireball) poke distance. Default
         # excludes "specials" → the ranged-special branch never fires (golden-safe).
@@ -137,6 +148,15 @@ class AttackerController(BaseController):
         # pre-#238 behaviour AND never touch the rng stream (always commit; never shield).
         self.follow_through_p = follow_through_p
         self.shield_chance = shield_chance
+        # #254: reactive (threat-gated) shielding. False = the #238 unconditional
+        # random roll (low-level flavour / golden-safe default). When True, the bot
+        # only shields when an opponent hitbox/projectile is detected incoming within
+        # `shield_threat_range` px (and `shield_threat_dy` px vertically), after the
+        # `reaction_delay` window; shield_chance is then the per-frame *reliability*.
+        self.reactive_shield = reactive_shield
+        self.shield_threat_range = shield_threat_range  # ⚠ GUESS px (~2 char-lengths, #251)
+        self.shield_threat_dy = shield_threat_dy        # ⚠ GUESS px (vertical threat band)
+        self._threat_since = None  # frame a threat first appeared (reaction-window tracker)
         self.level = level
         # reaction_delay (#232): frames the target must stay in range before the
         # FIRST attack fires. 0 = react instantly (the pre-#232 behaviour).
@@ -158,7 +178,43 @@ class AttackerController(BaseController):
         self.drop_threshold = drop_threshold
         self._last_attack = -10_000
 
-    def decide(self, a, t, frame) -> set:
+    def _in_threat_band(self, a, ox, oy) -> bool:
+        """Is point (ox, oy) within the shield threat band around the bot `a`?"""
+        return (abs(ox - a.rect.centerx) <= self.shield_threat_range
+                and abs(oy - a.rect.centery) <= self.shield_threat_dy)
+
+    def _threat_incoming(self, a, t, attacks) -> bool:
+        """#254: is `t` threatening `a` right now? Two signals (#251 decision model):
+
+        1. **Melee windup** — `t` is executing an attack move within the threat band.
+           We react to the *windup* (not the active hitbox sprite), because an already-
+           live hitbox lands before a shield can rise — too late to be reactive.
+        2. **Projectile/active hitbox** — an opponent-owned `Attack` sprite in the band;
+           a *moving* projectile must also be *closing* (heading toward the bot).
+
+        Pure function of the frame snapshot → deterministic, replay/golden-safe."""
+        # (1) opponent winding up a move nearby (gives lead time to shield).
+        if getattr(t, "current_move", None) is not None and t.fighter.is_alive:
+            if self._in_threat_band(a, t.rect.centerx, t.rect.centery):
+                return True
+        # (2) opponent-owned hitbox/projectile in flight.
+        for atk in (attacks or ()):
+            if getattr(atk, "owner", None) is not t or not getattr(atk, "active", True):
+                continue
+            if not self._in_threat_band(a, atk.rect.centerx, atk.rect.centery):
+                continue
+            vel = getattr(atk, "velocity", None)
+            if vel is not None:
+                vx = vel[0]
+                dx = atk.rect.centerx - a.rect.centerx
+                # closing = moving toward the bot (opposite sign to its offset); a
+                # stationary projectile already in-band counts as incoming.
+                if vx != 0 and dx * vx >= 0:
+                    continue
+            return True
+        return False
+
+    def decide(self, a, t, frame, attacks=None) -> set:
         keys = a.controls
         held = set()
 
@@ -179,9 +235,25 @@ class AttackerController(BaseController):
                          or self.rng.random() < self.follow_through_p)):
                 self._last_attack = self._f
                 return {keys["special"]}
-            # #238: stochastic shield (seeded, #166). Default shield_chance 0.0 →
-            # no roll, no change. A shielding frame is purely defensive (no move/attack).
-            if self.shield_chance > 0.0 and self.rng.random() < self.shield_chance:
+            # Shield (defensive frame — no move/attack). Two regimes (#254/#251 Q2):
+            if self.reactive_shield:
+                # High level: shield REACTIVELY — only when an opponent hitbox/
+                # projectile is detected incoming, after the reaction window, with
+                # shield_chance as the reliability. Never shields in open space (the
+                # user's complaint). Default level-less path has reactive_shield=False
+                # so this branch never runs (golden-safe; rng untouched).
+                if self._threat_incoming(a, t, attacks):
+                    if self._threat_since is None:
+                        self._threat_since = self._f
+                    reacted = (self._f - self._threat_since) >= self.reaction_delay
+                    if (reacted and self.shield_chance > 0.0
+                            and self.rng.random() < self.shield_chance):
+                        return {keys["shield"]}
+                else:
+                    self._threat_since = None
+            # #238: low-level stochastic shield (seeded, #166) — "shields at random
+            # times." Default shield_chance 0.0 → no roll, no change (golden-safe).
+            elif self.shield_chance > 0.0 and self.rng.random() < self.shield_chance:
                 return {keys["shield"]}
             lo, hi = self.safe_x
             toward = keys["right"] if dx > 0 else keys["left"]
@@ -264,7 +336,7 @@ class IdlerController(BaseController):
         self.shield_hold = shield_hold
         self.shield_chance = shield_chance
 
-    def decide(self, a, t, frame) -> set:
+    def decide(self, a, t, frame, attacks=None) -> set:
         # #166 first consumer: an rng-jittered shield. A real PRNG roll per frame,
         # so two seeds diverge while a fixed seed repeats — the end-to-end proof
         # that the injected RNG reaches a chosen InputFrame (and nothing else).
@@ -289,7 +361,7 @@ class FollowerController(BaseController):
         self.standoff = standoff
         self.safe_x = safe_x
 
-    def decide(self, a, t, frame) -> set:
+    def decide(self, a, t, frame, attacks=None) -> set:
         held = set()
         if not t.fighter.is_alive:
             return held
