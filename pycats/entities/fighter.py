@@ -126,6 +126,7 @@ class Fighter:
         self.stun_timer = 0
         self.prone_timer = 0  # knockdown/getup window (#13); prone while > 0
         self.getup_roll_timer = 0  # getup-roll duration + intangibility window (#146)
+        self.getup_attack_timer = 0  # wake-up attack duration out of prone (#225)
         self.landing_lag_timer = 0  # post-waveland action lock (#202); locked while > 0
         self.land_impact_vy = 0.0  # downward speed at last ground contact (#145)
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters

@@ -230,3 +230,23 @@ def load_fighter_data(character: str) -> FighterData:
     # default cat for every other key (incl. the "P1"/"P2" sim path)
     from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
     return DEFAULT_FIGHTER_DATA
+
+
+# ---------------------------------------------------------------------------
+# Getup-attack (#225 / #146 slice 2): a generic wake-up attack out of `prone`.
+# Started directly on the move clock from the getup transition (player.update),
+# not via the move-selection seam — so the existing Attack/clank/multi-hit
+# plumbing is reused. One low front hitbox for v1; a back hitbox (PM hits both
+# sides) is a documented refinement. Frames/box are ⚠ playtest starting points.
+# ---------------------------------------------------------------------------
+GETUP_ATTACK = MoveData(
+    name="getup attack",
+    in_air=False,
+    startup=4,
+    active=3,
+    recovery=14,
+    hitboxes=(
+        Hitbox(circle=Circle(dx=28, dy=42, r=24), damage=8.0, angle=70,
+               base_knockback=40.0, knockback_growth=70.0),
+    ),
+)

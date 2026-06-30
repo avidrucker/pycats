@@ -236,6 +236,10 @@ def build_fighter_chart(p):
         # wins over the plain idle/fall getup exits below.
         _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.getup_roll_timer > 0,
               "getup_roll"),
+        # Getup-attack (#225): if attack was held at getup, player.update started the
+        # wake-up move on the clock (getup_attack_active) — swing instead of standing.
+        _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.getup_attack_timer > 0,
+              "getup_attack"),
         _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.on_ground, "idle"),
         _tick(lambda e, d: p.fighter.prone_timer <= 0 and not p.fighter.on_ground, "fall"),
     )
@@ -248,6 +252,16 @@ def build_fighter_chart(p):
         {"id": "getup_roll"},
         _tick(lambda e, d: p.fighter.getup_roll_timer <= 0 and p.fighter.on_ground, "idle"),
         _tick(lambda e, d: p.fighter.getup_roll_timer <= 0 and not p.fighter.on_ground, "fall"),
+    )
+
+    # Getup-attack (#225): the wake-up attack out of prone. Its hitbox spawns via
+    # the move clock (started in player.update); the state ends when the move
+    # completes (attack_timer hits 0), recovering to idle. Intangibility is dropped
+    # by player.update at the same point.
+    getup_attack = state(
+        {"id": "getup_attack"},
+        _tick(lambda e, d: p.fighter.getup_attack_timer <= 0 and p.fighter.on_ground, "idle"),
+        _tick(lambda e, d: p.fighter.getup_attack_timer <= 0 and not p.fighter.on_ground, "fall"),
     )
 
     # Helpless / special-fall (#184): entered after an air dodge's timer expires
@@ -288,6 +302,7 @@ def build_fighter_chart(p):
         ko,
         prone,
         getup_roll,
+        getup_attack,
         helpless,
         landing_lag,
     )

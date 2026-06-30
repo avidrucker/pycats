@@ -36,7 +36,7 @@ from .attack import Attack
 from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
-from ..combat.data import load_fighter_data
+from ..combat.data import load_fighter_data, GETUP_ATTACK
 from ..combat.move_clock import MoveClock
 from ..combat.knockback import decay_velocity
 from ..core.physics import apply_horizontal_friction
@@ -259,7 +259,8 @@ class Player(pygame.sprite.Sprite):
         in_landing_lag = self.fighter.landing_lag_timer > 0  # waveland lock (#202)
         dodge_initiated = False
         if (not in_hitstun and not in_shieldstun and not in_landing_lag
-                and self.state not in ("dodge", "hurt", "stun", "prone")):
+                and self.state not in ("dodge", "hurt", "stun", "prone",
+                                       "getup_roll", "getup_attack")):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
@@ -297,10 +298,26 @@ class Player(pygame.sprite.Sprite):
                 dir_x = self._held_dir_x(input_frame)
                 if dir_x != 0:
                     self.fighter.start_getup_roll(dir_x)
+                elif self.controls["attack"] in input_frame.held:
+                    # Getup-attack (#225): swing a wake-up attack instead of standing.
+                    # Run the move clock directly so the hitbox spawns via the normal
+                    # path below; the chart routes prone -> getup_attack this frame.
+                    # getup_attack_timer mirrors the move duration and drives the
+                    # state exit + intangibility (decremented below like getup_roll).
+                    self._clock.start(GETUP_ATTACK)
+                    self.fighter.getup_attack_timer = (
+                        GETUP_ATTACK.startup + GETUP_ATTACK.active + GETUP_ATTACK.recovery
+                    )
+                    self.fighter.invulnerable = True  # getup intangibility (⚠ playtest:
+                    # held for the whole swing for v1; tighten to startup+active later)
         if self.fighter.getup_roll_timer > 0:
             self.fighter.getup_roll_timer -= 1  # roll + intangibility window (#146)
             if self.fighter.getup_roll_timer == 0 and self.state == "getup_roll":
                 self.fighter.invulnerable = False  # intangibility ends with the roll
+        if self.fighter.getup_attack_timer > 0:
+            self.fighter.getup_attack_timer -= 1  # wake-up attack duration (#225)
+            if self.fighter.getup_attack_timer == 0 and self.state == "getup_attack":
+                self.fighter.invulnerable = False  # intangibility ends with the swing
         if self.fighter.landing_lag_timer > 0:
             self.fighter.landing_lag_timer -= 1  # waveland lock window (#202)
         if self.fighter.shieldstun_timer > 0:

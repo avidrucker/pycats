@@ -142,6 +142,42 @@ def test_neutral_getup_still_stands_without_direction():
     assert p.state == "idle"
 
 
+# --- #225 (#146 slice 2): getup-attack — a wake-up attack out of prone ---------
+
+def test_getup_attack_when_attack_held_swings_intangible_and_spawns_hitbox():
+    """Holding attack as the getup window ends performs a wake-up attack — a
+    getup_attack state that spawns a hitbox, intangible, then recovers to idle."""
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    grp = pygame.sprite.Group()
+    p.force_prone(3)
+    for _ in range(3):                       # hold attack through the prone window
+        p.update(_frame("attack"), plats, grp)
+    assert p.state == "getup_attack", "attack held at getup should swing, not stand"
+    assert p.fighter.invulnerable, "getup-attack has getup intangibility"
+    spawned = len(grp) > 0
+    for _ in range(30):                      # the swing spawns a hitbox, then recovers
+        p.update(_frame(), plats, grp)
+        spawned = spawned or len(grp) > 0
+        if p.state == "idle":
+            break
+    assert spawned, "getup-attack should spawn a hitbox"
+    assert p.state == "idle"
+    assert not p.fighter.invulnerable, "intangibility ends with the getup-attack"
+
+
+def test_getup_roll_beats_getup_attack_when_both_held():
+    """A held direction (roll) takes precedence over attack at getup."""
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    p.force_prone(3)
+    for _ in range(3):
+        _run(p, plats, _frame("right", "attack"))
+    assert p.state == "getup_roll"
+
+
 # --- #173: prone posture geometry — body lowers, high attacks whiff -----------
 
 def test_prone_resizes_collision_rect_feet_planted():
