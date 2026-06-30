@@ -242,6 +242,14 @@ class AttackerController(BaseController):
         keys = a.controls
         held = set()
 
+        # Ledge recovery (#291): a hanging fighter only escapes by pressing up (the
+        # neutral getup, #14) — otherwise it hangs to a timeout/drop KO. Skilled bots
+        # (level >= 5) recover; low levels and the default (level=None) fall through
+        # unchanged, so the baseline / golden-safe controller is untouched.
+        if (getattr(a.fighter, "grabbed_ledge", None) is not None
+                and self.level is not None and self.level >= 5):
+            return {keys["up"]}
+
         if t.fighter.is_alive:
             dx = t.rect.centerx - a.rect.centerx
             dy = t.rect.centery - a.rect.centery
