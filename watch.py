@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import random
+from collections import Counter
 
 from pycats.config import FPS
 from pycats.sim.runner import run_battle
@@ -19,7 +20,18 @@ from pycats.sim.presenters import LivePresenter, VideoPresenter
 from pycats.sim.controllers import (
     AttackerController, IdlerController, FollowerController,
 )
+from pycats.sim.battle_log import events_from_snaps, render
 from pycats.characters.roster import ARCHETYPE_ROSTER
+
+
+def battle_log_text(snaps) -> str:
+    """Render the derived battle event-log for `snaps` with a summary header
+    (event count + per-type tally) — the `--log` output (#300)."""
+    events = events_from_snaps(snaps)
+    tally = " ".join(f"{t}:{c}" for t, c in sorted(Counter(e.type for e in events).items()))
+    header = f"=== battle log: {len(events)} events ({tally}) ==="
+    body = render(events)
+    return header + ("\n" + body if body else "")
 
 # P2 controller per `--vs` archetype (P1 is always an attacker).
 VS_CONTROLLERS = {
@@ -64,7 +76,7 @@ def resolve_battle_plan(vs, match, frames):
     return (frames if frames is not None else REPLAY_FRAMES), False
 
 
-def main():
+def main(argv=None, presenter=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--frames", type=int, default=None,
                     help="frame-cap override; defaults per mode (scripted 300, "
@@ -94,10 +106,15 @@ def main():
                     help="P1 CPU difficulty 1-9 (#231/#148); makes P1 a leveled bot.")
     ap.add_argument("--p2-level", type=int, choices=range(1, 10), default=None,
                     help="P2 CPU difficulty 1-9; makes P2 a leveled bot.")
-    args = ap.parse_args()
+    ap.add_argument("--log", action="store_true",
+                    help="after the run, print the derived battle event-log "
+                         "(jumps/attacks/hits/KOs/state changes) — a 'git-diff "
+                         "for the fight' (#300). Pair with --seed for a repro.")
+    args = ap.parse_args(argv)
 
-    presenter = (VideoPresenter(args.video) if args.video
-                 else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay))
+    if presenter is None:
+        presenter = (VideoPresenter(args.video) if args.video
+                     else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay))
     # Seed home is this CLI edge (#166): an explicit --seed is reproducible; absent
     # is clocktime (live variation). Injected into the controllers so the seed is
     # caller-controlled — controllers never import-and-call a module-level random.
@@ -122,15 +139,18 @@ def main():
         if args.match:
             controller = AttackerController(attacker_num=1, rng=rng)
         frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
+    snaps = []
     try:
-        run_battle(frames=frames, presenter=presenter,
-                   controller=controller, controllers=controllers,
-                   stop_on_match_over=stop_on_match_over,
-                   p1_char=args.p1_char, p2_char=args.p2_char)
+        snaps = run_battle(frames=frames, presenter=presenter,
+                           controller=controller, controllers=controllers,
+                           stop_on_match_over=stop_on_match_over,
+                           p1_char=args.p1_char, p2_char=args.p2_char)
     except KeyboardInterrupt:
         presenter.close()
     if args.video:
         print(f"wrote {args.video}")
+    if args.log:
+        print(battle_log_text(snaps))
 
 
 if __name__ == "__main__":
