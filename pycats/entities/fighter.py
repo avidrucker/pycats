@@ -10,10 +10,11 @@ every reader/writer is unchanged, and orchestrates the per-frame `update()`.
 
 `Fighter` is deliberately NOT a `pygame.sprite.Sprite` — it holds plain values
 (`pygame.Rect`/`Vector2` are kept as value types per the #69 Sprite-free, not
-pygame-free, boundary), enforces its contracts, and runs the rules. It keeps an
-`owner` back-reference (the established `Tail(self)` pattern) through which the
-rules reach the few things that remain Player's: the `_clock`/`engine`/`tail`
-subsystems and `char_name`.
+pygame-free, boundary), enforces its contracts, and runs the rules. It is
+**self-contained** (#264/S6): no back-reference to the Player. Domain methods that
+need an FSM transition (`_ko`, the #145 auto-knockdown in `_handle_landing`)
+*return intent*; the Player adapter applies it. The dependency is strictly
+one-way — adapter → entity — and an AST guard pins it.
 
 Invariants (S3 — enforced once, at the setter, instead of re-derived per site):
 - ``percent >= 0``                 (had NO guard before — first enforcement)
@@ -59,12 +60,10 @@ from ..combat.shield import shield_break_stun_frames
 
 
 class Fighter:
-    def __init__(self, owner, x, y, facing_right, fighter_data):
-        # Back-reference to the owning Player (the pygame Sprite adapter). Since
-        # 6b-3b the rules reach only Player's wiring through it — `owner._clock`,
-        # `owner.engine`, `owner.tail` (and `owner.char_name` in debug comments);
-        # all the simulation state is now Fighter's own.
-        self.owner = owner
+    def __init__(self, x, y, facing_right, fighter_data):
+        # No back-reference to the owning Player (#264/S6): all simulation state is
+        # Fighter's own, and the few Player-side effects are returned as intent for
+        # the adapter to apply.
 
         # ---------- per-character stats from FighterData (#123/#126) ----------
         # weight feeds the knockback formula (#40); the movement constants are
@@ -138,7 +137,7 @@ class Fighter:
         self.land_impact_vy = 0.0  # downward speed at last ground contact (#145)
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
         self.shieldstun_timer = 0  # locked-in-shield frames after a block (#140)
-        # attack_timer is a derived property over owner._clock (#71).
+        # attack_timer is a derived property on Player over its MoveClock (#71).
         self.invulnerable_timer = 0  # invulnerability mid-dodge, post-respawn, or while ledge grabbing
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True  # players can only air dodge once per sustained jump/fall, until they land
@@ -383,8 +382,6 @@ class Fighter:
         if not self.was_hit_before_ko:
             self.suicides += 1
 
-        # debugging
-        # print(f"PLAYER KO: {self.owner.char_name} fell off and lost a life! (lives: {self.lives-1})")
         # Decrement; the lives>=0 invariant (#54) is now enforced once, in the
         # Fighter.lives setter (#81), instead of clamped here. This keeps a
         # zero-life player from going negative if the is_alive / respawn gates
@@ -486,8 +483,6 @@ class Fighter:
             # Ground spot dodge - no movement, special thin platform protection
             self.vel.update(0, 0)  # No movement for ground spot dodge
             self.spot_dodge_shield_held = True
-            # debugging
-            # print(f"GROUND SPOT DODGE START: {self.owner.char_name} ground spot dodge initiated")
         elif dir_x == 0 and not self.on_ground:
             # Neutral air dodge (PM/Melee, #184): HALT momentum — replace velocity
             # with ~zero (hover), not Brawl-style preserve. Gravity still applies

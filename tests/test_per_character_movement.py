@@ -69,10 +69,6 @@ def test_step_horizontal_defaults_to_global_move_speed():
 
 # --- Fighter threads movement + weight from its FighterData ------------------
 
-class _Owner:
-    SIZE = (40, 60)
-
-
 def test_fighter_threads_movement_and_weight_from_data():
     """A Fighter reads weight + every movement constant from its FighterData,
     and seeds jumps_remaining from max_jumps. Able-to-fail: a hard-coded global
@@ -80,7 +76,7 @@ def test_fighter_threads_movement_and_weight_from_data():
     from pycats.entities.fighter import Fighter
     fd = FighterData(hurtbox=_HB, moves={}, weight=120, gravity=0.9,
                      max_fall_speed=25, move_speed=10, jump_vel=-20, max_jumps=5)
-    f = Fighter(_Owner(), x=100, y=100, facing_right=True, fighter_data=fd)
+    f = Fighter(x=100, y=100, facing_right=True, fighter_data=fd)  # #264/S6: no owner
     assert f.weight == 120
     assert (f.gravity, f.max_fall_speed, f.move_speed, f.jump_vel,
             f.max_jumps) == (0.9, 25, 10, -20, 5)

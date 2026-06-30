@@ -75,3 +75,33 @@ def test_fighter_does_not_reach_owner_clock_tail_or_size():
             if reaches_owner:
                 offenders.append(f"line {node.lineno}: owner.{node.attr}")
     assert offenders == [], "Fighter reaches the Player adapter: " + "; ".join(offenders)
+
+
+def test_fighter_has_no_player_back_reference():
+    """#264/S6 capstone: the Fighter->Player dependency is strictly one-way. The
+    aggregate holds no `self.owner` and `Fighter.__init__` takes no `owner` param —
+    domain methods return intent for the adapter to apply. Able-to-fail:
+    reintroduce the back-reference (the param or any `self.owner`) and this reds.
+    """
+    import ast
+    import pathlib
+    import pycats.entities.fighter as fm
+
+    tree = ast.parse(pathlib.Path(fm.__file__).read_text(encoding="utf-8"))
+
+    self_owner = [
+        f"line {n.lineno}"
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Attribute) and n.attr == "owner"
+        and isinstance(n.value, ast.Name) and n.value.id == "self"
+    ]
+    assert self_owner == [], "Fighter has a Player back-reference at " + ", ".join(self_owner)
+
+    fighter_cls = next(
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.ClassDef) and node.name == "Fighter"
+    )
+    init = next(n for n in fighter_cls.body
+                if isinstance(n, ast.FunctionDef) and n.name == "__init__")
+    params = [a.arg for a in init.args.args]
+    assert "owner" not in params, f"Fighter.__init__ still takes `owner`: {params}"

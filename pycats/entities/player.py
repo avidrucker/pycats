@@ -89,7 +89,7 @@ class Player(pygame.sprite.Sprite):
         # below, exposes delegating properties so readers are unchanged, and
         # orchestrates them in update(). Created early so those properties resolve
         # during the rest of __init__.
-        self.fighter = Fighter(self, x, y, facing_right, self.fighter_data)
+        self.fighter = Fighter(x, y, facing_right, self.fighter_data)
 
         # Presentation is a render-time concern (#75): the body tint is computed
         # by render_battle.body_tint(self) from this player's state, so the entity
