@@ -54,6 +54,15 @@ are the regression oracle — regenerate them with `PYCATS_UPDATE_GOLDENS=1`.
 Run tests:        SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. .venv/bin/python -m pytest -q
                       # bare pytest is the source of truth — collects & runs the whole suite
                       # green (skips OK). Add -m "not slow" to skip the benchmark tests.
+
+Copy-paste one-liner (absolute paths, runs from anywhere):
+
+    cd /home/avi/Documents/Study/Python/pycats && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. /home/avi/Documents/Study/Python/pycats/.venv/bin/python -m pytest -q
+
+The `cd <repo> && <test cmd>` form keeps `cd` a separate command from the test run
+(the `&&` is the separator), so the whole thing still pastes as one line — without
+it, `cd` plus the env vars on one line trips `bash: cd: too many arguments`, and a
+line-break after `-m` makes Python report `Argument expected for the -m option`.
 Run benchmark:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py
 Store results:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
 Watch a replay:   .venv/bin/python watch.py                    # scripted replay
