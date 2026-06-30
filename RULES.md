@@ -88,6 +88,28 @@
   thread **one at a time**, finishing it before filing the next sibling. This
   avoids premature decomposition (yegor: only decompose when about to start work).
 
+## Dependencies
+
+- **Installing a new dependency needs explicit human approval.** Do **not** add a
+  dependency on your own initiative. This covers, equivalently: `pip install <pkg>`
+  (**even into a throwaway/dev `.venv`**), adding or changing entries in a dependency
+  manifest or lockfile (`requirements*.txt`, `pyproject.toml`, `package.json`,
+  `package-lock.json`, …), `npm install <pkg>`, `apt`/system-package installs, and any
+  other way of pulling in code the project did not already declare. Ask the human and
+  proceed **only on an explicit "yes."**
+- **Using an already-declared dependency is fine; *adding* one is not.** `pygame-ce`,
+  `pytest`, and the sibling `statecharts-py` are declared (see README) — use them
+  freely. Reaching for anything new — including a "harmless dev-only" linter or
+  formatter — is the gated action: **propose it and wait; do not install it.** (The
+  `pyflakes`-into-`.venv` install during #193 is the exact case this forbids.)
+- **Why it's gated.** A new dep is supply-chain + reproducibility surface — a teammate
+  or CI without it gets a different result — and "it's dev-only / it's harmless" is the
+  rationalization that normalizes silent installs. This is the same discipline as
+  *Filing work* (a question isn't authorization) and *Closing work* (the racy push is
+  gated): agents act freely on reversible in-repo work, but environment- and
+  supply-chain-changing actions are human-gated. pycats already leans this way by
+  design — `settings.py` is deliberately stdlib-only "no new dependency, per #94."
+
 ## Fixing bugs
 
 - **Every bugfix lands a regression test in the same commit.** A fix without a

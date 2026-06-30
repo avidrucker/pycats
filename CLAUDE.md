@@ -10,6 +10,10 @@ Critical rules:
   feature priority — assign features directly instead.
 - **A question/suggestion is not authorization to create work** — answer first;
   file/claim/code only on an explicit go-ahead. See [RULES.md](./RULES.md) → "Filing work".
+- **Installing a new dependency needs explicit human approval** — `pip install` (even
+  into a dev `.venv`), manifests/lockfiles, `npm`, system packages. Using a declared
+  dep is fine; *adding* one (incl. a "harmless" dev tool) is gated — propose, don't
+  install. See [RULES.md](./RULES.md) → "Dependencies".
 - **Repro/spec-first:** if a bug's symptom isn't specific, file a `research` ticket to
   reproduce/spec it before a DEV ticket.
 - **Every bugfix lands a regression test in the same commit**, and that test must
