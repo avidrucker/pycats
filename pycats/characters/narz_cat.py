@@ -106,6 +106,27 @@ _NARZ_UTILT = MoveData(
     ),
 )
 
+# --- Neutral-air (slice 6, #307): the first sword AERIAL, a disjoint tipper swipe ---
+# Narz's first in_air move (the air/ground split, #38): the 2-box tipper shape (tip box
+# FIRST, stronger; priority = tuple order) as an aerial sword swipe around the body,
+# reaching past the hurtbox (disjoint). PM3.6 Marth `AttackAirN`, ⚠ playtest / rukaidata-
+# confirm. Tip at dx 48..72 (disjoint past the hurtbox 6..34).
+_NARZ_NAIR = MoveData(
+    name="nair",
+    in_air=True,
+    startup=4,
+    active=4,
+    recovery=12,  # 4 + 4 + 12 = 20
+    hitboxes=(
+        # TIP (box 0): far + strong.
+        Hitbox(circle=Circle(dx=60, dy=30, r=12), damage=11.0, angle=45,
+               base_knockback=15.0, knockback_growth=90.0),
+        # BASE (box 1): near + weak.
+        Hitbox(circle=Circle(dx=40, dy=30, r=14), damage=8.0, angle=45,
+               base_knockback=10.0, knockback_growth=70.0),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
@@ -113,7 +134,7 @@ NARZ_FIGHTER_DATA = FighterData(
     # the default cat until their slices land (#294). Body still the default (#290 v1).
     hurtbox=_DEFAULT.hurtbox,
     moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
-           "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT},
+           "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT, "nair": _NARZ_NAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
