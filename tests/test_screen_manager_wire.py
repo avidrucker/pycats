@@ -88,3 +88,62 @@ def test_char_select_resets_battle_via_update_action():
                                    reset=lambda: reset_calls.append(1))
     sm.update(_empty(), battle)                      # winner/loser are None
     assert reset_calls, "char_select with no winner should reset the battle"
+
+
+# --- #246: battle.step + winner-set owned by the playing-state update action ---
+
+class _FakeBattle:
+    """Records step() calls and KOs on a chosen frame, so the seam test can pin the
+    sim-step + winner-set ownership and frame timing without the real sim."""
+
+    def __init__(self, ko_on_step):
+        self.player1 = object()
+        self.player2 = object()
+        self.steps = 0
+        self._ko_on_step = ko_on_step
+        self._win = (None, None)
+        self.last_platforms = "UNSET"
+
+    def step(self, frame_input, platforms):
+        self.steps += 1
+        self.last_platforms = platforms
+        if self.steps == self._ko_on_step:
+            self._win = (self.player1, self.player2)
+
+    def winner(self):
+        return self._win
+
+    def reset(self):
+        pass
+
+
+def test_playing_update_owns_battle_step_and_winner_set():
+    """#246: the `playing` state's update action owns the per-frame `battle.step`
+    AND the winner-set — not game.py's loop. The two move together so win detection
+    still lands on the SAME frame the step produces the KO (the slice-3 frame-shift
+    risk, #230), and the playing->win_screen hop still fires on the NEXT update.
+    `platforms` is threaded through the engine ctx. Able-to-fail: red while
+    _update_playing only ticks the esc timer (battle.steps stays 0)."""
+    sm = _mk()
+    sm.engine.force("playing")
+    assert sm.get_state() == "playing"
+    platforms = ["STAGE"]                     # sentinel: must reach battle.step
+    battle = _FakeBattle(ko_on_step=3)
+
+    sm.update(_empty(), battle, platforms)    # frame 1 — step, no KO
+    assert battle.steps == 1
+    assert battle.last_platforms is platforms, "platforms must thread to battle.step"
+    assert sm.winner is None and sm.get_state() == "playing"
+
+    sm.update(_empty(), battle, platforms)    # frame 2 — step, no KO
+    assert battle.steps == 2
+    assert sm.winner is None and sm.get_state() == "playing"
+
+    sm.update(_empty(), battle, platforms)    # frame 3 — step KOs; winner set SAME frame
+    assert battle.steps == 3
+    assert sm.winner is battle.player1 and sm.loser is battle.player2
+    assert sm.get_state() == "playing", "transition is the NEXT update, not this one"
+
+    sm.update(_empty(), battle, platforms)    # frame 4 — guard sees winner -> win_screen
+    assert sm.get_state() == "win_screen"
+    assert battle.steps == 3, "no step on the transition-out frame"

@@ -201,12 +201,6 @@ def reset_game():
     battle.reset()
 
 
-def check_win_condition():
-    """(winner, loser) or (None, None) — delegates to BattleScreen.winner(), the
-    single win-condition rule shared with the headless match_engine."""
-    return battle.winner()
-
-
 def toggle_fullscreen():
     """Toggle between fullscreen and windowed mode."""
     global screen, is_fullscreen, display_surface, game_surface, scale_factor, offset_x, offset_y
@@ -346,17 +340,6 @@ _display_hooks = {
 # Screen state manager
 screen_manager = ScreenStateManager(P1_KEYS, P2_KEYS, display_hooks=_display_hooks)
 
-# Game state
-winner = None
-loser = None
-
-
-def create_players_from_selection():
-    """Create players from character selection (delegates to BattleScreen, #193)."""
-    p1_char, p2_char = screen_manager.get_selected_characters()
-    battle.create_from_selection(p1_char, p2_char)
-
-
 while running:
     dt = clock.tick(FPS)
     frame_input, events = inp.poll()
@@ -401,8 +384,9 @@ while running:
                 )
                 zoom_toast.show("P2 face: " + cat_faces.face_style_label(battle.player2.face_style))
 
-    # Update screen state manager
-    screen_manager.update(frame_input, battle)
+    # Update screen state manager. `platforms` is threaded so the playing state's
+    # engine action owns the per-frame battle.step + winner-set (#246).
+    screen_manager.update(frame_input, battle, platforms)
 
     # Check if we should quit
     if screen_manager.should_quit_game():
@@ -460,18 +444,9 @@ while running:
         )
 
     elif current_state == "playing":
-        # Check if we need to create players (first time entering playing state)
-        if battle.player1 is None or battle.player2 is None:
-            create_players_from_selection()
-
-        # ---- update (the per-frame battle sim is owned by BattleScreen, #193)
-        battle.step(frame_input, platforms)
-
-        # Check for win condition
-        winner, loser = check_win_condition()
-        if winner:
-            screen_manager.set_winner(winner, loser)
-
+        # The per-frame update (player creation, battle.step, winner-set) is owned by
+        # the playing state's engine action (screen_manager._update_playing, #246),
+        # which ran above in screen_manager.update — the loop body only renders now.
         # ---- render (battle composite owned by BattleScreen, #205 slice 2b)
         render_surface = get_render_surface()
         battle.render(render_surface, platforms)

@@ -103,16 +103,20 @@ class ScreenStateManager:
         self.loser = None
         self.should_quit = False
 
-    def update(self, frame_input, battle=None):
+    def update(self, frame_input, battle=None, platforms=None):
         """Update the screen state manager.
 
         ``battle`` (the BattleScreen, #193) is threaded into the engine ctx so the
         transition side-effects can run as entry/update actions instead of game.py
         loop branches (#230, slice 3 of #100): win_screen's from-pause stats and
         char_select's reset read ``ctx["battle"]``.
+
+        ``platforms`` (the static stage geometry) is threaded too so the playing
+        state's update action can own the per-frame ``battle.step`` (#246), instead
+        of game.py's loop body running it.
         """
         self.engine.update({"frame_input": frame_input, "screen_manager": self,
-                            "battle": battle})
+                            "battle": battle, "platforms": platforms})
 
     def render(self, surface):
         """Render the current screen."""
@@ -251,9 +255,26 @@ class ScreenStateManager:
             self.back_timer = 0
 
     def _update_playing(self, ctx):
-        """Update playing state."""
+        """Update playing state — owns the per-frame battle sim + winner-set (#246).
+
+        Runs ``battle.step`` then the win-check in one action, so win detection lands
+        on the SAME frame the step produces the KO; the ``playing->win_screen`` hop
+        then fires on the NEXT update (when ``_guard_playing_to_win_screen`` sees the
+        winner set). game.py's loop body no longer runs the sim step or the winner-set.
+        Players are created lazily on the first playing frame (the engine action runs
+        before game.py's old loop-body create, so it owns that too)."""
         frame_input = ctx["frame_input"]
         self._tick_esc_quit_timer(frame_input)
+        battle = ctx.get("battle")
+        if battle is None:
+            return
+        if battle.player1 is None or battle.player2 is None:
+            p1_char, p2_char = self.get_selected_characters()
+            battle.create_from_selection(p1_char, p2_char)
+        battle.step(frame_input, ctx.get("platforms"))
+        winner, loser = battle.winner()
+        if winner:
+            self.set_winner(winner, loser)
 
     def _update_pause(self, ctx):
         """Update pause state."""
