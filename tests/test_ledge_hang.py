@@ -6,8 +6,10 @@ neutral getup (up) / drop (down or away) / timeout. One-occupant lockout per edg
 """
 import pygame
 
+from pycats.entities import Player
 from pycats.entities.ledge import Ledge, LEFT, RIGHT, ledges_from_platforms
 from pycats.entities.platform import Platform
+from pycats.core.input import InputFrame
 from pycats import config
 
 
@@ -17,6 +19,40 @@ def _thick(x, y, w, h):
 
 def _thin(x, y, w, h):
     return Platform(pygame.Rect(x, y, w, h), thin=True)
+
+
+# --- shared scaffolding (verified against tests/test_prone.py) ---------------
+
+_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
+                 down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
+                 shield=pygame.K_x)
+
+
+def _player():
+    return Player(200, 200, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
+                  char_name="P1", facing_right=True)
+
+
+def _frame(*keys):
+    ks = {_CONTROLS[k] for k in keys}
+    return InputFrame(held=set(ks), pressed=set(ks), released=set())
+
+
+def _empty_frame():
+    return _frame()
+
+
+def _frame_up(p):    return _frame("up")
+def _frame_down(p):  return _frame("down")
+def _frame_left(p):  return _frame("left")
+
+
+def p_attack_group():
+    return pygame.sprite.Group()
+
+
+def _stage():
+    return [_thick(80, 410, 800, 80)]
 
 
 # --- Task 1: Ledge value + geometry ------------------------------------------
@@ -58,3 +94,35 @@ def test_away_held_is_off_stage_direction():
     assert Ledge(LEFT, 80, 410).away_held(left_held=True, right_held=False) is True
     assert Ledge(LEFT, 80, 410).away_held(left_held=False, right_held=True) is False
     assert Ledge(RIGHT, 880, 410).away_held(left_held=False, right_held=True) is True
+
+
+# --- Task 2: fighter fields + ledge_hang statechart leaf ---------------------
+
+def test_force_ledge_grab_enters_hang_and_exits():
+    p = _player()
+    p.fighter.grabbed_ledge = object()      # stand-in: "is hanging"
+    p.fighter.on_ground = False
+    p.engine.force("ledge_grab")
+    assert p.state == "ledge_hang"
+    p.fighter.grabbed_ledge = None          # release while airborne -> fall
+    p.engine.tick(None)
+    assert p.state == "fall"
+
+
+def test_ledge_hang_release_on_ground_goes_idle():
+    p = _player()
+    p.fighter.grabbed_ledge = object()
+    p.fighter.on_ground = False
+    p.engine.force("ledge_grab")
+    assert p.state == "ledge_hang"
+    p.fighter.grabbed_ledge = None
+    p.fighter.on_ground = True
+    p.engine.tick(None)
+    assert p.state == "idle"
+
+
+def test_fighter_ledge_fields_default():
+    p = _player()
+    assert p.fighter.grabbed_ledge is None
+    assert p.fighter.ledge_hang_timer == 0
+    assert p.fighter.ledge_regrab_lockout_timer == 0

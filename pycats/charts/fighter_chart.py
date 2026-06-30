@@ -288,13 +288,27 @@ def build_fighter_chart(p):
         _tick(lambda e, d: p.fighter.landing_lag_timer <= 0, "idle"),
     )
 
+    # Ledge-hang (#14): force-entry via force_ledge_grab (player.update detects the
+    # grab and sends it, mirroring force_prone). The hang holds while grabbed_ledge
+    # is set; player.update releases it — neutral getup repositions onto the stage
+    # (-> idle), while drop/timeout leaves the fighter airborne (-> fall).
+    # Intangibility reuses `invulnerable`, so the defensive_status region flips to
+    # intangible for free.
+    ledge_hang = state(
+        {"id": "ledge_hang"},
+        _tick(lambda e, d: p.fighter.grabbed_ledge is None and p.fighter.on_ground, "idle"),
+        _tick(lambda e, d: p.fighter.grabbed_ledge is None and not p.fighter.on_ground, "fall"),
+    )
+
     action = state(
         {"id": "action", "initial": "idle"},
-        # force_ko / force_idle / force_prone hoisted to the action parent: they
-        # fire on distinct events, so they never reorder the per-leaf tick transitions.
+        # force_ko / force_idle / force_prone / force_ledge_grab hoisted to the
+        # action parent: they fire on distinct events, so they never reorder the
+        # per-leaf tick transitions.
         on("force_ko", "ko"),
         on("force_idle", "idle"),
         on("force_prone", "prone"),
+        on("force_ledge_grab", "ledge_hang"),
         actionable,
         attacking,
         dodging,
@@ -305,6 +319,7 @@ def build_fighter_chart(p):
         getup_attack,
         helpless,
         landing_lag,
+        ledge_hang,
     )
 
     defensive_status = state(
