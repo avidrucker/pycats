@@ -36,12 +36,14 @@ def test_narz_non_delta_fields_match_baseline():
     assert narz.max_fall_speed == default.max_fall_speed
 
 
-def test_narz_reuses_default_placeholders_for_boxes_and_moves():
-    # slice 1 authors NO Narz moves — hurtbox/moves are the default cat's placeholders
+def test_narz_keeps_default_placeholders_except_its_own_moves():
+    # hurtbox is still the default placeholder (#290 v1 body); the "attack" neutral-A
+    # alias is kept as a placeholder, but slice 2 (#299) adds Narz's own "ftilt".
     narz = load_fighter_data("narz")
     default = load_fighter_data("default")
     assert narz.hurtbox == default.hurtbox
-    assert narz.moves == default.moves
+    assert narz.moves["attack"] == default.moves["attack"]   # placeholder kept
+    assert "ftilt" in narz.moves and "ftilt" not in default.moves  # Narz's own move
 
 
 def test_narz_is_in_the_selectable_roster():
