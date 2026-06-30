@@ -7,6 +7,7 @@ import pygame
 from ..config import SCREEN_WIDTH, SCREEN_HEIGHT, BG_COLOR, FPS, WHITE, HUD_PADDING
 from ..render_battle import render_battle, render_attacks
 from .. import text_utils
+from .captions import draw_captions
 
 
 class HeadlessPresenter:
@@ -22,7 +23,7 @@ class LivePresenter:
     readout shows the true achievable rate. `overlay=True` draws an FPS counter
     plus each fighter's stocks/damage."""
 
-    def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True):
+    def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True, captions=()):
         import os
         os.environ.pop("SDL_VIDEODRIVER", None)
         pygame.display.quit()
@@ -32,6 +33,7 @@ class LivePresenter:
         self.clock = pygame.time.Clock()
         self.cap_fps = cap_fps
         self.overlay = overlay
+        self.captions = list(captions)  # demo captions (#306); presentation overlay
 
     def _draw_overlay(self, players):
         cap = "capped@60" if self.cap_fps else "uncapped"
@@ -53,6 +55,7 @@ class LivePresenter:
         render_attacks(self.screen, attacks)
         if self.overlay:
             self._draw_overlay(players)
+        draw_captions(self.screen, self.captions, frame)
         pygame.display.flip()
         self.clock.tick(FPS) if self.cap_fps else self.clock.tick()
 
@@ -63,7 +66,7 @@ class LivePresenter:
 class VideoPresenter:
     """Writes each frame to a video file. Requires imageio (+ imageio-ffmpeg)."""
 
-    def __init__(self, path="battle.mp4", fps=FPS):
+    def __init__(self, path="battle.mp4", fps=FPS, captions=()):
         try:
             import imageio.v2 as imageio
         except Exception as exc:  # pragma: no cover - optional dep
@@ -73,11 +76,13 @@ class VideoPresenter:
         self._imageio = imageio
         self._writer = imageio.get_writer(path, fps=fps)
         self._surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.captions = list(captions)  # demo captions (#306); presentation overlay
 
     def show(self, platforms, players, attacks, frame):
         self._surface.fill(BG_COLOR)
         render_battle(self._surface, players, platforms)
         render_attacks(self._surface, attacks)
+        draw_captions(self._surface, self.captions, frame)
         arr = pygame.surfarray.array3d(self._surface).transpose(1, 0, 2)
         self._writer.append_data(arr)
 
