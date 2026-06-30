@@ -31,6 +31,11 @@ class LevelParams:
     # attacks"); low levels shield "at random times" (the #238 unconditional roll).
     # When True, shield_chance is reused as the *reliability* of a reactive shield.
     reactive_shield: bool = False
+    # #274/#251: whiff-punish — when the opponent is in the RECOVERY phase of a move
+    # (committed/whiffed) in range, attack immediately (bypass the cadence gate) to
+    # punish the opening. High levels punish (paired with reactive_shield); low levels
+    # don't. Off = the pre-#274 cadence-only attack.
+    whiff_punish: bool = False
     # Capability gate (#248 / #148 step 3). Only "specials" is wired today (the bot
     # presses B → fireball); tilts/aerials emerge from the move-select seam when the
     # bot attacks while moving/airborne, and smash/grab don't exist in pycats yet —
@@ -41,11 +46,11 @@ class LevelParams:
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
 # are pycats interpolations — tuning starting points, not measured PM data.
 LEVEL_PARAMS: dict[int, LevelParams] = {
-    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, enabled_moves=frozenset({"jab"})),
-    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, enabled_moves=frozenset({"jab", "tilts"})),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"})),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"})),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"})),
+    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab"})),
+    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab", "tilts"})),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"})),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"})),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"})),
 }
 
 
@@ -124,7 +129,7 @@ class AttackerController(BaseController):
                  attack_range=45, safe_x=(110, 850), drop_threshold=20, rng=None,
                  reaction_delay=0, level=None,
                  follow_through_p=1.0, shield_chance=0.0,
-                 reactive_shield=False,
+                 reactive_shield=False, whiff_punish=False,
                  shield_threat_range=160, shield_threat_dy=80,
                  enabled_moves=frozenset({"jab", "tilts", "aerials"}),
                  fireball_range=450):
@@ -139,6 +144,7 @@ class AttackerController(BaseController):
             follow_through_p = lp.follow_through_p
             shield_chance = lp.shield_chance
             reactive_shield = lp.reactive_shield
+            whiff_punish = lp.whiff_punish
             enabled_moves = lp.enabled_moves
         # #248: capability gate + ranged-special (fireball) poke distance. Default
         # excludes "specials" → the ranged-special branch never fires (golden-safe).
@@ -154,6 +160,8 @@ class AttackerController(BaseController):
         # `shield_threat_range` px (and `shield_threat_dy` px vertically), after the
         # `reaction_delay` window; shield_chance is then the per-frame *reliability*.
         self.reactive_shield = reactive_shield
+        # #274: punish a committed/whiffed move during its recovery (off = cadence-only).
+        self.whiff_punish = whiff_punish
         self.shield_threat_range = shield_threat_range  # ⚠ GUESS px (~2 char-lengths, #251)
         self.shield_threat_dy = shield_threat_dy        # ⚠ GUESS px (vertical threat band)
         self._threat_since = None  # frame a threat first appeared (reaction-window tracker)
@@ -193,8 +201,11 @@ class AttackerController(BaseController):
            a *moving* projectile must also be *closing* (heading toward the bot).
 
         Pure function of the frame snapshot → deterministic, replay/golden-safe."""
-        # (1) opponent winding up a move nearby (gives lead time to shield).
-        if getattr(t, "current_move", None) is not None and t.fighter.is_alive:
+        # (1) opponent winding up a move nearby (gives lead time to shield). #274:
+        # only startup/active is a THREAT — a move in recovery is a whiff-punish
+        # opportunity (see _whiff_open), not something to shield.
+        mv = getattr(t, "current_move", None)
+        if mv is not None and t.fighter.is_alive and t.move_frame <= mv.startup + mv.active:
             if self._in_threat_band(a, t.rect.centerx, t.rect.centery):
                 return True
         # (2) opponent-owned hitbox/projectile in flight.
@@ -213,6 +224,19 @@ class AttackerController(BaseController):
                     continue
             return True
         return False
+
+    def _whiff_open(self, a, t) -> bool:
+        """#274: is the opponent `t` in the RECOVERY phase of a move and within melee
+        range of `a`? Recovery = move_frame past startup+active while the move is still
+        live (the clock clears the move at frame >= total). A punishable opening."""
+        mv = getattr(t, "current_move", None)
+        if mv is None or not t.fighter.is_alive:
+            return False
+        if t.move_frame <= mv.startup + mv.active:
+            return False  # still startup/active (a threat, not an opening)
+        adx = abs(t.rect.centerx - a.rect.centerx)
+        dy = abs(t.rect.centery - a.rect.centery)
+        return adx <= self.attack_range and dy < 60
 
     def decide(self, a, t, frame, attacks=None) -> set:
         keys = a.controls
@@ -255,6 +279,15 @@ class AttackerController(BaseController):
             # times." Default shield_chance 0.0 → no roll, no change (golden-safe).
             elif self.shield_chance > 0.0 and self.rng.random() < self.shield_chance:
                 return {keys["shield"]}
+            # #274: whiff-punish — the opponent committed a laggy move and is now in
+            # its RECOVERY phase, in range → strike the opening IMMEDIATELY, bypassing
+            # the attack_period cadence gate, gated by follow-through reliability.
+            # Default whiff_punish=False → never runs (golden-safe; rng untouched).
+            if self.whiff_punish and self._whiff_open(a, t):
+                if (self.follow_through_p >= 1.0
+                        or self.rng.random() < self.follow_through_p):
+                    self._last_attack = self._f
+                    return {keys["attack"]}
             lo, hi = self.safe_x
             toward = keys["right"] if dx > 0 else keys["left"]
             away = keys["left"] if dx > 0 else keys["right"]
