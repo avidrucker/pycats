@@ -23,16 +23,19 @@ class LevelParams:
     reaction_delay: int   # frames in-range before the first attack fires
     attack_period: int    # frames between attacks (cadence)
     standoff: int         # desired horizontal gap (px)
+    # Seeded-RNG knobs (#238 / #148 step 2), rolled against self.rng (#166):
+    follow_through_p: float = 1.0   # P(commit a chosen attack); 1.0 = always
+    shield_chance: float = 0.0      # P(raise shield this frame); 0.0 = never
 
 
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
 # are pycats interpolations — tuning starting points, not measured PM data.
 LEVEL_PARAMS: dict[int, LevelParams] = {
-    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45),
-    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30),
+    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00),
+    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85),
 }
 
 
@@ -106,15 +109,22 @@ class AttackerController(BaseController):
 
     def __init__(self, attacker_num=1, attack_period=12, standoff=30,
                  attack_range=45, safe_x=(110, 850), drop_threshold=20, rng=None,
-                 reaction_delay=0, level=None):
+                 reaction_delay=0, level=None,
+                 follow_through_p=1.0, shield_chance=0.0):
         super().__init__(attacker_num, rng=rng)
-        # #232: a difficulty `level` (1-9) overrides the deterministic knobs from
-        # the #148 table; level=None keeps the explicit defaults (golden-safe).
+        # #232/#238: a difficulty `level` (1-9) overrides the knobs from the #148
+        # table; level=None keeps the explicit defaults (golden-safe).
         if level is not None:
             lp = level_params(level)
             attack_period = lp.attack_period
             standoff = lp.standoff
             reaction_delay = lp.reaction_delay
+            follow_through_p = lp.follow_through_p
+            shield_chance = lp.shield_chance
+        # #238: seeded-RNG knobs (rolled against self.rng, #166). Defaults keep the
+        # pre-#238 behaviour AND never touch the rng stream (always commit; never shield).
+        self.follow_through_p = follow_through_p
+        self.shield_chance = shield_chance
         self.level = level
         # reaction_delay (#232): frames the target must stay in range before the
         # FIRST attack fires. 0 = react instantly (the pre-#232 behaviour).
@@ -141,6 +151,10 @@ class AttackerController(BaseController):
         held = set()
 
         if t.fighter.is_alive:
+            # #238: stochastic shield (seeded, #166). Default shield_chance 0.0 →
+            # no roll, no change. A shielding frame is purely defensive (no move/attack).
+            if self.shield_chance > 0.0 and self.rng.random() < self.shield_chance:
+                return {keys["shield"]}
             dx = t.rect.centerx - a.rect.centerx
             dy = t.rect.centery - a.rect.centery
             adx = abs(dx)
@@ -193,8 +207,14 @@ class AttackerController(BaseController):
                 self._in_range_since = None
                 reacted = False
             if in_range and reacted and (self._f - self._last_attack) >= self.attack_period:
-                held.add(keys["attack"])
-                self._last_attack = self._f
+                # #238: follow-through — commit the attack only with probability
+                # follow_through_p (seeded). p >= 1.0 skips the roll (always commit,
+                # golden-safe default); a failed roll hesitates and retries later.
+                commit = (self.follow_through_p >= 1.0
+                          or self.rng.random() < self.follow_through_p)
+                if commit:
+                    held.add(keys["attack"])
+                    self._last_attack = self._f
 
         return held
 

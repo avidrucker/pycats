@@ -5,6 +5,7 @@ standoff) from the #148 Q5 table; a level-less controller is unchanged (golden-s
 RNG knobs (follow-through / shield) are a later child. Numbers per #148 (tuning
 starting points).
 """
+import random
 import types
 
 import pygame as pg
@@ -71,3 +72,56 @@ def test_reaction_delay_gates_first_attack_higher_level_attacks_sooner():
     lv9, lv1 = _first_attack_frame(9), _first_attack_frame(1)
     assert lv9 is not None and lv1 is not None, f"both should attack; lv9={lv9} lv1={lv1}"
     assert lv9 < lv1, f"Lv9 (delay 1) must attack before Lv1 (delay 30): lv9={lv9} lv1={lv1}"
+
+
+# ---- #238: seeded follow-through + shield propensity ----
+
+def test_level_params_includes_seeded_knobs():
+    assert (level_params(1).follow_through_p, level_params(1).shield_chance) == (0.15, 0.00)
+    assert (level_params(5).follow_through_p, level_params(5).shield_chance) == (0.55, 0.15)
+    assert (level_params(9).follow_through_p, level_params(9).shield_chance) == (1.00, 0.85)
+
+
+def test_controller_pulls_seeded_knobs_from_level():
+    c9 = AttackerController(level=9)
+    assert (c9.follow_through_p, c9.shield_chance) == (1.00, 0.85)
+    c1 = AttackerController(level=1)
+    assert (c1.follow_through_p, c1.shield_chance) == (0.15, 0.00)
+
+
+def test_default_controller_always_commits_never_shields():
+    c = AttackerController()  # golden-safe default: no rng-driven divergence
+    assert c.follow_through_p == 1.0
+    assert c.shield_chance == 0.0
+
+
+def _count(level_kwargs, key, frames=360, seed=0):
+    c = AttackerController(attacker_num=1, rng=random.Random(seed), **level_kwargs)
+    a, t = _stub(100, 300), _stub(140, 300)  # in range, dy=0
+    n = 0
+    for k in range(frames):
+        fi = c(a, t, frame=k)
+        if _CTRL[key] in fi.held:
+            n += 1
+    return n
+
+
+def test_low_follow_through_commits_fewer_attacks_than_high():
+    # same cadence/reaction, different follow-through; fixed seed → deterministic.
+    base = dict(attack_period=12, reaction_delay=0, shield_chance=0.0)
+    high = _count({**base, "follow_through_p": 1.0}, "attack")
+    low = _count({**base, "follow_through_p": 0.1}, "attack")
+    assert low < high, f"low follow-through should attack less: low={low} high={high}"
+
+
+def test_shield_chance_raises_shield_and_seed_changes_pattern():
+    base = dict(attack_period=12, reaction_delay=0, follow_through_p=1.0, shield_chance=0.5)
+
+    def shield_frames(seed):
+        c = AttackerController(attacker_num=1, rng=random.Random(seed), **base)
+        a, t = _stub(100, 300), _stub(140, 300)
+        return [k for k in range(60) if _CTRL["shield"] in c(a, t, frame=k).held]
+
+    s1, s2 = shield_frames(1), shield_frames(2)
+    assert len(s1) >= 1, "shield_chance>0 should raise shield on at least one frame"
+    assert s1 != s2, "different seeds should change the shield pattern (#166)"
