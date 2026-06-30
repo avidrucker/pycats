@@ -8,20 +8,17 @@ review doc linked below.
 
 ## Ubiquitous language
 
-The domain vocabulary, shared by the code, the tests, and the issue tracker. Terms
-match the #39/#40 combat specs and SSBWiki.
+The domain vocabulary, shared by the code, the tests, and the issue tracker. The
+**mechanics** terms (hitbox, hurtbox, knockback/BKB/KBG, hitstun, shield, dodge, prone,
+dizzy, ledge-hang, KO, startup/active/recovery, …) are defined once in the
+**[glossary](./docs/glossary.md)** — don't restate them here. Below are the
+**pycats-specific** terms that tie those mechanics to *this* codebase:
 
 - **fighter** — a combatant's pure domain state/rules (`Fighter`), independent of how it's drawn or controlled.
 - **player** — the thin pygame `Sprite` adapter wrapping a `Fighter` for the live game.
-- **hurtbox** — the region where a fighter *can be hit* (circles on the body).
-- **hitbox** — the region of an *attack* that deals damage when it overlaps a hurtbox.
 - **percent** — accumulated damage (≥ 0); higher percent ⇒ more knockback.
-- **knockback** — launch velocity dealt by a hit. **BKB** = base knockback (fixed part); **KBG** = knockback growth (scales with percent).
-- **hitstun** — frames after being hit during which a fighter can't act.
-- **startup / active / recovery** — the three phases of a move: wind-up, hitbox-live, cooldown.
-- **shield** — a depletable defensive bubble (`shield_hp`); breaking it causes **stun**.
-- **dizzy / prone / ledge-hang** — fighter states (post-shield-break dizzy; knocked-down prone; hanging on a ledge).
-- **stock / KO / fall** — a life; a knockout; losing a stock.
+- **stock / fall** — a life; losing one (the KO itself is in the [glossary](./docs/glossary.md)).
+- **fighter states** — the FSM labels the statechart emits (`idle`/`run`/`jump`/`fall`/`shield`/`dodge`/`hurt`/`prone`/`ledge_hang`/…); each mechanic is in the glossary, the state graph in [`pm-reference/fighter-states.md`](./docs/pm-reference/fighter-states.md).
 - **MoveClock** — the single source of "where are we in the current move" (replaced the old triple representation).
 - **golden** — a recorded deterministic snapshot used as the regression oracle (`tests/golden/`).
 

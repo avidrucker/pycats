@@ -157,6 +157,7 @@ doc or ticket, it carries the meaning recorded below.
 | **deterministic** | Same inputs → same outputs every frame (no RNG, no wall-clock); required for golden/parity safety. | [CONTEXT.md](../CONTEXT.md) |
 | **stochastic** | Involves randomness (RNG-driven) — the opposite of deterministic. pycats controllers must be RNG-free, which is why Smash's stochastic CPU AI can't be copied directly. | [npc-behaviors](./research/2026-06-25-npc-behaviors-and-dual-controller.md) |
 | **fleet / claim** | The multi-agent workflow; an agent claims a ticket via `pmtools claim <issue> --as <fruit>`. | [RULES.md](../RULES.md) |
+| **fighter / player / MoveClock / percent** | pycats code-domain terms (pure domain object vs its sprite adapter; the move-progress clock; accumulated damage). | [CONTEXT.md](../CONTEXT.md#ubiquitous-language) |
 
 ---
 
