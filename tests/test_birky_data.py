@@ -41,7 +41,7 @@ def test_birky_reuses_default_hurtbox_but_has_no_placeholder_moves():
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
     assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair", "fair",
-                                "bair", "uair"}
+                                "bair", "uair", "dair"}
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():
@@ -163,3 +163,16 @@ def test_birky_uair_is_two_window_juggle():
     assert early and late
     assert all(h.damage == 15.0 and h.angle == 75 for h in early)
     assert all(h.damage == 12.0 and h.angle == 30 for h in late)
+
+
+def test_birky_dair_is_looping_spike_drill():
+    """Birky's dair = PM3.6 Kirby AttackAirLw: IASA 50, a looping drill
+    (rehit_rate 3), dmg 3, angle 270 (down spike), BKB 10."""
+    birky = load_fighter_data("birky")
+    dair = birky.moves["dair"]
+    assert dair.in_air is True
+    assert dair.startup + dair.active + dair.recovery == 50  # PM3.6 IASA
+    assert dair.rehit_rate == 3
+    assert dair.hitboxes
+    assert all(h.damage == 3.0 and h.angle == 270 and h.base_knockback == 10.0
+               for h in dair.hitboxes)

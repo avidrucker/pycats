@@ -204,14 +204,34 @@ _BIRKY_UAIR = MoveData(
     ),
 )
 
+# --- Down-air (slice 3, #260): PM3.6 Kirby AttackAirLw — a looping spike drill ------
+# rukaidata PM3.6 Kirby AttackAirLw: 55f total, IASA 50; active windows 13-14/16-17/
+# 19-20/22-23/25-26/28-29 (2 active / 1 gap → rehit every 3 frames). All hits dmg 3,
+# angle 270 (down spike), BKB 10, KBG 100; 2 hitboxes, radii round(size×5.4) for
+# 6.05/4.69u ≈ 33/25, BELOW the cat (high dy). rehit_rate like nalio d-air. Playtest.
+_BIRKY_DAIR = MoveData(
+    name="dair",
+    in_air=True,
+    startup=12,
+    active=17,
+    recovery=21,  # active f13-29; 12 + 17 + 21 = 50 (PM3.6 IASA)
+    rehit_rate=3,  # 2-active / 1-gap loop → rehit every 3 frames (⚠ playtest start)
+    hitboxes=(
+        Hitbox(circle=Circle(dx=18, dy=52, r=33), damage=3.0, angle=270,
+               base_knockback=10.0, knockback_growth=100.0, active_start=13, active_end=29),
+        Hitbox(circle=Circle(dx=26, dy=56, r=25), damage=3.0, angle=270,
+               base_knockback=10.0, knockback_growth=100.0, active_start=13, active_end=29),
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
     # hurtbox/posture still reuse the default cat (body geometry is a separate concern);
-    # ground normals (#240/#245/#247/#249) + nair (#255) + fair (#256) + bair (#258)
-    # + uair (#259).
+    # ground normals (#240/#245/#247/#249) + aerials nair #255 / fair #256 / bair #258
+    # / uair #259 / dair #260 — Birky's full normals + aerials.
     hurtbox=_DEFAULT.hurtbox,
     moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT,
            "utilt": _BIRKY_UTILT, "nair": _BIRKY_NAIR, "fair": _BIRKY_FAIR,
-           "bair": _BIRKY_BAIR, "uair": _BIRKY_UAIR},
+           "bair": _BIRKY_BAIR, "uair": _BIRKY_UAIR, "dair": _BIRKY_DAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
