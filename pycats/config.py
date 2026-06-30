@@ -71,6 +71,14 @@ WAVEDASH_ANGLE_DEG = 17.1
 # Melee so the frame count maps 1:1, but it stays a tuning starting point (#192).
 WAVEDASH_LANDING_LAG = 10
 
+# Ledge-hang (#14). ⚠ playtest starting points (no published PM px values; pycats
+# scale). LEDGE_HANG_FRAMES doubles as the intangibility window for v1 (decay-on-
+# regrab is deferred). The catch region is a box hanging off a solid-stage corner.
+LEDGE_CATCH_W = 24    # px outward from the edge corner the catch box spans
+LEDGE_CATCH_H = 64    # px downward from the lip the catch box spans
+LEDGE_HANG_FRAMES = 120          # ~2s @60fps before auto-release (timeout)
+LEDGE_REGRAB_LOCKOUT_FRAMES = 30  # post-release frames grab is suppressed
+
 # ---------------- combat / attacks ----------------
 PLAYER_ATTACK_DURATION = 12  # this can be different than the lifetime of an attack, for example, a fireball could take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames
 ATTACK_SIZE = (30, 18)  # width, height — render-only: sizes the drawn hit-box rect
