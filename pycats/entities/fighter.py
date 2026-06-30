@@ -41,6 +41,8 @@ from ..config import (
     DODGE_TIME,
     DODGE_SPEED,
     DODGE_AIR_SPEED,
+    WAVEDASH_ANGLE_DEG,
+    WAVEDASH_LANDING_LAG,
     KNOCKBACK_LAUNCH_FACTOR,
     CROUCH_CANCEL_FACTOR,
     SAKURAI_ANGLE_CODE,
@@ -121,6 +123,7 @@ class Fighter:
         self.hurt_timer = 0
         self.stun_timer = 0
         self.prone_timer = 0  # knockdown/getup window (#13); prone while > 0
+        self.landing_lag_timer = 0  # post-waveland action lock (#202); locked while > 0
         self.land_impact_vy = 0.0  # downward speed at last ground contact (#145)
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
         self.shieldstun_timer = 0  # locked-in-shield frames after a block (#140)
@@ -139,6 +142,10 @@ class Fighter:
         # PM-faithful air dodge (#184): True while an air dodge is in progress, so the
         # statechart routes the dodge's exit to `helpless` (not `fall`); cleared on land.
         self.air_dodge_active = False
+        # Wavedash (#202): True while a *diagonal-down* air dodge is in progress, so
+        # landing cancels into a waveland (slide + landing lag) rather than a plain
+        # land. Set in _start_dodge, consumed/cleared in _handle_landing.
+        self.wavedash_armed = False
 
         # ---------- facing ----------
         self.facing_right = facing_right
@@ -258,6 +265,19 @@ class Fighter:
             self.jumps_remaining = self.max_jumps  # reset jumps when landing
             self.air_dodge_ok = True  # reset air dodge availability
             self.air_dodge_active = False  # landing ends helpless/special-fall (#184)
+
+            # Waveland (#202): a diagonal-down air dodge that touches the ground
+            # cancels into a grounded slide + landing lag. End the dodge cleanly
+            # (drop intangibility now) but KEEP the horizontal velocity — that's the
+            # slide, which decays under GROUND_FRICTION during the lag. The chart
+            # routes dodge/helpless -> `landing_lag` while landing_lag_timer > 0, and
+            # the dodge-end vel.x zeroing in player.update is guarded off the timer so
+            # the momentum survives.
+            if self.wavedash_armed:
+                self.wavedash_armed = False
+                self.landing_lag_timer = WAVEDASH_LANDING_LAG
+                self.dodge_timer = 0
+                self.invulnerable = False
             # Auto landing-velocity knockdown (#145): landing hard while still in
             # hitstun (tumble) without teching forces `prone` (#13). The hurt-timer
             # gate is what separates this from a normal jump landing (same impact
@@ -315,6 +335,7 @@ class Fighter:
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True
         self.air_dodge_active = False  # clear helpless/special-fall on respawn (#184)
+        self.wavedash_armed = False  # nor a pending waveland (#202)
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP
         self.shield_attempting = False
@@ -328,6 +349,7 @@ class Fighter:
         self.dodge_timer = 0
         self.hurt_timer = 0
         self.stun_timer = 0
+        self.landing_lag_timer = 0  # don't carry a waveland lock across a KO/respawn (#202)
         self.hitlag_timer = 0  # don't carry a freeze across a KO/respawn (#138)
         self.shieldstun_timer = 0  # nor a block-stun (#140)
         self.invulnerable_timer = 0
@@ -355,10 +377,11 @@ class Fighter:
         self.stun_timer = shield_break_stun_frames(self.percent)
         self.vel.update(0, 0)
 
-    def _start_dodge(self, dir_x: int) -> None:
+    def _start_dodge(self, dir_x: int, dir_y: int = 0) -> None:
         self.dodge_timer = DODGE_TIME
         self.invulnerable = True
         self.dodge_blocked_by_edge = False  # Reset edge blocking flag
+        self.wavedash_armed = False  # only a diagonal-down air dodge re-arms it (below)
 
         # Only set spot_dodge_shield_held for ground-based spot dodges (not air dodges)
         if dir_x == 0 and self.on_ground:
@@ -386,6 +409,16 @@ class Fighter:
                 # (Air directional dodges are out of scope here — see air-dodge
                 # research #23 — so only the grounded branch sets facing.)
                 self.facing_right = dir_x < 0
+            elif dir_y > 0:
+                # Diagonal-down air dodge → wavedash (#202): SET the burst at the
+                # canonical wavedash angle below horizontal (SmashWiki: 17.1°) so it
+                # drives into the ground. Landing then cancels into a grounded slide
+                # (the waveland) via wavedash_armed. +y is down.
+                ang = math.radians(WAVEDASH_ANGLE_DEG)
+                self.vel.update(dir_x * DODGE_AIR_SPEED * math.cos(ang),
+                                DODGE_AIR_SPEED * math.sin(ang))
+                self.air_dodge_active = True
+                self.wavedash_armed = True
             else:
                 # Directional air dodge (PM/Melee, #184): SET (replace) velocity to a
                 # fixed burst in the stick direction and zero vertical — not Brawl-style

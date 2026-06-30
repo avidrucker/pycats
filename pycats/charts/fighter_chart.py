@@ -186,6 +186,11 @@ def build_fighter_chart(p):
         {"id": "dodging", "initial": "dodge"},
         state(
             {"id": "dodge"},
+            # Waveland (#202): a diagonal-down air dodge that lands cancels into a
+            # grounded slide + landing lag (landing_lag_timer set in _handle_landing).
+            # Highest priority so it wins over the shield/idle ground exits.
+            _tick(lambda e, d: p.fighter.dodge_timer <= 0 and p.fighter.on_ground
+                  and p.fighter.landing_lag_timer > 0, "landing_lag"),
             _tick(lambda e, d: p.fighter.shield_attempting and p.fighter.dodge_timer <= 0
                   and p.fighter.on_ground, "shield"),
             _tick(lambda e, d: not p.fighter.shield_attempting and p.fighter.dodge_timer <= 0
@@ -236,7 +241,21 @@ def build_fighter_chart(p):
     # deferred to #184b.
     helpless = state(
         {"id": "helpless"},
+        # Waveland from special-fall (#202): if the air dodge's helpless fall ends on
+        # the ground while a landing-lag window is armed, route through landing_lag;
+        # otherwise a plain helpless landing recovers straight to idle (#184).
+        _tick(lambda e, d: p.fighter.on_ground and p.fighter.landing_lag_timer > 0,
+              "landing_lag"),
         _tick(lambda e, d: p.fighter.on_ground, "idle"),
+    )
+
+    # Waveland landing lag (#202): grounded action-lock after a wavedash. No
+    # self-initiated transitions — input is gated in player.update while the timer
+    # runs (the slide decays under GROUND_FRICTION meanwhile); recovers to idle when
+    # the lag window closes.
+    landing_lag = state(
+        {"id": "landing_lag"},
+        _tick(lambda e, d: p.fighter.landing_lag_timer <= 0, "idle"),
     )
 
     action = state(
@@ -253,6 +272,7 @@ def build_fighter_chart(p):
         ko,
         prone,
         helpless,
+        landing_lag,
     )
 
     defensive_status = state(

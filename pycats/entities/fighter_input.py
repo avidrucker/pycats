@@ -107,6 +107,9 @@ class FighterInput:
 
         if (can_dodge_state and p.fighter.dodge_timer == 0) or can_modify_air_dodge:
             dir_x = None
+            dir_y = 0
+            airborne = not p.fighter.on_ground
+            down_input = self._pressed(pressed, "down") or self._pressed(held, "down")
 
             # Priority 1: Check for simultaneous shield + direction press (including spot dodge)
             # Issue #6: the spot-dodge direction may be *held* from an earlier
@@ -114,8 +117,13 @@ class FighterInput:
             # already held still spot-dodges (symmetric with the shield-held-then-
             # down path handled by Priority 3). Held left/right stay momentum/air
             # dodges via Priority 2; only the neutral spot dodge reads held-down.
-            if shield_pressed and (self._pressed(pressed, "down")
-                                   or self._pressed(held, "down")):
+            # Wavedash (#202): in the AIR, shield+down WITH a horizontal direction is
+            # not a spot dodge but a diagonal-down air dodge — fall through to the
+            # L/R branches (which set dir_y below). The ground spot dodge is unchanged.
+            if (shield_pressed and down_input
+                    and not (airborne
+                             and (self._pressed(pressed, "left")
+                                  or self._pressed(pressed, "right")))):
                 dir_x = 0  # spot dodge
             elif shield_pressed and self._pressed(pressed, "left"):
                 dir_x = -1  # left dodge
@@ -139,6 +147,12 @@ class FighterInput:
                 elif self._pressed(pressed, "right"):
                     dir_x = 1
 
+            # Wavedash (#202): a directional air dodge with down also input bursts
+            # diagonally DOWN (dir_y=1) instead of flat — drives into the ground for a
+            # waveland. Only meaningful for a fresh airborne directional dodge.
+            if dir_x is not None and dir_x != 0 and airborne and down_input:
+                dir_y = 1
+
             if dir_x is not None:
                 if can_modify_air_dodge:
                     # Special case: modifying existing air dodge
@@ -146,7 +160,7 @@ class FighterInput:
                         p.fighter.vel.x = (dir_x * DODGE_SPEED) + p.fighter.vel.x
                         dodge_initiated = True
                 elif p.fighter.on_ground or p.fighter.air_dodge_ok:
-                    p.fighter._start_dodge(dir_x)
+                    p.fighter._start_dodge(dir_x, dir_y)
                     dodge_initiated = True
                     if not p.fighter.on_ground:
                         p.fighter.air_dodge_ok = False

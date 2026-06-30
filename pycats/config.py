@@ -58,6 +58,16 @@ DODGE_SPEED = 14  # horizontal boost for a roll
 # pycats px/frame; reuses DODGE_SPEED as a starting point, derivable via #192/#195
 # (PM units/frame × PX_PER_UNIT≈5.4). See GUESSED_VALUES_TO_RESEARCH.md.
 DODGE_AIR_SPEED = 14
+# Wavedash (#202, follow-up to #184): a *diagonal-down* air dodge sets the
+# DODGE_AIR_SPEED burst at an angle below horizontal so it drives into the ground
+# and cancels into a grounded slide (the waveland). FOUND — SmashWiki gives the
+# optimal wavedash angle as 17.1° below horizontal (Melee/PM).
+WAVEDASH_ANGLE_DEG = 17.1
+# Landing lag after a waveland — frames locked out of action once the air dodge
+# touches the ground (the slide still decays under GROUND_FRICTION during it).
+# FOUND — Melee/PM wavedash landing lag is ~10 frames; pycats runs at 60 FPS like
+# Melee so the frame count maps 1:1, but it stays a tuning starting point (#192).
+WAVEDASH_LANDING_LAG = 10
 
 # ---------------- combat / attacks ----------------
 PLAYER_ATTACK_DURATION = 12  # this can be different than the lifetime of an attack, for example, a fireball could take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames

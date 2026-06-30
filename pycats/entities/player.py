@@ -39,6 +39,7 @@ from .fighter_physics import step_physics
 from ..combat.data import load_fighter_data
 from ..combat.move_clock import MoveClock
 from ..combat.knockback import decay_velocity
+from ..core.physics import apply_horizontal_friction
 from ..systems.state_engine import make_state_engine
 
 
@@ -255,8 +256,10 @@ class Player(pygame.sprite.Sprite):
         # frame does not run handle_move and clobber the knockback with walk
         # speed when a direction is held.
         in_hitstun = self.fighter.hurt_timer > 0 or self.fighter.stun_timer > 0
+        in_landing_lag = self.fighter.landing_lag_timer > 0  # waveland lock (#202)
         dodge_initiated = False
-        if not in_hitstun and not in_shieldstun and self.state not in ("dodge", "hurt", "stun", "prone"):
+        if (not in_hitstun and not in_shieldstun and not in_landing_lag
+                and self.state not in ("dodge", "hurt", "stun", "prone")):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
@@ -268,6 +271,12 @@ class Player(pygame.sprite.Sprite):
             # is the only horizontal decel here; normal friction resumes once
             # hitstun ends. (Gravity still acts on vel.y below.)
             self.fighter.vel.x = decay_velocity(self.fighter.vel.x, KNOCKBACK_DECAY)
+        elif in_landing_lag:
+            # Waveland (#202): actions are locked, but the grounded slide keeps
+            # bleeding off under ground friction (handle_move is skipped here, so
+            # apply it directly — same job step_horizontal would do, minus walking).
+            self.fighter.vel = apply_horizontal_friction(
+                self.fighter.vel, self.fighter.on_ground)
 
         # physics: gravity, edge-aware dodge clamping, movement, drop-through,
         # vertical/horizontal collision, and landing — see fighter_physics (#77).
@@ -280,13 +289,19 @@ class Player(pygame.sprite.Sprite):
             self.fighter.stun_timer -= 1
         if self.fighter.prone_timer > 0:
             self.fighter.prone_timer -= 1  # getup window (#13)
+        if self.fighter.landing_lag_timer > 0:
+            self.fighter.landing_lag_timer -= 1  # waveland lock window (#202)
         if self.fighter.shieldstun_timer > 0:
             self.fighter.shieldstun_timer -= 1
         if self.fighter.dodge_timer > 0:
             self.fighter.dodge_timer -= 1
         if self.fighter.dodge_timer == 0 and self.state == "dodge":
             self.fighter.invulnerable = False  # reset invulnerability after dodge ends
-            self.fighter.vel.x = 0  # stop horizontal movement after dodge ends
+            # A waveland (#202) ends the dodge with a live slide — the landing-lag
+            # window owns that momentum, so DON'T zero it here; a normal dodge end
+            # still stops dead.
+            if self.fighter.landing_lag_timer == 0:
+                self.fighter.vel.x = 0  # stop horizontal movement after dodge ends
 
             # Handle spot dodge transition
             if self.fighter.spot_dodge_shield_held:
