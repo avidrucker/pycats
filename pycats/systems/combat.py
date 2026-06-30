@@ -93,7 +93,9 @@ def process_hits(players, attacks):
     _resolve_clanks(attacks)
 
     for atk in list(attacks):  # copy to allow safe removal
-        if not atk.active:
+        # #213: a looping attack stays active between hits but is dormant while its
+        # rehit cooldown drains. Defensive getattr — stub attacks have no timer.
+        if not atk.active or getattr(atk, "_rehit_timer", 0) > 0:
             continue
 
         # #130: an attack may carry MULTIPLE hitbox circles (multi-hitbox move),
@@ -153,7 +155,11 @@ def process_hits(players, attacks):
                 atk.set_knockback = getattr(hit_box, "set_knockback", None)  # WDSK (#211)
                 defender.fighter.receive_hit(atk)
                 atk.owner.fighter.record_hit_landed()  # Track successful hit
-                if atk.disappear_on_hit:
+                if getattr(atk, "rehit_rate", None) is not None:
+                    # #213 looping multi-hit: stay active, just go on cooldown so
+                    # the same target is re-hit once rehit_rate frames pass.
+                    atk._rehit_timer = atk.rehit_rate
+                elif atk.disappear_on_hit:
                     atk.kill()
                 else:
                     atk.active = False  # only one hit allowed

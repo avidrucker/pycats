@@ -327,7 +327,8 @@ class Player(pygame.sprite.Sprite):
             # every circle (multi-hitbox moves activate all boxes at once).
             attack_group.add(
                 Attack(self, hitboxes=tick.spawn, in_air=tick.in_air,
-                       disappear_on_hit=False, lifetime=tick.lifetime)
+                       disappear_on_hit=False, lifetime=tick.lifetime,
+                       rehit_rate=self.current_move.rehit_rate)  # #213 looping
             )
         if self.attack_timer == 0 and self.state == "attack":
             self.fighter.done_attacking = True

@@ -52,6 +52,7 @@ class Attack(pygame.sprite.Sprite):
         disappear_on_hit=False,
         hitboxes=None,      # #130: tuple[Hitbox, ...] for a multi-hitbox move
         in_air=False,       # #133: is this an aerial move's hitbox? (aerials don't clank)
+        rehit_rate=None,    # #213: frames between re-hits (None = single hit)
     ):
         super().__init__()
         self.owner = owner
@@ -62,6 +63,12 @@ class Attack(pygame.sprite.Sprite):
         # lifetime: how many frames the hit-box persists. Task 4 spawns the
         # hit-box during a move's active window with lifetime == move.active.
         self.frames_left = lifetime
+
+        # Rehit-rate / looping multi-hit (#213). When set, a connect doesn't
+        # deactivate the attack — instead it starts a cooldown; the attack re-hits
+        # once the cooldown drains. None = single hit (today's once-per-instance).
+        self.rehit_rate = rehit_rate
+        self._rehit_timer = 0
 
         # Normalise to a non-empty tuple of hitboxes (priority order preserved).
         if hitboxes is None:
@@ -122,6 +129,8 @@ class Attack(pygame.sprite.Sprite):
 
     # called every frame by sprite.Group.update()
     def update(self):
+        if self._rehit_timer > 0:  # #213: drain the looping-rehit cooldown
+            self._rehit_timer -= 1
         self.frames_left -= 1
         if self.frames_left <= 0:
             self.kill()

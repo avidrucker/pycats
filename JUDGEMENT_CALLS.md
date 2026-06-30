@@ -164,3 +164,24 @@ Each entry: what was decided, why, and how to undo/revisit.
 5. **Scope: capability only.** Did NOT retrofit jab/d-tilt to use WDSK (that
    changes their knockback + needs their data-pins updated) — separate enrichment
    slices. This gate just makes WDSK expressible; d-air (D3) is the first consumer.
+
+---
+
+## D2 — rehit-rate gate (#213, looping multi-hit)
+
+1. **Attack-level cooldown, not per-defender (v1 simplification).**
+   - *Why:* after any hit the looping attack re-hits nobody until the cooldown
+     drains. Faithful for the 1v1 sim; per-defender cooldown (correct for >2
+     fighters hitting different targets on different cadences) is a documented
+     future refinement. Keeps the change to one timer.
+2. **Low-churn: `MoveTick`/`move_clock` untouched** (same call as A2). `player.py`
+   reads `self.current_move.rehit_rate` at the spawn site instead of threading a
+   new field through `MoveTick`. `current_move` is always live at a spawn frame.
+3. **Loop branch keeps `atk.active` True;** the cooldown (`_rehit_timer`, drained
+   in `Attack.update`) gates the cadence. `rehit_rate is None` → the unchanged
+   `active=False` path → byte-identical, goldens safe, #130 once-per-instance
+   preserved for every existing move.
+4. **Defensive getattr in `process_hits`** for `_rehit_timer`/`rehit_rate` — stub
+   attacks in tests have neither (#179 shared-combat defensive-read rule).
+5. **Composes with the other gates for d-air (D3):** #204 windows give the two
+   damage phases, this gives the loop within each, #211 WDSK gives the set launch.

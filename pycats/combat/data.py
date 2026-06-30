@@ -116,6 +116,11 @@ class MoveData:
     active: int
     recovery: int
     hitboxes: tuple[Hitbox, ...]
+    # Rehit-rate (#213): frames between re-hits of the same target for a LOOPING
+    # multi-hit move (the d-air drill). None = single hit per move-instance
+    # (today's behavior, the #130 guarantee). A number N = the spawned hitbox
+    # re-hits an overlapping target every N frames across its active window.
+    rehit_rate: int | None = None
 
     def __post_init__(self) -> None:
         # Per-hitbox temporal-window cross-checks (#204). Per-box shape (paired,
