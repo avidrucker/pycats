@@ -15,7 +15,6 @@ import pygame
 
 from .config import (
     BG_COLOR,
-    CAT_CHARACTERS,
     INITIAL_LIVES,
     PLAYER1_START_X,
     PLAYER1_START_Y,
@@ -24,6 +23,8 @@ from .config import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
+from .characters.roster import palette_for
+from .combat.data import load_fighter_data
 from .core.physics import resolve_player_push
 from .entities import Player
 from .entities.ledge import ledges_from_platforms
@@ -51,23 +52,27 @@ class BattleScreen:
         self._ledges = None  # solid-edge ledges (#14), built lazily from platforms
 
     def create_from_selection(self, p1_char, p2_char):
-        """Build the two fighters from the selected characters (statechart engine,
-        per ADR-0002), mirroring game.py's create_players_from_selection."""
-        p1_data = CAT_CHARACTERS[p1_char]
-        p2_data = CAT_CHARACTERS[p2_char]
+        """Build the two fighters from the selected ARCHETYPES (#268, #127 Part 1):
+        cosmetic from each archetype's default palette, fighter data from
+        load_fighter_data(key). char_name stays "P1"/"P2" so win-attribution
+        (stats_print) and name rendering are unchanged."""
+        p1_pal = palette_for(p1_char)
+        p2_pal = palette_for(p2_char)
 
         self.player1 = Player(
             PLAYER1_START_X, PLAYER1_START_Y, self.p1_keys,
-            p1_data["color"], eye_color=p1_data["eye_color"],
+            p1_pal["color"], eye_color=p1_pal["eye_color"],
             char_name="P1", facing_right=True,
+            fighter_data=load_fighter_data(p1_char),
         )
         self.player2 = Player(
             PLAYER2_START_X, PLAYER2_START_Y, self.p2_keys,
-            p2_data["color"], eye_color=p2_data["eye_color"],
+            p2_pal["color"], eye_color=p2_pal["eye_color"],
             char_name="P2", facing_right=False,
+            fighter_data=load_fighter_data(p2_char),
         )
-        self.player1.stripe_color = p1_data["stripe_color"]
-        self.player2.stripe_color = p2_data["stripe_color"]
+        self.player1.stripe_color = p1_pal["stripe_color"]
+        self.player2.stripe_color = p2_pal["stripe_color"]
         self.players = pygame.sprite.Group(self.player1, self.player2)
 
     def reset(self):

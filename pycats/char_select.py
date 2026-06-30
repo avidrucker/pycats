@@ -27,7 +27,6 @@ from .config import (
     CHAR_SELECT_CURSOR_WIDTH,
     CHAR_SELECT_TOKEN_SIZE,
     CHAR_SELECT_TOKEN_BORDER_WIDTH,
-    CAT_CHARACTERS,
     EYE_OFFSET_X,
     EYE_OFFSET_Y,
     EYE_RADIUS,
@@ -52,14 +51,16 @@ from .config import (
     BLACK,
 )
 from . import text_utils
+from .characters.roster import ARCHETYPE_ROSTER, ARCHETYPE_NAME, palette_for
 
 
 class CharacterSelector:
     """Handles character selection screen logic for both players."""
 
     def __init__(self, p1_controls, p2_controls):
-        # Character list in order
-        self.characters = list(CAT_CHARACTERS.keys())
+        # The roster is the real PM-archetype fighters (#268, #127 Part 1), not the
+        # OG colour-skins; each archetype's cosmetic comes from its default palette.
+        self.characters = list(ARCHETYPE_ROSTER)
 
         # Player cursors (grid positions)
         self.p1_cursor = 0  # grid index
@@ -265,7 +266,7 @@ class CharacterSelector:
 
     def _draw_cat_preview(self, screen, char_key, x, y, size):
         """Draw a small cat preview in the given tile."""
-        char_data = CAT_CHARACTERS[char_key]
+        char_data = palette_for(char_key)  # archetype's default cosmetic palette
 
         # Scale down for preview
         preview_size = (size * 0.6, size * 0.8)
@@ -377,7 +378,7 @@ class CharacterSelector:
             # Draw character name
             text_utils.render_text(
                 screen,
-                CAT_CHARACTERS[char_key]["name"],
+                ARCHETYPE_NAME[char_key],
                 (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + 10),
                 18,
                 WHITE,
