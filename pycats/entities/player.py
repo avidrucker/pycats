@@ -345,34 +345,35 @@ class Player(pygame.sprite.Sprite):
                     self.engine.force("ledge_grab")
                     break
 
-        # Non-shield timers tick. The stateless ones (hurt/stun/landing_lag/
-        # ledge_regrab_lockout/shieldstun) are owned by the Fighter (#273/S1);
-        # the transition-coupled ones below stay here until #264 S4. Placed at the
-        # top of the block so landing_lag_timer is already decremented before the
-        # dodge-end read of it (`landing_lag_timer == 0`) further down.
+        # Non-shield timers tick. Stateless ones (hurt/stun/landing_lag/
+        # ledge_regrab_lockout/shieldstun) -> Fighter.tick_timers (#273/S1).
+        # Coupled prone + dodge decrements -> Fighter.tick_action_timers (#289/S4),
+        # which returns the names that hit 0 this frame. getup_roll/getup_attack
+        # KEEP their inline decrement (they're set-and-ticked in the same frame by
+        # the prone block below — moving them would drop that same-frame tick).
+        # Placed at the top so landing_lag_timer is decremented before the dodge-end
+        # read of it (`landing_lag_timer == 0`) further down.
         self.fighter.tick_timers()
-        if self.fighter.prone_timer > 0:
-            self.fighter.prone_timer -= 1  # getup window (#13)
-            # Getup-roll (#146): the frame the window closes, a held left/right
-            # rolls that way (intangible) instead of a neutral stand. Started here
-            # — before engine.tick below — so the chart routes prone -> getup_roll
-            # this same frame.
-            if self.fighter.prone_timer == 0 and self.fighter.on_ground:
-                dir_x = self._held_dir_x(input_frame)
-                if dir_x != 0:
-                    self.fighter.start_getup_roll(dir_x)
-                elif self.controls["attack"] in input_frame.held:
-                    # Getup-attack (#225): swing a wake-up attack instead of standing.
-                    # Run the move clock directly so the hitbox spawns via the normal
-                    # path below; the chart routes prone -> getup_attack this frame.
-                    # getup_attack_timer mirrors the move duration and drives the
-                    # state exit + intangibility (decremented below like getup_roll).
-                    self._clock.start(GETUP_ATTACK)
-                    self.fighter.getup_attack_timer = (
-                        GETUP_ATTACK.startup + GETUP_ATTACK.active + GETUP_ATTACK.recovery
-                    )
-                    self.fighter.invulnerable = True  # getup intangibility (⚠ playtest:
-                    # held for the whole swing for v1; tighten to startup+active later)
+        expired = self.fighter.tick_action_timers()
+        if "prone_timer" in expired and self.fighter.on_ground:
+            # Getup-roll (#146): the frame the prone window closes, a held
+            # left/right rolls that way (intangible) instead of a neutral stand —
+            # before engine.tick, so the chart routes prone -> getup_roll this frame.
+            dir_x = self._held_dir_x(input_frame)
+            if dir_x != 0:
+                self.fighter.start_getup_roll(dir_x)
+            elif self.controls["attack"] in input_frame.held:
+                # Getup-attack (#225): swing a wake-up attack instead of standing.
+                # Run the move clock directly so the hitbox spawns via the normal
+                # path below; the chart routes prone -> getup_attack this frame.
+                # getup_attack_timer mirrors the move duration and drives the
+                # state exit + intangibility (decremented below like getup_roll).
+                self._clock.start(GETUP_ATTACK)
+                self.fighter.getup_attack_timer = (
+                    GETUP_ATTACK.startup + GETUP_ATTACK.active + GETUP_ATTACK.recovery
+                )
+                self.fighter.invulnerable = True  # getup intangibility (⚠ playtest:
+                # held for the whole swing for v1; tighten to startup+active later)
         if self.fighter.getup_roll_timer > 0:
             self.fighter.getup_roll_timer -= 1  # roll + intangibility window (#146)
             if self.fighter.getup_roll_timer == 0 and self.state == "getup_roll":
@@ -381,10 +382,8 @@ class Player(pygame.sprite.Sprite):
             self.fighter.getup_attack_timer -= 1  # wake-up attack duration (#225)
             if self.fighter.getup_attack_timer == 0 and self.state == "getup_attack":
                 self.fighter.invulnerable = False  # intangibility ends with the swing
-        # (landing_lag / ledge_regrab_lockout / shieldstun decremented above by
-        # Fighter.tick_timers() — #273/S1)
-        if self.fighter.dodge_timer > 0:
-            self.fighter.dodge_timer -= 1
+        # (landing_lag / ledge_regrab_lockout / shieldstun via tick_timers #273;
+        #  prone / dodge via tick_action_timers #289 — dodge-end reads the value)
         if self.fighter.dodge_timer == 0 and self.state == "dodge":
             self.fighter.invulnerable = False  # reset invulnerability after dodge ends
             # A waveland (#202) ends the dodge with a live slide — the landing-lag

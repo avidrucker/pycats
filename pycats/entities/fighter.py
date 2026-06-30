@@ -213,15 +213,39 @@ class Fighter:
         """Advance the fighter's *stateless* per-frame timers (S1/#273).
 
         These decrement with no transition side-effect, so the aggregate owns the
-        tick (was inline in `Player.update()`, N2). The transition-coupled timers
-        (prone/getup_roll/getup_attack/ledge_hang/dodge/respawn) and `hitlag`
-        (bound to the freeze early-return) stay in `Player.update()` until later
-        slices (#264 S4/S5)."""
+        tick (was inline in `Player.update()`, N2). `ledge_hang`/`respawn` (other
+        regions) and `hitlag` (bound to the freeze early-return) stay in
+        `Player.update()` until later slices (#264 S4b/S5)."""
         for name in ("hurt_timer", "stun_timer", "landing_lag_timer",
                      "ledge_regrab_lockout_timer", "shieldstun_timer"):
             v = getattr(self, name)
             if v > 0:
                 setattr(self, name, v - 1)
+
+    def tick_action_timers(self) -> set:
+        """Decrement the cleanly-movable transition-coupled timers; return the
+        names that hit 0 THIS frame (#264/S4).
+
+        The aggregate owns the *decrement* (N2); the *decisions* on expiry stay in
+        `Player.update()` because they read input + drive Player wiring. The
+        returned set gives `prone` its once-on-expiry semantics (a timer already at
+        0 never re-appears, so the getup decision fires exactly once); `dodge`'s
+        every-frame transition reads the value directly, so it's decremented here
+        but callers don't gate on the return.
+
+        NOT moved: `getup_roll_timer`/`getup_attack_timer` are *set inside the
+        prone-expiry block and decremented by their own blocks in the same frame*,
+        so they must keep their inline decrement (moving it here would drop that
+        same-frame tick — an off-by-one on the getup duration)."""
+        expired = set()
+        for name in ("prone_timer", "dodge_timer"):
+            v = getattr(self, name)
+            if v > 0:
+                v -= 1
+                setattr(self, name, v)
+                if v == 0:
+                    expired.add(name)
+        return expired
 
     # ----------- hit processing ------------
     def receive_hit(self, atk, is_crouching=False):
