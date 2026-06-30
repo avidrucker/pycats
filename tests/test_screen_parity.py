@@ -1,30 +1,21 @@
-"""Screen-flow backend equivalence, anchored on a recorded golden (ADR-0002, #100).
+"""Screen-flow engine semantics, anchored on a recorded golden (ADR-0002, #100).
 
-Previously this asserted the legacy and statechart screen engines were
-transition-equivalent by driving **both live engines** and comparing them to each
-*other* per step. ADR-0002 (#174) — whose "delete legacy" ruling **extends to the
-screen backend** (`systems/fsm.py` / `LegacyScreenEngine`, epic #100) — removes the
-legacy engine in slice 4b, so that live cross-check is going away.
+This originally cross-checked two live screen engines — the legacy guard-table FSM
+(`systems/fsm.py` / `LegacyScreenEngine`) and the statechart engine — per step. ADR-0002
+(#174), whose "delete legacy" ruling **extends to the screen backend** (epic #100),
+retired the legacy engine: slice 4a (#234) froze its per-step transition sequence as a
+recorded golden (`tests/golden/screen_parity.json`); slice 4b (#235) then deleted the
+legacy engine and its FSM. The statechart engine is now the only screen engine.
 
-To keep the equivalence from lapsing we anchor it on a **recorded golden** instead: a
-frozen snapshot of the LEGACY screen engine's per-step transition sequence for a
-representative script (`tests/golden/screen_parity.json`). This mirrors the fighter
-parity freeze (#176):
-
-  * the surviving gate is **statechart == golden**
-    (`test_statechart_screen_trace_matches_golden`), with no dependence on a live
-    legacy engine — it carries on after slice 4b deletes the legacy backend;
-  * while legacy still exists (this slice) a second arm asserts **legacy == golden**
-    (`test_legacy_screen_trace_matches_golden`), proving the golden faithfully froze
-    legacy's behaviour before it is deleted. Slice 4b removes that arm (and the
-    legacy entries in the semantic unit tests below) with nothing lost.
-
-The earlier slices' semantic unit tests (initial state, transition order, on_enter/
-on_update, force) still drive both backends directly; they pin the engine *semantics*
-the golden gate then freezes.
+The equivalence guard survives the deletion as **statechart == golden**
+(`test_statechart_screen_trace_matches_golden`) — the frozen record stands in for the
+deleted second engine, mirroring the fighter parity freeze (#176). The semantic unit
+tests below (initial state, transition order, on_enter/on_update, force) pin the engine
+semantics directly.
 
 Regen the golden — only after a *reviewed, intended* screen-flow change — by running
-this file with ``PYCATS_UPDATE_GOLDENS=1`` (records from the legacy engine).
+this file with ``PYCATS_UPDATE_GOLDENS=1`` (records from the statechart engine, now the
+sole engine).
 """
 import json
 import os
@@ -32,7 +23,7 @@ from pathlib import Path
 
 from pycats.systems.screen_engine import make_screen_engine
 
-BACKENDS = ("legacy", "statechart")
+BACKENDS = ("statechart",)
 
 
 def _table(flags):
@@ -162,22 +153,15 @@ def _load_golden():
     return json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
 
 
-def test_legacy_screen_trace_matches_golden():
-    """The legacy screen engine still reproduces the recorded golden — i.e. the
-    golden faithfully froze legacy's behaviour. Doubles as the recorder under
-    PYCATS_UPDATE_GOLDENS=1. (Removed in slice 4b along with the legacy engine.)"""
-    trace = _run_trace("legacy")
+def test_statechart_screen_trace_matches_golden():
+    """THE GATE: the statechart engine — now the sole screen engine — reproduces the
+    recorded golden screen-flow transition sequence (the frozen legacy record, #234).
+    Doubles as the recorder under PYCATS_UPDATE_GOLDENS=1."""
+    trace = _run_trace("statechart")
     if os.environ.get("PYCATS_UPDATE_GOLDENS") == "1":
         GOLDEN_PATH.parent.mkdir(parents=True, exist_ok=True)
         GOLDEN_PATH.write_text(json.dumps(trace, indent=2) + "\n", encoding="utf-8")
         return
-    assert trace == _load_golden(), f"legacy diverged from golden:\n {trace}"
-
-
-def test_statechart_screen_trace_matches_golden():
-    """THE GATE: the statechart engine reproduces the recorded golden screen-flow
-    transition sequence — no dependence on a live legacy engine. Survives slice 4b."""
-    trace = _run_trace("statechart")
     assert trace == _load_golden(), f"statechart diverged from golden:\n {trace}"
     # The trace must actually visit the interesting states (golden isn't vacuous).
     assert INTERESTING <= set(trace), sorted(set(trace))
