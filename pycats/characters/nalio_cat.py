@@ -141,6 +141,31 @@ _FORWARD_TILT = MoveData(
     ),
 )
 
+# --- Up-tilt, mapped to the canonical "utilt" key (PM3.6 Mario AttackHi3) -------
+# rukaidata AttackHi3: active 5-11 -> startup 4 / active 7; IASA 30 -> recovery 19.
+# Three same-set hitboxes (priority id 0->2), all damage 8, angle 96 (literal —
+# an up-and-slightly-back arc, NOT a sentinel), BKB 26, WDSK 0. KBG differs per
+# box (125/122/120), recorded faithfully. Radii = round(size u × 5.4): 2.73->15,
+# 3.52->19, 4.69->25. Positions approximated (bones not modelled): an overhead arc
+# clustered above the head (small dy), id2 (r25) the big sweep behind. Same
+# approximation convention as jab/d-tilt/f-tilt.
+def _utilt_box(dx, dy, r, kbg):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=8.0,
+                  angle=96, base_knockback=26.0, knockback_growth=kbg)
+
+_UP_TILT = MoveData(
+    name="up tilt",
+    in_air=False,
+    startup=4,
+    active=7,
+    recovery=19,
+    hitboxes=(
+        _utilt_box(dx=32, dy=8, r=15, kbg=125.0),  # id0 (bone 38) — front, priority
+        _utilt_box(dx=22, dy=2, r=19, kbg=122.0),  # id1 (bone 47) — over the head
+        _utilt_box(dx=14, dy=6, r=25, kbg=120.0),  # id2 (bone 47) — big sweep, back
+    ),
+)
+
 # --- Neutral-air, mapped to the "nair" slot (PM3.6 Mario AttackAirN) -----------
 # Nalio's first aerial (#136), authored as the CLEAN-HIT form on the #130 engine.
 # A "sex kick" — 2 simultaneous hitboxes around the body (rukaidata ids 0 & 1,
@@ -201,7 +226,7 @@ NALIO_FIGHTER_DATA = FighterData(
     weight=100,            # PM3.6 Mario (== pycats default → no KB change)
     hurtbox=_HURTBOX,
     moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
-           "nair": _NEUTRAL_AIR},
+           "utilt": _UP_TILT, "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

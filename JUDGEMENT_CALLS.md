@@ -76,3 +76,22 @@ Each entry: what was decided, why, and how to undo/revisit.
      r21) outermost → dx 57/46/37. Documented in the move's code comment.
 4. **First real consumer of the A1 Sakurai gate** — f-tilt uses `angle=361`, no
    literal placeholder (unlike n-air's 45). End-to-end validation that #203 works.
+
+---
+
+## B2 — Nalio u-tilt (#207, PM3.6 Mario AttackHi3)
+
+1. **Rejected the web-search summary; read the rukaidata move page instead.**
+   - *Why:* the search summary returned implausible u-tilt values (15-16 damage,
+     259° angle) — a retrieval-trust red flag (a u-tilt is a ~8% poke). Fetching
+     the actual `AttackHi3` page gave the believable set used: damage 8, angle 96,
+     BKB 26, KBG 125/122/120, sizes 2.73/3.52/4.69. *Lesson:* verify search
+     summaries of datamined values against the primary page before authoring.
+2. **Per-box KBG recorded faithfully (125/122/120), not averaged.**
+   - Unlike jab/d-tilt (uniform KBG), AttackHi3's three boxes have slightly
+     different growth; the `_utilt_box` helper takes kbg per box.
+3. **Active window 5-11 (active 7) taken from rukaidata as-is.**
+   - Longer than a Melee-memory guess would suggest; trusted the PM3.6 page (the
+     project's canonical reference) over recollection.
+4. **Positions approximated** as an overhead arc (small dy, id2 r25 the big sweep),
+   same no-skeleton convention as the other tilts.

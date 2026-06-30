@@ -105,6 +105,24 @@ def test_nalio_ftilt_is_pm_attacks3():
     assert tuple(hb.circle.r for hb in move.hitboxes) == (21, 17, 15)
 
 
+def test_nalio_utilt_is_pm_attackhi3():
+    """Nalio's up tilt is PM3.6 Mario AttackHi3 (rukaidata). Active 5-11 (startup
+    4 / active 7), IASA 30 (recovery 19); 3 hitboxes priority id 0->2, all damage
+    8 / angle 96 (literal, up-and-slightly-back) / BKB 26 / WDSK 0; per-box KBG
+    125/122/120; radii 15/19/25 (sizes 2.73/3.52/4.69 u × 5.4). Able-to-fail: an
+    absent utilt key falls back to the d-tilt alias (angle 80, KBG 80) and reds
+    this."""
+    move = load_fighter_data("nalio").moves["utilt"]
+    assert move.in_air is False
+    assert (move.startup, move.active, move.recovery) == (4, 7, 19)
+    assert len(move.hitboxes) == 3
+    assert tuple(hb.damage for hb in move.hitboxes) == (8.0, 8.0, 8.0)
+    assert tuple(hb.angle for hb in move.hitboxes) == (96, 96, 96)
+    assert tuple(hb.base_knockback for hb in move.hitboxes) == (26.0, 26.0, 26.0)
+    assert tuple(hb.knockback_growth for hb in move.hitboxes) == (125.0, 122.0, 120.0)
+    assert tuple(hb.circle.r for hb in move.hitboxes) == (15, 19, 25)
+
+
 def test_nalio_nair_is_pm_neutral_air():
     """Nalio's neutral-air is PM3.6 Mario AttackAirN (#136), clean-hit form on the
     #130 multi-hitbox engine: 2 simultaneous hitboxes, in_air, damage 12, BKB 20,

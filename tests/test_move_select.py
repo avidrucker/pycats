@@ -113,6 +113,19 @@ def test_nalio_forward_ground_uses_ftilt_not_the_attack_alias():
     assert p.current_move is not p.fighter_data.moves["attack"]
 
 
+def test_nalio_up_ground_uses_utilt_not_the_attack_alias():
+    """Now that Nalio defines a real u-tilt (#207), up-on-the-ground + A selects
+    "utilt" instead of the "attack" alias (d-tilt). 'up' is held (not pressed) so
+    it sets direction without triggering a jump."""
+    pg.init()
+    p = _mk("nalio")
+    p.fighter.on_ground = True
+    p.handle_actions(_press("attack", held_extra=("up",)), pg.sprite.Group())
+    assert "utilt" in p.fighter_data.moves
+    assert p.current_move is p.fighter_data.moves["utilt"]
+    assert p.current_move is not p.fighter_data.moves["attack"]
+
+
 def test_b_button_starts_a_defined_special():
     pg.init()
     sb = MoveData(name="neutral b", in_air=False, startup=3, active=2, recovery=5,
