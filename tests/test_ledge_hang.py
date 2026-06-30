@@ -126,3 +126,32 @@ def test_fighter_ledge_fields_default():
     assert p.fighter.grabbed_ledge is None
     assert p.fighter.ledge_hang_timer == 0
     assert p.fighter.ledge_regrab_lockout_timer == 0
+
+
+# --- Task 3: automatic grab detection ----------------------------------------
+
+def test_descending_into_left_catch_region_grabs():
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
+    p = _player()
+    p.rect.topleft = (80 - 40, 420)          # body just left of the left lip
+    p.fighter.vel.x, p.fighter.vel.y = 0, 5  # descending
+    p.fighter.on_ground = False
+    p.update(_empty_frame(), plats, p_attack_group(), ledges)
+    assert p.state == "ledge_hang"
+    assert p.fighter.invulnerable is True
+    assert p.fighter.ledge_hang_timer == config.LEDGE_HANG_FRAMES
+    assert (p.rect.left, p.rect.top) == (40, 410)     # snapped to hang_topleft
+    assert any(l.occupied_by is p for l in ledges)
+
+
+def test_rising_does_not_grab():
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
+    p = _player()
+    p.rect.topleft = (80 - 40, 420)
+    p.fighter.vel.y = -5                     # rising
+    p.fighter.on_ground = False
+    p.update(_empty_frame(), plats, p_attack_group(), ledges)
+    assert p.state != "ledge_hang"
+    assert p.fighter.grabbed_ledge is None

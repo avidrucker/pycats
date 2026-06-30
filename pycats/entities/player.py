@@ -31,6 +31,8 @@ from enum import Enum, auto
 from ..config import (
     PLAYER_SIZE,
     KNOCKBACK_DECAY,
+    LEDGE_HANG_FRAMES,
+    LEDGE_REGRAB_LOCKOUT_FRAMES,
 )
 from .attack import Attack
 from .fighter import Fighter
@@ -186,7 +188,7 @@ class Player(pygame.sprite.Sprite):
     # move clock, not from Fighter, so they stay.)
 
     # ============================================================== update
-    def update(self, input_frame, platforms, attack_group):
+    def update(self, input_frame, platforms, attack_group, ledges=()):
         held = input_frame.held
         # note: currently unused, formerly called prev_keys
         #       pressed means freshly pressed this frame
@@ -282,6 +284,29 @@ class Player(pygame.sprite.Sprite):
         # physics: gravity, edge-aware dodge clamping, movement, drop-through,
         # vertical/horizontal collision, and landing — see fighter_physics (#77).
         step_physics(self, platforms, held)
+
+        # ---------- ledge grab (#14): automatic, PM-faithful ----------
+        # After physics so on_ground/vel/pos are final. Grab when airborne +
+        # descending + the body overlaps a free edge's catch box + not locked out.
+        # One occupant per edge (no trump yet — #14 deferred follow-up).
+        if (self.fighter.grabbed_ledge is None
+                and self.fighter.ledge_regrab_lockout_timer == 0
+                and not self.fighter.on_ground
+                and self.fighter.vel.y >= 0):
+            for ledge in ledges:
+                if ledge.occupied_by is not None:
+                    continue                       # one-occupant lockout
+                if self.rect.colliderect(ledge.catch_rect()):
+                    self.rect.topleft = ledge.hang_topleft(self.rect.size)
+                    self.fighter.vel.x = 0
+                    self.fighter.vel.y = 0
+                    self.fighter.ledge_hang_timer = LEDGE_HANG_FRAMES
+                    self.fighter.invulnerable = True
+                    self.fighter.facing_right = ledge.facing_right()
+                    self.fighter.grabbed_ledge = ledge
+                    ledge.occupied_by = self
+                    self.engine.force("ledge_grab")
+                    break
 
         # Non-shield timers tick
         if self.fighter.hurt_timer > 0:
