@@ -108,6 +108,40 @@ def test_prone_state_sequence_reaches_prone_then_stands():
     assert seq[-1] == "idle", f"fighter never stood up: {seq}"
 
 
+# --- #146: getup-roll — a directional getup with intangibility ----------------
+
+def test_getup_roll_when_direction_held_rolls_out_intangible():
+    """Holding a direction as the getup window ends rolls out — an intangible,
+    displaced getup — instead of the neutral stand to idle."""
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    x0 = p.fighter.rect.x
+    p.force_prone(3)
+    for _ in range(3):                      # hold 'right' through the prone window
+        _run(p, plats, _frame("right"))
+    assert p.state == "getup_roll", "a held direction at getup should roll, not stand"
+    assert p.fighter.invulnerable, "getup-roll grants intangibility"
+    for _ in range(30):                     # roll plays out -> recovers to idle
+        _run(p, plats, _frame())
+        if p.state == "idle":
+            break
+    assert p.state == "idle"
+    assert p.fighter.rect.x > x0, "the roll displaced the fighter forward"
+    assert not p.fighter.invulnerable, "intangibility ends when the roll ends"
+
+
+def test_neutral_getup_still_stands_without_direction():
+    """No direction held at getup => unchanged neutral stand to idle (#13)."""
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    p.force_prone(3)
+    for _ in range(4):
+        _run(p, plats, _frame())            # no direction
+    assert p.state == "idle"
+
+
 # --- #173: prone posture geometry — body lowers, high attacks whiff -----------
 
 def test_prone_resizes_collision_rect_feet_planted():

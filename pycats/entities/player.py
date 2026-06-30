@@ -289,6 +289,18 @@ class Player(pygame.sprite.Sprite):
             self.fighter.stun_timer -= 1
         if self.fighter.prone_timer > 0:
             self.fighter.prone_timer -= 1  # getup window (#13)
+            # Getup-roll (#146): the frame the window closes, a held left/right
+            # rolls that way (intangible) instead of a neutral stand. Started here
+            # — before engine.tick below — so the chart routes prone -> getup_roll
+            # this same frame.
+            if self.fighter.prone_timer == 0 and self.fighter.on_ground:
+                dir_x = self._held_dir_x(input_frame)
+                if dir_x != 0:
+                    self.fighter.start_getup_roll(dir_x)
+        if self.fighter.getup_roll_timer > 0:
+            self.fighter.getup_roll_timer -= 1  # roll + intangibility window (#146)
+            if self.fighter.getup_roll_timer == 0 and self.state == "getup_roll":
+                self.fighter.invulnerable = False  # intangibility ends with the roll
         if self.fighter.landing_lag_timer > 0:
             self.fighter.landing_lag_timer -= 1  # waveland lock window (#202)
         if self.fighter.shieldstun_timer > 0:
@@ -372,6 +384,12 @@ class Player(pygame.sprite.Sprite):
 
     def handle_move(self, keys):
         return self._input.handle_move(keys)
+
+    def _held_dir_x(self, input_frame):
+        """+1 if right is held, -1 if left is held, 0 if neither/both (#146 getup)."""
+        right = self.controls["right"] in input_frame.held
+        left = self.controls["left"] in input_frame.held
+        return (1 if right else 0) - (1 if left else 0)
 
     def handle_actions(self, input_frame, attack_group):
         return self._input.handle_actions(input_frame, attack_group)

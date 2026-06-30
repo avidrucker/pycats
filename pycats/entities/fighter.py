@@ -46,6 +46,8 @@ from ..config import (
     KNOCKBACK_LAUNCH_FACTOR,
     CROUCH_CANCEL_FACTOR,
     SAKURAI_ANGLE_CODE,
+    GETUP_ROLL_FRAMES,
+    GETUP_ROLL_SPEED,
     KNOCKDOWN_VY_THRESHOLD,
     KNOCKDOWN_PRONE_FRAMES,
 )
@@ -123,6 +125,7 @@ class Fighter:
         self.hurt_timer = 0
         self.stun_timer = 0
         self.prone_timer = 0  # knockdown/getup window (#13); prone while > 0
+        self.getup_roll_timer = 0  # getup-roll duration + intangibility window (#146)
         self.landing_lag_timer = 0  # post-waveland action lock (#202); locked while > 0
         self.land_impact_vy = 0.0  # downward speed at last ground contact (#145)
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
@@ -384,6 +387,19 @@ class Fighter:
         # entry guards on stun_timer > 0); input is locked while the timer runs.
         self.stun_timer = shield_break_stun_frames(self.percent)
         self.vel.update(0, 0)
+
+    def start_getup_roll(self, direction: int) -> None:
+        """Roll out of `prone` (#146): a directional getup with intangibility.
+
+        Holding left/right as the getup window ends rolls that way instead of a
+        neutral stand. Grants intangibility for the roll and sets an initial
+        horizontal velocity that decays under friction. ``direction`` is -1 (left)
+        or +1 (right). Reuses the same invulnerable/timer machinery as the dodge.
+        """
+        self.getup_roll_timer = GETUP_ROLL_FRAMES
+        self.invulnerable = True
+        self.invulnerable_timer = GETUP_ROLL_FRAMES
+        self.vel.update(direction * GETUP_ROLL_SPEED, 0)
 
     def _start_dodge(self, dir_x: int, dir_y: int = 0) -> None:
         self.dodge_timer = DODGE_TIME

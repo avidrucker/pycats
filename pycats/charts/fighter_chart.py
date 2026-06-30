@@ -230,8 +230,24 @@ def build_fighter_chart(p):
     # ground) / fall (airborne). Mirrors the flat FSM "prone" order (parity).
     prone = state(
         {"id": "prone"},
+        # Getup-roll (#146): if a direction was held as the getup window closed,
+        # player.update has started the roll (getup_roll_timer > 0) before this tick
+        # — route to the roll instead of the neutral stand. Highest priority so it
+        # wins over the plain idle/fall getup exits below.
+        _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.getup_roll_timer > 0,
+              "getup_roll"),
         _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.on_ground, "idle"),
         _tick(lambda e, d: p.fighter.prone_timer <= 0 and not p.fighter.on_ground, "fall"),
+    )
+
+    # Getup-roll (#146): a directional, intangible getup out of prone. The roll's
+    # velocity (set in start_getup_roll) decays under friction; input stays locked
+    # until the roll window closes -> idle. Intangibility (invulnerable) is dropped
+    # by player.update when getup_roll_timer hits 0.
+    getup_roll = state(
+        {"id": "getup_roll"},
+        _tick(lambda e, d: p.fighter.getup_roll_timer <= 0 and p.fighter.on_ground, "idle"),
+        _tick(lambda e, d: p.fighter.getup_roll_timer <= 0 and not p.fighter.on_ground, "fall"),
     )
 
     # Helpless / special-fall (#184): entered after an air dodge's timer expires
@@ -271,6 +287,7 @@ def build_fighter_chart(p):
         hitstun,
         ko,
         prone,
+        getup_roll,
         helpless,
         landing_lag,
     )

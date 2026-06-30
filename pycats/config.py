@@ -146,6 +146,13 @@ CROUCH_CANCEL_FACTOR = 0.67
 # of scope — #146 sibling. ⚠ tuning starting points, not sourced — playtest.
 KNOCKDOWN_VY_THRESHOLD = 8.0   # downward impact speed (px/frame); MAX_FALL_SPEED is 13
 KNOCKDOWN_PRONE_FRAMES = 30    # getup window the auto-knockdown sets (~0.5s @ 60 FPS)
+# Getup-roll (#146): a directional getup out of `prone` — holding left/right as the
+# getup window ends rolls that way with intangibility, instead of a neutral stand.
+# The roll lasts GETUP_ROLL_FRAMES (= its intangibility window) and sets an initial
+# horizontal GETUP_ROLL_SPEED that decays under friction. ⚠ playtest starting
+# points (per PM feel; like the dodge/crouch/prone numbers).
+GETUP_ROLL_FRAMES = 16
+GETUP_ROLL_SPEED = 12.0
 
 # Clank / priority (#38 4c). When two opposing GROUND hitboxes overlap, the Smash
 # "priority range" decides the outcome: if their damage differs by <= this many
