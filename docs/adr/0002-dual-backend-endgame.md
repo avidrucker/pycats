@@ -54,3 +54,10 @@ behaviour-neutral.
   Each ships with a green suite; ordering matters (1 before 2).
 - **Reversal:** would require a new ADR superseding this one (and resurrecting
   legacy from git history).
+
+## Addendum — extends to the screen backend (epic #100)
+
+Applies equally to the screen backend (`systems/fsm.py` / `LegacyScreenEngine`, epic
+#100): retire it on the same golden-freeze→delete→strip-plumbing path (slices 4a/4b/4c,
+#234/#235/#236), with `tests/test_screen_parity.py` + `tests/golden/screen_parity.json`
+as the screen-flow analogue of the fighter golden gate.

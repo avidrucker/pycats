@@ -1,13 +1,35 @@
-"""Screen-flow engine backend parity (slice 1 of epic #100; #181).
+"""Screen-flow backend equivalence, anchored on a recorded golden (ADR-0002, #100).
 
-A `StatechartScreenEngine` must be transition-equivalent to the legacy guard-table
-FSM. These tests drive *controllable* guards through both backends and assert the
-engines select transitions identically (document order, break-after-first) — the
-screen-flow analogue of the fighter_fsm <-> fighter_chart parity guarantee.
+Previously this asserted the legacy and statechart screen engines were
+transition-equivalent by driving **both live engines** and comparing them to each
+*other* per step. ADR-0002 (#174) — whose "delete legacy" ruling **extends to the
+screen backend** (`systems/fsm.py` / `LegacyScreenEngine`, epic #100) — removes the
+legacy engine in slice 4b, so that live cross-check is going away.
 
-Slice 1 only adds the engine seam + this guard; it does not rewire game.py or the
-live ScreenStateManager off the legacy default.
+To keep the equivalence from lapsing we anchor it on a **recorded golden** instead: a
+frozen snapshot of the LEGACY screen engine's per-step transition sequence for a
+representative script (`tests/golden/screen_parity.json`). This mirrors the fighter
+parity freeze (#176):
+
+  * the surviving gate is **statechart == golden**
+    (`test_statechart_screen_trace_matches_golden`), with no dependence on a live
+    legacy engine — it carries on after slice 4b deletes the legacy backend;
+  * while legacy still exists (this slice) a second arm asserts **legacy == golden**
+    (`test_legacy_screen_trace_matches_golden`), proving the golden faithfully froze
+    legacy's behaviour before it is deleted. Slice 4b removes that arm (and the
+    legacy entries in the semantic unit tests below) with nothing lost.
+
+The earlier slices' semantic unit tests (initial state, transition order, on_enter/
+on_update, force) still drive both backends directly; they pin the engine *semantics*
+the golden gate then freezes.
+
+Regen the golden — only after a *reviewed, intended* screen-flow change — by running
+this file with ``PYCATS_UPDATE_GOLDENS=1`` (records from the legacy engine).
 """
+import json
+import os
+from pathlib import Path
+
 from pycats.systems.screen_engine import make_screen_engine
 
 BACKENDS = ("legacy", "statechart")
@@ -87,9 +109,24 @@ def test_screen_engine_force_jumps_and_fires_on_enter_both_backends():
         assert log == ["enter_mm"], (backend, log)
 
 
+# --------------------------------------------------------------------------- #
+# Recorded-golden parity gate (ADR-0002 step 1, #234)
+# --------------------------------------------------------------------------- #
+
+GOLDEN_PATH = Path(__file__).parent / "golden" / "screen_parity.json"
+
+# A representative input/event trace exercising the real screen-flow graph shape
+# (main_menu/options/char_select/playing/pause/win_screen), one event per step.
+SCRIPT = ["to_opt", "opt_back", "to_cs", "start", "pause",
+          "resume", "ko", "rematch", "noop", "start"]
+
+# States the trace must actually visit, so the golden isn't a vacuous "stayed put".
+INTERESTING = {"options", "char_select", "playing", "pause", "win_screen"}
+
+
 def _screen_like_table(sig):
-    """The real screen-flow graph shape (main_menu/options/char_select/playing/
-    pause/win_screen), with guards driven by a single controllable signal `sig`."""
+    """The real screen-flow graph shape, with guards driven by a single
+    controllable signal `sig` (one event per step)."""
     return {
         "main_menu":   [("char_select", lambda c: sig["v"] == "to_cs"),
                         ("options",     lambda c: sig["v"] == "to_opt")],
@@ -105,21 +142,42 @@ def _screen_like_table(sig):
     }
 
 
-def test_screen_engine_full_path_parity():
-    """A representative input/event trace must produce an IDENTICAL per-step state
-    sequence on both backends (the screen-flow equivalence guard)."""
-    script = ["to_opt", "opt_back", "to_cs", "start", "pause",
-              "resume", "ko", "rematch", "noop", "start"]
-    sig_l, sig_s = {"v": None}, {"v": None}
-    legacy = make_screen_engine(_screen_like_table(sig_l), "main_menu", "legacy")
-    chart = make_screen_engine(_screen_like_table(sig_s), "main_menu", "statechart")
-    trace_l, trace_s = [], []
-    for ev in script:
-        sig_l["v"] = sig_s["v"] = ev
-        legacy.update(None)
-        chart.update(None)
-        trace_l.append(legacy.state)
-        trace_s.append(chart.state)
-    assert trace_l == trace_s, f"{trace_l} != {trace_s}"
-    # The trace must actually visit the interesting states (guard isn't vacuous).
-    assert {"options", "char_select", "playing", "pause", "win_screen"} <= set(trace_l)
+def _run_trace(backend):
+    """Drive `backend` through SCRIPT, returning the per-step state sequence."""
+    sig = {"v": None}
+    eng = make_screen_engine(_screen_like_table(sig), "main_menu", backend)
+    trace = []
+    for ev in SCRIPT:
+        sig["v"] = ev
+        eng.update(None)
+        trace.append(eng.state)
+    return trace
+
+
+def _load_golden():
+    assert GOLDEN_PATH.exists(), (
+        f"Screen-parity golden missing: {GOLDEN_PATH}\n"
+        "Record it by running this file with PYCATS_UPDATE_GOLDENS=1."
+    )
+    return json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
+
+
+def test_legacy_screen_trace_matches_golden():
+    """The legacy screen engine still reproduces the recorded golden — i.e. the
+    golden faithfully froze legacy's behaviour. Doubles as the recorder under
+    PYCATS_UPDATE_GOLDENS=1. (Removed in slice 4b along with the legacy engine.)"""
+    trace = _run_trace("legacy")
+    if os.environ.get("PYCATS_UPDATE_GOLDENS") == "1":
+        GOLDEN_PATH.parent.mkdir(parents=True, exist_ok=True)
+        GOLDEN_PATH.write_text(json.dumps(trace, indent=2) + "\n", encoding="utf-8")
+        return
+    assert trace == _load_golden(), f"legacy diverged from golden:\n {trace}"
+
+
+def test_statechart_screen_trace_matches_golden():
+    """THE GATE: the statechart engine reproduces the recorded golden screen-flow
+    transition sequence — no dependence on a live legacy engine. Survives slice 4b."""
+    trace = _run_trace("statechart")
+    assert trace == _load_golden(), f"statechart diverged from golden:\n {trace}"
+    # The trace must actually visit the interesting states (golden isn't vacuous).
+    assert INTERESTING <= set(trace), sorted(set(trace))
