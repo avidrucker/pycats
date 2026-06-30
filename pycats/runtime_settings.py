@@ -35,3 +35,8 @@ def set(key, value):
 def show_status_timer_bars():
     """Live HUD toggle the status-bar render path honours (#111/#121)."""
     return bool(get("show_status_timer_bars"))
+
+
+def show_hitbox_overlay():
+    """Live toggle the hit/hurtbox debug overlay render path honours (#219)."""
+    return bool(get("show_hitbox_overlay"))

@@ -6,6 +6,8 @@ prefs here, per-player config stays on char-select). Each change persists throug
 `settings.py` and updates the live value so it takes effect immediately:
 
 - **Status Bars** (HUD overlay #111): flips `runtime_settings` live + persists.
+- **Hitbox Overlay** (debug box visualiser #219): flips `runtime_settings` live
+  + persists; the battle render path draws hit/hurtbox outlines when ON.
 - **Window Size / Fullscreen** (display): routed back to game.py via injected
   `display_hooks` (None in headless/tests → those rows are inert). The hooks reuse
   game.py's existing F10/F11 machinery, which already persists display prefs.
@@ -44,7 +46,8 @@ class OptionsMenu:
         self.display_hooks = display_hooks or {}
 
         # Row keys in display order. "back" is the explicit exit row.
-        self.rows = ["status_bars", "window_scale", "fullscreen", "esc_quit", "back"]
+        self.rows = ["status_bars", "hitbox_overlay", "window_scale",
+                     "fullscreen", "esc_quit", "back"]
         self.selected_option = 0
 
         self.input_cooldown = 0
@@ -96,6 +99,10 @@ class OptionsMenu:
             new = not runtime_settings.show_status_timer_bars()
             runtime_settings.set("show_status_timer_bars", new)
             settings.save({"show_status_timer_bars": new})
+        elif row == "hitbox_overlay":
+            new = not runtime_settings.show_hitbox_overlay()
+            runtime_settings.set("show_hitbox_overlay", new)
+            settings.save({"show_hitbox_overlay": new})
         elif row == "window_scale":
             hook = self.display_hooks.get("cycle_windowed_scale")
             if hook:
@@ -116,6 +123,8 @@ class OptionsMenu:
     def _row_label(self, row):
         if row == "status_bars":
             return "Status Bars: " + ("ON" if runtime_settings.show_status_timer_bars() else "OFF")
+        if row == "hitbox_overlay":
+            return "Hitbox Overlay: " + ("ON" if runtime_settings.show_hitbox_overlay() else "OFF")
         if row == "window_scale":
             getter = self.display_hooks.get("get_windowed_scale")
             return "Window Size: " + (f"{getter():g}x" if getter else "F10")

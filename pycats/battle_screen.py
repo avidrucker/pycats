@@ -31,6 +31,7 @@ from .render_battle import (
     draw_hud,
     render_attacks,
     render_battle,
+    render_hitbox_overlay,
 )
 from .systems import combat
 from .systems.win_condition import winner_loser
@@ -98,6 +99,9 @@ class BattleScreen:
         surface.fill(BG_COLOR)
         render_battle(surface, self.players, platforms)
         render_attacks(surface, self.attacks)
+        # Hit/hurtbox debug overlay (#219) — above fighters/attacks, gated on the
+        # live toggle (default OFF, so this is a no-op until a dev flips it on).
+        render_hitbox_overlay(surface, self.players, self.attacks)
         if self.player1 and self.player2:
             draw_hud(surface, self.player1, "P1")
             draw_hud(surface, self.player2, "P2", topright=True)
@@ -118,6 +122,7 @@ class BattleScreen:
         background.fill(BG_COLOR)
         render_battle(background, self.players, platforms)
         render_attacks(background, self.attacks)
+        render_hitbox_overlay(background, self.players, self.attacks)  # #219
         if self.player1 and self.player2:
             draw_hud(background, self.player1, "P1")
             draw_hud(background, self.player2, "P2", topright=True)
