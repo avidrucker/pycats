@@ -44,13 +44,31 @@ _NARZ_FTILT = MoveData(
     ),
 )
 
+# --- Jab (slice 3, #301): a fast, disjoint neutral-A poke -------------------------
+# Marth's jab (PM3.6 `Attack11`) is a quick sword stab — ONE box (not a tipper; that's
+# the f-tilt). It still reaches past the hurtbox (disjoint), but closer + weaker than
+# the f-tilt tip, and much faster (startup 4 vs 6). ⚠ playtest / rukaidata-confirm.
+# #120 units: frames/%/angle/BKB/KBG RAW; the thin blade → small r. The default hurtbox
+# spans dx 6..34; this box sits at dx 48..68 — disjoint.
+_NARZ_JAB = MoveData(
+    name="jab",
+    in_air=False,
+    startup=4,
+    active=2,
+    recovery=8,  # 4 + 2 + 8 = 14 (fast poke)
+    hitboxes=(
+        Hitbox(circle=Circle(dx=58, dy=28, r=10), damage=4.0, angle=361,
+               base_knockback=15.0, knockback_growth=30.0),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
     # default "attack" placeholder is kept as the neutral-A fallback. Other slots reuse
     # the default cat until their slices land (#294). Body still the default (#290 v1).
     hurtbox=_DEFAULT.hurtbox,
-    moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT},
+    moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
