@@ -166,6 +166,42 @@ _UP_TILT = MoveData(
     ),
 )
 
+# --- Forward-air, mapped to the canonical "fair" key (PM3.6 Mario AttackAirF) ---
+# The FIRST move to use the #204 per-hitbox temporal windows: a two-stage f-air,
+# the classic Mario forward air. rukaidata AttackAirF: active 16-22 -> startup 15
+# / active 7; IASA 45 -> recovery 23. Two windows (MoveClock frame coords):
+#   - EARLY [16,17]: angle 60 (up-forward), strong — id0 dmg17/BKB50, id1 dmg16/
+#     BKB40, both KBG 100; radii 17/24 (sizes 3.13/4.49 u × 5.4).
+#   - LATE  [18,22]: angle 280 (down-and-forward — the METEOR/spike), both dmg15 /
+#     BKB30 / KBG70; radii 17/21 (sizes 3.13/3.91 u × 5.4).
+# All WDSK 0; angles literal (280 launches downward via the existing code, no
+# sentinel). Positions approximated (no skeleton): in front of the body, the late
+# meteor boxes swung lower. Landing-lag / auto-cancel / L-cancel deferred (no
+# landing-lag system — same as n-air).
+def _fair_early(dx, dy, r, damage, bkb):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=60,
+                  base_knockback=bkb, knockback_growth=100.0,
+                  active_start=16, active_end=17)
+
+def _fair_late(dx, dy, r):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=15.0, angle=280,
+                  base_knockback=30.0, knockback_growth=70.0,
+                  active_start=18, active_end=22)
+
+_FORWARD_AIR = MoveData(
+    name="forward air",
+    in_air=True,
+    startup=15,
+    active=7,
+    recovery=23,
+    hitboxes=(
+        _fair_early(dx=42, dy=18, r=17, damage=17.0, bkb=50.0),  # early id0
+        _fair_early(dx=48, dy=26, r=24, damage=16.0, bkb=40.0),  # early id1 (big arc)
+        _fair_late(dx=46, dy=36, r=17),                          # late id0 (meteor)
+        _fair_late(dx=50, dy=44, r=21),                          # late id1 (spike tip)
+    ),
+)
+
 # --- Neutral-air, mapped to the "nair" slot (PM3.6 Mario AttackAirN) -----------
 # Nalio's first aerial (#136), authored as the CLEAN-HIT form on the #130 engine.
 # A "sex kick" — 2 simultaneous hitboxes around the body (rukaidata ids 0 & 1,
@@ -226,7 +262,7 @@ NALIO_FIGHTER_DATA = FighterData(
     weight=100,            # PM3.6 Mario (== pycats default → no KB change)
     hurtbox=_HURTBOX,
     moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
-           "utilt": _UP_TILT, "nair": _NEUTRAL_AIR},
+           "utilt": _UP_TILT, "fair": _FORWARD_AIR, "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

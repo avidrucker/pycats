@@ -123,6 +123,61 @@ def test_nalio_utilt_is_pm_attackhi3():
     assert tuple(hb.circle.r for hb in move.hitboxes) == (15, 19, 25)
 
 
+def test_nalio_fair_is_pm_attackairf_two_windows():
+    """Nalio's f-air is PM3.6 Mario AttackAirF (rukaidata) — the first move to use
+    the #204 per-hitbox temporal windows. Active 16-22 (startup 15 / active 7),
+    IASA 45 (recovery 23). Two windows: early [16,17] (angle 60, strong) then the
+    meteor late [18,22] (angle 280, downward spike). Able-to-fail: an absent fair
+    key falls back to nair, and collapsing the windows breaks the per-box timing."""
+    move = load_fighter_data("nalio").moves["fair"]
+    assert move.in_air is True
+    assert (move.startup, move.active, move.recovery) == (15, 7, 23)
+    assert len(move.hitboxes) == 4
+
+    early = [hb for hb in move.hitboxes if hb.active_start == 16]
+    late = [hb for hb in move.hitboxes if hb.active_start == 18]
+    assert len(early) == 2 and len(late) == 2
+
+    # Early window [16, 17].
+    assert all(hb.active_end == 17 for hb in early)
+    assert tuple(hb.damage for hb in early) == (17.0, 16.0)
+    assert all(hb.angle == 60 for hb in early)
+    assert tuple(hb.base_knockback for hb in early) == (50.0, 40.0)
+    assert all(hb.knockback_growth == 100.0 for hb in early)
+    assert tuple(hb.circle.r for hb in early) == (17, 24)
+
+    # Late window [18, 22] — the meteor (angle 280 = downward).
+    assert all(hb.active_end == 22 for hb in late)
+    assert tuple(hb.damage for hb in late) == (15.0, 15.0)
+    assert all(hb.angle == 280 for hb in late)
+    assert all(hb.base_knockback == 30.0 for hb in late)
+    assert all(hb.knockback_growth == 70.0 for hb in late)
+    assert tuple(hb.circle.r for hb in late) == (17, 21)
+
+
+def test_nalio_fair_spawns_two_windows_through_player_update():
+    """End-to-end (#204): driving the real f-air through Player.update spawns the
+    early window as one Attack on frame 16 and the meteor late window as a SEPARATE
+    Attack on frame 18."""
+    from pycats.core.input import InputFrame
+    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
+               char_name="nalio", facing_right=True)
+    group = pygame.sprite.Group()
+    neutral = InputFrame(held=set(), pressed=set(), released=set())
+    p._clock.start(load_fighter_data("nalio").moves["fair"])
+
+    seen: set[int] = set()
+    appeared: list[tuple[int, int]] = []  # (frame, first-box angle)
+    for frame in range(1, 24):
+        p.update(neutral, [], group)  # airborne, no platforms; clock still ticks
+        for atk in group:
+            if id(atk) not in seen:
+                seen.add(id(atk))
+                appeared.append((frame, atk.hitboxes[0].angle))
+
+    assert appeared == [(16, 60), (18, 280)], "early then meteor, separate Attacks"
+
+
 def test_nalio_nair_is_pm_neutral_air():
     """Nalio's neutral-air is PM3.6 Mario AttackAirN (#136), clean-hit form on the
     #130 multi-hitbox engine: 2 simultaneous hitboxes, in_air, damage 12, BKB 20,

@@ -95,3 +95,22 @@ Each entry: what was decided, why, and how to undo/revisit.
      project's canonical reference) over recollection.
 4. **Positions approximated** as an overhead arc (small dy, id2 r25 the big sweep),
    same no-skeleton convention as the other tilts.
+
+---
+
+## C1 — Nalio f-air (#208, PM3.6 Mario AttackAirF) — first A2 consumer
+
+1. **Authored as a real two-window move (early hit → meteor), not clean-only.**
+   - *Why:* unlike n-air (#136, authored clean-only because A2 didn't exist), the
+     #204 gate now exists, so f-air uses it: early window [16,17] angle 60, late
+     window [18,22] angle 280. This is the first real consumer of A2.
+2. **Meteor uses literal angle 280 (no A1 sentinel).**
+   - 280° resolves down-and-forward via the existing launch code (`vel.y = -sin280
+     > 0` = downward). Only 361 needs the A1 path; 280 is a normal angle.
+3. **Window frame coords map rukaidata frames 1:1.**
+   - pycats startup convention (startup = first_active − 1) makes rukaidata "active
+     frame N" == MoveClock frame N, so active_start/active_end take rukaidata's
+     16/17 and 18/22 directly. Verified by the end-to-end test (Attacks on frames
+     16 and 18).
+4. **Positions approximated**, late meteor boxes swung lower (higher dy) than the
+   early boxes — documented; same no-skeleton convention.

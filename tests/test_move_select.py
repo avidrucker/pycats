@@ -126,6 +126,18 @@ def test_nalio_up_ground_uses_utilt_not_the_attack_alias():
     assert p.current_move is not p.fighter_data.moves["attack"]
 
 
+def test_nalio_airborne_forward_uses_fair_not_nair():
+    """Now that Nalio defines a real f-air (#208), airborne forward + A selects
+    "fair" instead of falling back to nair."""
+    pg.init()
+    p = _mk("nalio")  # faces right, so held "right" == "forward"
+    p.fighter.on_ground = False
+    p.handle_actions(_press("attack", held_extra=("right",)), pg.sprite.Group())
+    assert "fair" in p.fighter_data.moves
+    assert p.current_move is p.fighter_data.moves["fair"]
+    assert p.current_move is not p.fighter_data.moves["nair"]
+
+
 def test_b_button_starts_a_defined_special():
     pg.init()
     sb = MoveData(name="neutral b", in_air=False, startup=3, active=2, recovery=5,
