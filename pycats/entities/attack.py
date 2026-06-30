@@ -91,6 +91,7 @@ class Attack(pygame.sprite.Sprite):
         self.angle = prim.angle
         self.base_knockback = prim.base_knockback
         self.knockback_growth = prim.knockback_growth
+        self.set_knockback = prim.set_knockback  # WDSK (#211); None = normal scaling
         self.hit_cx: float = prim_cx
         self.hit_cy: float = prim_cy
         self.hit_r: float = prim_r

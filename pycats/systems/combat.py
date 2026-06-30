@@ -150,6 +150,7 @@ def process_hits(players, attacks):
                 atk.angle = hit_box.angle
                 atk.base_knockback = hit_box.base_knockback
                 atk.knockback_growth = hit_box.knockback_growth
+                atk.set_knockback = getattr(hit_box, "set_knockback", None)  # WDSK (#211)
                 defender.fighter.receive_hit(atk)
                 atk.owner.fighter.record_hit_landed()  # Track successful hit
                 if atk.disappear_on_hit:

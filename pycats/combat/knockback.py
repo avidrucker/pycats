@@ -22,6 +22,18 @@ def knockback(percent: float, damage: float, weight: int,
     return (growth * (knockback_growth / 100.0)) + base_knockback
 
 
+def set_knockback(wdsk: float, weight: int,
+                  base_knockback: float, knockback_growth: float) -> float:
+    """Weight-dependent SET knockback (WDSK, #211).
+
+    SmashWiki "Knockback": a set-knockback hit ignores the victim's percent — the
+    damage `d` becomes the WDSK value and the percent `p` is fixed at 10. So it is
+    exactly the normal formula at percent=10 with damage=wdsk; weight + KBG + BKB
+    still apply (hence *weight-dependent*). Pure; no pygame.
+    """
+    return knockback(10.0, wdsk, weight, base_knockback, knockback_growth)
+
+
 def sakurai_angle(kb: float, on_ground: bool) -> float:
     """Resolve the Sakurai-angle sentinel (361) to launch degrees.
 

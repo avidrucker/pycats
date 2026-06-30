@@ -144,3 +144,23 @@ Each entry: what was decided, why, and how to undo/revisit.
      used IASA as the move's pycats total.
 3. **BKB 0 recorded faithfully** — u-air's knockback is pure KBG (juggle tool), so
    base_knockback is genuinely 0, not a placeholder.
+
+---
+
+## D1 — WDSK gate (#211, weight-dependent set knockback)
+
+1. **Reused the existing knockback() formula, didn't add a new one.**
+   - SmashWiki: set knockback = the normal formula with percent fixed at 10 and
+     damage = the WDSK value. So `set_knockback(s,w,bkb,kbg) = knockback(10,s,w,
+     bkb,kbg)` — a 1-line wrapper, not a parallel formula to maintain.
+2. **Opt-in `Hitbox.set_knockback` field (None = normal).** Golden-safe: no
+   existing move sets it; default cat / current Nalio data unaffected.
+3. **Defensive `getattr` reads at the shared-combat sites (#179).** The combat.py
+   field-copy and fighter.receive_hit read `set_knockback` via getattr/default,
+   because test stubs (SimpleNamespace hit_boxes / attacks) and any legacy attack
+   object may lack the field — matches the project's defensive-read rule.
+4. **WDSK changes only knockback, not damage.** The hit still does `percent +=
+   damage`; only the launch is set. (d-air's 3%/2% hits still register their %.)
+5. **Scope: capability only.** Did NOT retrofit jab/d-tilt to use WDSK (that
+   changes their knockback + needs their data-pins updated) — separate enrichment
+   slices. This gate just makes WDSK expressible; d-air (D3) is the first consumer.

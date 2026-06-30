@@ -64,6 +64,12 @@ class Hitbox:
                            different windows so they fire on different frames.
         active_end       — inclusive END frame of the window. Paired with
                            active_start: set both or neither.
+        set_knockback    — weight-dependent SET knockback (WDSK, #211). When set
+                           to the WDSK value, this hit's launch ignores the
+                           victim's percent (a "set" hit) but still scales with the
+                           victim's weight + KBG/BKB. None = normal percent-scaling
+                           (today's behavior). The hit still deals its `damage` %;
+                           only the knockback is set.
     """
     circle: Circle
     damage: float
@@ -72,6 +78,7 @@ class Hitbox:
     knockback_growth: float = 0.0
     active_start: int | None = None
     active_end: int | None = None
+    set_knockback: int | None = None
 
     def __post_init__(self) -> None:
         s, e = self.active_start, self.active_end

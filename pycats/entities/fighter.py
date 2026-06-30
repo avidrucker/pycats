@@ -50,7 +50,7 @@ from ..config import (
     KNOCKDOWN_PRONE_FRAMES,
 )
 from ..combat.knockback import (
-    knockback, hitstun_frames, hitlag_frames, sakurai_angle,
+    knockback, hitstun_frames, hitlag_frames, sakurai_angle, set_knockback,
 )
 from ..combat.shield import shieldstun_frames
 from ..combat.shield import shield_break_stun_frames
@@ -222,8 +222,16 @@ class Fighter:
             # damage, not percent, so it is correctly excluded here.
             self.damage_taken += atk.damage
             atk.owner.fighter.record_damage_given(atk.damage)
-            kb = knockback(self.percent, atk.damage, self.weight,
-                           atk.base_knockback, atk.knockback_growth)
+            # Weight-dependent set knockback (#211): a WDSK hit's launch ignores
+            # the victim's percent (set) but still scales with weight + KBG/BKB.
+            # The hit still dealt its damage % above; only the knockback is set.
+            wdsk = getattr(atk, "set_knockback", None)
+            if wdsk is not None:
+                kb = set_knockback(wdsk, self.weight,
+                                   atk.base_knockback, atk.knockback_growth)
+            else:
+                kb = knockback(self.percent, atk.damage, self.weight,
+                               atk.base_knockback, atk.knockback_growth)
             # Crouch-cancel (#135): a hit taken while in the `crouch` state (#124)
             # has its knockback scaled down by CROUCH_CANCEL_FACTOR (0.67x, PM)
             # before launch + hitstun are derived — crouch as a defensive tool.
