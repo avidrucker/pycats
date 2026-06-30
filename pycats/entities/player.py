@@ -352,12 +352,24 @@ class Player(pygame.sprite.Sprite):
         # the hitbox lives for `active` frames.
         tick = self._clock.tick()
         if tick.spawn is not None:
+            # #223: a projectile move (projectile_speed set) spawns a MOVING,
+            # detached projectile — velocity in the facing direction, its own
+            # lifetime, vanishing on hit. Normal moves keep the static hitbox.
+            mv = self.current_move
+            velocity = None
+            disappear = False
+            lifetime = tick.lifetime
+            if getattr(mv, "projectile_speed", None) is not None:
+                facing = 1 if self.fighter.facing_right else -1
+                velocity = (facing * mv.projectile_speed, 0)
+                disappear = True
+                lifetime = mv.projectile_lifetime or tick.lifetime
             # Task 5 / #130: pass the move's full hitbox tuple so Attack resolves
             # every circle (multi-hitbox moves activate all boxes at once).
             attack_group.add(
                 Attack(self, hitboxes=tick.spawn, in_air=tick.in_air,
-                       disappear_on_hit=False, lifetime=tick.lifetime,
-                       rehit_rate=self.current_move.rehit_rate)  # #213 looping
+                       disappear_on_hit=disappear, lifetime=lifetime,
+                       rehit_rate=mv.rehit_rate, velocity=velocity)  # #213 looping; #223 projectile
             )
         if self.attack_timer == 0 and self.state == "attack":
             self.fighter.done_attacking = True

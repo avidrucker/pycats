@@ -121,6 +121,13 @@ class MoveData:
     # (today's behavior, the #130 guarantee). A number N = the spawned hitbox
     # re-hits an overlapping target every N frames across its active window.
     rehit_rate: int | None = None
+    # Projectile special (#223): when projectile_speed is set, the move spawns a
+    # MOVING projectile (an Attack with velocity = facing * projectile_speed) that
+    # lives projectile_lifetime frames, detached from the owner. None = a normal
+    # static-hitbox move. projectile_speed is a GUESS in px/frame (derive via
+    # rukaidata units/frame × PX_PER_UNIT≈5.4 / playtest — tracked like #192).
+    projectile_speed: int | None = None
+    projectile_lifetime: int | None = None
 
     def __post_init__(self) -> None:
         # Per-hitbox temporal-window cross-checks (#204). Per-box shape (paired,

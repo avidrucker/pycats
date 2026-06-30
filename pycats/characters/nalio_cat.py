@@ -327,6 +327,28 @@ _NEUTRAL_AIR = MoveData(
     ),
 )
 
+# --- Neutral-B Fireball (#223, PM3.6 Mario SpecialN) --------------------------
+# First special: a flat-travelling projectile (scoped in #155,
+# docs/research/nalio-fireball-scoping-findings.md). FOUND values (Smashboards 3.6
+# / SmashWiki): throw startup 14, total ~48 (IASA 41 → recovery 33); the projectile
+# article lives ~73 frames, 7% damage, Sakurai angle 361 (#203/#206), BKB 22 / KBG
+# 20, size 3.5u → r≈19px (×PX_PER_UNIT 5.4). active=1 so a single projectile spawns.
+# ⚠ projectile_speed is a GUESS (px/frame) — derive via rukaidata units/frame × 5.4
+# or playtest (tracked the #192 way). Bounce arc / reflect-absorb are out of scope.
+_FIREBALL = MoveData(
+    name="fireball",
+    in_air=False,
+    startup=14,
+    active=1,
+    recovery=33,
+    hitboxes=(
+        Hitbox(circle=Circle(dx=50, dy=30, r=19), damage=7.0, angle=361,
+               base_knockback=22.0, knockback_growth=20.0),
+    ),
+    projectile_speed=10,     # ⚠ GUESS px/frame (#192/#195 derivation pending)
+    projectile_lifetime=73,
+)
+
 # --- Crouch geometry (#124) ---------------------------------------------------
 # PM Mario's crouch is a moderate lower (not a Kirby-style ground-hug). The body
 # Rect resizes from the 40×60 stand box to a squarish 40×40 crouch box (feet
@@ -359,7 +381,8 @@ NALIO_FIGHTER_DATA = FighterData(
     hurtbox=_HURTBOX,
     moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
            "utilt": _UP_TILT, "fair": _FORWARD_AIR, "bair": _BACK_AIR,
-           "uair": _UP_AIR, "dair": _DOWN_AIR, "nair": _NEUTRAL_AIR},
+           "uair": _UP_AIR, "dair": _DOWN_AIR, "nair": _NEUTRAL_AIR,
+           "neutral_b": _FIREBALL},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

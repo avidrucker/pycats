@@ -18,7 +18,7 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame  # type: ignore
-from ..config import ATTACK_SIZE  # legacy single-hitbox visual size
+from ..config import ATTACK_SIZE, SCREEN_WIDTH  # legacy single-hitbox visual size; stage width (#223 off-stage despawn)
 from ..combat.geometry import resolve_circle
 
 
@@ -53,12 +53,16 @@ class Attack(pygame.sprite.Sprite):
         hitboxes=None,      # #130: tuple[Hitbox, ...] for a multi-hitbox move
         in_air=False,       # #133: is this an aerial move's hitbox? (aerials don't clank)
         rehit_rate=None,    # #213: frames between re-hits (None = single hit)
+        velocity=None,      # #223: (vx, vy) px/frame for a MOVING projectile (None = static)
     ):
         super().__init__()
         self.owner = owner
         self.disappear_on_hit = disappear_on_hit
         self.active = True
         self.in_air = in_air
+        # #223: a projectile (e.g. fireball) MOVES — its resolved circles + rect
+        # advance by `velocity` each frame. None = the Phase-0 static hitbox.
+        self.velocity = tuple(velocity) if velocity else None
 
         # lifetime: how many frames the hit-box persists. Task 4 spawns the
         # hit-box during a move's active window with lifetime == move.active.
@@ -129,6 +133,17 @@ class Attack(pygame.sprite.Sprite):
 
     # called every frame by sprite.Group.update()
     def update(self):
+        if self.velocity is not None:  # #223: advance the moving projectile
+            vx, vy = self.velocity
+            self.resolved = [(cx + vx, cy + vy, r, hb)
+                             for (cx, cy, r, hb) in self.resolved]
+            self.hit_cx += vx
+            self.hit_cy += vy
+            self.rect.center = (int(self.hit_cx), int(self.hit_cy))
+            # despawn once it flies off the stage (the lifetime is the other bound)
+            if not (-self.rect.width <= self.hit_cx <= SCREEN_WIDTH + self.rect.width):
+                self.kill()
+                return
         if self._rehit_timer > 0:  # #213: drain the looping-rehit cooldown
             self._rehit_timer -= 1
         self.frames_left -= 1
