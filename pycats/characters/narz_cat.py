@@ -62,13 +62,36 @@ _NARZ_JAB = MoveData(
     ),
 )
 
+# --- Down-tilt (slice 4, #303): a low, disjoint, tippered edgeguard poke ----------
+# Marth's low spacing tool: the same 2-box tipper shape as the f-tilt (tip box FIRST,
+# stronger; priority = tuple order, attack.py:36 / combat.py:141), but near the feet
+# (high dy) and at a LOW launch angle (sends low/outward — the edgeguard / 2-frame use),
+# unlike the f-tilt's 361 sentinel. PM3.6 Marth `AttackLw3`, ⚠ playtest / rukaidata-confirm.
+# Tip at dx 56..76 (disjoint past the hurtbox 6..34).
+_NARZ_DTILT = MoveData(
+    name="dtilt",
+    in_air=False,
+    startup=5,
+    active=2,
+    recovery=13,  # 5 + 2 + 13 = 20
+    hitboxes=(
+        # TIP (box 0): far + low + strong.
+        Hitbox(circle=Circle(dx=66, dy=46, r=10), damage=9.0, angle=30,
+               base_knockback=20.0, knockback_growth=70.0),
+        # BASE (box 1): near + low + weak.
+        Hitbox(circle=Circle(dx=44, dy=48, r=12), damage=7.0, angle=30,
+               base_knockback=12.0, knockback_growth=50.0),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
     # default "attack" placeholder is kept as the neutral-A fallback. Other slots reuse
     # the default cat until their slices land (#294). Body still the default (#290 v1).
     hurtbox=_DEFAULT.hurtbox,
-    moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB},
+    moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
+           "dtilt": _NARZ_DTILT},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
