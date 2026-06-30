@@ -162,6 +162,18 @@ def test_nalio_airborne_up_uses_uair_not_nair():
     assert p.current_move is not p.fighter_data.moves["nair"]
 
 
+def test_nalio_airborne_down_uses_dair_not_nair():
+    """Now that Nalio defines a real d-air (#214), airborne down + A selects
+    "dair" instead of falling back to nair."""
+    pg.init()
+    p = _mk("nalio")
+    p.fighter.on_ground = False
+    p.handle_actions(_press("attack", held_extra=("down",)), pg.sprite.Group())
+    assert "dair" in p.fighter_data.moves
+    assert p.current_move is p.fighter_data.moves["dair"]
+    assert p.current_move is not p.fighter_data.moves["nair"]
+
+
 def test_b_button_starts_a_defined_special():
     pg.init()
     sb = MoveData(name="neutral b", in_air=False, startup=3, active=2, recovery=5,

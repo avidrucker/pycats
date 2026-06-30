@@ -185,3 +185,23 @@ Each entry: what was decided, why, and how to undo/revisit.
    attacks in tests have neither (#179 shared-combat defensive-read rule).
 5. **Composes with the other gates for d-air (D3):** #204 windows give the two
    damage phases, this gives the loop within each, #211 WDSK gives the set launch.
+
+---
+
+## D3 — Nalio d-air (#214, PM3.6 Mario AttackAirLw) — composes all 3 gates
+
+1. **Modelled each phase by its priority box, not all 4/2 rukaidata boxes.**
+   - rukaidata lists 4 phase-1 / 2 phase-2 boxes at one spot with descending WDSK.
+     pycats picks the FIRST overlapping box (priority), so only the priority box
+     ever connects — the rest are redundant under first-box-wins. One box per phase.
+2. **rehit_rate=4 is a playtest starting point.** The real per-hitbox rehit cadence
+   isn't in the basic frame-data table; picked 4 and flagged it ⚠, like the
+   crouch/prone/Sakurai tuning values. In-game cadence/feel is a playtest follow-up.
+3. **Two windows + rehit + WDSK compose cleanly.** #204 gives the 3→2 damage phases
+   ([7,15] and [16,27]), #213 loops within each (each spawned Attack carries the
+   move-level rehit_rate), #211 makes every hit a set-knockback launch (BKB 0).
+4. **In-game caveat (documented, not blocking):** WDSK launches each loop hit, which
+   could knock a victim out of the drill before the next loop — real PM tunes this
+   to keep them in. That's an in-game tuning matter; the data + structure are
+   faithful and the regression tests pin them. Playtest follow-up if it feels off.
+5. **Positions approximated below the body** (downward drill, large dy), no skeleton.

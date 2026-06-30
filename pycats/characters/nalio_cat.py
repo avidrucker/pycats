@@ -263,6 +263,38 @@ _UP_AIR = MoveData(
     ),
 )
 
+# --- Down-air, mapped to the canonical "dair" key (PM3.6 Mario AttackAirLw) -----
+# The looping DRILL — the final move of Nalio's kit, and the one that composes ALL
+# THREE Phase-2 gates: #204 temporal windows (the two damage phases), #213
+# rehit_rate (the loop within each phase), #211 WDSK (every hit is a set-knockback
+# launch). rukaidata AttackAirLw: active 7-27 -> startup 6 / active 21; IASA 35 ->
+# recovery 8. All hits angle 85, BKB 0, set knockback (WDSK).
+#   - PHASE 1 [7,15]:  dmg 3, WDSK 55, KBG 160.
+#   - PHASE 2 [16,27]: dmg 2, WDSK 30, KBG 100.
+# rukaidata lists 4 phase-1 / 2 phase-2 boxes at one spot with descending WDSK;
+# pycats picks the FIRST overlapping box (priority), so each phase is modelled by
+# its priority box (the rest are redundant under first-box-wins). Radii ~5.0 u ×
+# 5.4 -> 27. Positions approximated BELOW the body (downward drill). rehit_rate=4
+# is a ⚠ playtest starting point (the per-hitbox rehit parameter isn't in the basic
+# table). Landing-lag/L-cancel deferred (no system — as the other aerials).
+def _dair_box(damage, sk, kbg, start, end, dy):
+    return Hitbox(circle=Circle(dx=20, dy=dy, r=27), damage=damage, angle=85,
+                  base_knockback=0.0, knockback_growth=kbg,
+                  set_knockback=sk, active_start=start, active_end=end)
+
+_DOWN_AIR = MoveData(
+    name="down air",
+    in_air=True,
+    startup=6,
+    active=21,
+    recovery=8,
+    rehit_rate=4,   # looping drill cadence (⚠ playtest start)
+    hitboxes=(
+        _dair_box(damage=3.0, sk=55, kbg=160.0, start=7, end=15, dy=56),   # phase 1
+        _dair_box(damage=2.0, sk=30, kbg=100.0, start=16, end=27, dy=58),  # phase 2
+    ),
+)
+
 # --- Neutral-air, mapped to the "nair" slot (PM3.6 Mario AttackAirN) -----------
 # Nalio's first aerial (#136), authored as the CLEAN-HIT form on the #130 engine.
 # A "sex kick" — 2 simultaneous hitboxes around the body (rukaidata ids 0 & 1,
@@ -324,7 +356,7 @@ NALIO_FIGHTER_DATA = FighterData(
     hurtbox=_HURTBOX,
     moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
            "utilt": _UP_TILT, "fair": _FORWARD_AIR, "bair": _BACK_AIR,
-           "uair": _UP_AIR, "nair": _NEUTRAL_AIR},
+           "uair": _UP_AIR, "dair": _DOWN_AIR, "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

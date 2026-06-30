@@ -284,6 +284,56 @@ def test_nalio_uair_spawns_two_windows_through_player_update():
     assert appeared == [(4, 11.0), (6, 10.0)], "clean then late, separate Attacks"
 
 
+def test_nalio_dair_is_pm_attackairlw():
+    """Nalio's d-air is PM3.6 Mario AttackAirLw (rukaidata) — a looping drill that
+    composes ALL THREE gates: #204 windows (two damage phases), #213 rehit_rate
+    (the loop), #211 WDSK (set-knockback launch). Active 7-27 (startup 6 / active
+    21), IASA 35 (recovery 8). Phase 1 [7,15]: 3 dmg, WDSK 55, KBG 160. Phase 2
+    [16,27]: 2 dmg, WDSK 30, KBG 100. Both angle 85, BKB 0. Able-to-fail: an absent
+    key falls back to nair; a None rehit_rate breaks the loop."""
+    move = load_fighter_data("nalio").moves["dair"]
+    assert move.in_air is True
+    assert (move.startup, move.active, move.recovery) == (6, 21, 8)
+    assert move.rehit_rate is not None, "d-air is a looping drill"
+    assert len(move.hitboxes) == 2
+
+    p1 = next(hb for hb in move.hitboxes if hb.active_start == 7)
+    p2 = next(hb for hb in move.hitboxes if hb.active_start == 16)
+
+    assert (p1.active_start, p1.active_end) == (7, 15)
+    assert p1.damage == 3.0 and p1.angle == 85
+    assert p1.base_knockback == 0.0
+    assert p1.set_knockback == 55 and p1.knockback_growth == 160.0
+
+    assert (p2.active_start, p2.active_end) == (16, 27)
+    assert p2.damage == 2.0 and p2.angle == 85
+    assert p2.base_knockback == 0.0
+    assert p2.set_knockback == 30 and p2.knockback_growth == 100.0
+
+
+def test_nalio_dair_spawns_looping_windows_through_player_update():
+    """End-to-end: the real d-air spawns phase 1 on frame 7 and phase 2 on frame
+    16 as separate Attacks, each carrying the move's rehit_rate so they loop."""
+    from pycats.core.input import InputFrame
+    move = load_fighter_data("nalio").moves["dair"]
+    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
+               char_name="nalio", facing_right=True)
+    group = pygame.sprite.Group()
+    neutral = InputFrame(held=set(), pressed=set(), released=set())
+    p._clock.start(move)
+
+    seen: set[int] = set()
+    appeared: list[tuple[int, float, int]] = []  # (frame, dmg, rehit_rate)
+    for frame in range(1, 28):
+        p.update(neutral, [], group)
+        for atk in group:
+            if id(atk) not in seen:
+                seen.add(id(atk))
+                appeared.append((frame, atk.hitboxes[0].damage, atk.rehit_rate))
+
+    assert appeared == [(7, 3.0, move.rehit_rate), (16, 2.0, move.rehit_rate)]
+
+
 def test_nalio_nair_is_pm_neutral_air():
     """Nalio's neutral-air is PM3.6 Mario AttackAirN (#136), clean-hit form on the
     #130 multi-hitbox engine: 2 simultaneous hitboxes, in_air, damage 12, BKB 20,
