@@ -158,3 +158,53 @@ pycats moved from "**~6/10 on all three lenses, one dominating root cause**" to 
 ### Process note
 
 All three sub-spikes were almost entirely **diffs**, and the diff is overwhelmingly green — the system working as designed: a review (#56) produced ranked follow-ups, the follow-ups were worked, and this re-review confirms it. The new findings (DDD N1/N2, Hex H1–H4, BDD's S5 remainder) are mostly *consequences of, or remainders after,* the big decomposition — second-order coupling and finishing touches — which is precisely what a re-review surfaces. Method note worth carrying forward: gathering each lens's evidence via parallel read-only investigations kept every claim file:line-cited and the spikes bounded.
+
+---
+
+## Appendix — F1+F2 slice plan (scoping spike #270)
+
+Scope-first slicing of #264 item 2 (findings **N1** `Fighter`→`Player` back-reference + **N2** `Player.update()` ticks domain timers). Read-only enumeration; each slice below is single-deliverable, ≤60min, and ordered to keep the suite green at every step.
+
+### Enumeration
+
+**N1 — `self.owner.*` reaches in `fighter.py`:**
+
+| Reach | file:line | Kind |
+|---|---|---|
+| `self.owner.state == "crouch"` | `:247` (in `receive_hit`) | state-label read (FSM/adapter) |
+| `self.owner.force_prone(...)` | `:305` (in `receive_hit`) | transition (→ engine) |
+| `self.owner.engine.force("ko")` | `:333` (in `_ko`) | transition (→ engine) |
+| `self.owner._clock.reset()` | `:382` (in `reset_to_spawn`) | data reach (clock) |
+| `self.owner.tail.reset()` | `:389` (in `reset_to_spawn`) | data reach (presentation) |
+| `owner.SIZE` | `:83, :96` (`__init__`) | construction read |
+
+*(`atk.owner.fighter.*` in `receive_hit` — `:223,232,252,277` — is the attacker↔defender link via the `Attack` object, legitimate domain↔domain; out of scope.)*
+
+**N2 — timers in `player.update()`:**
+
+- **Pure decrement** (`if t>0: t-=1`, no transition): `hitlag_timer` `:212`, `hurt_timer` `:340`, `stun_timer` `:342`, `landing_lag_timer` `:374`, `ledge_regrab_lockout_timer` `:376`, `shieldstun_timer` `:378`.
+- **Decrement + transition** (reads `self.state` / calls `engine.force` / starts a clock): `respawn_timer` `:200`, `prone_timer→getup` `:344-361`, `getup_roll_timer` `:366`, `getup_attack_timer` `:370`, `ledge_hang_timer` `:292-303`, `dodge_timer` `:380-382`.
+
+### Inversion shape (Q3 — resolved)
+
+A **hybrid**, applied per-kind:
+- **Pure timers** → a `Fighter.tick_timers()` the aggregate owns (no owner needed).
+- **Coupled timers** → `Fighter` advances them and **returns expiration events**; `Player.update()` maps events → `engine.force`/`_clock.start` (transitions stay in the adapter layer, which is correct — the Fighter reports *what expired*, the Player decides *what that means for the FSM*).
+- **`receive_hit`/`_ko` transitions** → same **return-intent** pattern (`receive_hit`/`_ko` return e.g. `("force","ko")`/`("force","prone")`; `combat.process_hits` / the caller applies it).
+- **state-label read** → pass the defender's crouch state in (or a `Fighter.is_crouching` flag) instead of reading `owner.state`.
+- **reset/construction reaches** → `Player` owns `_clock`/`tail` reset and passes `size` into `Fighter(...)`.
+
+Rejected: a pure injected-engine-port on `Fighter` (keeps a control dependency on the engine inside the domain; return-intents keep `Fighter` free of the engine entirely).
+
+### Ranked DEV slices (file one at a time under #264; not pre-filed)
+
+| # | Slice | N | Size | Covering oracles (behaviour-neutral net) |
+|---|---|---|---|---|
+| **S1** | `Fighter.tick_timers()` owns the 6 **pure** decrements; `Player.update()` calls it | N2 | S | `tests/golden/*` (combat/two_npc/full_match), `test_shieldstun.py`, `test_hitlag.py`, `test_knockback.py` (hitstun floor) + new unit: each pure timer −1, floors at 0 |
+| **S2** | crouch state-label: pass defender crouch-state into `receive_hit` (drop `owner.state`) | N1 | S | `test_crouch.py` (crouch-cancel whiff) |
+| **S3** | `Player` owns `_clock`/`tail` reset + pass `size` into `Fighter()` (drop those `owner` reaches) | N1 | S | respawn/reset tests, `tests/golden/*` |
+| **S4** | `Fighter.tick()` advances **coupled** timers, returns expiration events; `Player` maps → transitions | N2 | M | `test_prone*`, `test_getup_roll`/`#146`, `test_getup_attack`/`#225`, `test_dodge_mechanics.py`, `test_ledge*`, goldens |
+| **S5** | return-intent for `receive_hit`/`_ko` transitions (`force_prone`, `engine.force("ko")`); caller applies | N1 | M | `test_combat.py`, knockback/KO + blast-zone tests, goldens — **hardest; do after the pattern is proven** |
+| **S6** | drop the `owner` back-ref entirely + AST guard (Fighter has no `self.owner.` except `atk.owner`) | N1 | S | new able-to-fail structural guard (mirrors the #265 tail guard) |
+
+**Order rationale:** S1–S3 are isolated, low-risk confidence-builders; S4 establishes the event-return pattern; S5 (the high-blast-radius `process_hits` change) lands once that pattern is proven; S6 is the enforcing capstone. The suite stays green at every step.
