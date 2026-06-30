@@ -206,6 +206,10 @@ class FighterData:
     move_speed: float = MOVE_SPEED
     jump_vel: float = JUMP_VEL
     max_jumps: int = MAX_JUMPS
+    # Per-fighter standing body box (#275). None = the global config.PLAYER_SIZE
+    # (via owner.SIZE), so the default cat / sim path is unchanged. Symmetric with
+    # crouch_size/prone_size; a small archetype (Kirby) sets a shorter box here.
+    stand_size: tuple[int, int] | None = None
     crouch_size: tuple[int, int] | None = None
     crouch_hurtbox: Hurtbox | None = None
     prone_size: tuple[int, int] | None = None

@@ -6,11 +6,41 @@ and body geometry are placeholders reused from the default cat until slice 2; th
 slice pins only the stat differentiation. All assertions go through
 load_fighter_data("birky") — the loader is the seam (#229).
 """
+import pygame
+
+from pycats.battle_screen import BattleScreen
 from pycats.combat.data import load_fighter_data
+from pycats.config import PLAYER_SIZE
 
 # #229 PM-Kirby -> pycats stat table (proportional-to-Mario; pin/playtest later).
 _EXPECTED = dict(weight=70, gravity=0.42, max_fall_speed=12, move_speed=5,
                  max_jumps=6, jump_vel=-11)
+
+# Birky's Kirby-proportioned body (#275): shorter than the default 40x60 (playtest).
+_BIRKY_BODY = (40, 44)
+
+_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
+           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
+_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
+           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+
+
+def test_birky_stand_size_is_a_smaller_kirby_body():
+    birky = load_fighter_data("birky")
+    default = load_fighter_data("default")
+    assert birky.stand_size == _BIRKY_BODY
+    assert default.stand_size is None          # default cat keeps the global PLAYER_SIZE
+    assert _BIRKY_BODY[1] < PLAYER_SIZE[1]      # shorter than the 60-tall default
+
+
+def test_birky_fighter_body_is_smaller_than_default():
+    bs = BattleScreen(_P1, _P2)
+    bs.create_from_selection("birky", "nalio")  # nalio has no custom stand_size
+    assert bs.player1.fighter.stand_size == _BIRKY_BODY
+    assert bs.player1.fighter.rect.height == _BIRKY_BODY[1]
+    # nalio falls back to the global body
+    assert bs.player2.fighter.stand_size == PLAYER_SIZE
+    assert bs.player2.fighter.rect.height == PLAYER_SIZE[1]
 
 
 def test_birky_overrides_movement_scalars():
@@ -34,10 +64,10 @@ def test_birky_diverges_from_default_on_every_scalar():
     assert birky.jump_vel != default.jump_vel
 
 
-def test_birky_reuses_default_hurtbox_but_has_no_placeholder_moves():
+def test_birky_has_own_body_and_no_placeholder_moves():
     birky = load_fighter_data("birky")
     default = load_fighter_data("default")
-    assert birky.hurtbox == default.hurtbox            # body geometry not per-fighter
+    assert birky.hurtbox != default.hurtbox   # body-matched hurtbox now (#275)
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
     assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair", "fair",

@@ -80,7 +80,9 @@ class Fighter:
         # ---------- crouch geometry (#124) ----------
         # stand_size is the body's full standing box; crouch_size/_hurtbox are
         # the per-cat crouch geometry (None = this fighter can't crouch).
-        self.stand_size = (owner.SIZE[0], owner.SIZE[1])
+        # Per-fighter stand_size (#275): a small archetype (Kirby) overrides it;
+        # None falls back to the global owner.SIZE (config.PLAYER_SIZE).
+        self.stand_size = tuple(fighter_data.stand_size or (owner.SIZE[0], owner.SIZE[1]))
         self.crouch_size = fighter_data.crouch_size
         self.crouch_hurtbox = fighter_data.crouch_hurtbox
         self.crouch_attempting = False  # set per-frame by input (down on ground)
@@ -93,7 +95,7 @@ class Fighter:
         # The authoritative body box + velocity now live on the domain object;
         # Player exposes them as delegating get/set properties (pygame value
         # types, kept per the #69 Sprite-free-not-pygame-free boundary).
-        self.rect = pygame.Rect(0, 0, owner.SIZE[0], owner.SIZE[1])
+        self.rect = pygame.Rect(0, 0, self.stand_size[0], self.stand_size[1])
         self.rect.midbottom = (x, y)
         self.vel = pygame.Vector2(0, 0)
         self.on_ground = False

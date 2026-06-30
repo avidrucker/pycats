@@ -8,10 +8,9 @@ from the #229 scoping spike (PM Kirby, proportional-to-Mario; pin/playtest later
 Per #120, these scalars are entered RAW (the ×5.4 unit scale is for *spatial* values,
 not needed this slice).
 
-Placeholders reused from the default cat (slice 1 = scalars only):
-  - `hurtbox`, `moves`, crouch/prone geometry — Birky's real moves are **slice 2**;
-  - per-fighter body size is **not** a `FighterData` field (the rendered `stand_size`
-    is the global `config.PLAYER_SIZE`), so a smaller round body is out of scope here.
+Birky owns its full normals + aerials (#240-#260), a Kirby-proportioned `stand_size`
++ body-matched `hurtbox` (#275, a shorter rect — circle shape is a later change), and
+the featherweight movement scalars. Crouch/prone geometry still reuse the default cat.
 
 Caveat (#229): pycats has a single `move_speed` knob (ground == air), so Kirby's
 slow-walk / fast-air split can't be captured — `move_speed` leans to the
@@ -19,7 +18,16 @@ slow-featherweight identity. The genuine `fast-fall` mechanic is a separate, sha
 engine ticket; selectability (making Birky human-pickable) is gated on #117/#127.
 """
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
-from pycats.combat.data import Circle, FighterData, Hitbox, MoveData
+from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
+
+# Kirby-proportioned body (#275): shorter than the default 40x60 (Kirby is short/round).
+# Shape stays a rect for now (circle is a possible later change). Width kept at 40 so the
+# authored horizontal move offsets hold; a fuller re-tune of move dx/dy is a follow-up.
+_STAND_SIZE = (40, 44)
+_HURTBOX = Hurtbox(circles=(
+    Circle(dx=20, dy=13, r=13),   # upper body
+    Circle(dx=20, dy=30, r=13),   # lower body
+))
 
 # --- Jab (slice 2, #240): PM3.6 Kirby jab 1 (Attack11) ------------------------
 # rukaidata PM3.6 Kirby Attack11: 16 frames total (IASA 16), hitbox active ~frame 3,
@@ -225,10 +233,11 @@ _BIRKY_DAIR = MoveData(
 )
 
 BIRKY_FIGHTER_DATA = FighterData(
-    # hurtbox/posture still reuse the default cat (body geometry is a separate concern);
+    # own Kirby-sized body (#275) + body-matched hurtbox; crouch/prone reuse default;
     # ground normals (#240/#245/#247/#249) + aerials nair #255 / fair #256 / bair #258
     # / uair #259 / dair #260 — Birky's full normals + aerials.
-    hurtbox=_DEFAULT.hurtbox,
+    hurtbox=_HURTBOX,
+    stand_size=_STAND_SIZE,
     moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT,
            "utilt": _BIRKY_UTILT, "nair": _BIRKY_NAIR, "fair": _BIRKY_FAIR,
            "bair": _BIRKY_BAIR, "uair": _BIRKY_UAIR, "dair": _BIRKY_DAIR},
