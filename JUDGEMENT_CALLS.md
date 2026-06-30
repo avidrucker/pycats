@@ -205,3 +205,19 @@ Each entry: what was decided, why, and how to undo/revisit.
    to keep them in. That's an in-game tuning matter; the data + structure are
    faithful and the regression tests pin them. Playtest follow-up if it feels off.
 5. **Positions approximated below the body** (downward drill, large dy), no skeleton.
+
+---
+
+## #212 — jab/d-tilt WDSK enrichment
+
+1. **Verified each move's WDSK from the rukaidata move page before touching data.**
+   - **jab (Attack11):** all 3 boxes are SET knockback (WDSK 20, BKB 0, KBG 100) →
+     applied `set_knockback=20`, updated the data-pin, dropped the deferred note.
+   - **d-tilt (AttackLw3):** all 3 boxes are NORMAL knockback (WDSK 0, BKB 30) →
+     **already faithful, no change.** Resolved explicitly with a code note, not
+     left ambiguous (the ticket asked for this).
+2. **No separate revert-check needed beyond red→green:** the change is purely
+   additive data; the data-pin failed before `set_knockback=20` and passed after.
+3. **Behavior change is intended:** jab's knockback is now percent-INDEPENDENT
+   (set) rather than scaling — the faithful PM behavior. Goldens unaffected (jab is
+   a Nalio move; the sim/golden path loads the default cat).

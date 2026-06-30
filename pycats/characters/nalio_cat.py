@@ -75,8 +75,9 @@ _HURTBOX = Hurtbox(
 )
 
 # --- Jab, mapped to the canonical "jab" key (PM3.6 Mario Attack11) ------------
-# Real 3-hitbox first jab (#154). Active frames 2-3, IASA/total 16. WDSK 20 is
-# deferred because Hitbox has no weight-dependent-set-knockback field yet.
+# Real 3-hitbox first jab (#154). Active frames 2-3, IASA/total 16. All three
+# hitboxes use SET knockback (rukaidata WDSK 20, BKB 0, KBG 100) — now represented
+# via set_knockback (#211/#212), replacing the earlier deferred approximation.
 _JAB = MoveData(
     name="jab",
     in_air=False,
@@ -84,12 +85,12 @@ _JAB = MoveData(
     active=2,
     recovery=13,
     hitboxes=(
-        Hitbox(circle=Circle(dx=54, dy=27, r=19), damage=3.0,
-               angle=83, base_knockback=0.0, knockback_growth=100.0),
-        Hitbox(circle=Circle(dx=44, dy=28, r=13), damage=3.0,
-               angle=83, base_knockback=0.0, knockback_growth=100.0),
-        Hitbox(circle=Circle(dx=34, dy=29, r=15), damage=3.0,
-               angle=85, base_knockback=0.0, knockback_growth=100.0),
+        Hitbox(circle=Circle(dx=54, dy=27, r=19), damage=3.0, angle=83,
+               base_knockback=0.0, knockback_growth=100.0, set_knockback=20),
+        Hitbox(circle=Circle(dx=44, dy=28, r=13), damage=3.0, angle=83,
+               base_knockback=0.0, knockback_growth=100.0, set_knockback=20),
+        Hitbox(circle=Circle(dx=34, dy=29, r=15), damage=3.0, angle=85,
+               base_knockback=0.0, knockback_growth=100.0, set_knockback=20),
     ),
 )
 
@@ -97,6 +98,8 @@ _JAB = MoveData(
 # Real 3-hitbox form (#132). All active 5-8, angle 80 / BKB 30 / KBG 80; raw
 # damage 9/9/8 and radii 13/17/21 (sizes 2.34/3.13/3.91 u × 5.4). Listed in
 # priority order (rukaidata id 0->2). dx/dy approximated — see module docstring.
+# NB (#212): verified against rukaidata AttackLw3 — d-tilt uses NORMAL knockback
+# (WDSK 0, BKB 30), so it is already faithful; no set_knockback (#211) applies.
 def _dtilt_box(dx, r, damage):
     return Hitbox(circle=Circle(dx=dx, dy=30, r=r), damage=damage,
                   angle=80, base_knockback=30.0, knockback_growth=80.0)

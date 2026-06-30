@@ -51,12 +51,12 @@ def test_nalio_attack_is_pm_down_tilt():
     assert hb.knockback_growth == 80.0
 
 
-def test_nalio_jab_is_pm_attack11_single_hit_approx():
-    """Nalio's neutral-A key carries PM3.6 Mario Attack11 (#154).
+def test_nalio_jab_is_pm_attack11():
+    """Nalio's neutral-A key carries PM3.6 Mario Attack11 (#154, WDSK applied #212).
 
-    rukaidata Attack11: total 16f / IASA 16, hitboxes active 2-3, three
-    same-set hitboxes. pycats can express simultaneous hitboxes, but not WDSK's
-    special knockback formula yet, so BKB/KBG are recorded raw as available.
+    rukaidata Attack11: total 16f / IASA 16, hitboxes active 2-3, three same-set
+    hitboxes — all SET knockback (WDSK 20, BKB 0, KBG 100). The #211 gate now
+    represents WDSK, so `set_knockback=20` replaces the old deferred approximation.
     Radii are round(size u × 5.4): 3.52->19, 2.34->13, 2.73->15.
     """
     move = load_fighter_data("nalio").moves["jab"]
@@ -68,6 +68,7 @@ def test_nalio_jab_is_pm_attack11_single_hit_approx():
     assert tuple(hb.angle for hb in move.hitboxes) == (83, 83, 85)
     assert tuple(hb.base_knockback for hb in move.hitboxes) == (0.0, 0.0, 0.0)
     assert tuple(hb.knockback_growth for hb in move.hitboxes) == (100.0, 100.0, 100.0)
+    assert tuple(hb.set_knockback for hb in move.hitboxes) == (20, 20, 20)  # WDSK (#212)
     assert tuple(hb.circle.r for hb in move.hitboxes) == (19, 13, 15)
 
 
