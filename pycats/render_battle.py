@@ -292,10 +292,14 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
     `face_style` (#108) selects how the face is drawn: PRIMITIVES (default —
     eyes + ears + whiskers) or a glyph style (kaomoji/emoji) blitted over the
     head. It is part of the cache key so toggling re-renders."""
-    w, h = PLAYER_SIZE
+    # Per-fighter body size (#282 fix for the #275 regression): the composite must
+    # match the fighter's collision box (stand_size), not the global PLAYER_SIZE —
+    # else a small archetype renders full-height and clips below its feet. (w, h) is
+    # in the cache key so different-sized fighters don't share one cached body.
+    w, h = p.fighter.stand_size
     tint = tuple(body_tint(p))
     key = (tuple(p.char_color), tuple(p.stripe_color), tuple(p.eye_color),
-           p.char_name, p.fighter.facing_right, tint, face_style)
+           p.char_name, p.fighter.facing_right, tint, face_style, (w, h))
     surf = _body_cache.get(key)
     if surf is None:
         cw = w + 2 * _BODY_PAD_X
