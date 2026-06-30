@@ -69,6 +69,9 @@ Watch a replay:   .venv/bin/python watch.py                    # scripted replay
 Watch full match: .venv/bin/python watch.py --match            # P1 defeats P2 (3 stocks)
   ...uncapped:    .venv/bin/python watch.py --match --uncapped  # FPS readout = true rate
 Record a video:   .venv/bin/python watch.py --match --video media/full_battle.mp4
+NPC battle (--vs): .venv/bin/python watch.py --vs chase            # P1 vs NPC: idle|chase|idler|follower (#61)
+  ...reproducible:  .venv/bin/python watch.py --vs chase --seed 42 # same seed + backend → same outcome (#166)
+                      # omit --seed for a clocktime seed → the NPC battle varies run-to-run
                       # video needs: .venv/bin/python -m pip install imageio imageio-ffmpeg
 
 The live window shows an FPS counter + each fighter's stocks/damage (hide with
