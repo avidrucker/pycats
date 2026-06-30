@@ -366,6 +366,13 @@ class Fighter:
         self.hurt_timer = 0
         self.stun_timer = 0
         self.landing_lag_timer = 0  # don't carry a waveland lock across a KO/respawn (#202)
+        # Ledge-hang (#14): free the held edge and clear the hang so a KO/respawn or
+        # match reset can't leave a fighter pinned or an edge permanently occupied.
+        if self.grabbed_ledge is not None:
+            self.grabbed_ledge.occupied_by = None
+        self.grabbed_ledge = None
+        self.ledge_hang_timer = 0
+        self.ledge_regrab_lockout_timer = 0
         self.hitlag_timer = 0  # don't carry a freeze across a KO/respawn (#138)
         self.shieldstun_timer = 0  # nor a block-stun (#140)
         self.invulnerable_timer = 0

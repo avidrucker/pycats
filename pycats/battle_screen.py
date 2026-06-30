@@ -26,6 +26,7 @@ from .config import (
 )
 from .core.physics import resolve_player_push
 from .entities import Player
+from .entities.ledge import ledges_from_platforms
 from .render_battle import (
     draw_controls,
     draw_hud,
@@ -47,6 +48,7 @@ class BattleScreen:
         self.player2 = None
         self.players = pygame.sprite.Group()
         self.attacks = pygame.sprite.Group()
+        self._ledges = None  # solid-edge ledges (#14), built lazily from platforms
 
     def create_from_selection(self, p1_char, p2_char):
         """Build the two fighters from the selected characters (statechart engine,
@@ -80,11 +82,14 @@ class BattleScreen:
                 p.fighter.suicides = 0
                 p.engine.force("idle")
         self.attacks.empty()
+        self._ledges = None  # rebuilt next step (clears edge occupancy; #14)
 
     def step(self, frame_input, platforms):
         """One frame of battle sim — SAME primitives/order as the old inline block."""
+        if self._ledges is None:
+            self._ledges = ledges_from_platforms(platforms)  # build once, persist (#14)
         for p in self.players:
-            p.update(frame_input, platforms, self.attacks)
+            p.update(frame_input, platforms, self.attacks, self._ledges)
         resolve_player_push(list(self.players))
         self.attacks.update()
         combat.process_hits(self.players, self.attacks)
