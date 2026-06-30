@@ -202,6 +202,40 @@ _FORWARD_AIR = MoveData(
     ),
 )
 
+# --- Back-air, mapped to the canonical "bair" key (PM3.6 Mario AttackAirB) ------
+# A clean->late "sex kick" that consumes BOTH gates: the late hit uses the Sakurai
+# sentinel 361 (#203) and the two stages use temporal windows (#204). rukaidata
+# AttackAirB: active 6-17 -> startup 5 / active 12; IASA 29 -> recovery 12.
+#   - CLEAN [6,8]:  angle 28 (literal), both dmg 11 / BKB 43 / KBG 65; r 25/19.
+#   - LATE  [9,17]: angle 361 (Sakurai), both dmg 9 / BKB 20 / KBG 100; r 25/19.
+# All WDSK 0. Radii = round(size u × 5.4): 4.69->25, 3.52->19. Positions
+# approximated BEHIND the body (negative dx — facing-right-relative; b-air hits
+# backward), same x/y for clean and late (same bones 16/17). Landing-lag/L-cancel
+# deferred (no landing-lag system — as n-air/f-air).
+def _bair_clean(dx, dy, r):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=11.0, angle=28,
+                  base_knockback=43.0, knockback_growth=65.0,
+                  active_start=6, active_end=8)
+
+def _bair_late(dx, dy, r):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=9.0, angle=361,
+                  base_knockback=20.0, knockback_growth=100.0,
+                  active_start=9, active_end=17)
+
+_BACK_AIR = MoveData(
+    name="back air",
+    in_air=True,
+    startup=5,
+    active=12,
+    recovery=12,
+    hitboxes=(
+        _bair_clean(dx=-12, dy=30, r=25),   # clean id0 (bone 16)
+        _bair_clean(dx=-2, dy=34, r=19),    # clean id1 (bone 17)
+        _bair_late(dx=-12, dy=30, r=25),    # late id0 (bone 16) — Sakurai
+        _bair_late(dx=-2, dy=34, r=19),     # late id1 (bone 17) — Sakurai
+    ),
+)
+
 # --- Neutral-air, mapped to the "nair" slot (PM3.6 Mario AttackAirN) -----------
 # Nalio's first aerial (#136), authored as the CLEAN-HIT form on the #130 engine.
 # A "sex kick" — 2 simultaneous hitboxes around the body (rukaidata ids 0 & 1,
@@ -262,7 +296,8 @@ NALIO_FIGHTER_DATA = FighterData(
     weight=100,            # PM3.6 Mario (== pycats default → no KB change)
     hurtbox=_HURTBOX,
     moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
-           "utilt": _UP_TILT, "fair": _FORWARD_AIR, "nair": _NEUTRAL_AIR},
+           "utilt": _UP_TILT, "fair": _FORWARD_AIR, "bair": _BACK_AIR,
+           "nair": _NEUTRAL_AIR},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

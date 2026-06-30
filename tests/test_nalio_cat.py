@@ -178,6 +178,60 @@ def test_nalio_fair_spawns_two_windows_through_player_update():
     assert appeared == [(16, 60), (18, 280)], "early then meteor, separate Attacks"
 
 
+def test_nalio_bair_is_pm_attackairb_two_windows():
+    """Nalio's b-air is PM3.6 Mario AttackAirB (rukaidata) — a clean→late sex-kick
+    using BOTH gates. Active 6-17 (startup 5 / active 12), IASA 29 (recovery 12).
+    Clean [6,8]: angle 28, dmg 11, BKB 43, KBG 65. Late [9,17]: angle 361 (the
+    Sakurai sentinel, #203), dmg 9, BKB 20, KBG 100. Able-to-fail: an absent key
+    falls back to nair; collapsing the windows breaks the per-box timing."""
+    move = load_fighter_data("nalio").moves["bair"]
+    assert move.in_air is True
+    assert (move.startup, move.active, move.recovery) == (5, 12, 12)
+    assert len(move.hitboxes) == 4
+
+    clean = [hb for hb in move.hitboxes if hb.active_start == 6]
+    late = [hb for hb in move.hitboxes if hb.active_start == 9]
+    assert len(clean) == 2 and len(late) == 2
+
+    # Clean window [6, 8].
+    assert all(hb.active_end == 8 for hb in clean)
+    assert tuple(hb.damage for hb in clean) == (11.0, 11.0)
+    assert all(hb.angle == 28 for hb in clean)
+    assert all(hb.base_knockback == 43.0 for hb in clean)
+    assert all(hb.knockback_growth == 65.0 for hb in clean)
+    assert tuple(hb.circle.r for hb in clean) == (25, 19)
+
+    # Late window [9, 17] — the Sakurai-angle (361) weak hit.
+    assert all(hb.active_end == 17 for hb in late)
+    assert tuple(hb.damage for hb in late) == (9.0, 9.0)
+    assert all(hb.angle == 361 for hb in late)
+    assert all(hb.base_knockback == 20.0 for hb in late)
+    assert all(hb.knockback_growth == 100.0 for hb in late)
+    assert tuple(hb.circle.r for hb in late) == (25, 19)
+
+
+def test_nalio_bair_spawns_two_windows_through_player_update():
+    """End-to-end (#204): the clean window spawns one Attack on frame 6 and the
+    Sakurai late window a SEPARATE Attack on frame 9."""
+    from pycats.core.input import InputFrame
+    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
+               char_name="nalio", facing_right=True)
+    group = pygame.sprite.Group()
+    neutral = InputFrame(held=set(), pressed=set(), released=set())
+    p._clock.start(load_fighter_data("nalio").moves["bair"])
+
+    seen: set[int] = set()
+    appeared: list[tuple[int, int]] = []
+    for frame in range(1, 19):
+        p.update(neutral, [], group)
+        for atk in group:
+            if id(atk) not in seen:
+                seen.add(id(atk))
+                appeared.append((frame, atk.hitboxes[0].angle))
+
+    assert appeared == [(6, 28), (9, 361)], "clean then Sakurai late, separate Attacks"
+
+
 def test_nalio_nair_is_pm_neutral_air():
     """Nalio's neutral-air is PM3.6 Mario AttackAirN (#136), clean-hit form on the
     #130 multi-hitbox engine: 2 simultaneous hitboxes, in_air, damage 12, BKB 20,

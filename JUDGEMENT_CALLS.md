@@ -114,3 +114,19 @@ Each entry: what was decided, why, and how to undo/revisit.
      16 and 18).
 4. **Positions approximated**, late meteor boxes swung lower (higher dy) than the
    early boxes — documented; same no-skeleton convention.
+
+---
+
+## C2 — Nalio b-air (#209, PM3.6 Mario AttackAirB) — first dual-gate consumer
+
+1. **First move to exercise BOTH gates at once.** The clean window (angle 28) and
+   Sakurai late window (angle 361) use #204 temporal windows; the 361 late hit
+   resolves through the #203 Sakurai gate. End-to-end test pins both (Attacks on
+   frames 6 and 9; the late one carries angle 361).
+2. **Positions behind the body (negative dx).** b-air hits backward; circles are
+   facing-right-relative, so a backward box is dx<0 (mirrored for left-facing by
+   the existing consumer). Clean and late share x/y (same bones 16/17), differing
+   only in timing/values.
+3. **Active window 6-17 (active 12) is the full envelope;** the per-box windows
+   carve it into clean [6,8] and late [9,17]. recovery = IASA 29 − 5 − 12 = 12.
+4. **Landing-lag / L-cancel deferred** (no system), consistent with n-air/f-air.
