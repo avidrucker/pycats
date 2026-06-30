@@ -8,8 +8,44 @@ byte-identical comparison on identical inputs.
 from __future__ import annotations
 
 import random
+from dataclasses import dataclass
 
 from ..core.input import InputFrame
+
+
+# ---------------------------------------------------------------------------
+# CPU difficulty levels (#232, #231 / #148 step 1) — DETERMINISTIC core only.
+# The seeded-RNG knobs (follow_through_p, shield_chance) are a later child.
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class LevelParams:
+    """Deterministic AI knobs for one difficulty level."""
+    reaction_delay: int   # frames in-range before the first attack fires
+    attack_period: int    # frames between attacks (cadence)
+    standoff: int         # desired horizontal gap (px)
+
+
+# Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
+# are pycats interpolations — tuning starting points, not measured PM data.
+LEVEL_PARAMS: dict[int, LevelParams] = {
+    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45),
+    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30),
+}
+
+
+def level_params(level: int) -> LevelParams:
+    """Knobs for `level` (1-9). Intermediate levels reuse the nearest filled anchor;
+    a tie (even levels are equidistant between odd anchors) resolves to the HIGHER
+    anchor. Out-of-range clamps to the nearest end."""
+    anchors = sorted(LEVEL_PARAMS)
+    nearest = min(anchors, key=lambda a: (abs(a - level), -a))
+    return LEVEL_PARAMS[nearest]
+
+
+DEFAULT_CONTROLLER_SEED = 0
 
 # #166: the default controller seed. rng=None resolves to random.Random(this) so
 # every sim/golden/parity run is reproducible by construction; live variation is
@@ -69,8 +105,21 @@ class AttackerController(BaseController):
     """
 
     def __init__(self, attacker_num=1, attack_period=12, standoff=30,
-                 attack_range=45, safe_x=(110, 850), drop_threshold=20, rng=None):
+                 attack_range=45, safe_x=(110, 850), drop_threshold=20, rng=None,
+                 reaction_delay=0, level=None):
         super().__init__(attacker_num, rng=rng)
+        # #232: a difficulty `level` (1-9) overrides the deterministic knobs from
+        # the #148 table; level=None keeps the explicit defaults (golden-safe).
+        if level is not None:
+            lp = level_params(level)
+            attack_period = lp.attack_period
+            standoff = lp.standoff
+            reaction_delay = lp.reaction_delay
+        self.level = level
+        # reaction_delay (#232): frames the target must stay in range before the
+        # FIRST attack fires. 0 = react instantly (the pre-#232 behaviour).
+        self.reaction_delay = reaction_delay
+        self._in_range_since = None
         # safe_x is the range the attacker will walk to — the thick platform's
         # standing extent (x[80..880]) minus a body-margin. Widened from the old
         # 770 for #44: realistic knockback decay no longer launches the target
@@ -133,7 +182,17 @@ class AttackerController(BaseController):
             # nudges the target a platform up/down, avoiding a positional
             # deadlock under the post-startup hitbox timing.
             in_range = (self.standoff - 18) <= adx <= self.attack_range and abs(dy) < 60
-            if in_range and (self._f - self._last_attack) >= self.attack_period:
+            # #232: reaction_delay — wait this many frames after entering range
+            # before the first attack (a higher level reacts faster). With the
+            # default reaction_delay=0 this is always satisfied → unchanged.
+            if in_range:
+                if self._in_range_since is None:
+                    self._in_range_since = self._f
+                reacted = (self._f - self._in_range_since) >= self.reaction_delay
+            else:
+                self._in_range_since = None
+                reacted = False
+            if in_range and reacted and (self._f - self._last_attack) >= self.attack_period:
                 held.add(keys["attack"])
                 self._last_attack = self._f
 
