@@ -25,10 +25,12 @@ from pycats.options_menu import OptionsMenu  # noqa: E402
 # --------------------------------------------------------------------------- #
 # settings.py — persisted default-OFF toggle (mirrors show_status_timer_bars)
 # --------------------------------------------------------------------------- #
-def test_show_hitbox_overlay_defaults_off(tmp_path, monkeypatch):
+def test_show_hitbox_overlay_defaults_on(tmp_path, monkeypatch):
+    # #239: temporary dev default flipped ON for the #125 visuals work; reverted
+    # to OFF before release (#241).
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    assert settings.defaults()["show_hitbox_overlay"] is False
-    assert settings.load()["show_hitbox_overlay"] is False  # missing file
+    assert settings.defaults()["show_hitbox_overlay"] is True
+    assert settings.load()["show_hitbox_overlay"] is True  # missing file
 
 
 def test_show_hitbox_overlay_round_trips_and_coerces_bool(tmp_path, monkeypatch):
@@ -43,9 +45,10 @@ def test_show_hitbox_overlay_round_trips_and_coerces_bool(tmp_path, monkeypatch)
 # --------------------------------------------------------------------------- #
 # runtime_settings.py — live accessor the render path honours
 # --------------------------------------------------------------------------- #
-def test_runtime_hitbox_overlay_default_off():
+def test_runtime_hitbox_overlay_default_on():
+    # #239 temporary dev default (ON); reverted to OFF before release (#241).
     runtime_settings.seed(settings.defaults())
-    assert runtime_settings.show_hitbox_overlay() is False
+    assert runtime_settings.show_hitbox_overlay() is True
 
 
 def test_runtime_hitbox_overlay_set():
@@ -65,7 +68,8 @@ ATTACK = pygame.K_v
 
 def test_hitbox_overlay_row_toggles_runtime_and_persists(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    runtime_settings.seed(settings.defaults())  # OFF by default
+    runtime_settings.seed(settings.defaults())
+    runtime_settings.set("show_hitbox_overlay", False)  # known starting state
     m = OptionsMenu(P1, P2)
     m.selected_option = m.rows.index("hitbox_overlay")
     m.update({ATTACK})
@@ -76,6 +80,7 @@ def test_hitbox_overlay_row_toggles_runtime_and_persists(tmp_path, monkeypatch):
 def test_hitbox_overlay_row_label_reflects_state():
     runtime_settings.seed(settings.defaults())
     m = OptionsMenu(P1, P2)
+    runtime_settings.set("show_hitbox_overlay", False)
     assert m._row_label("hitbox_overlay") == "Hitbox Overlay: OFF"
     runtime_settings.set("show_hitbox_overlay", True)
     assert m._row_label("hitbox_overlay") == "Hitbox Overlay: ON"
@@ -117,7 +122,8 @@ def _spy_circles(monkeypatch):
 
 @pytest.mark.usefixtures("render_isolation")
 def test_overlay_off_draws_nothing(monkeypatch):
-    runtime_settings.seed(settings.defaults())  # OFF
+    runtime_settings.seed(settings.defaults())
+    runtime_settings.set("show_hitbox_overlay", False)  # explicitly OFF
     captured = _spy_circles(monkeypatch)
     surf = pygame.Surface((400, 400))
     rb.render_hitbox_overlay(surf, [_fake_player()], [_fake_attack([(50, 50, 10)])])

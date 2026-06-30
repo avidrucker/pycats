@@ -25,9 +25,11 @@ _DEFAULTS = {
     # HUD overlay toggle (#111), migrated from a config.py constant into persisted
     # prefs by #121 so the Options menu can flip it live + remember it.
     "show_status_timer_bars": True,
-    # Hit/hurtbox debug overlay (#219): default OFF — a dev-facing box visualiser
-    # toggled live from the Options sub-menu, mirroring show_status_timer_bars.
-    "show_hitbox_overlay": False,
+    # Hit/hurtbox debug overlay (#219): a dev-facing box visualiser toggled live
+    # from the Options sub-menu, mirroring show_status_timer_bars. TEMPORARILY
+    # defaulted ON (#239) for the #125 combat-visuals work; revert to OFF before
+    # release (#241).
+    "show_hitbox_overlay": True,
     # Hold-ESC-to-quit feature (#113): when True, holding ESC for 2s quits the
     # current context (battle→menu, menu→game). Toggleable in Options sub-menu.
     "esc_hold_to_quit": True,

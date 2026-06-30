@@ -14,7 +14,7 @@ import pygame
 from pycats.battle_screen import BattleScreen
 from pycats.config import BG_COLOR, SCREEN_WIDTH, SCREEN_HEIGHT
 from pycats.render_battle import (
-    render_battle, render_attacks, draw_hud, draw_controls,
+    render_battle, render_attacks, render_hitbox_overlay, draw_hud, draw_controls,
 )
 
 _P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
@@ -37,8 +37,9 @@ def _battle():
 
 
 def test_render_matches_inline_playing_composition():
-    """render() == fill(BG) -> render_battle -> render_attacks -> draw_hud x2 ->
-    draw_controls x2 (the playing branch's inline block), byte-for-byte."""
+    """render() == fill(BG) -> render_battle -> render_attacks ->
+    render_hitbox_overlay -> draw_hud x2 -> draw_controls x2 (the playing
+    branch's inline block), byte-for-byte."""
     bs = _battle()
     platforms = []
 
@@ -46,6 +47,7 @@ def test_render_matches_inline_playing_composition():
     expected.fill(BG_COLOR)
     render_battle(expected, bs.players, platforms)
     render_attacks(expected, bs.attacks)
+    render_hitbox_overlay(expected, bs.players, bs.attacks)  # #219 debug overlay
     draw_hud(expected, bs.player1, "P1")
     draw_hud(expected, bs.player2, "P2", topright=True)
     draw_controls(expected, bs.player1, "P1")
@@ -69,6 +71,7 @@ def test_render_paused_freezes_battle_onto_intermediate_background():
     expected_bg.fill(BG_COLOR)
     render_battle(expected_bg, bs.players, platforms)
     render_attacks(expected_bg, bs.attacks)
+    render_hitbox_overlay(expected_bg, bs.players, bs.attacks)  # #219 debug overlay
     draw_hud(expected_bg, bs.player1, "P1")
     draw_hud(expected_bg, bs.player2, "P2", topright=True)
 
