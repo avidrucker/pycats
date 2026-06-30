@@ -40,7 +40,7 @@ def test_birky_reuses_default_hurtbox_but_has_no_placeholder_moves():
     assert birky.hurtbox == default.hurtbox            # body geometry not per-fighter
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
-    assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair"}
+    assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair", "fair"}
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():
@@ -118,3 +118,18 @@ def test_birky_nair_is_two_window_sex_kick():
     assert all(h.damage == 12.0 and h.base_knockback == 15.0 for h in early)
     assert all(h.damage == 9.0 and h.base_knockback == 0.0 for h in late)
     assert all(h.angle == 55 for h in nair.hitboxes)
+
+
+def test_birky_fair_is_three_window_multihit():
+    """Birky's fair = PM3.6 Kirby AttackAirF: IASA 40, drag hits (WDSK 30, dmg 5)
+    in f7-8/f14-15 + a Sakurai finisher (angle 361, dmg 7, KBG 160) in f22-24."""
+    birky = load_fighter_data("birky")
+    fair = birky.moves["fair"]
+    assert fair.in_air is True
+    assert fair.startup + fair.active + fair.recovery == 40  # PM3.6 IASA
+    drags = [h for h in fair.hitboxes if h.set_knockback == 30]
+    finisher = [h for h in fair.hitboxes if h.angle == 361]
+    assert drags and finisher
+    assert all(h.damage == 5.0 for h in drags)
+    assert all(h.damage == 7.0 and h.knockback_growth == 160.0 for h in finisher)
+    assert all(h.active_start == 22 for h in finisher)

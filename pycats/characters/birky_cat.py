@@ -132,12 +132,39 @@ _BIRKY_NAIR = MoveData(
     ),
 )
 
+# --- Forward-air (slice 3, #256): PM3.6 Kirby AttackAirF — 3-window multihit -------
+# rukaidata PM3.6 Kirby AttackAirF: 51f total, IASA 40. Drag hits f7-8 & f14-15
+# (dmg 5, angle 60/75, set_knockback/WDSK 30, BKB 0, KBG 100) + a Sakurai finisher
+# f22-24 (dmg 7, angle 361, KBG 160). Radii round(size×5.4) for 4.75/4.69/4.5/5.5u.
+# Forward dx; mid dy. Approximated/playtest per #120; WDSK like nalio_cat.py jab.
+def _fair_box(dx, dy, r, damage, angle, kbg, start, end, wdsk=None):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=angle,
+                  base_knockback=0.0, knockback_growth=kbg,
+                  set_knockback=wdsk, active_start=start, active_end=end)
+
+
+_BIRKY_FAIR = MoveData(
+    name="fair",
+    in_air=True,
+    startup=6,
+    active=18,
+    recovery=16,  # active f7-24; 6 + 18 + 16 = 40 (PM3.6 IASA)
+    hitboxes=(
+        _fair_box(dx=42, dy=30, r=26, damage=5.0, angle=60, kbg=100.0, start=7, end=8, wdsk=30),
+        _fair_box(dx=50, dy=28, r=25, damage=5.0, angle=75, kbg=100.0, start=7, end=8, wdsk=30),
+        _fair_box(dx=42, dy=30, r=24, damage=5.0, angle=60, kbg=100.0, start=14, end=15, wdsk=30),
+        _fair_box(dx=50, dy=28, r=25, damage=5.0, angle=75, kbg=100.0, start=14, end=15, wdsk=30),
+        _fair_box(dx=50, dy=29, r=30, damage=7.0, angle=361, kbg=160.0, start=22, end=24),
+        _fair_box(dx=42, dy=29, r=30, damage=7.0, angle=361, kbg=160.0, start=22, end=24),
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
     # hurtbox/posture still reuse the default cat (body geometry is a separate concern);
-    # ground normals (#240/#245/#247/#249) + nair (#255).
+    # ground normals (#240/#245/#247/#249) + nair (#255) + fair (#256).
     hurtbox=_DEFAULT.hurtbox,
     moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT,
-           "utilt": _BIRKY_UTILT, "nair": _BIRKY_NAIR},
+           "utilt": _BIRKY_UTILT, "nair": _BIRKY_NAIR, "fair": _BIRKY_FAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
