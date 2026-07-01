@@ -14,7 +14,7 @@ from pycats.entities.player import Player
 from pycats.core.input import InputFrame
 
 P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
-          attack=pg.K_v, special=pg.K_c, shield=pg.K_x)
+          attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
 
 
 # ---- pure: canonical key per context --------------------------------------
@@ -190,3 +190,57 @@ def test_b_button_noop_when_no_special_defined():
     p = _mk("P1"); p.fighter.on_ground = True
     p.handle_actions(_press("special"), pg.sprite.Group())
     assert p.current_move is None, "B with no special move is a no-op"
+
+
+# ---- smash input + routing (#331, slice 1 of #327) ------------------------
+
+def test_select_smash_keys():
+    s = lambda d: select_move_key(d, on_ground=True, is_special=False, is_smash=True)
+    assert s("forward") == "fsmash"
+    assert s("back") == "fsmash"      # back-smash = turnaround f-smash
+    assert s("neutral") == "fsmash"   # no neutral smash → treat as forward
+    assert s("up") == "usmash"
+    assert s("down") == "dsmash"
+
+
+def test_resolve_smash_prefers_smash_then_tilt_then_attack():
+    full = {"fsmash", "usmash", "dsmash", "ftilt", "utilt", "dtilt", "attack"}
+    assert resolve_move_key(full, "forward", True, False, is_smash=True) == "fsmash"
+    assert resolve_move_key(full, "up", True, False, is_smash=True) == "usmash"
+    assert resolve_move_key(full, "down", True, False, is_smash=True) == "dsmash"
+    # no smash keys → fall back to the matching TILT (graceful degradation)
+    tilts = {"ftilt", "utilt", "dtilt", "attack"}
+    assert resolve_move_key(tilts, "forward", True, False, is_smash=True) == "ftilt"
+    assert resolve_move_key(tilts, "up", True, False, is_smash=True) == "utilt"
+    assert resolve_move_key(tilts, "down", True, False, is_smash=True) == "dtilt"
+    # no smash, no tilt → the "attack" alias
+    assert resolve_move_key({"attack"}, "forward", True, False, is_smash=True) == "attack"
+
+
+def test_smash_through_player_falls_back_to_tilt_until_slice2():
+    # Nalio has ftilt but no fsmash yet (#327 slice 2) → smash-forward plays the ftilt
+    pg.init()
+    p = _mk("nalio"); p.fighter.on_ground = True
+    p.handle_actions(_press("smash", held_extra=("right",)), pg.sprite.Group())
+    assert p.current_move is p.fighter_data.moves["ftilt"]
+
+
+def test_smash_in_air_alone_is_a_noop_this_slice():
+    pg.init()
+    p = _mk("nalio"); p.fighter.on_ground = False
+    p.handle_actions(_press("smash", held_extra=("right",)), pg.sprite.Group())
+    assert p.current_move is None, "smash is ground-only this slice; no air-smash"
+
+
+def test_pressed_is_tolerant_of_a_missing_smash_binding():
+    # sim keymaps omit "smash" — must not KeyError, just never smash (golden-safe)
+    pg.init()
+    no_smash = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
+                    attack=pg.K_v, special=pg.K_c, shield=pg.K_x)  # no "smash"
+    p = Player(100, 100, no_smash, (255, 160, 64), eye_color=(0, 0, 0),
+               char_name="nalio", facing_right=True)
+    p.fighter.on_ground = True
+    # a frame with K_b held (would be smash if bound) must not route a smash
+    frame = InputFrame(held={pg.K_b, pg.K_d}, pressed={pg.K_b}, released=set())
+    p.handle_actions(frame, pg.sprite.Group())
+    assert p.current_move is None

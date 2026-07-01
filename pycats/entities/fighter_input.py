@@ -188,18 +188,25 @@ class FighterInput:
         #### TODO: implement attack buffering, that attacks can be chained
         atk_pressed = self._pressed(pressed, "attack")
         sp_pressed = self._pressed(pressed, "special")
-        if (atk_pressed or sp_pressed) and p.state not in ("shield", "dodge", "helpless"):
-            # Map (direction × ground/air × A-vs-B) -> a move key, falling back to
-            # whatever the character defines (#143). Data-driven (Task 4 / #71):
-            # start the move clock; the hitbox spawns later in update() when the
-            # active window opens. Attack takes precedence if both are pressed.
-            # Characters with a partial kit (default cat = {"attack"}, Nalio =
-            # {"attack","nair"}) resolve to the same moves as before, so the
-            # golden sims are unchanged; B with no special is a no-op.
-            is_special = sp_pressed and not atk_pressed
+        # Smash (#331, slice 1 of #327): a dedicated input, ground-only. Takes
+        # precedence over attack/special the frame it's pressed; smash-in-air alone
+        # is a no-op this slice (no air-smash). `_pressed` is binding-tolerant, so
+        # control maps without "smash" (the sim keymaps) simply never smash.
+        ground_smash = self._pressed(pressed, "smash") and p.fighter.on_ground
+        if ((atk_pressed or sp_pressed or ground_smash)
+                and p.state not in ("shield", "dodge", "helpless")):
+            # Map (direction × ground/air × A-vs-B-vs-smash) -> a move key, falling
+            # back to whatever the character defines (#143). Data-driven (Task 4 /
+            # #71): start the move clock; the hitbox spawns later in update() when
+            # the active window opens. Partial kits (default cat = {"attack"}, Nalio
+            # = full normals) resolve to the same moves as before, so the golden sims
+            # are unchanged; B with no special is a no-op, and a smash with no
+            # smash-key falls back to the tilt (move_select).
+            is_smash = ground_smash
+            is_special = sp_pressed and not atk_pressed and not ground_smash
             direction = self._move_direction(held)
             key = resolve_move_key(p.fighter_data.moves, direction,
-                                   p.fighter.on_ground, is_special)
+                                   p.fighter.on_ground, is_special, is_smash)
             if key is not None:
                 p._clock.start(p.fighter_data.moves[key])
                 p.fighter.record_attack_made()  # Track attack statistics
