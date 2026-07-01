@@ -177,6 +177,17 @@ class Player(pygame.sprite.Sprite):
         """Frames elapsed since the current move started (POST-increment)."""
         return self._clock.frame
 
+    @property
+    def done_attacking(self) -> bool:
+        """True when the current move has finished (the move clock has drained).
+
+        Derived off `MoveClock` (#321/F3) — replaces the old hand-latched
+        `Fighter.done_attacking` shim that was set False on move start and latched
+        True on drain (`move_clock.py:8`). The statechart's attack-exit guards read
+        this; it's only meaningful in the `attacking` state, where it equals the
+        old flag exactly."""
+        return self.attack_timer == 0
+
     # rect is kept on Player (NOT collapsed in #90): pygame's Sprite machinery
     # reads `sprite.rect` directly, so it must stay a real attribute. get+set so
     # both in-place mutation (`p.rect.left = …`) and wholesale assignment flow
@@ -408,12 +419,11 @@ class Player(pygame.sprite.Sprite):
         # ---------- data-driven move clock (Task 4 / #71: MoveClock) ----------
         # Advance the move one frame and spawn its hitbox exactly once, when the
         # active window opens. The clock owns move_frame/current_move and clears
-        # itself on completion (current_move -> None, attack_timer -> 0). Then
-        # latch done_attacking when the move finishes while still in the attack
-        # state — verbatim historical semantics (attack_timer is now
-        # self._clock.remaining), so the move classifies/exits on the same frame
-        # (golden-stable). The active window is startup < move_frame <= startup + active;
-        # the hitbox lives for `active` frames.
+        # itself on completion (current_move -> None, attack_timer -> 0). The
+        # attack-exit condition is now the derived `done_attacking` property
+        # (attack_timer == 0) — #321/F3 removed the hand-latched flag. The active
+        # window is startup < move_frame <= startup + active; the hitbox lives for
+        # `active` frames.
         tick = self._clock.tick()
         if tick.spawn is not None:
             # #223: a projectile move (projectile_speed set) spawns a MOVING,
@@ -444,8 +454,7 @@ class Player(pygame.sprite.Sprite):
                            disappear_on_hit=False, lifetime=tick.lifetime,
                            rehit_rate=mv.rehit_rate)  # #213 looping; static hit-box
                 )
-        if self.attack_timer == 0 and self.state == "attack":
-            self.fighter.done_attacking = True
+        # (#321/F3: done_attacking is now a derived Player property — no latch.)
 
         # Update tail physics
         self.tail.update(platforms)

@@ -149,7 +149,7 @@ def build_fighter_chart(p):
     # The active window is therefore startup < move_frame <= startup+active,
     # identical to where the player spawns the hitbox.
     #
-    # The EXIT (-> idle / -> fall) stays on p.fighter.done_attacking. It is placed
+    # The EXIT (-> idle / -> fall) reads p.done_attacking (derived, #321). It is placed
     # on each phase leaf (first, so it has priority and can fire from whichever
     # phase is active when attack_timer hits 0). Because the total move duration
     # == startup+active+recovery == attack_timer, the exit fires on the frame
@@ -165,20 +165,20 @@ def build_fighter_chart(p):
         {"id": "attacking", "initial": "startup"},
         state(
             {"id": "startup"},
-            _tick(lambda e, d: p.fighter.done_attacking and p.fighter.on_ground, "idle"),
-            _tick(lambda e, d: p.fighter.done_attacking and not p.fighter.on_ground, "fall"),
+            _tick(lambda e, d: p.done_attacking and p.fighter.on_ground, "idle"),
+            _tick(lambda e, d: p.done_attacking and not p.fighter.on_ground, "fall"),
             _tick(_mf_gt(lambda m: m.startup), "active"),
         ),
         state(
             {"id": "active"},
-            _tick(lambda e, d: p.fighter.done_attacking and p.fighter.on_ground, "idle"),
-            _tick(lambda e, d: p.fighter.done_attacking and not p.fighter.on_ground, "fall"),
+            _tick(lambda e, d: p.done_attacking and p.fighter.on_ground, "idle"),
+            _tick(lambda e, d: p.done_attacking and not p.fighter.on_ground, "fall"),
             _tick(_mf_gt(lambda m: m.startup + m.active), "recovery"),
         ),
         state(
             {"id": "recovery"},
-            _tick(lambda e, d: p.fighter.done_attacking and p.fighter.on_ground, "idle"),
-            _tick(lambda e, d: p.fighter.done_attacking and not p.fighter.on_ground, "fall"),
+            _tick(lambda e, d: p.done_attacking and p.fighter.on_ground, "idle"),
+            _tick(lambda e, d: p.done_attacking and not p.fighter.on_ground, "fall"),
         ),
     )
 

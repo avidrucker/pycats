@@ -142,7 +142,7 @@ class Fighter:
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True  # players can only air dodge once per sustained jump/fall, until they land
         self.invulnerable = False  # dodging / post-hit / respawn / ledge-grab invulnerability
-        self.done_attacking = True  # used to determine when the player is done attacking
+        # (#321/F3: done_attacking is a derived Player property now — no field here.)
 
         # ---------- shield / dodge flags ----------
         self.shield_attempting = False  # shield visual helper
@@ -444,7 +444,8 @@ class Fighter:
         self.invulnerable = False
         self.spot_dodge_shield_held = False
         self.dodge_blocked_by_edge = False
-        self.done_attacking = True
+        # (#321/F3: done_attacking is derived on Player; the clock reset below
+        #  in Player.reset_to_spawn makes it True.)
         # (visual reset is render-time now: render_battle.body_tint #75)
         # The Player-owned wiring reset here — the move clock (attack_timer/
         # current_move/move_frame derive from it) and the Verlet tail layout (#41)

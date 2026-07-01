@@ -78,4 +78,4 @@ def test_respawn_clears_transient_action_state():
     assert p.fighter.dodge_blocked_by_edge is False
     assert p.current_move is None
     assert p.move_frame == 0
-    assert p.fighter.done_attacking is True
+    assert p.done_attacking is True

@@ -210,7 +210,8 @@ class FighterInput:
             if key is not None:
                 p._clock.start(p.fighter_data.moves[key])
                 p.fighter.record_attack_made()  # Track attack statistics
-                p.fighter.done_attacking = False  # set false on start, true when done
+                # (#321/F3: done_attacking is derived (attack_timer == 0); starting
+                #  the clock above makes it False — no flag to set.)
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
 
         # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs

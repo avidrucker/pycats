@@ -57,7 +57,7 @@ def test_attack_press_sets_current_move_and_zero_frame():
     m = p.current_move
     assert p.attack_timer == m.startup + m.active + m.recovery - 1 or \
         p.attack_timer == m.startup + m.active + m.recovery
-    assert p.fighter.done_attacking is False
+    assert p.done_attacking is False
 
 
 def test_move_frame_advances_each_frame():
