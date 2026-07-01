@@ -214,6 +214,75 @@ _NARZ_DAIR = MoveData(
     ),
 )
 
+# --- Smashes (slice 5 of #327 / #294): the archetype's signature KO tools ----------
+# Narz's smashes are the strongest disjoint tippers — 2-box (tip box FIRST, priority =
+# tuple order, so the far tip wins on overlap), chargeable via the mechanic in #371/#377.
+# PM3.6 Marth (AttackS4 / AttackHi4 / AttackLw4), ⚠ playtest / rukaidata-confirm-later —
+# the same fidelity caveat every Narz move carries (#290).
+
+# Forward-smash: Marth's iconic spacing KO. Far tip = the KO hit; near base = a punished
+# whiff. The strongest, longest tipper in the kit.
+_NARZ_FSMASH = MoveData(
+    name="fsmash",
+    in_air=False,
+    chargeable=True,
+    startup=10,
+    active=3,
+    recovery=31,  # 10 + 3 + 31 = 44 (PM3.6 total / IASA ballpark)
+    hitboxes=(
+        # TIP (box 0): farthest + strongest — the signature KO.
+        Hitbox(circle=Circle(dx=78, dy=30, r=12), damage=18.0, angle=361,
+               base_knockback=35.0, knockback_growth=95.0),
+        # BASE (box 1): near the body + weaker.
+        Hitbox(circle=Circle(dx=52, dy=30, r=14), damage=14.0, angle=361,
+               base_knockback=25.0, knockback_growth=72.0),
+    ),
+)
+
+# Up-smash: a tall vertical sword arc above the head — the tip (higher) is the anti-air KO
+# sweetspot. angle 90 (up).
+_NARZ_USMASH = MoveData(
+    name="usmash",
+    in_air=False,
+    chargeable=True,
+    startup=9,
+    active=3,
+    recovery=28,  # 9 + 3 + 28 = 40
+    hitboxes=(
+        # TIP (box 0): highest above the head + strongest.
+        Hitbox(circle=Circle(dx=22, dy=-16, r=12), damage=18.0, angle=90,
+               base_knockback=32.0, knockback_growth=95.0),
+        # BASE (box 1): head level + weaker.
+        Hitbox(circle=Circle(dx=22, dy=6, r=14), damage=13.0, angle=90,
+               base_knockback=22.0, knockback_growth=72.0),
+    ),
+)
+
+# Down-smash: hits FRONT then BEHIND, low along the ground — two temporal windows (#204),
+# each a 2-box tipper (tip FIRST). Front [6,7] ahead, back [13,14] behind (dx < 0).
+_NARZ_DSMASH = MoveData(
+    name="dsmash",
+    in_air=False,
+    chargeable=True,
+    startup=5,
+    active=9,      # spans the front [6,7] + back [13,14] windows
+    recovery=20,   # 5 + 9 + 20 = 34
+    hitboxes=(
+        # FRONT TIP (box 0): far ahead, low + strong.
+        Hitbox(circle=Circle(dx=52, dy=48, r=12), damage=15.0, angle=361,
+               base_knockback=30.0, knockback_growth=80.0, active_start=6, active_end=7),
+        # FRONT BASE (box 1): nearer + weaker.
+        Hitbox(circle=Circle(dx=34, dy=48, r=14), damage=12.0, angle=361,
+               base_knockback=22.0, knockback_growth=65.0, active_start=6, active_end=7),
+        # BACK TIP (box 2): far behind, low + strong.
+        Hitbox(circle=Circle(dx=-52, dy=48, r=12), damage=13.0, angle=361,
+               base_knockback=28.0, knockback_growth=78.0, active_start=13, active_end=14),
+        # BACK BASE (box 3): nearer-behind + weaker.
+        Hitbox(circle=Circle(dx=-34, dy=48, r=14), damage=10.0, angle=361,
+               base_knockback=20.0, knockback_growth=63.0, active_start=13, active_end=14),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
@@ -223,7 +292,8 @@ NARZ_FIGHTER_DATA = FighterData(
     moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
            "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT, "nair": _NARZ_NAIR,
            "fair": _NARZ_FAIR, "bair": _NARZ_BAIR, "uair": _NARZ_UAIR,
-           "dair": _NARZ_DAIR},
+           "dair": _NARZ_DAIR, "fsmash": _NARZ_FSMASH, "usmash": _NARZ_USMASH,
+           "dsmash": _NARZ_DSMASH},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
