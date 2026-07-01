@@ -191,6 +191,29 @@ _NARZ_UAIR = MoveData(
     ),
 )
 
+# --- Down-air (slice 10, #324): a meteor spike below the fighter --------------------
+# Marth's meteor: the 2-box tipper shape (tip box FIRST, stronger; priority = tuple order)
+# below the body (high dy) with a straight-DOWN spike angle (270), like birky_cat.py's
+# d-air. The tip's top edge (dy-r=64) is below the hurtbox bottom (dy 59). PM3.6 Marth
+# `AttackAirLw`, ⚠ playtest / rukaidata-confirm. NOTE: Marth's real d-air stall-then-fall
+# is a MOVEMENT mechanic (kin to fast-fall #261), not move data — deferred; this is the
+# spike hitbox only. Completes the #294 sword aerials.
+_NARZ_DAIR = MoveData(
+    name="dair",
+    in_air=True,
+    startup=6,
+    active=3,
+    recovery=16,  # 6 + 3 + 16 = 25
+    hitboxes=(
+        # TIP (box 0): farthest-below + strongest (the spike).
+        Hitbox(circle=Circle(dx=24, dy=76, r=12), damage=12.0, angle=270,
+               base_knockback=15.0, knockback_growth=80.0),
+        # BASE (box 1): nearer + weaker.
+        Hitbox(circle=Circle(dx=24, dy=56, r=14), damage=9.0, angle=270,
+               base_knockback=10.0, knockback_growth=60.0),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
@@ -199,7 +222,8 @@ NARZ_FIGHTER_DATA = FighterData(
     hurtbox=_DEFAULT.hurtbox,
     moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
            "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT, "nair": _NARZ_NAIR,
-           "fair": _NARZ_FAIR, "bair": _NARZ_BAIR, "uair": _NARZ_UAIR},
+           "fair": _NARZ_FAIR, "bair": _NARZ_BAIR, "uair": _NARZ_UAIR,
+           "dair": _NARZ_DAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
