@@ -352,6 +352,24 @@ class AttackerController(BaseController):
                 if commit:
                     held.add(keys["attack"])
                     self._last_attack = self._f
+                    # #292: convert a NEUTRAL grounded attack into a forward-tilt.
+                    # The bot converges to `standoff` and strikes from rest, so the
+                    # move-select seam always resolved the neutral **jab** — a
+                    # set-knockback move (WDSK) whose launch is fixed regardless of
+                    # the victim's percent, so it can NEVER KO. No bot match could
+                    # end by KO (the loser juggled past 1400% with all stocks). A
+                    # leveled tilt-capable bot instead holds "toward" so a
+                    # percent-scaling **f-tilt** lands — the only launch that grows
+                    # with damage and can finish. Gated to leveled bots with tilts
+                    # enabled, so the level-less golden-safe default and the
+                    # jab-only Lv1 are byte-identical. Skipped when up/down already
+                    # steer an intended u-tilt/d-tilt (both also scaling moves), so
+                    # no sideways drift is injected into a jump/drop.
+                    if (self.level is not None and "tilts" in self.enabled_moves
+                            and a.fighter.on_ground
+                            and keys["up"] not in held
+                            and keys["down"] not in held):
+                        held.add(toward)
 
         return held
 

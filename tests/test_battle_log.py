@@ -114,8 +114,12 @@ def test_render_formats_readable_lines():
 
 
 def test_events_from_real_seeded_run():
-    # Integration: a real short run must derive plausible events, AND reproduce the
-    # #292 signature — birky takes HITs but produces ZERO KO events (no conversion).
+    # Integration: a real seeded run must derive plausible events — JUMP/ATTACK/HIT
+    # and, since #292 is fixed, a KO once a fighter is finished. Before the fix this
+    # exact matchup produced ZERO KO events (the loser juggled past 1400% with all
+    # stocks); the leveled bot now lands percent-scaling f-tilts, so a KO converts.
+    # Regression coverage for the win-condition itself lives in
+    # tests/test_bot_match_resolves.py; here we only assert the log DERIVES the KO.
     import os
     os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
     os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
@@ -125,11 +129,11 @@ def test_events_from_real_seeded_run():
     rng = random.Random(3)
     cs = (AttackerController(attacker_num=1, level=5, rng=rng),
           AttackerController(attacker_num=2, level=5, rng=rng))
-    # 1200f window (#309): zone-anchoring Birky's hitboxes re-placed its move
-    # geometry, which perturbs this deterministic seed-3 trajectory and delays the
-    # first exchange past frame 600. The #292 signature (Birky takes HITs, ZERO KO
-    # conversion) is unchanged — it just needs a slightly longer window to observe.
-    snaps = run_battle(frames=1200, controllers=cs, p1_char="nalio", p2_char="birky",
+    # 2000f window: #309 zone-anchored Birky's hitboxes, re-placing its move
+    # geometry and perturbing this deterministic seed-3 trajectory (the first KO
+    # now converts around frame ~1428). The window is sized past that so the log
+    # has a KO event to derive.
+    snaps = run_battle(frames=2000, controllers=cs, p1_char="nalio", p2_char="birky",
                        stop_on_match_over=True)
     ev = events_from_snaps(snaps)
     kinds = {e.type for e in ev}
@@ -137,4 +141,4 @@ def test_events_from_real_seeded_run():
     hits_on_p2 = [e for e in ev if e.type == HIT and e.actor == "P2"]
     kos = [e for e in ev if e.type == KO]
     assert hits_on_p2, "birky should take hits in this matchup"
-    assert kos == [], "#292: no KO is converted in 1200f — the log makes that assertable"
+    assert kos, "#292 fixed: a KO must now convert and be derivable from the log"
