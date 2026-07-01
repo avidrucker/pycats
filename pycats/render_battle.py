@@ -24,6 +24,7 @@ from .config import (
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, LEDGE_HANG_FRAMES,
+    KNOCKDOWN_PRONE_FRAMES,
     SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
     TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH, TAPER_MODIFER,
 )
@@ -401,6 +402,7 @@ STATUS_BAR_GAP_ABOVE_STARS = 6
 # Per-timer bar colours (#334 spec). Shield/stun keep their existing colours
 # (SHIELD_COLOR / YELLOW) unlabelled; labelled bars add one hue each per slice.
 HANG_BAR_COLOR = (0, 210, 200)          # teal — ledge-hang timeout (#348)
+DOWN_BAR_COLOR = (255, 140, 45)         # orange — knockdown/getup window (#350)
 
 
 class TimerBar(NamedTuple):
@@ -421,10 +423,10 @@ def timer_bar_specs(p):
     and a bar tracks mid-effect changes (e.g. a blocked hit chipping shield).
     Honours the live status-bars toggle (runtime_settings, #111/#121). Shield
     takes precedence: a shielding fighter is never simultaneously stunned. Slice
-    1 (#340) surfaced shield/stun unlabelled (byte-identical); #348 adds the
-    labelled HANG bar. Hang is mutually exclusive with shield/stun (a hanging
-    fighter is neither shielding nor stunned), so at most one bar is active here;
-    recency ordering for genuinely co-active bars lands in a later slice.
+    1 (#340) surfaced shield/stun unlabelled (byte-identical); #348/#350 add the
+    labelled HANG/DOWN bars. Each of shield/stun/hang/prone is a mutually
+    exclusive state, so at most one bar is active here; recency ordering for
+    genuinely co-active bars lands in a later slice.
     """
     if not runtime_settings.show_status_timer_bars():
         return []
@@ -440,6 +442,10 @@ def timer_bar_specs(p):
         ratio = p.fighter.ledge_hang_timer / LEDGE_HANG_FRAMES
         seconds = math.ceil(p.fighter.ledge_hang_timer / FPS)
         return [TimerBar(ratio, f"{seconds}s", HANG_BAR_COLOR, label="HANG")]
+    if p.state == "prone" and p.fighter.prone_timer > 0:
+        ratio = p.fighter.prone_timer / KNOCKDOWN_PRONE_FRAMES
+        seconds = math.ceil(p.fighter.prone_timer / FPS)
+        return [TimerBar(ratio, f"{seconds}s", DOWN_BAR_COLOR, label="DOWN")]
     return []
 
 

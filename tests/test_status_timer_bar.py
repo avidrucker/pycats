@@ -23,19 +23,19 @@ import pytest  # noqa: E402
 from pycats import render_battle as rb  # noqa: E402
 from pycats.config import (  # noqa: E402
     SHIELD_MAX_HP, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, FPS,
-    SHIELD_COLOR, YELLOW, EAR_HEIGHT, LEDGE_HANG_FRAMES,
+    SHIELD_COLOR, YELLOW, EAR_HEIGHT, LEDGE_HANG_FRAMES, KNOCKDOWN_PRONE_FRAMES,
 )
 from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402
 
 
 def _fake(state="idle", shield_hp=SHIELD_MAX_HP, stun_timer=0,
-          ledge_hang_timer=0, cx=120, top=200):
-    # timer_bar_specs reads shield_hp/stun_timer/ledge_hang_timer through `.fighter`
-    # (#90); `state` stays a direct Player attr. Self-ref so the flat stand-in
-    # satisfies both.
+          ledge_hang_timer=0, prone_timer=0, cx=120, top=200):
+    # timer_bar_specs reads shield_hp/stun_timer/ledge_hang_timer/prone_timer
+    # through `.fighter` (#90); `state` stays a direct Player attr. Self-ref so the
+    # flat stand-in satisfies both.
     ns = types.SimpleNamespace(
         state=state, shield_hp=shield_hp, stun_timer=stun_timer,
-        ledge_hang_timer=ledge_hang_timer,
+        ledge_hang_timer=ledge_hang_timer, prone_timer=prone_timer,
         rect=pygame.Rect(cx - 20, top, 40, 60),
     )
     ns.fighter = ns
@@ -105,6 +105,29 @@ def test_hang_bar_suppressed_by_toggle(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
     assert rb.timer_bar_specs(
         _fake(state="ledge_hang", ledge_hang_timer=90)) == []
+
+
+# --- DOWN bar (#350, slice 3 of #334) ----------------------------------------
+# An orange count-down bar labelled DOWN while a fighter is knocked down (prone,
+# #13), draining as the ~0.5s getup window (prone_timer) runs out.
+
+def test_down_bar_ratio_seconds_label_colour():
+    p = _fake(state="prone", prone_timer=20)
+    (bar,) = rb.timer_bar_specs(p)
+    assert bar.label == "DOWN"
+    assert bar.color == rb.DOWN_BAR_COLOR
+    assert bar.ratio == 20 / KNOCKDOWN_PRONE_FRAMES
+    assert bar.readout == f"{math.ceil(20 / FPS)}s"
+
+
+def test_no_down_bar_when_not_prone():
+    assert rb.timer_bar_specs(_fake(state="prone", prone_timer=0)) == []
+    assert rb.timer_bar_specs(_fake(state="idle", prone_timer=20)) == []
+
+
+def test_down_bar_suppressed_by_toggle(monkeypatch):
+    monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
+    assert rb.timer_bar_specs(_fake(state="prone", prone_timer=20)) == []
 
 
 @pytest.mark.usefixtures("render_isolation")
