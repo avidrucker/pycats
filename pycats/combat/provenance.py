@@ -65,8 +65,8 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "SHIELD_BREAK_STUN_MAX": Provenance(490, "frames", "Melee/PM shield-break stun = (400 - percent) + 90; max at 0%", "FOUND", 12),
     "SHIELD_BREAK_STUN_MIN": Provenance(90, "frames", "Melee/PM shield-break stun = (400 - percent) + 90; min at >=400%", "FOUND", 12),
     "SHIELDSTUN_FACTOR": Provenance(0.345, "factor", "SmashWiki:Shieldstun — Brawl/PM factor 0.345", "FOUND", 140),
-    "SHIELD_MAX_HP": Provenance(50, "hp", "fresh shield-bubble HP; pycats tuning, not sourced", "GUESS", None),
-    "SHIELD_DRAIN_PER_FRAME": Provenance(0.2, "hp/frame", "shield HP drain/regain per frame; pycats tuning, not sourced", "GUESS", 111),
+    "SHIELD_MAX_HP": Provenance(50, "hp", "pycats shield-HP model; no verified 1:1 canon value (Melee uses a different shield-health/decay model)", "TUNED", 12),
+    "SHIELD_DRAIN_PER_FRAME": Provenance(0.2, "hp/frame", "pycats shield-HP model; deliberate drain/regain rate, no canon equivalent", "TUNED", 111),
 
     # ---- hitstun (#43/#44) ----
     "HITSTUN_MULTIPLIER": Provenance(0.4, "factor", "SmashWiki:Hitstun — 0.4 frames per unit of knockback (Melee; Brawl same; PM = Melee model)", "FOUND", 378),
@@ -78,15 +78,15 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "HITLAG_CAP": Provenance(30, "frames", "SmashWiki:Hitlag — Brawl-onward cap (Melee was 20)", "FOUND", 138),
 
     # ---- knockback decay model (#44 from #43) ----
-    "KNOCKBACK_LAUNCH_FACTOR": Provenance(0.085, "factor", "launch_speed = KB * this; scaled from Smash KB*0.03 to the 960px stage; tuning", "GUESS", 44),
-    "KNOCKBACK_DECAY": Provenance(0.145, "px/frame", "hitstun velocity bleed/frame; scaled from Smash 0.051 keeping the 1.7 decay/launch ratio; tuning", "GUESS", 44),
+    "KNOCKBACK_LAUNCH_FACTOR": Provenance(0.085, "factor", "DIVERGENCE from Smash launch_speed = KB*0.03 (docs/research/knockback-launch-physics-findings.md, #43): deliberately scaled to the 960px stage", "DIVERGENCE", 44),
+    "KNOCKBACK_DECAY": Provenance(0.145, "px/frame", "DIVERGENCE from Smash decay 0.051/frame (#43): deliberately scaled to the 960px stage, preserving the 1.7 decay/launch ratio", "DIVERGENCE", 44),
 
     # ---- Sakurai angle (#203, a #142 gate) ----
     "SAKURAI_ANGLE_CODE": Provenance(361, "code", "SmashWiki:Sakurai_angle — the 361 sentinel (not a literal degree)", "FOUND", 203),
-    "SAKURAI_AIRBORNE_DEG": Provenance(40.0, "deg", "Brawl/PM-derived airborne launch angle; playtest starting point", "GUESS", 203),
-    "SAKURAI_GROUNDED_MAX_DEG": Provenance(40.0, "deg", "Brawl/PM-derived grounded max angle at HIGH_KB; playtest starting point", "GUESS", 203),
-    "SAKURAI_GROUNDED_LOW_KB": Provenance(60.0, "kb", "grounded angle stays flat below this KB; playtest starting point", "GUESS", 203),
-    "SAKURAI_GROUNDED_HIGH_KB": Provenance(88.0, "kb", "grounded angle reaches max at this KB; playtest starting point", "GUESS", 203),
+    "SAKURAI_AIRBORNE_DEG": Provenance(40.0, "deg", "pycats airborne launch angle; keyed to pycats knockback() magnitude, not Smash units — no canon value", "TUNED", 203),
+    "SAKURAI_GROUNDED_MAX_DEG": Provenance(40.0, "deg", "pycats grounded max angle at HIGH_KB; keyed to pycats knockback() magnitude, not Smash units — no canon value", "TUNED", 203),
+    "SAKURAI_GROUNDED_LOW_KB": Provenance(60.0, "kb", "pycats threshold — grounded angle stays flat below this pycats KB magnitude; no canon value", "TUNED", 203),
+    "SAKURAI_GROUNDED_HIGH_KB": Provenance(88.0, "kb", "pycats threshold — grounded angle reaches max at this pycats KB magnitude; no canon value", "TUNED", 203),
 
     # ---- crouch-cancel (#135) ----
     "CROUCH_CANCEL_FACTOR": Provenance(0.67, "factor", "Melee/PM crouch-cancel knockback scale (0.67x); value cited, still a tuning starting point", "FOUND", 135),
