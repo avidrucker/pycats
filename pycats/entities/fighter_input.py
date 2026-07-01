@@ -42,7 +42,11 @@ class FighterInput:
             self._pressed(keys, "right"),
             locked=p.state
             in ("shield", "crouch", "helpless", "smash_charge"),  # no walking while shielding/crouching (#124), helpless (#184), or charging a smash (#327/3a)
-            move_speed=p.fighter.move_speed,
+            # #388 (slice 2a): during the initial-dash burst, held movement is at
+            # `dash_speed`, not walk speed. dash_timer is 0 in the default path, so
+            # this is walk speed everywhere until slice 2b's double-tap starts a dash.
+            move_speed=(p.fighter.dash_speed if p.fighter.dash_timer > 0
+                        else p.fighter.move_speed),
         )
 
     def _smash_direction_and_angle(self, held):

@@ -31,6 +31,12 @@ FPS = 60
 GRAVITY = 0.5
 MAX_FALL_SPEED = 13
 MOVE_SPEED = 6
+# Walk/dash/run layer (#388, design #374). MOVE_SPEED is the WALK (≈PM Mario walk
+# 1.1u ×5.4 ≈ 5.9px). DASH is the faster tap-burst (≈Mario dash 1.5u ×5.4 ≈ 8.1px).
+# DASH_DURATION = the initial-dash burst window in frames (⚠ tuning start; run — the
+# sustained state after the burst — is slice 3 of #388). Per-fighter via FighterData.
+DASH_SPEED = 8
+DASH_DURATION = 12
 JUMP_VEL = -13
 DODGE_FRAMES = 15
 MAX_JUMPS = 2  # single + double

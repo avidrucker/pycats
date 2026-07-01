@@ -28,7 +28,7 @@ from dataclasses import dataclass
 # Movement-constant defaults live in config; FighterData uses them as field
 # defaults so any data that doesn't specify movement == today's globals (the
 # default cat / golden sim is unchanged). #126.
-from ..config import GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, MAX_JUMPS
+from ..config import GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, MAX_JUMPS, DASH_SPEED
 
 
 # ---------------------------------------------------------------------------
@@ -208,6 +208,10 @@ class FighterData:
     gravity: float = GRAVITY
     max_fall_speed: float = MAX_FALL_SPEED
     move_speed: float = MOVE_SPEED
+    # Walk/dash/run (#388): `move_speed` is the WALK; `dash_speed` is the faster
+    # tap-burst (#374 design). Defaults to the config global so existing data is
+    # unchanged; the dash is only reached via `_start_dash` (slice 2b's double-tap).
+    dash_speed: float = DASH_SPEED
     jump_vel: float = JUMP_VEL
     max_jumps: int = MAX_JUMPS
     # Per-fighter standing body box (#275). None = the global config.PLAYER_SIZE

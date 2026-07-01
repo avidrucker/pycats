@@ -69,6 +69,7 @@ def build_fighter_chart(p):
             {"id": "idle"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.dash_timer > 0, "dash"),
             _tick(lambda e, d: p.fighter.crouch_attempting and p.fighter.on_ground, "crouch"),
             _tick(lambda e, d: p.fighter.vel.x != 0 and p.fighter.on_ground, "walk"),
             _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
@@ -80,12 +81,27 @@ def build_fighter_chart(p):
             {"id": "walk"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.dash_timer > 0, "dash"),
             _tick(lambda e, d: p.fighter.crouch_attempting and p.fighter.on_ground, "crouch"),
             _tick(lambda e, d: p.fighter.vel.x == 0, "idle"),
             _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
             _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
             _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
             _tick(lambda e, d: p.fighter.shield_attempting and p.fighter.on_ground, "shield"),
+        ),
+        # Dash (#388, slice 2a): the initial-dash burst, entered while dash_timer > 0
+        # (started via Fighter._start_dash — slice 2b's double-tap is the caller).
+        # Exits to walk/idle when the burst window expires; run (the sustained state
+        # after the burst) is slice 3. Grounded burst; standard interrupts apply.
+        state(
+            {"id": "dash"},
+            _tick(lambda e, d: p.attack_timer > 0, "attacking"),
+            _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
+            _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
+            _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
+            _tick(lambda e, d: p.fighter.dash_timer == 0 and p.fighter.vel.x != 0, "walk"),
+            _tick(lambda e, d: p.fighter.dash_timer == 0 and p.fighter.vel.x == 0, "idle"),
         ),
         # Crouch (#124): hold down on solid ground. Movement is locked (see
         # fighter_input), the body Rect resizes + the hurtbox lowers (Player).

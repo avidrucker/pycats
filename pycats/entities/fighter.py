@@ -43,6 +43,7 @@ from ..config import (
     RESPAWN_DELAY_FRAMES,
     DODGE_TIME,
     DODGE_SPEED,
+    DASH_DURATION,
     DODGE_AIR_SPEED,
     WAVEDASH_ANGLE_DEG,
     WAVEDASH_LANDING_LAG,
@@ -74,6 +75,7 @@ class Fighter:
         self.gravity = fighter_data.gravity
         self.max_fall_speed = fighter_data.max_fall_speed
         self.move_speed = fighter_data.move_speed
+        self.dash_speed = fighter_data.dash_speed  # #388: the faster tap-burst speed
         self.jump_vel = fighter_data.jump_vel
         self.max_jumps = fighter_data.max_jumps
 
@@ -125,6 +127,7 @@ class Fighter:
         # ---------- timers / counters (#87 / 6b-3b) ----------
         self.respawn_timer = 0  # frames until next spawn
         self.dodge_timer = 0
+        self.dash_timer = 0  # #388: initial-dash burst window; `dash` state while > 0
         self.hurt_timer = 0
         self.stun_timer = 0
         self.prone_timer = 0  # knockdown/getup window (#13); prone while > 0
@@ -250,7 +253,7 @@ class Fighter:
         so they must keep their inline decrement (moving it here would drop that
         same-frame tick — an off-by-one on the getup duration)."""
         expired = set()
-        for name in ("prone_timer", "dodge_timer"):
+        for name in ("prone_timer", "dodge_timer", "dash_timer"):
             v = getattr(self, name)
             if v > 0:
                 v -= 1
@@ -514,6 +517,16 @@ class Fighter:
         self.invulnerable = True
         self.invulnerable_timer = GETUP_ROLL_FRAMES
         self.vel.update(direction * GETUP_ROLL_SPEED, 0)
+
+    def _start_dash(self, direction: int) -> None:
+        """Begin an initial-dash burst (#388, slice 2a). Sets the burst window and
+        launches at `dash_speed` in `direction` (+1 right, -1 left), facing that way.
+        Mirrors `_start_dodge` as the seam the input layer calls; slice 2b's
+        double-tap detection is the caller. `run` (the sustained state after the
+        burst) is slice 3. Grounded only for now."""
+        self.dash_timer = DASH_DURATION
+        self.vel.x = direction * self.dash_speed
+        self.facing_right = direction > 0
 
     def _start_dodge(self, dir_x: int, dir_y: int = 0) -> None:
         self.dodge_timer = DODGE_TIME
