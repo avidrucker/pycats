@@ -24,7 +24,8 @@ from .config import (
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, LEDGE_HANG_FRAMES,
-    KNOCKDOWN_PRONE_FRAMES, LEDGE_REGRAB_LOCKOUT_FRAMES,
+    KNOCKDOWN_PRONE_FRAMES, LEDGE_REGRAB_LOCKOUT_FRAMES, DODGE_TIME,
+    GETUP_ROLL_FRAMES,
     SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
     TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH, TAPER_MODIFER,
 )
@@ -34,6 +35,7 @@ from .input_history import format_line
 from . import cat_faces
 from .entities import Player
 from .combat.geometry import resolve_circle
+from .combat.data import GETUP_ATTACK
 
 # Hit/hurtbox debug overlay (#219). Outline-only circles in two distinct colours
 # so an active attack's hitbox(es) and each fighter's hurtbox are directly
@@ -404,6 +406,11 @@ STATUS_BAR_GAP_ABOVE_STARS = 6
 HANG_BAR_COLOR = (0, 210, 200)          # teal — ledge-hang timeout (#348)
 DOWN_BAR_COLOR = (255, 140, 45)         # orange — knockdown/getup window (#350)
 LOCKOUT_BAR_COLOR = (230, 70, 70)       # red — post-drop regrab lockout (#357)
+INVULN_BAR_COLOR = (95, 225, 120)       # green — intangibility window (#358)
+
+# The getup-attack (#225) intangibility window = the whole swing, so its bar's
+# max is the move's total frames (kept in sync with the move data, not hardcoded).
+_GETUP_ATTACK_FRAMES = GETUP_ATTACK.startup + GETUP_ATTACK.active + GETUP_ATTACK.recovery
 
 # Recency sentinel: the shield bar is a *resource* gauge (shield_hp), not a frame
 # counter, so it has no comparable "frames elapsed since start". Give it a key
@@ -421,6 +428,29 @@ class TimerBar(NamedTuple):
     label: str | None = None
 
 
+def _invuln_remaining_max(p):
+    """The active intangibility window as `(remaining, max)` frames, or None.
+
+    Per-source resolve (#358, option 1): `fighter.invulnerable` is a bool driven
+    by several actions, each with its own timer and constant max — dodge
+    (DODGE_TIME), getup-roll (GETUP_ROLL_FRAMES), getup-attack (the whole swing).
+    Gated on the `invulnerable` bool so the bar shows only while actually
+    intangible, and **suppressed while ledge-hanging** (the HANG bar already shows
+    that clock — no redundant duplicate). Returns None when not intangible or the
+    source has no tracked frame window (e.g. respawn grants no count-down invuln).
+    """
+    f = p.fighter
+    if not f.invulnerable or p.state == "ledge_hang":
+        return None
+    if f.dodge_timer > 0:
+        return (f.dodge_timer, DODGE_TIME)
+    if f.getup_roll_timer > 0:
+        return (f.getup_roll_timer, GETUP_ROLL_FRAMES)
+    if f.getup_attack_timer > 0:
+        return (f.getup_attack_timer, _GETUP_ATTACK_FRAMES)
+    return None
+
+
 def timer_bar_specs(p):
     """The active above-head timer bars for fighter `p`, ordered newest-on-top.
 
@@ -434,8 +464,9 @@ def timer_bar_specs(p):
     - **Exclusive-state** bars (shield / stun / hang / prone) — mutually exclusive
       states, so at most one is added (shield takes precedence, via the elif
       chain: a shielding fighter is never simultaneously stunned).
-    - **Overlay** timers — state-independent, so they co-activate with the above.
-      LOCKOUT (post-drop regrab suppression) is the first (#357).
+    - **Overlay** timers — state-independent, so they co-activate with the above:
+      LOCKOUT (post-drop regrab suppression, #357) and INVULN (intangibility
+      window, #358; per-source resolve via _invuln_remaining_max).
 
     Bars are returned **newest-on-top**: sorted by recency = frames elapsed since
     the timer started (`max - remaining`), ascending, so the most recently started
@@ -476,6 +507,14 @@ def timer_bar_specs(p):
         seconds = math.ceil(f.ledge_regrab_lockout_timer / FPS)
         bars.append((LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer,
                      TimerBar(ratio, f"{seconds}s", LOCKOUT_BAR_COLOR, label="LOCKOUT")))
+
+    invuln = _invuln_remaining_max(p)
+    if invuln is not None:
+        remaining, max_frames = invuln
+        ratio = remaining / max_frames
+        seconds = math.ceil(remaining / FPS)
+        bars.append((max_frames - remaining,
+                     TimerBar(ratio, f"{seconds}s", INVULN_BAR_COLOR, label="INVULN")))
 
     bars.sort(key=lambda kb: kb[0])   # newest-on-top (least elapsed first)
     return [bar for _, bar in bars]
