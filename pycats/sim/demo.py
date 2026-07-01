@@ -61,13 +61,19 @@ class Demo:
 
 
 def demo_captions(demo: Demo) -> List[Caption]:
-    """One timed Caption per segment (list order = draw order). Each caption carries its
-    dwell (#352): the segment's `dwell` if set, else the demo's `default_dwell` — so the
-    presenter can freeze on the caption's start frame for readability."""
-    return [Caption(seg.caption, anchor=seg.anchor, size=seg.size, font=seg.font,
-                    frames=seg.window(),
+    """One timed Caption per segment (list order = draw order).
+
+    Each caption's text is prefixed with its 1-based position `i/n — ` (#356) so a
+    viewer can track which beat they're on; the numbering derives from segment order +
+    count, so reordering/adding a segment renumbers automatically. Numbering is
+    demo-choreography only — SRT / `--captions` overlays (captions_from_srt) stay raw.
+    Each caption also carries its dwell (#352): the segment's `dwell` if set, else the
+    demo's `default_dwell` — so the presenter can freeze on the caption's start frame."""
+    n = len(demo.segments)
+    return [Caption(f"{i}/{n} — {seg.caption}", anchor=seg.anchor, size=seg.size,
+                    font=seg.font, frames=seg.window(),
                     dwell=(seg.dwell if seg.dwell is not None else demo.default_dwell))
-            for seg in demo.segments]
+            for i, seg in enumerate(demo.segments, 1)]
 
 
 def demo_timeline(demo: Demo, keymaps):

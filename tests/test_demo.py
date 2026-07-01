@@ -55,9 +55,35 @@ def test_demo_captions_one_per_segment_with_windows():
         DemoSegment("B", start=11, end=20),
     ))
     caps = demo_captions(demo)
-    assert [c.text for c in caps] == ["A", "B"]
+    assert [c.text for c in caps] == ["1/2 — A", "2/2 — B"]   # numbered (#356)
     assert caps[0].anchor == TOP_CENTER and caps[0].frames == (0, 10)
     assert caps[1].frames == (11, 20)
+
+
+def test_demo_captions_are_numbered():
+    """#356: each demo caption is prefixed with its 1-based position `i/n — ` so the
+    viewer can track the beat; the numbering derives from segment order + count, so
+    reordering/adding a segment renumbers automatically."""
+    demo = Demo("t", segments=(
+        DemoSegment("Approach", start=0, end=10),
+        DemoSegment("Jump", start=11, end=20),
+        DemoSegment("Attack", start=21, end=30),
+    ))
+    assert [c.text for c in demo_captions(demo)] == [
+        "1/3 — Approach", "2/3 — Jump", "3/3 — Attack"]
+
+
+def test_srt_captions_are_not_numbered():
+    """#356: numbering is demo-choreography only — SRT/--captions overlays stay raw."""
+    caps = captions_from_srt("1\n00:00:00,000 --> 00:00:01,000\nHello\n")
+    assert caps[0].text == "Hello"   # no "1/1 — " prefix
+
+
+def test_showcase_captions_are_numbered():
+    caps = demo_captions(DEMOS["showcase"])
+    n = len(caps)
+    assert caps[0].text.startswith(f"1/{n} — ")
+    assert caps[-1].text.startswith(f"{n}/{n} — ")
 
 
 def test_demo_timeline_compiles_all_segment_spans():
