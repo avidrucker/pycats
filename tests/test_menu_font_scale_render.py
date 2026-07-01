@@ -117,6 +117,30 @@ def test_mixed_text_resizes_when_font_scale_changes():
     assert r_lg.height > r_std.height
 
 
+def test_main_menu_option_spacing_scales_with_font_scale():
+    """#402: the main-menu option rows spread further apart at large scale (so the
+    oversized selection arrows don't collide). Able-to-fail: static spacing -> equal
+    spans."""
+    def option_span(scale):
+        ys = {}
+        orig = text_renderer.render_text_simple
+
+        def spy(text, size, color, surface, position, center=False, **k):
+            if text in ("Play", "Options", "Quit"):
+                ys[text] = position[1]
+            return orig(text, size, color, surface, position, center=center, **k)
+
+        text_renderer.render_text_simple = spy
+        try:
+            with _font_scale(scale):
+                MainMenuManager(_P1, _P2).render(pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT)))
+        finally:
+            text_renderer.render_text_simple = orig
+        return ys["Quit"] - ys["Play"]
+
+    assert option_span("large") > option_span("standard")
+
+
 def test_small_scale_shrinks_text_below_standard():
     """The scalar cuts both ways: at small the fields are shorter than standard."""
     std = _field_sizes("options", "standard")
@@ -126,19 +150,15 @@ def test_small_scale_shrinks_text_below_standard():
     assert not bigger, f"options fields not smaller at small scale: {bigger}"
 
 
-# ---- geometry does NOT scale yet (documented finding, tracked by #402) ------ #
-@pytest.mark.xfail(reason="#402: menu layout geometry (button min-width/padding, "
-                          "grid spacing/positions) is unscaled", strict=False)
+# ---- geometry now scales: buttons fit their (adaptive) column at large (#402) - #
 def test_options_buttons_fit_their_column_at_large_scale():
-    """At large, the scaled labels make the auto-sized buttons wider than a column's
-    share of the screen (they overlap). Xfail until #402 scales the geometry."""
-    from pycats.menu_widgets import BUTTON_PAD_X, BUTTON_MIN_WIDTH
+    """#402: at large the grid drops to a single column, so the (wide) scaled buttons
+    fit their column's share of the screen instead of overlapping. Was xfail under
+    #399; now a real assertion of the fixed geometry."""
     runtime_settings.seed(settings.defaults())
-    col_budget = SCREEN_WIDTH // 2
     with _font_scale("large"):
         om = OptionsMenu(_P1, _P2)
-        for row in om.rows:
-            label = "► " + om._row_label(row)
-            tw = text_renderer._get_font(None, 36).size(label)[0]
-            bw = max(BUTTON_MIN_WIDTH, tw + 2 * BUTTON_PAD_X)
-            assert bw <= col_budget, f"{row!r} button {bw}px overflows {col_budget}px column"
+        ncols = om._effective_cols()
+        col_budget = SCREEN_WIDTH // ncols
+        bw = om._button_size()[0]
+        assert bw <= col_budget, f"button {bw}px overflows {col_budget}px column ({ncols} cols)"

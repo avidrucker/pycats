@@ -88,21 +88,15 @@ _P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame
            attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
 
 
-def _grid_center(i):
-    """The (x, y) center of option row i in the 2-column grid (#389)."""
-    from pycats.options_menu import NCOLS
-    r, c = divmod(i, NCOLS)
-    start_y = MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE + MAIN_MENU_PADDING
-    x = SCREEN_WIDTH // 4 if c == 0 else SCREEN_WIDTH * 3 // 4
-    return x, start_y + r * MAIN_MENU_OPTION_SPACING
-
-
 def test_options_render_draws_glow_button_only_at_focused_row():
+    # Layout-agnostic (#402 made positions scale-dependent): ask the menu where it
+    # drew each button, then assert the glow fill is under the focused one only.
     runtime_settings.seed(settings.defaults())
-    m = OptionsMenu(_P1, _P2)  # selected_option defaults to 0 (grid row0, col0)
+    m = OptionsMenu(_P1, _P2)  # selected_option defaults to 0
     s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     m.render(s)
-    fx, fy = _grid_center(0)   # focused cell
-    ux, uy = _grid_center(3)   # a different, unfocused cell (row1, col1)
+    centers = {i: c for i, c in m._layout()[0]}
+    fx, fy = centers[0]   # focused cell
+    ux, uy = centers[3]   # a different, unfocused cell
     assert _row_has_fill(s, fy, BUTTON_FILL_FOCUSED, fx - 150, fx + 150)      # focused
     assert not _row_has_fill(s, uy, BUTTON_FILL_FOCUSED, ux - 150, ux + 150)  # unfocused

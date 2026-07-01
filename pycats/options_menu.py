@@ -25,19 +25,19 @@ from .config import (
     MAIN_MENU_TITLE_COLOR,
     MAIN_MENU_TITLE_SIZE,
     MAIN_MENU_OPTION_SIZE,
-    MAIN_MENU_PADDING,
-    MAIN_MENU_OPTION_SPACING,
     FONT_SCALE_ORDER,
     FONT_SCALE_NAMES,
 )
 from . import runtime_settings
 from . import settings
-from .menu_widgets import draw_menu_button
+from .menu_widgets import draw_menu_button, menu_button_size, BUTTON_MIN_WIDTH
+from .menu_layout import effective_columns, grid_dims, scroll_to_visible
 from .text_utils import text_renderer
 
-# The rows lay out as a 2-column grid (#389) — row-major, so index i is at
-# (row=i//NCOLS, col=i%NCOLS). Navigation is 2D: up/down move a full row within a
-# column, left/right move between columns.
+# The rows lay out as a row-major grid (#389). NCOLS is the MAX columns; the actual
+# column count is chosen per-frame from the scaled button width (#402) — 2 where the
+# buttons fit, 1 at a large font_scale — via _effective_cols(). Navigation is 2D:
+# up/down move a full row within a column, left/right move between columns.
 NCOLS = 2
 
 
@@ -55,12 +55,16 @@ class OptionsMenu:
         self.rows = ["status_bars", "hitbox_overlay", "input_history", "controls",
                      "font_scale", "window_scale", "fullscreen", "esc_quit", "back"]
         self.selected_option = 0
+        # Top visible grid-row when the grid is taller than the viewport (large
+        # font_scale); kept in range by render via scroll_to_visible (#402).
+        self.scroll_top = 0
 
         self.input_cooldown = 0
         self.action_requested = None  # "back" or None
 
     def reset(self):
         self.selected_option = 0
+        self.scroll_top = 0
         self.input_cooldown = 0
         self.action_requested = None
 
@@ -86,10 +90,11 @@ class OptionsMenu:
             return
 
         # 2D grid navigation (#389): up/down move a full row within a column,
-        # left/right move between columns. Both wrap.
+        # left/right move between columns. Both wrap. The column count is the live
+        # scale-aware value (#402) — 1 at large scale, so left/right become no-ops.
         n = len(self.rows)
-        nrows = (n + NCOLS - 1) // NCOLS
-        row, col = divmod(self.selected_option, NCOLS)
+        ncols, nrows = grid_dims(n, self._effective_cols())
+        row, col = divmod(self.selected_option, ncols)
         moved = False
         if self._pressed("up", pressed_keys):
             row = (row - 1) % nrows
@@ -98,13 +103,13 @@ class OptionsMenu:
             row = (row + 1) % nrows
             moved = True
         if self._pressed("left", pressed_keys):
-            col = (col - 1) % NCOLS
+            col = (col - 1) % ncols
             moved = True
         if self._pressed("right", pressed_keys):
-            col = (col + 1) % NCOLS
+            col = (col + 1) % ncols
             moved = True
         if moved:
-            new = row * NCOLS + col
+            new = row * ncols + col
             if new >= n:  # partial last row (odd count) — snap to the last cell
                 new = n - 1
             self.selected_option = new
@@ -182,44 +187,100 @@ class OptionsMenu:
             return "Back"
         return row
 
+    # ---- layout (scale-aware, scrollable grid #402) ----
+    def _button_size(self):
+        """Uniform (w, h) for every option button at the live font scale — the widest
+        label sets the width so the grid columns line up."""
+        w, h = BUTTON_MIN_WIDTH, 0
+        for row in self.rows:
+            bw, bh = menu_button_size(self._row_label(row), MAIN_MENU_OPTION_SIZE,
+                                      focused=True)
+            w, h = max(w, bw), max(h, bh)
+        return w, h
+
+    def _effective_cols(self):
+        """Columns that fit at the live scale — 2 where the buttons fit, 1 at large."""
+        bw, _ = self._button_size()
+        return effective_columns(SCREEN_WIDTH, bw, NCOLS)
+
+    def _layout(self):
+        """Placement for this frame, updating scroll_top so the selected row stays on
+        screen. Returns (placements, meta) — placements is [(row_index, (cx, cy))] for
+        the rows to draw; meta carries the title/instruction bands + scroll flags.
+
+        Vertical bands scale with the font: a title at top, two instruction lines at
+        the bottom, and the grid scrolls within whatever is left (the grid is taller
+        than the viewport at large scale, so scroll_to_visible keeps focus on screen)."""
+        scale = runtime_settings.font_scale()
+        n = len(self.rows)
+        bw, bh = self._button_size()
+        ncols, nrows = grid_dims(n, effective_columns(SCREEN_WIDTH, bw, NCOLS))
+
+        title_h = text_renderer._get_font(None, MAIN_MENU_TITLE_SIZE).get_height()
+        instr_h = text_renderer._get_font(None, 20).get_height()
+        title_center_y = round(10 * scale) + title_h // 2
+        grid_top = round(10 * scale) + title_h + round(10 * scale)
+        instr_line = instr_h + round(4 * scale)
+        instr_top = SCREEN_HEIGHT - (2 * instr_line + round(8 * scale))
+        row_spacing = bh + round(6 * scale)
+        viewport_h = max(row_spacing, instr_top - grid_top)
+        visible_rows = max(1, viewport_h // row_spacing)
+
+        sel_row = self.selected_option // ncols
+        self.scroll_top = scroll_to_visible(self.scroll_top, sel_row, visible_rows, nrows)
+
+        col_x = (SCREEN_WIDTH // 2,) if ncols == 1 else (SCREEN_WIDTH // 4,
+                                                         SCREEN_WIDTH * 3 // 4)
+        last = min(nrows, self.scroll_top + visible_rows)
+        placements = []
+        for gr in range(self.scroll_top, last):
+            cy = grid_top + (gr - self.scroll_top) * row_spacing + bh // 2
+            for c in range(ncols):
+                i = gr * ncols + c
+                if i < n:
+                    placements.append((i, (col_x[c], cy)))
+
+        meta = dict(ncols=ncols, nrows=nrows, visible_rows=visible_rows,
+                    title_center=(SCREEN_WIDTH // 2, title_center_y),
+                    grid_top=grid_top, instr_top=instr_top, instr_line=instr_line,
+                    more_above=self.scroll_top > 0, more_below=last < nrows,
+                    button_width=bw)
+        return placements, meta
+
     # ---- render ----
     def render(self, surface):
         surface.fill(MAIN_MENU_BG_COLOR)
+        scale = runtime_settings.font_scale()
+        placements, meta = self._layout()
+
         text_renderer.render_text_simple(
-            "Options",
-            MAIN_MENU_TITLE_SIZE,
-            MAIN_MENU_TITLE_COLOR,
-            surface,
-            (SCREEN_WIDTH // 2, MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE // 2),
-            center=True,
+            "Options", MAIN_MENU_TITLE_SIZE, MAIN_MENU_TITLE_COLOR, surface,
+            meta["title_center"], center=True,
         )
 
-        start_y = MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE + MAIN_MENU_PADDING
-        # 2-column grid (#389): row-major, one column centred either side of centre.
-        # Two columns halve the vertical extent so the rows no longer overflow into
-        # the instruction line below (#386 follow-up).
-        col_x = (SCREEN_WIDTH // 4, SCREEN_WIDTH * 3 // 4)
-        for i, row in enumerate(self.rows):
-            r, c = divmod(i, NCOLS)
-            center = (col_x[c], start_y + r * MAIN_MENU_OPTION_SPACING)
-            # Each row is a menu-button widget (#359): a coloured rect that glows
-            # when focused, with a redundant ► marker (focus not colour-only, #346).
+        for i, center in placements:
+            # Each row is a menu-button widget (#359): a coloured rect that glows when
+            # focused, with a redundant ► marker (focus not colour-only, #346). A
+            # uniform width keeps the columns aligned (#402).
             draw_menu_button(
-                surface,
-                self._row_label(row),
-                center,
-                MAIN_MENU_OPTION_SIZE,
-                focused=(i == self.selected_option),
+                surface, self._row_label(self.rows[i]), center, MAIN_MENU_OPTION_SIZE,
+                focused=(i == self.selected_option), min_width=meta["button_width"],
             )
 
+        # Scroll affordances (#402): ↑/↓ "more" when the grid overflows the viewport
+        # (↑↓ are in the font-capability whitelist, unlike ▲▼).
+        if meta["more_above"]:
+            text_renderer.render_mixed_centered(
+                "↑ more", 18, WHITE, surface,
+                (SCREEN_WIDTH // 2, meta["grid_top"] - round(12 * scale)))
+        if meta["more_below"]:
+            text_renderer.render_mixed_centered(
+                "↓ more", 18, WHITE, surface,
+                (SCREEN_WIDTH // 2, meta["instr_top"] - round(4 * scale)))
+
         instructions = ["Use WASD or arrows to navigate", "A to toggle, B to go back"]
-        instruction_start_y = SCREEN_HEIGHT - len(instructions) * 30 - MAIN_MENU_PADDING
         for i, instruction in enumerate(instructions):
+            cy = meta["instr_top"] + i * meta["instr_line"] + meta["instr_line"] // 2
             text_renderer.render_text_mixed(
-                instruction,
-                20,
-                WHITE,
-                surface,
-                (SCREEN_WIDTH // 2, instruction_start_y + i * 30),
-                center=True,
+                instruction, 20, WHITE, surface, (SCREEN_WIDTH // 2, cy), center=True,
             )

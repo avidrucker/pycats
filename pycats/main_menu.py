@@ -24,6 +24,7 @@ from .config import (
     MAIN_MENU_OPTION_SPACING,
 )
 from .text_utils import text_renderer
+from . import runtime_settings
 
 
 class MainMenuManager:
@@ -109,7 +110,10 @@ class MainMenuManager:
             center=True,
         )
 
-        # Menu options
+        # Menu options — spacing scales with the live font_scale (#402) so the rows
+        # (and the oversized selection arrows) don't collide at a large scale.
+        scale = runtime_settings.font_scale()
+        spacing = round(MAIN_MENU_OPTION_SPACING * scale)
         start_y = MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE + MAIN_MENU_PADDING
 
         for i, option in enumerate(self.options):
@@ -120,7 +124,7 @@ class MainMenuManager:
                 else MAIN_MENU_OPTION_COLOR
             )
 
-            option_y = start_y + i * MAIN_MENU_OPTION_SPACING
+            option_y = start_y + i * spacing
             text_renderer.render_text_simple(
                 option,
                 MAIN_MENU_OPTION_SIZE,
@@ -135,7 +139,7 @@ class MainMenuManager:
                 arrow_offset = (
                     text_renderer.sys_font(None, MAIN_MENU_OPTION_SIZE).size(option)[0]
                     // 2
-                    + 20
+                    + round(20 * scale)
                 )
 
                 # Use specialized Unicode character rendering for better alignment
