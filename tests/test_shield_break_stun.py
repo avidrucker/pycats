@@ -67,6 +67,33 @@ def test_shield_to_stun_entry_and_exit():
     assert p.state == "idle", p.state
 
 
+# ------------------------------------------ 3. passive-drain-to-0 break (#341)
+def test_holding_shield_until_drained_to_zero_breaks_it():
+    """#341: a shield drained to 0 by HOLDING (passive drain, no hit) must break
+    into the dizzy `stun`, matching Melee/PM — a shield reaching 0 by ANY means
+    breaks, not only by a connecting hit. Able-to-fail: pre-fix the drain path
+    never calls _start_stun(), so the fighter sits in `shield` at 0 hp forever."""
+    p = _mk_player()
+    plats = pg.sprite.Group(Platform(pg.Rect(0, 160, 400, 40), thin=False))
+    noop = InputFrame(held=set(), pressed=set(), released=set())
+    for _ in range(30):                             # settle until grounded (falls ~16f)
+        p.update(noop, plats, pg.sprite.Group())
+        if p.fighter.on_ground:
+            break
+    assert p.fighter.on_ground, "fighter never landed to shield from"
+    p.fighter.shield_hp = 1.0                       # a few drain ticks from empty (fast)
+    # HELD (not a fresh press — a press spot-dodges); hold shield until it drains out.
+    hold_shield = InputFrame(held={pg.K_x}, pressed=set(), released=set())
+    broke = False
+    for _ in range(12):
+        p.update(hold_shield, plats, pg.sprite.Group())
+        if p.fighter.stun_timer > 0:
+            broke = True
+            break
+    assert broke, "holding shield until shield_hp hit 0 did not break it (#341)"
+    assert p.state == "stun", p.state               # drain-to-0 broke into the dizzy
+
+
 # ------------------------------------------------------- 4. dizzy animation
 def _nonblack_pixel_count(surf, bg=(0, 0, 0)):
     n = 0

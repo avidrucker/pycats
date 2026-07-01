@@ -38,6 +38,7 @@ from ..config import (
     SCREEN_HEIGHT,
     INITIAL_LIVES,
     SHIELD_MAX_HP,
+    SHIELD_DRAIN_PER_FRAME,
     BLAST_PADDING,
     RESPAWN_DELAY_FRAMES,
     DODGE_TIME,
@@ -453,6 +454,23 @@ class Fighter:
         # resets self._clock + self.tail. The aggregate no longer reaches `owner`.
 
     # state starters ----------------------------
+    def tick_shield(self, shielding: bool) -> None:
+        """Per-frame shield-HP tick (#341).
+
+        While shielding, the shield drains by SHIELD_DRAIN_PER_FRAME and BREAKS
+        into the dizzy `stun` if it empties — matching Melee/PM, where a shield
+        that reaches 0 by ANY means breaks, not only by a connecting hit. This is
+        the drain-path counterpart of the hit-path break in `receive_hit`; both
+        now route a 0-hp shield through `_start_stun()` (the single break rule).
+        While not shielding, the shield regenerates. The setter clamps
+        [0, SHIELD_MAX_HP]."""
+        if shielding:
+            self.shield_hp = round(self.shield_hp - SHIELD_DRAIN_PER_FRAME, 2)
+            if self.shield_hp == 0:
+                self._start_stun()  # shield broke -> dizzy stun (#12/#341)
+        else:
+            self.shield_hp = round(self.shield_hp + SHIELD_DRAIN_PER_FRAME, 2)
+
     def _start_stun(self) -> None:
         # Shield-break "dizzy" (#12): damage-scaled duration (Melee/PM). The
         # engine flips state -> "stun" on the next tick (the chart/FSM `stun`

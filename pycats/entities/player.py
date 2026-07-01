@@ -241,11 +241,11 @@ class Player(pygame.sprite.Sprite):
             return
 
         # ---------- shield tick ----------
-        # if shielding, then shield HP goes down, otherwise it goes up
-        if self.state == "shield":
-            self.fighter.shield_hp = round(self.fighter.shield_hp - 0.2, 2)  # Fighter setter clamps >= 0
-        else:
-            self.fighter.shield_hp = round(self.fighter.shield_hp + 0.2, 2)  # Fighter setter clamps <= MAX
+        # Shield HP drains while shielding (breaking into `stun` if it empties,
+        # #341) and regenerates otherwise — the domain owns both the drain rate
+        # (SHIELD_DRAIN_PER_FRAME) and the drain-to-0 break rule (Fighter setter
+        # clamps [0, MAX]).
+        self.fighter.tick_shield(self.state == "shield")
 
         # Shieldstun (#140): a blocked hit locks the defender in shield for
         # shieldstun_timer frames — no drop, jump, dodge, grab, or move. Force
