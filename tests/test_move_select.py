@@ -217,12 +217,13 @@ def test_resolve_smash_prefers_smash_then_tilt_then_attack():
     assert resolve_move_key({"attack"}, "forward", True, False, is_smash=True) == "attack"
 
 
-def test_smash_through_player_falls_back_to_tilt_until_slice2():
-    # Nalio has ftilt but no fsmash yet (#327 slice 2) → smash-forward plays the ftilt
+def test_smash_through_player_plays_real_smash_since_slice2():
+    # Nalio now has real smashes (#327 slice 2) → smash-forward plays fsmash, not
+    # the ftilt fallback the #331 seam used before the move data existed.
     pg.init()
     p = _mk("nalio"); p.fighter.on_ground = True
     p.handle_actions(_press("smash", held_extra=("right",)), pg.sprite.Group())
-    assert p.current_move is p.fighter_data.moves["ftilt"]
+    assert p.current_move is p.fighter_data.moves["fsmash"]
 
 
 def test_smash_in_air_alone_is_a_noop_this_slice():

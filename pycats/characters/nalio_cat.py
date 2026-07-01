@@ -350,6 +350,102 @@ _FIREBALL = MoveData(
     projectile_lifetime=73,
 )
 
+# --- Smash attacks (uncharged; #327 slice 2) ----------------------------------
+# Authored from PM3.6 Mario rukaidata, same convention as the tilts/aerials: raw
+# damage/angle/BKB/KBG/frames, radii = u(size), positions the documented
+# bones-not-modelled approximation. These are the UNCHARGED release swings, fired
+# like a strong tilt via the smash input+routing (#331); the hold-to-charge
+# scaling is slice 3 (#327). Sourcing recorded per move below.
+
+# Forward smash — PM3.6 Mario AttackS4S (rukaidata). Active 8-12 -> startup 7 /
+# active 5; IASA 38 -> recovery 26. Three same-window boxes (priority id0->2), all
+# angle 361 (Sakurai sentinel, #203), WDSK 0: id0 dmg14/BKB25/KBG96 r19 (3.52u),
+# id1 dmg19/BKB30/KBG97 r21 (3.94u — the flame sweetspot; the elemental effect
+# isn't modelled, only its damage/KB), id2 dmg10/BKB25/KBG96 r11 (1.95u). Positions
+# approximated along the forward arm at mid-body height (dy 28, like f-tilt): id0
+# (fist) outermost, id1 mid sweetspot, id2 inner.
+_FSMASH = MoveData(
+    name="forward smash",
+    in_air=False,
+    startup=7,
+    active=5,
+    recovery=26,
+    hitboxes=(
+        Hitbox(circle=Circle(dx=57, dy=28, r=u(3.52)), damage=14.0, angle=361,
+               base_knockback=25.0, knockback_growth=96.0),   # id0 fist (priority)
+        Hitbox(circle=Circle(dx=47, dy=28, r=u(3.94)), damage=19.0, angle=361,
+               base_knockback=30.0, knockback_growth=97.0),   # id1 sweetspot
+        Hitbox(circle=Circle(dx=36, dy=28, r=u(1.95)), damage=10.0, angle=361,
+               base_knockback=25.0, knockback_growth=96.0),   # id2 inner
+    ),
+)
+
+# Up smash — PM3.6 Mario AttackHi4 (rukaidata). Active 3-6 -> startup 2 / active 4.
+# rukaidata's subaction page doesn't surface IASA/FAF; PM Mario u-smash is
+# Melee-faithful FAF 39 -> recovery 33 (⚠ playtest — community frame data, not on
+# the rukaidata script). Two windows (#204), all size 3.52u -> r19, WDSK 0:
+#   - UP-HIT [3,4]: angle 83 (up, slightly forward), dmg15 / BKB32 / KBG97.
+#   - LATE   [5,6]: angle 259 (a down-angled late hit, per rukaidata; ⚠ playtest),
+#     dmg16 / BKB35 / KBG95.
+# (rukaidata's frame grouping is ambiguous between an up-hit [3,4] and [3,6]; the
+# non-overlapping [3,4]/[5,6] split is modelled, matching the two-stage f-air/b-air
+# convention.) Positions approximated overhead (like u-tilt): up boxes above the
+# head, late boxes slightly lower/forward.
+def _usmash_up(dx, dy):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=u(3.52)), damage=15.0, angle=83,
+                  base_knockback=32.0, knockback_growth=97.0,
+                  active_start=3, active_end=4)
+
+def _usmash_late(dx, dy):
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=u(3.52)), damage=16.0, angle=259,
+                  base_knockback=35.0, knockback_growth=95.0,
+                  active_start=5, active_end=6)
+
+_USMASH = MoveData(
+    name="up smash",
+    in_air=False,
+    startup=2,
+    active=4,
+    recovery=33,
+    hitboxes=(
+        _usmash_up(dx=2, dy=2),      # id0 over the head
+        _usmash_up(dx=12, dy=4),     # id1 front of the head
+        _usmash_late(dx=10, dy=12),  # id2 late, lower-forward
+        _usmash_late(dx=0, dy=12),   # id3 late, lower
+    ),
+)
+
+# Down smash — PM3.6 Mario AttackLw4 (rukaidata). A two-hit sweep, front then back;
+# active 3-4 (front) + 12-13 (back) -> startup 2 / active 11 (spanning both
+# windows); total 36 -> recovery 23. All angle 361 (Sakurai), WDSK 0. Two windows
+# (#204): FRONT [3,4] both BKB45/KBG75 — id0 dmg16 r21 (3.91u), id1 dmg16 r17
+# (3.13u); BACK [12,13] both BKB40/KBG75 — id0 dmg12 r21, id1 dmg10 r17. Positions
+# approximated at ground level (low dy): front boxes ahead (+dx), back behind (-dx,
+# facing-right-relative).
+def _dsmash_front(dx, r, dmg):
+    return Hitbox(circle=Circle(dx=dx, dy=48, r=r), damage=dmg, angle=361,
+                  base_knockback=45.0, knockback_growth=75.0,
+                  active_start=3, active_end=4)
+
+def _dsmash_back(dx, r, dmg):
+    return Hitbox(circle=Circle(dx=dx, dy=48, r=r), damage=dmg, angle=361,
+                  base_knockback=40.0, knockback_growth=75.0,
+                  active_start=12, active_end=13)
+
+_DSMASH = MoveData(
+    name="down smash",
+    in_air=False,
+    startup=2,
+    active=11,
+    recovery=23,
+    hitboxes=(
+        _dsmash_front(dx=40, r=u(3.91), dmg=16.0),   # front id0 (outer)
+        _dsmash_front(dx=24, r=u(3.13), dmg=16.0),   # front id1 (inner)
+        _dsmash_back(dx=-40, r=u(3.91), dmg=12.0),   # back id0 (outer)
+        _dsmash_back(dx=-24, r=u(3.13), dmg=10.0),   # back id1 (inner)
+    ),
+)
+
 # --- Crouch geometry (#124) ---------------------------------------------------
 # PM Mario's crouch is a moderate lower (not a Kirby-style ground-hug). The body
 # Rect resizes from the 40×60 stand box to a squarish 40×40 crouch box (feet
@@ -383,7 +479,8 @@ NALIO_FIGHTER_DATA = FighterData(
     moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
            "utilt": _UP_TILT, "fair": _FORWARD_AIR, "bair": _BACK_AIR,
            "uair": _UP_AIR, "dair": _DOWN_AIR, "nair": _NEUTRAL_AIR,
-           "neutral_b": _FIREBALL},
+           "neutral_b": _FIREBALL,
+           "fsmash": _FSMASH, "usmash": _USMASH, "dsmash": _DSMASH},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,
