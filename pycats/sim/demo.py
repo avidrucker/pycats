@@ -130,3 +130,9 @@ _EXAMPLE = Demo(
 )
 
 DEMOS = {_EXAMPLE.name: _EXAMPLE}
+
+# The curated showcase lives in its own module (long span list); register it here.
+# Imported at the bottom so `Demo`/`DemoSegment` are already defined (no import cycle).
+from .showcase import SHOWCASE  # noqa: E402
+
+DEMOS[SHOWCASE.name] = SHOWCASE
