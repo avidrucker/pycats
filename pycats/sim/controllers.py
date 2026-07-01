@@ -46,6 +46,12 @@ class LevelParams:
     # actually commits (per-character/per-move) instead of the flat `attack_range=45`.
     # On for the reactive levels (5/7/9), off for low/default → golden-safe.
     reach_aware: bool = False
+    # #277 (model A, re-spec per #343): press the advantage on a vulnerable opponent —
+    # when the opponent is in move recovery (no threat) and the bot is in melee range,
+    # suppress the standoff back-off so it holds/presses instead of retreating. On for
+    # the reactive levels (5/7/9), off for low/default → golden-safe. NOT footsies:
+    # `standoff` is never widened (Smash CPUs approach committally, #343).
+    reactive_spacing: bool = False
 
 
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
@@ -53,9 +59,9 @@ class LevelParams:
 LEVEL_PARAMS: dict[int, LevelParams] = {
     1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab"})),
     3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab", "tilts"})),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True),
 }
 
 
@@ -137,7 +143,7 @@ class AttackerController(BaseController):
                  reactive_shield=False, whiff_punish=False,
                  shield_threat_range=160, shield_threat_dy=80,
                  enabled_moves=frozenset({"jab", "tilts", "aerials"}),
-                 fireball_range=450, reach_aware=False):
+                 fireball_range=450, reach_aware=False, reactive_spacing=False):
         super().__init__(attacker_num, rng=rng)
         # #232/#238/#248: a difficulty `level` (1-9) overrides the knobs from the
         # #148 table; level=None keeps the explicit defaults (golden-safe).
@@ -152,6 +158,7 @@ class AttackerController(BaseController):
             whiff_punish = lp.whiff_punish
             enabled_moves = lp.enabled_moves
             reach_aware = lp.reach_aware
+            reactive_spacing = lp.reactive_spacing
         # #248: capability gate + ranged-special (fireball) poke distance. Default
         # excludes "specials" → the ranged-special branch never fires (golden-safe).
         self.enabled_moves = enabled_moves
@@ -188,6 +195,8 @@ class AttackerController(BaseController):
         # of the move the bot actually commits, per character, instead of this flat
         # constant. Default off → `_melee_range` returns `attack_range` unchanged.
         self.reach_aware = reach_aware
+        # #277 (model A): suppress the standoff back-off when the opponent is vulnerable.
+        self.reactive_spacing = reactive_spacing
         self.safe_x = safe_x
         # Task 5 retune: drop_threshold — if attacker is grounded and target is
         # this many pixels *below* (positive dy), hold 'down' to drop through any
@@ -338,10 +347,19 @@ class AttackerController(BaseController):
             away = keys["left"] if dx > 0 else keys["right"]
             # Maintain a standoff gap: close in if too far, back off if stacked
             # on top of the target (adx ~ 0 would otherwise deadlock).
+            # #277 (model A): press the advantage — when `reactive_spacing` and the
+            # opponent is in move recovery (vulnerable, no incoming threat) and the bot
+            # is within melee range (`_whiff_open`), SUPPRESS the back-off so it holds/
+            # presses instead of retreating from a punishable opponent. NOT footsies —
+            # `standoff` is never widened (Smash CPUs approach committally, #343).
+            # Gated on `reactive_spacing`, so the level-less default never evaluates the
+            # helpers and is byte-identical (golden-safe); deterministic (no rng).
+            press_in = (self.reactive_spacing and self._whiff_open(a, t)
+                        and not self._threat_incoming(a, t, attacks))
             move = None
             if adx > self.standoff + 8:
                 move = toward
-            elif adx < self.standoff - 8:
+            elif adx < self.standoff - 8 and not press_in:
                 move = away
             # Clamp: allow moving back toward centre from outside, but never
             # press further past a blast-zone-side bound.
