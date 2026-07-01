@@ -21,6 +21,14 @@ class TextRenderer:
         # Cache fonts to avoid recreating them
         self.font_cache = {}
 
+        # Cache composed mixed-text surfaces so static menu/HUD text is rasterised
+        # once per (text, size, colour) instead of glyph-by-glyph every frame (#372
+        # — the per-frame per-glyph render storm hard-hung the menus on a real
+        # display). mixed_cache_misses counts compositions (the regression guard).
+        self._mixed_surface_cache = {}
+        self.mixed_cache_misses = 0
+        self._MIXED_CACHE_CAP = 1024  # soft cap; clear if dynamic text grows it
+
         # Run diagnostic test if requested
         if run_diagnostics:
             self.test_font_capabilities()
@@ -297,78 +305,85 @@ class TextRenderer:
         # Convert to string in case we get non-string input
         text = str(text)
 
-        # Calculate total width for centering if needed
-        if center:
-            total_width = self._calculate_text_width(
-                text, regular_font, unicode_font, supported_chars
-            )
-            x = position[0] - total_width // 2
-            y = position[1]
-        else:
-            x, y = position
+        # Compose once per (text, size, colour) and blit the cached surface — the
+        # glyphs are non-overlapping side-by-side blits, so blitting the composed
+        # SRCALPHA surface is byte-identical to blitting each glyph directly (#372).
+        composed = self._compose_mixed(
+            text, size, color, regular_font, unicode_font, supported_chars
+        )
+        if composed is None:  # empty text
+            return pygame.Rect(position[0], position[1], 0, 0)
 
-        current_x = x
-        total_width = 0
-        max_height = 0
+        surf, total_width, max_height, top = composed
+        x = position[0] - total_width // 2 if center else position[0]
+        y = position[1]
+        surface.blit(surf, (x, y + top))
+        return pygame.Rect(x, y, total_width, max_height)
 
-        # Get baseline information for alignment
+    def _compose_mixed(self, text, size, color, regular_font, unicode_font, supported_chars):
+        """Compose `text` to a single SRCALPHA surface (cached by text/size/colour).
+
+        Returns (surface, total_width, max_height, top) or None for empty text.
+        `top` is the (<=0) topmost glyph offset relative to the baseline y, so the
+        caller blits at (x, y + top) to reproduce the old per-glyph absolute
+        positions exactly. Replicates the pre-#372 per-char font/baseline logic."""
+        key = (text, size, color)
+        cached = self._mixed_surface_cache.get(key)
+        if cached is not None:
+            return cached
+
+        self.mixed_cache_misses += 1
+        if not text:
+            self._mixed_surface_cache[key] = None
+            return None
+
         regular_metrics = regular_font.get_ascent()
         unicode_metrics = unicode_font.get_ascent()
 
+        # First pass: render each glyph + its y offset relative to the baseline y.
+        items = []  # (char_surface, x_offset, y_offset)
+        cur_x = 0
         for char in text:
-            # Check if character is unicode (outside ASCII range)
             if ord(char) > 127:
-                # Use whitelist approach instead of tofu detection
                 if char in supported_chars:
-                    # Character is known to work with this font
                     try:
                         char_surface = unicode_font.render(char, True, color)
-                        ### print(f"Rendered Unicode char '{char}' successfully with {font_info['name'] if isinstance(self.unicode_font_name, dict) else 'legacy font'}")
-                        # Unicode rendered properly
                         if unicode_font == regular_font:
-                            # Same font, no baseline adjustment needed
-                            char_y = y
+                            y_off = 0
                         else:
-                            # Different fonts, adjust Y position to align baselines
-                            baseline_adjustment = regular_metrics - unicode_metrics
-
-                            # For arrows and symbols, add subtle vertical centering adjustment
+                            y_off = regular_metrics - unicode_metrics
                             if char in ["►", "◄", "↑", "↓", "→", "←"]:
-                                char_height = char_surface.get_height()
-                                regular_height = regular_font.get_height()
-                                # Use a smaller fraction for more subtle adjustment
-                                vertical_center_adjustment = (
-                                    abs(regular_height - char_height) // 4
-                                )  ###
-                                baseline_adjustment += vertical_center_adjustment
-
-                            char_y = y + baseline_adjustment
-                    except Exception as e:
-                        ### print(f"Unicode rendering failed for '{char}': {e}, using ASCII fallback")
-                        # Unicode rendering failed, use ASCII fallback
-                        fallback_char = self._get_ascii_fallback(char)
-                        char_surface = regular_font.render(fallback_char, True, color)
-                        char_y = y
+                                y_off += abs(
+                                    regular_font.get_height() - char_surface.get_height()
+                                ) // 4
+                    except Exception:
+                        char_surface = regular_font.render(
+                            self._get_ascii_fallback(char), True, color)
+                        y_off = 0
                 else:
-                    # Character not in whitelist, use ASCII fallback
-                    fallback_char = self._get_ascii_fallback(char)
-                    char_surface = regular_font.render(fallback_char, True, color)
-                    char_y = y
-                    ### print(f"Char '{char}' not in whitelist, using fallback '{fallback_char}'")
+                    char_surface = regular_font.render(
+                        self._get_ascii_fallback(char), True, color)
+                    y_off = 0
             else:
-                # Use regular font for ASCII characters
                 char_surface = regular_font.render(char, True, color)
-                char_y = y
+                y_off = 0
+            items.append((char_surface, cur_x, y_off))
+            cur_x += char_surface.get_width()
 
-            surface.blit(char_surface, (current_x, char_y))
-            char_width = char_surface.get_width()
-            char_height = char_surface.get_height()
+        total_width = cur_x
+        max_height = max(cs.get_height() for cs, _, _ in items)
+        top = min([0] + [y_off for _, _, y_off in items])
+        bottom = max(y_off + cs.get_height() for cs, _, y_off in items)
 
-            current_x += char_width
-            total_width += char_width
-            max_height = max(max_height, char_height)
+        out = pygame.Surface((total_width, bottom - top), pygame.SRCALPHA)
+        for char_surface, x_off, y_off in items:
+            out.blit(char_surface, (x_off, y_off - top))
 
-        return pygame.Rect(x, y, total_width, max_height)
+        result = (out, total_width, max_height, top)
+        if len(self._mixed_surface_cache) >= self._MIXED_CACHE_CAP:
+            self._mixed_surface_cache.clear()  # bound growth from dynamic HUD text
+        self._mixed_surface_cache[key] = result
+        return result
 
     def _calculate_text_width(
         self, text, regular_font, unicode_font, supported_chars=None
