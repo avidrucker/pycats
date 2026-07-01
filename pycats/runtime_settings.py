@@ -40,3 +40,8 @@ def show_status_timer_bars():
 def show_hitbox_overlay():
     """Live toggle the hit/hurtbox debug overlay render path honours (#219)."""
     return bool(get("show_hitbox_overlay"))
+
+
+def show_input_history():
+    """Live toggle the in-battle input-history HUD strip honours (#21)."""
+    return bool(get("show_input_history"))

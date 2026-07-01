@@ -30,6 +30,9 @@ _DEFAULTS = {
     # defaulted ON (#239) for the #125 combat-visuals work; revert to OFF before
     # release (#241).
     "show_hitbox_overlay": True,
+    # In-battle input-history HUD strip (#21): per-fighter last-10 raw inputs,
+    # toggleable from the Options sub-menu (mirrors show_status_timer_bars).
+    "show_input_history": True,
     # Hold-ESC-to-quit feature (#113): when True, holding ESC for 2s quits the
     # current context (battle→menu, menu→game). Toggleable in Options sub-menu.
     "esc_hold_to_quit": True,
@@ -74,6 +77,9 @@ def _validated(raw):
     )
     out["show_hitbox_overlay"] = bool(
         raw.get("show_hitbox_overlay", out["show_hitbox_overlay"])
+    )
+    out["show_input_history"] = bool(
+        raw.get("show_input_history", out["show_input_history"])
     )
     out["esc_hold_to_quit"] = bool(
         raw.get("esc_hold_to_quit", out["esc_hold_to_quit"])

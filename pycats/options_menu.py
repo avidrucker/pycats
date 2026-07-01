@@ -46,8 +46,8 @@ class OptionsMenu:
         self.display_hooks = display_hooks or {}
 
         # Row keys in display order. "back" is the explicit exit row.
-        self.rows = ["status_bars", "hitbox_overlay", "window_scale",
-                     "fullscreen", "esc_quit", "back"]
+        self.rows = ["status_bars", "hitbox_overlay", "input_history",
+                     "window_scale", "fullscreen", "esc_quit", "back"]
         self.selected_option = 0
 
         self.input_cooldown = 0
@@ -103,6 +103,10 @@ class OptionsMenu:
             new = not runtime_settings.show_hitbox_overlay()
             runtime_settings.set("show_hitbox_overlay", new)
             settings.save({"show_hitbox_overlay": new})
+        elif row == "input_history":
+            new = not runtime_settings.show_input_history()
+            runtime_settings.set("show_input_history", new)
+            settings.save({"show_input_history": new})
         elif row == "window_scale":
             hook = self.display_hooks.get("cycle_windowed_scale")
             if hook:
@@ -125,6 +129,8 @@ class OptionsMenu:
             return "Status Bars: " + ("ON" if runtime_settings.show_status_timer_bars() else "OFF")
         if row == "hitbox_overlay":
             return "Hitbox Overlay: " + ("ON" if runtime_settings.show_hitbox_overlay() else "OFF")
+        if row == "input_history":
+            return "Input History: " + ("ON" if runtime_settings.show_input_history() else "OFF")
         if row == "window_scale":
             getter = self.display_hooks.get("get_windowed_scale")
             return "Window Size: " + (f"{getter():g}x" if getter else "F10")

@@ -28,6 +28,7 @@ from .config import (
 )
 from . import runtime_settings
 from . import text_utils
+from .input_history import format_line
 from . import cat_faces
 from .entities import Player
 from .combat.geometry import resolve_circle
@@ -654,6 +655,30 @@ def draw_controls(surface, p: Player, label, topright=False):
             text_utils.text_renderer.render_text_mixed(
                 txt, 24, WHITE, surface, (x_pos, y_pos)
             )
+
+
+def draw_input_history(surface, history, label, topright=False):
+    """Draw a fighter's recent-input strip (#21) below the controls block.
+
+    ``history`` is an :class:`~pycats.input_history.InputHistory`; entries render
+    oldest->newest as absolute-direction arrows + A/B/S, joined by ' · '. Unicode
+    arrows go through ``render_text_mixed`` (same path draw_controls uses). One
+    line, anchored under the HUD (7 lines) + controls (7 lines) blocks."""
+    line = format_line(label, history.entries())
+
+    # Below the HUD (7 lines) and the controls block (header + 6 rows).
+    y_pos = HUD_PADDING + 14 * HUD_SPACING + 40
+    x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
+
+    if topright:
+        text_width = text_utils.text_renderer._get_font(None, 24).size(line)[0]
+        text_utils.text_renderer.render_text_mixed(
+            line, 24, WHITE, surface, (x_pos - text_width, y_pos)
+        )
+    else:
+        text_utils.text_renderer.render_text_mixed(
+            line, 24, WHITE, surface, (x_pos, y_pos)
+        )
 
 
 def draw_pause_hint(surface):

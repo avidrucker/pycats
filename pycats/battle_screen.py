@@ -28,14 +28,17 @@ from .combat.data import load_fighter_data
 from .core.physics import resolve_player_push
 from .entities import Player
 from .entities.ledge import ledges_from_platforms
+from .input_history import InputHistory
 from .render_battle import (
     draw_controls,
     draw_hud,
+    draw_input_history,
     draw_pause_hint,
     render_attacks,
     render_battle,
     render_hitbox_overlay,
 )
+from . import runtime_settings
 from .systems import combat
 from .systems.win_condition import winner_loser
 
@@ -51,6 +54,10 @@ class BattleScreen:
         self.players = pygame.sprite.Group()
         self.attacks = pygame.sprite.Group()
         self._ledges = None  # solid-edge ledges (#14), built lazily from platforms
+        # Per-fighter input-history buffers (#21) — a render-only side buffer fed
+        # on the press-edge; does not participate in the sim.
+        self.p1_history = InputHistory()
+        self.p2_history = InputHistory()
 
     def create_from_selection(self, p1_char, p2_char):
         """Build the two fighters from the selected ARCHETYPES (#268, #127 Part 1):
@@ -89,11 +96,18 @@ class BattleScreen:
                 p.engine.force("idle")
         self.attacks.empty()
         self._ledges = None  # rebuilt next step (clears edge occupancy; #14)
+        self.p1_history = InputHistory()  # fresh input-history buffers per match (#21)
+        self.p2_history = InputHistory()
 
     def step(self, frame_input, platforms):
         """One frame of battle sim — SAME primitives/order as the old inline block."""
         if self._ledges is None:
             self._ledges = ledges_from_platforms(platforms)  # build once, persist (#14)
+        # Input-history capture (#21) — record this frame's press-edge per keymap
+        # before the sim runs; a side buffer that never feeds fighter/attack state.
+        pressed = getattr(frame_input, "pressed", ())
+        self.p1_history.record(pressed, self.p1_keys)
+        self.p2_history.record(pressed, self.p2_keys)
         for p in self.players:
             p.update(frame_input, platforms, self.attacks, self._ledges)
         resolve_player_push(list(self.players))
@@ -118,6 +132,10 @@ class BattleScreen:
             draw_hud(surface, self.player2, "P2", topright=True)
             draw_controls(surface, self.player1, "P1")
             draw_controls(surface, self.player2, "P2", topright=True)
+            # Input-history strip (#21), gated on the live toggle (default ON).
+            if runtime_settings.show_input_history():
+                draw_input_history(surface, self.p1_history, "P1")
+                draw_input_history(surface, self.p2_history, "P2", topright=True)
 
     def render(self, surface, platforms):
         """Render one live battle frame onto `surface` (the playing branch's draw

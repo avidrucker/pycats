@@ -15,9 +15,10 @@ from pycats.battle_screen import BattleScreen
 from pycats.config import (
     BG_COLOR, SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, WHITE,
 )
-from pycats import text_utils
+from pycats import runtime_settings, settings, text_utils
 from pycats.render_battle import (
     render_battle, render_attacks, render_hitbox_overlay, draw_hud, draw_controls,
+    draw_input_history,
 )
 
 _P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
@@ -50,10 +51,13 @@ def _draw_pause_hint(surface):
 
 def test_render_matches_inline_playing_composition():
     """render() == fill(BG) -> render_battle -> render_attacks ->
-    render_hitbox_overlay -> draw_hud x2 -> draw_controls x2 -> pause hint (the
-    playing branch's inline block), byte-for-byte. The 'P: Pause Game' hint is now
-    part of render() (battle HUD, #279) — the FPS/fullscreen/debug shell overlays
-    moved to draw_shell_chrome (see test_shell_chrome)."""
+    render_hitbox_overlay -> draw_hud x2 -> draw_controls x2 ->
+    draw_input_history x2 -> pause hint (the playing branch's inline block),
+    byte-for-byte. The input-history strip (#21) is default-ON, so it's part of
+    the composite; the 'P: Pause Game' hint is part of render() (battle HUD,
+    #279) — the FPS/fullscreen/debug shell overlays moved to draw_shell_chrome
+    (see test_shell_chrome)."""
+    runtime_settings.seed(settings.defaults())  # input-history strip default ON (#21)
     bs = _battle()
     platforms = []
 
@@ -66,6 +70,8 @@ def test_render_matches_inline_playing_composition():
     draw_hud(expected, bs.player2, "P2", topright=True)
     draw_controls(expected, bs.player1, "P1")
     draw_controls(expected, bs.player2, "P2", topright=True)
+    draw_input_history(expected, bs.p1_history, "P1")  # #21 default-ON strip
+    draw_input_history(expected, bs.p2_history, "P2", topright=True)
     _draw_pause_hint(expected)
 
     actual = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
