@@ -170,6 +170,27 @@ _NARZ_BAIR = MoveData(
     ),
 )
 
+# --- Up-air (slice 9, #323): an overhead juggle arc, disjoint tipper ----------------
+# Marth's juggle aerial: the up-tilt's vertical disjoint as an aerial — the 2-box tipper
+# (tip box FIRST, stronger; priority = tuple order) hitting ABOVE the fighter (tip dy=-10)
+# and sending UP (angle 90). The tip's top edge (dy-r=-24) clears the hurtbox top (dy 1).
+# PM3.6 Marth `AttackAirHi`, ⚠ playtest / rukaidata-confirm.
+_NARZ_UAIR = MoveData(
+    name="uair",
+    in_air=True,
+    startup=5,
+    active=3,
+    recovery=14,  # 5 + 3 + 14 = 22
+    hitboxes=(
+        # TIP (box 0): above + strong.
+        Hitbox(circle=Circle(dx=22, dy=-10, r=14), damage=12.0, angle=90,
+               base_knockback=20.0, knockback_growth=90.0),
+        # BASE (box 1): head level + weak.
+        Hitbox(circle=Circle(dx=22, dy=8, r=12), damage=9.0, angle=90,
+               base_knockback=12.0, knockback_growth=70.0),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
@@ -178,7 +199,7 @@ NARZ_FIGHTER_DATA = FighterData(
     hurtbox=_DEFAULT.hurtbox,
     moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
            "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT, "nair": _NARZ_NAIR,
-           "fair": _NARZ_FAIR, "bair": _NARZ_BAIR},
+           "fair": _NARZ_FAIR, "bair": _NARZ_BAIR, "uair": _NARZ_UAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
