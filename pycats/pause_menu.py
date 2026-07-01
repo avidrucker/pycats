@@ -142,7 +142,7 @@ class PauseMenuManager:
             # Draw selection indicator with unicode arrows
             if i == self.selected_option:
                 arrow_offset = (
-                    pygame.font.SysFont(None, MAIN_MENU_OPTION_SIZE).size(option)[0]
+                    text_renderer.sys_font(None, MAIN_MENU_OPTION_SIZE).size(option)[0]
                     // 2
                     + 30
                 )

@@ -219,6 +219,20 @@ class TextRenderer:
         except Exception:
             return False
 
+    def sys_font(self, name, size):
+        """A cached ``pygame.font.SysFont(name, size)``.
+
+        Menus need a system font for arrow-offset measurement + the fullscreen
+        hint; calling ``SysFont()`` every frame is a font-system (fontconfig)
+        lookup that builds a new font each frame and hard-hangs on a real display
+        (#375). Cache by ``(name, size)`` so it is built once and reused."""
+        key = ("sys", name, size)
+        font = self.font_cache.get(key)
+        if font is None:
+            font = pygame.font.SysFont(name, size)
+            self.font_cache[key] = font
+        return font
+
     def _get_font(self, font_name, size):
         """Get a font from cache or create it."""
         cache_key = (font_name, size)

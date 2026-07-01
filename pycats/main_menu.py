@@ -133,7 +133,7 @@ class MainMenuManager:
             # Draw selection indicator with unicode arrows
             if i == self.selected_option:
                 arrow_offset = (
-                    pygame.font.SysFont(None, MAIN_MENU_OPTION_SIZE).size(option)[0]
+                    text_renderer.sys_font(None, MAIN_MENU_OPTION_SIZE).size(option)[0]
                     // 2
                     + 20
                 )
@@ -177,7 +177,7 @@ class MainMenuManager:
 
         # Draw fullscreen instructions
         fs_text = "F11: Toggle Fullscreen"
-        fs_font = pygame.font.SysFont(None, 20)
+        fs_font = text_renderer.sys_font(None, 20)
         fs_surf = fs_font.render(fs_text, True, WHITE)
         surface.blit(
             fs_surf, (SCREEN_WIDTH - fs_surf.get_width() - 10, SCREEN_HEIGHT - 25)
