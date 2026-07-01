@@ -25,13 +25,12 @@ from .config import (
     MAIN_MENU_TITLE_COLOR,
     MAIN_MENU_TITLE_SIZE,
     MAIN_MENU_OPTION_SIZE,
-    MAIN_MENU_OPTION_COLOR,
-    MAIN_MENU_SELECTED_COLOR,
     MAIN_MENU_PADDING,
     MAIN_MENU_OPTION_SPACING,
 )
 from . import runtime_settings
 from . import settings
+from .menu_widgets import draw_menu_button
 from .text_utils import text_renderer
 
 
@@ -165,19 +164,15 @@ class OptionsMenu:
 
         start_y = MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE + MAIN_MENU_PADDING
         for i, row in enumerate(self.rows):
-            if i == self.selected_option:
-                color = MAIN_MENU_SELECTED_COLOR
-            else:
-                color = MAIN_MENU_OPTION_COLOR
-
             option_y = start_y + i * MAIN_MENU_OPTION_SPACING
-            text_renderer.render_text_simple(
-                self._row_label(row),
-                MAIN_MENU_OPTION_SIZE,
-                color,
+            # Each row is a menu-button widget (#359): a coloured rect that glows
+            # when focused, with a redundant ► marker (focus not colour-only, #346).
+            draw_menu_button(
                 surface,
+                self._row_label(row),
                 (SCREEN_WIDTH // 2, option_y),
-                center=True,
+                MAIN_MENU_OPTION_SIZE,
+                focused=(i == self.selected_option),
             )
 
         instructions = ["Use W/S or ↑/↓ to navigate", "A to toggle, B to go back"]
