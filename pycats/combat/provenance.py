@@ -40,16 +40,16 @@ class Provenance:
 
 # One row per in-scope constant. Keyed by the exact `config` attribute name.
 TUNING_PROVENANCE: dict[str, Provenance] = {
-    # ---- base movement / physics (unsourced defaults; #319 to source) ----
-    "GRAVITY": Provenance(0.5, "px/frame^2", "pycats base-physics default; not yet traced to canon", "GUESS", None),
-    "MAX_FALL_SPEED": Provenance(13, "px/frame", "pycats base-physics default; not yet traced to canon", "GUESS", None),
-    "MOVE_SPEED": Provenance(6, "px/frame", "pycats base-physics default; not yet traced to canon", "GUESS", None),
-    "JUMP_VEL": Provenance(-13, "px/frame", "pycats base-physics default; not yet traced to canon", "GUESS", None),
+    # ---- base movement / physics (calibrated to PM Mario via PX_PER_UNIT, #120/#384) ----
+    "GRAVITY": Provenance(0.5, "px/frame^2", "PM Mario gravity 0.095 u/f^2 (SmashWiki:Mario_(PM); #120)", "FOUND", 384, "round(0.095 * PX_PER_UNIT, 1)"),
+    "MAX_FALL_SPEED": Provenance(13, "px/frame", "DIVERGENCE: pycats uses a single global fall speed ~= PM Mario fast-fall 2.3 u/f; the Melee/PM base 1.7 / fast-fall 2.3 split is not modelled (SmashWiki:Mario_(PM); #120)", "DIVERGENCE", 384),
+    "MOVE_SPEED": Provenance(6, "px/frame", "PM Mario walk 1.1 u/f (SmashWiki:Mario_(PM); #120)", "FOUND", 384, "round(1.1 * PX_PER_UNIT)"),
+    "JUMP_VEL": Provenance(-13, "px/frame", "calibrated to PM Mario full-hop 30.19 u (SmashWiki:Mario_(PM); #120) via height = JUMP_VEL^2/(2*GRAVITY) = 169 px ~= 31 u @ PX_PER_UNIT", "FOUND", 384),
 
     # ---- dodges / rolls ----
     "DODGE_FRAMES": Provenance(15, "frames", "roll intangibility window; playtest starting point", "GUESS", None),
     "DODGE_TIME": Provenance(14, "frames", "roll duration; playtest starting point", "GUESS", None),
-    "DODGE_SPEED": Provenance(14, "px/frame", "roll horizontal boost; playtest starting point", "GUESS", None),
+    "DODGE_SPEED": Provenance(14, "px/frame", "pycats ground-roll horizontal boost; Melee rolls are animation-driven per-character, no single canon speed to derive", "TUNED", None),
     # FOUND (#215): Melee escapeair_force = 3.1 units/frame (doldecomp/melee, meleelight
     # ESCAPEAIR.js); px/frame = round(3.1 * PX_PER_UNIT). PM restored Melee's air dodge.
     "DODGE_AIR_SPEED": Provenance(17, "px/frame", "doldecomp/melee escapeair_force=3.1u/f; meleelight ESCAPEAIR.js; SmashWiki:Air_dodge", "FOUND", 215, "round(3.1 * PX_PER_UNIT)"),
@@ -92,12 +92,12 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "CROUCH_CANCEL_FACTOR": Provenance(0.67, "factor", "Melee/PM crouch-cancel knockback scale (0.67x); value cited, still a tuning starting point", "FOUND", 135),
 
     # ---- auto landing-velocity knockdown (#145) ----
-    "KNOCKDOWN_VY_THRESHOLD": Provenance(8.0, "px/frame", "downward impact speed that forces prone while in hitstun; not sourced", "GUESS", 145),
+    "KNOCKDOWN_VY_THRESHOLD": Provenance(8.0, "px/frame", "pycats auto-knockdown impact-speed gate (#145); pycats-specific mechanic, no canon equivalent", "TUNED", 145),
     "KNOCKDOWN_PRONE_FRAMES": Provenance(30, "frames", "pycats fixed getup window (~0.5s @60 FPS); Melee knockdown/getup is variable + per-character, no single canon value (SmashWiki:Floor_getup)", "TUNED", 145),
 
     # ---- getup-roll (#146) ----
     "GETUP_ROLL_FRAMES": Provenance(16, "frames", "pycats getup-roll duration = its intangibility window; DIVERGENCE from Melee (getup roll 35f, intangible frames 1-14..1-24 per Smashboards frame data) — pycats runs a shorter roll on its own scale", "DIVERGENCE", 146),
-    "GETUP_ROLL_SPEED": Provenance(12.0, "px/frame", "initial getup-roll horizontal speed (decays under friction); playtest starting point", "GUESS", 146),
+    "GETUP_ROLL_SPEED": Provenance(12.0, "px/frame", "pycats getup-roll horizontal speed (decays under friction); no canon single value (animation-driven)", "TUNED", 146),
 
     # ---- clank / priority (#38 4c) ----
     "CLANK_PRIORITY_RANGE": Provenance(9, "%", "SmashWiki:Priority — 9% across the Melee/Brawl/PM family", "FOUND", 38),
