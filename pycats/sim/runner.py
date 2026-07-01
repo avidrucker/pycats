@@ -5,6 +5,7 @@ producing per-frame snapshots for golden checks and benchmarking."""
 from __future__ import annotations
 
 import os
+from collections import namedtuple
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
@@ -27,6 +28,17 @@ from ..core.physics import resolve_player_push  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
 from .input_script import default_timeline  # noqa: E402
 from ..core.input import merge_frames  # noqa: E402
+
+# Self-describing per-player golden snapshot row (#322/B-b). A `namedtuple` so the
+# golden oracle + tests read fields by name instead of magic indices — and it's a
+# `tuple` subclass, so `golden_util._to_list` serialises it byte-identically (no
+# golden regen) and existing positional readers keep working. The field ORDER here
+# IS the golden layout; `test_snapshot_layout` guards it against drift.
+PlayerSnap = namedtuple("PlayerSnap", (
+    "name state rect_x rect_y vel_x vel_y on_ground percent shield_hp lives is_alive "
+    "jumps_remaining dodge_timer hurt_timer stun_timer attack_timer invulnerable_timer "
+    "facing_right invulnerable defensive_status move_frame"
+))
 
 P1_KEYS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
                attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
@@ -70,7 +82,9 @@ def build_players(p1_char=None, p2_char=None):
 def snapshot(players, attacks, match):
     parts = []
     for p in players:
-        parts.append((
+        # #322/B-b: a PlayerSnap namedtuple (field ORDER unchanged) — serialises
+        # byte-identically and lets the oracle/tests read by name.
+        parts.append(PlayerSnap(
             p.char_name, p.state, p.rect.x, p.rect.y,
             round(p.fighter.vel.x, 6), round(p.fighter.vel.y, 6), p.fighter.on_ground,
             round(p.fighter.percent, 6), round(p.fighter.shield_hp, 6), p.fighter.lives, p.fighter.is_alive,

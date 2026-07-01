@@ -17,6 +17,8 @@ import os
 from pathlib import Path
 from typing import Any
 
+from pycats.sim.runner import PlayerSnap  # #322/B-b: read player rows by name
+
 # Goldens live alongside this file, one sub-directory down.
 GOLDEN_DIR = Path(__file__).parent / "golden"
 
@@ -65,12 +67,15 @@ def summarize(snaps: list) -> dict:
         return {"frames": 0, "final_phase": None, "winner": None,
                 "attack_active_frames": 0, "players": {}}
 
-    names = [p[0] for p in snaps[0][0]]
+    # #322/B-b: wrap each per-player row in PlayerSnap so fields are read by name
+    # (the parts are lists here after _to_list; PlayerSnap(*row) re-attaches names).
+    names = [PlayerSnap(*p).name for p in snaps[0][0]]
     players: dict = {}
     for idx, name in enumerate(names):
-        states = sorted({snaps[f][0][idx][1] for f in range(n)})
-        lives = [snaps[f][0][idx][9] for f in range(n)]
-        percents = [snaps[f][0][idx][7] for f in range(n)]
+        rows = [PlayerSnap(*snaps[f][0][idx]) for f in range(n)]
+        states = sorted({r.state for r in rows})
+        lives = [r.lives for r in rows]
+        percents = [r.percent for r in rows]
         ko_frames = [f for f in range(1, n) if lives[f] < lives[f - 1]]
         players[name] = {
             "states": states,
