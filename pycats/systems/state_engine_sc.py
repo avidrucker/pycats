@@ -8,7 +8,7 @@ from typing import Any
 # so it is mapped separately via in_state("attacking") -> "attack".
 LABELS = ("idle", "walk", "crouch", "jump", "fall", "shield", "dodge", "ko",
           "hurt", "stun", "prone", "getup_roll", "getup_attack", "helpless",
-          "landing_lag", "ledge_hang", "smash_charge")
+          "landing_lag", "ledge_hang", "ledge_getup", "smash_charge")
 
 
 class StatechartEngine:

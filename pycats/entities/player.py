@@ -34,8 +34,10 @@ from ..config import (
     KNOCKDOWN_PRONE_FRAMES,
     LEDGE_HANG_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
+    LEDGE_GETUP_FRAMES,
 )
 from .attack import Attack, Projectile
+from .ledge import ledge_invuln_frames
 from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
@@ -144,6 +146,21 @@ class Player(pygame.sprite.Sprite):
         invulnerability flag (computed without the engine; the statechart engine
         mirrors this same flag in its orthogonal defensive_status region)."""
         return "intangible" if self.fighter.invulnerable else "vulnerable"
+
+    def _evict_from_ledge(self, occupant) -> None:
+        """Knock a mistimed edge-hog occupant off the ledge (#311). Its intangibility
+        burst has lapsed and an opponent grabbed the edge, so it loses the hang and
+        drops into fall (regrab briefly locked out). The occupant's statechart routes
+        ledge_hang -> fall on its next tick (grabbed_ledge is None while airborne)."""
+        f = occupant.fighter
+        f.invulnerable = False
+        f.ledge_invuln_timer = 0
+        f.ledge_getup_timer = 0
+        f.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
+        f.grabbed_ledge = None
+        f.vel.y = 1  # nudge airborne so the next frame falls
+        # The occupant's ledge_hang state routes to `fall` on its next engine tick
+        # (grabbed_ledge is None while airborne) — no force event needed.
 
     def force_prone(self, frames: int) -> None:
         """Force the fighter into the prone/knockdown state for `frames` getup
@@ -308,30 +325,46 @@ class Player(pygame.sprite.Sprite):
             self.fighter.vel = apply_horizontal_friction(
                 self.fighter.vel, self.fighter.on_ground)
 
-        # ---------- ledge-hang driving (#14) ----------
-        # While hanging: pin position (skip gravity), tick the hang timer, and read
-        # the two options. Up = neutral getup (climb on). Down or away = drop. The
-        # timer reaching 0 auto-releases like a drop. Every release frees the edge.
+        # ---------- ledge-hang driving (#14 + #311 edge-hog) ----------
+        # While on the edge (hang or getup climb): pin position (skip gravity).
+        #  - Hanging: tick the percent-scaled intangibility burst (#311) + the hang
+        #    auto-release timeout; intangibility is `ledge_invuln_timer > 0` (a short
+        #    burst), NOT the whole hang. Up = neutral getup, down/away/timeout = drop.
+        #  - Getup climb (#311): a LEDGE_GETUP_FRAMES action-lock on the stage; the
+        #    edge frees to others at the halfway frame (half-animation regrab), and
+        #    the climb completes to idle when the window closes.
         if self.fighter.grabbed_ledge is not None:
             ledge = self.fighter.grabbed_ledge
             self.fighter.vel.x = 0
             self.fighter.vel.y = 0
-            self.fighter.tick_ledge_hang()  # #293/S4b: aggregate owns the decrement
-            up = self._pressed(held, "up")
-            down = self._pressed(held, "down")
-            away = ledge.away_held(self._pressed(held, "left"),
-                                   self._pressed(held, "right"))
-            if up:                                   # neutral getup
-                self.rect.topleft = ledge.getup_topleft(self.rect.size)
-                self.fighter.invulnerable = False
-                ledge.occupied_by = None
-                self.fighter.grabbed_ledge = None
-            elif down or away or self.fighter.ledge_hang_timer == 0:  # drop / timeout
-                self.fighter.invulnerable = False
-                self.fighter.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
-                ledge.occupied_by = None
-                self.fighter.grabbed_ledge = None
-                self.fighter.vel.y = 1               # nudge so next frame is airborne
+            if self.fighter.ledge_getup_timer > 0:
+                self.fighter.ledge_getup_timer -= 1
+                if self.fighter.ledge_getup_timer <= LEDGE_GETUP_FRAMES // 2:
+                    ledge.occupied_by = None         # edge re-grabbable mid-getup
+                if self.fighter.ledge_getup_timer == 0:  # climb done -> on the stage
+                    ledge.occupied_by = None
+                    self.fighter.grabbed_ledge = None
+            else:
+                self.fighter.tick_ledge_hang()       # hang auto-release timeout
+                if self.fighter.ledge_invuln_timer > 0:
+                    self.fighter.ledge_invuln_timer -= 1
+                self.fighter.invulnerable = self.fighter.ledge_invuln_timer > 0
+                up = self._pressed(held, "up")
+                down = self._pressed(held, "down")
+                away = ledge.away_held(self._pressed(held, "left"),
+                                       self._pressed(held, "right"))
+                if up:                               # neutral getup -> climb window
+                    self.rect.topleft = ledge.getup_topleft(self.rect.size)
+                    self.fighter.invulnerable = False
+                    self.fighter.ledge_invuln_timer = 0
+                    self.fighter.ledge_getup_timer = LEDGE_GETUP_FRAMES
+                elif down or away or self.fighter.ledge_hang_timer == 0:  # drop
+                    self.fighter.invulnerable = False
+                    self.fighter.ledge_invuln_timer = 0
+                    self.fighter.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
+                    ledge.occupied_by = None
+                    self.fighter.grabbed_ledge = None
+                    self.fighter.vel.y = 1           # nudge so next frame is airborne
 
         # physics: gravity, edge-aware dodge clamping, movement, drop-through,
         # vertical/horizontal collision, and landing — see fighter_physics (#77).
@@ -342,22 +375,29 @@ class Player(pygame.sprite.Sprite):
             if step_physics(self, platforms, held):
                 self.force_prone(KNOCKDOWN_PRONE_FRAMES)
 
-        # ---------- ledge grab (#14): automatic, PM-faithful ----------
+        # ---------- ledge grab (#14 + #311 edge-hog) ----------
         # After physics so on_ground/vel/pos are final. Grab when airborne +
-        # descending + the body overlaps a free edge's catch box + not locked out.
-        # One occupant per edge (no trump yet — #14 deferred follow-up).
+        # descending + the body overlaps the catch box + not locked out. Edge-hog
+        # timing (#311): an OCCUPIED edge is grabbable only once the occupant's
+        # intangibility burst has lapsed (ledge_invuln_timer == 0) — grab too early
+        # and the hog holds. A grab that lands on an occupied edge EVICTS the
+        # occupant (mistimed hog loses the ledge; the incoming fighter takes it).
         if (self.fighter.grabbed_ledge is None
                 and self.fighter.ledge_regrab_lockout_timer == 0
                 and not self.fighter.on_ground
                 and self.fighter.vel.y >= 0):
             for ledge in ledges:
-                if ledge.occupied_by is not None:
-                    continue                       # one-occupant lockout
+                occupant = ledge.occupied_by
+                if occupant is not None and occupant.fighter.ledge_invuln_timer > 0:
+                    continue                       # hog denied: occupant still intangible
                 if self.rect.colliderect(ledge.catch_rect()):
+                    if occupant is not None and occupant is not self:
+                        self._evict_from_ledge(occupant)   # mistimed hog -> evicted
                     self.rect.topleft = ledge.hang_topleft(self.rect.size)
                     self.fighter.vel.x = 0
                     self.fighter.vel.y = 0
                     self.fighter.ledge_hang_timer = LEDGE_HANG_FRAMES
+                    self.fighter.ledge_invuln_timer = ledge_invuln_frames(self.fighter.percent)
                     self.fighter.invulnerable = True
                     self.fighter.facing_right = ledge.facing_right()
                     self.fighter.grabbed_ledge = ledge

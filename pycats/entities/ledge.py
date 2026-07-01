@@ -11,6 +11,17 @@ LEFT = "left"
 RIGHT = "right"
 
 
+def ledge_invuln_frames(percent: float) -> int:
+    """Ledge-grab intangibility burst, scaled by the occupant's percent (#311).
+
+    Monotonic non-decreasing: a Brawl-baseline burst at 0% that grows with damage
+    (higher % -> longer invincibility, the PM edge-hog fidelity), capped. Replaces
+    #14's flat full-hang intangibility. ⚠ playtest curve; per-character later (#117).
+    """
+    frames = config.LEDGE_INVULN_BASE_FRAMES + round(percent * config.LEDGE_INVULN_PER_PERCENT)
+    return min(frames, config.LEDGE_INVULN_MAX_FRAMES)
+
+
 class Ledge:
     """One grabbable stage edge.
 

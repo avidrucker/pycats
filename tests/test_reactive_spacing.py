@@ -119,15 +119,18 @@ def test_reactive_spacing_changes_a_real_battle_trajectory():
     # suppresses a back-off — any divergence here IS the feature biting. The natural
     # press-in window (opponent recovering while the bot is too close) is rare, matching
     # #343's finding that reactive spacing is a minor tweak for a Smash-faithful CPU, so
-    # this uses a seed/length (seed 1 / 3000f) where it does occur.
+    # we scan a few seeds and require it to bite in at least one — robust to sim shifts.
+    # (Re-anchored in #311: the ledge-invincibility change shifted which seeds surface
+    # the press-in window; the old single seed 1 no longer does, but seeds 0/3 do.)
     from pycats.sim.runner import run_battle
 
-    def run(reactive_spacing):
-        rng = random.Random(1)
+    def run(reactive_spacing, seed):
+        rng = random.Random(seed)
         c1 = AttackerController(attacker_num=1, level=5, rng=rng)
         c2 = AttackerController(attacker_num=2, level=5, rng=rng)
         c1.reactive_spacing = c2.reactive_spacing = reactive_spacing
         return run_battle(frames=3000, controllers=(c1, c2),
                           p1_char="nalio", p2_char="birky", stop_on_match_over=True)
 
-    assert run(True) != run(False), "reactive_spacing must change the sim trajectory"
+    assert any(run(True, s) != run(False, s) for s in range(4)), \
+        "reactive_spacing must change the sim trajectory in at least one scenario"

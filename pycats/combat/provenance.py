@@ -101,6 +101,12 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
 
     # ---- clank / priority (#38 4c) ----
     "CLANK_PRIORITY_RANGE": Provenance(9, "%", "SmashWiki:Priority — 9% across the Melee/Brawl/PM family", "FOUND", 38),
+
+    # ---- ledge edge-hog (#311, grounded by #297) ----
+    "LEDGE_INVULN_BASE_FRAMES": Provenance(23, "frames", "Brawl ledge-grab intangibility baseline 23f (SmashWiki:Ledge; #297)", "FOUND", 311),
+    "LEDGE_INVULN_PER_PERCENT": Provenance(0.3, "frames/%", "pycats percent-scaling of ledge invincibility; PM is per-character, no single canon curve", "TUNED", 311),
+    "LEDGE_INVULN_MAX_FRAMES": Provenance(60, "frames", "pycats cap on the ledge-invincibility burst (~1s); no canon value", "TUNED", 311),
+    "LEDGE_GETUP_FRAMES": Provenance(16, "frames", "pycats neutral ledge-getup climb window (edge frees at half); PM getup frames are per-character", "TUNED", 311),
 }
 
 # The curated combat/physics set (excludes render/UI/tail/platform/menu constants).
@@ -124,4 +130,6 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset({
     "KNOCKDOWN_VY_THRESHOLD", "KNOCKDOWN_PRONE_FRAMES",
     "GETUP_ROLL_FRAMES", "GETUP_ROLL_SPEED",
     "CLANK_PRIORITY_RANGE",
+    "LEDGE_INVULN_BASE_FRAMES", "LEDGE_INVULN_PER_PERCENT",
+    "LEDGE_INVULN_MAX_FRAMES", "LEDGE_GETUP_FRAMES",
 })

@@ -296,6 +296,19 @@ def build_fighter_chart(p):
     # intangible for free.
     ledge_hang = state(
         {"id": "ledge_hang"},
+        # Neutral getup started (#311): a climb window (ledge_getup_timer) opens; the
+        # edge frees to others at half and the fighter finishes onto the stage.
+        _tick(lambda e, d: p.fighter.grabbed_ledge is not None
+              and p.fighter.ledge_getup_timer > 0, "ledge_getup"),
+        _tick(lambda e, d: p.fighter.grabbed_ledge is None and p.fighter.on_ground, "idle"),
+        _tick(lambda e, d: p.fighter.grabbed_ledge is None and not p.fighter.on_ground, "fall"),
+    )
+
+    # Ledge neutral getup climb (#311): a short action-lock on the stage after a
+    # getup input. player.update ticks ledge_getup_timer, frees the edge at ~half,
+    # and clears grabbed_ledge when the window closes -> idle (on the stage).
+    ledge_getup = state(
+        {"id": "ledge_getup"},
         _tick(lambda e, d: p.fighter.grabbed_ledge is None and p.fighter.on_ground, "idle"),
         _tick(lambda e, d: p.fighter.grabbed_ledge is None and not p.fighter.on_ground, "fall"),
     )
@@ -341,6 +354,7 @@ def build_fighter_chart(p):
         helpless,
         landing_lag,
         ledge_hang,
+        ledge_getup,
         smash_charge,
     )
 

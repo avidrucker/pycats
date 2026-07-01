@@ -168,10 +168,21 @@ def _grab_left(p, plats, ledges):
 
 
 def test_getup_climbs_onto_stage_and_idles():
+    # #311: neutral getup is now a windowed climb (ledge_getup), not instant. Up
+    # repositions onto the stage and enters the climb; the edge frees at ~half; the
+    # fighter idles when the window closes.
     plats = _stage(); ledges = ledges_from_platforms(plats)
     p = _player()
     _grab_left(p, plats, ledges)
-    p.update(_frame_up(p), plats, p_attack_group(), ledges)   # press up -> getup
+    p.update(_frame_up(p), plats, p_attack_group(), ledges)   # press up -> getup climb
+    assert p.state == "ledge_getup"
+    assert p.fighter.grabbed_ledge is not None                # still on the edge (climbing)
+    assert (p.rect.left, p.rect.top) == (80, 410 - 60)        # snapped onto the stage lip
+    # run the climb window to completion
+    for _ in range(config.LEDGE_GETUP_FRAMES + 1):
+        p.update(_empty_frame(), plats, p_attack_group(), ledges)
+        if p.state != "ledge_getup":
+            break
     assert p.fighter.grabbed_ledge is None
     assert all(l.occupied_by is None for l in ledges)
     assert p.fighter.invulnerable is False

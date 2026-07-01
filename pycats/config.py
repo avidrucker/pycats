@@ -102,12 +102,23 @@ WAVEDASH_ANGLE_DEG = 17.1
 WAVEDASH_LANDING_LAG = 10
 
 # Ledge-hang (#14). ⚠ playtest starting points (no published PM px values; pycats
-# scale). LEDGE_HANG_FRAMES doubles as the intangibility window for v1 (decay-on-
-# regrab is deferred). The catch region is a box hanging off a solid-stage corner.
+# scale). The catch region is a box hanging off a solid-stage corner.
 LEDGE_CATCH_W = 24    # px outward from the edge corner the catch box spans
 LEDGE_CATCH_H = 64    # px downward from the lip the catch box spans
 LEDGE_HANG_FRAMES = 120          # ~2s @60fps before auto-release (timeout)
 LEDGE_REGRAB_LOCKOUT_FRAMES = 30  # post-release frames grab is suppressed
+# True PM edge-hog (#311, grounded by #297): the ledge-grab intangibility is a
+# short percent-scaled burst (Brawl ~23f baseline, scaling up with the occupant's
+# percent) — replacing #14's flat full-hang intangibility. A hog succeeds once the
+# occupant's burst lapses (percent-gated timing). ⚠ playtest curve (per-char later
+# via #117); registered with #233.
+LEDGE_INVULN_BASE_FRAMES = 23    # intangibility burst at 0% (Brawl baseline)
+LEDGE_INVULN_PER_PERCENT = 0.3   # additional intangibility frames per 1% damage
+LEDGE_INVULN_MAX_FRAMES = 60     # cap on the burst (~1s @60fps)
+# Neutral ledge-getup climb window (#311): getup is no longer instant — the fighter
+# climbs for this many frames; the edge frees to others at ~half (half-animation
+# regrab), and the climber snaps onto the stage when it closes. ⚠ playtest.
+LEDGE_GETUP_FRAMES = 16
 
 # ---------------- combat / attacks ----------------
 PLAYER_ATTACK_DURATION = 12  # this can be different than the lifetime of an attack, for example, a fireball could take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames
