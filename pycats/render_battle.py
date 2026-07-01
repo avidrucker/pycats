@@ -34,6 +34,11 @@ from .combat.geometry import resolve_circle
 # Hit/hurtbox debug overlay (#219). Outline-only circles in two distinct colours
 # so an active attack's hitbox(es) and each fighter's hurtbox are directly
 # visible. Cosmetic + default-OFF (runtime_settings), so no golden impact.
+# Platform fill colours (#317/H-b): moved out of Platform (which no longer owns a
+# Surface) so the adapter paints the rect. Thick = solid stage, thin = pass-through.
+PLATFORM_THICK = (164, 113, 73)
+PLATFORM_THIN = (193, 153, 112)
+
 HITBOX_OVERLAY_COLOR = RED            # attack hitbox circles
 HURTBOX_OVERLAY_COLOR = (0, 255, 255)  # cyan — fighter hurtbox circles
 OVERLAY_LINE_WIDTH = 2                 # >0 → pygame draws an outline, not a disc
@@ -430,7 +435,9 @@ def render_battle(surface, players, platforms):
     """Draw platforms, alive fighters, and their attacks onto `surface`.
     Mirrors game.py's playing-branch draw block (no HUD/controls/FPS text)."""
     for pl in platforms:
-        surface.blit(pl.image, pl.rect)
+        # #317/H-b: the platform holds only data (rect + thin); the adapter paints
+        # its thickness colour (was Platform.image, an entity-owned Surface).
+        pygame.draw.rect(surface, PLATFORM_THIN if pl.thin else PLATFORM_THICK, pl.rect)
     for p in players:
         if not p.fighter.is_alive:
             continue

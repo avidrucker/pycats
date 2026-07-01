@@ -45,3 +45,18 @@ def test_tail_entity_does_not_import_the_render_adapter():
         "entities/tail.py imports the render adapter (layering inversion, #265):\n"
         + "\n".join(offenders)
     )
+
+
+def test_platform_renders_thickness_colour_pixels():
+    """#317/H-b slice 1: render_battle paints each platform its thickness colour
+    (thick (164,113,73) / thin (193,153,112)). Guards the Surface -> draw.rect
+    extraction — able-to-fail if the colour mapping or the rect draw is wrong."""
+    from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT
+    plats = build_stage()
+    surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    surf.fill((0, 0, 0))
+    render_battle(surf, [], plats)
+    thick = next(p for p in plats if not p.thin)
+    thin = next(p for p in plats if p.thin)
+    assert surf.get_at(thick.rect.center)[:3] == (164, 113, 73)
+    assert surf.get_at(thin.rect.center)[:3] == (193, 153, 112)
