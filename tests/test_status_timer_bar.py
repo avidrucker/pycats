@@ -25,6 +25,7 @@ from pycats.config import (  # noqa: E402
     SHIELD_MAX_HP, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, FPS,
     EAR_HEIGHT, LEDGE_HANG_FRAMES, KNOCKDOWN_PRONE_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES, DODGE_TIME, GETUP_ROLL_FRAMES,
+    SMASH_CHARGE_FRAMES,
 )
 from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402
 
@@ -32,7 +33,7 @@ from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402
 def _fake(state="idle", shield_hp=SHIELD_MAX_HP, stun_timer=0,
           ledge_hang_timer=0, prone_timer=0, ledge_regrab_lockout_timer=0,
           invulnerable=False, dodge_timer=0, getup_roll_timer=0,
-          getup_attack_timer=0, cx=120, top=200):
+          getup_attack_timer=0, smash_charge_timer=0, cx=120, top=200):
     # timer_bar_specs reads the timers through `.fighter` (#90); `state` stays a
     # direct Player attr. Self-ref so the flat stand-in satisfies both.
     ns = types.SimpleNamespace(
@@ -41,6 +42,7 @@ def _fake(state="idle", shield_hp=SHIELD_MAX_HP, stun_timer=0,
         ledge_regrab_lockout_timer=ledge_regrab_lockout_timer,
         invulnerable=invulnerable, dodge_timer=dodge_timer,
         getup_roll_timer=getup_roll_timer, getup_attack_timer=getup_attack_timer,
+        smash_charge_timer=smash_charge_timer,
         rect=pygame.Rect(cx - 20, top, 40, 60),
     )
     ns.fighter = ns
@@ -254,6 +256,46 @@ def test_invuln_and_lockout_coactivate_ordered_by_recency():
               ledge_regrab_lockout_timer=5)                      # elapsed 25
     labels = [b.label for b in rb.timer_bar_specs(p)]
     assert labels == ["INVULN", "LOCKOUT"]
+
+
+# --- CHARGE bar (#380, final slice of #334) — the one FILL bar -----------------
+# Grows 0->100% as smash_charge_timer accumulates (#371); readout = %-and-
+# seconds-to-full; holds at 100% when maxed.
+
+def test_charge_bar_fills_and_reads_percent_and_seconds():
+    p = _fake(state="smash_charge", smash_charge_timer=30)   # half of 60
+    (bar,) = rb.timer_bar_specs(p)
+    assert bar.label == "CHARGE"
+    assert bar.color == rb.CHARGE_BAR_COLOR
+    assert bar.ratio == 30 / SMASH_CHARGE_FRAMES            # fills UP
+    secs = math.ceil((SMASH_CHARGE_FRAMES - 30) / FPS)
+    assert bar.readout == f"50%·{secs}s"
+
+
+def test_charge_bar_holds_at_full():
+    p = _fake(state="smash_charge", smash_charge_timer=SMASH_CHARGE_FRAMES)
+    (bar,) = rb.timer_bar_specs(p)
+    assert bar.ratio == 1.0
+    assert bar.readout == "100%·0s"                          # holds at 100%, 0s to full
+
+
+def test_no_charge_bar_when_not_charging():
+    assert rb.timer_bar_specs(_fake(smash_charge_timer=0)) == []
+
+
+def test_charge_bar_suppressed_by_toggle(monkeypatch):
+    monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
+    assert rb.timer_bar_specs(
+        _fake(state="smash_charge", smash_charge_timer=30)) == []
+
+
+def test_charge_and_lockout_coactivate_ordered_by_recency():
+    # CHARGE just started (elapsed 3), LOCKOUT older (elapsed 25 of 30) -> CHARGE
+    # nearer the head. Proves the fill bar's up-count joins the recency sort.
+    p = _fake(state="smash_charge", smash_charge_timer=3,   # elapsed 3
+              ledge_regrab_lockout_timer=5)                 # elapsed 25
+    labels = [b.label for b in rb.timer_bar_specs(p)]
+    assert labels == ["CHARGE", "LOCKOUT"]
 
 
 @pytest.mark.usefixtures("render_isolation")

@@ -25,7 +25,7 @@ from .config import (
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, LEDGE_HANG_FRAMES,
     KNOCKDOWN_PRONE_FRAMES, LEDGE_REGRAB_LOCKOUT_FRAMES, DODGE_TIME,
-    GETUP_ROLL_FRAMES,
+    GETUP_ROLL_FRAMES, SMASH_CHARGE_FRAMES,
     SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
     TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH, TAPER_MODIFER,
 )
@@ -410,6 +410,7 @@ HANG_BAR_COLOR = (0, 210, 200)          # teal — ledge-hang timeout (#348)
 DOWN_BAR_COLOR = (255, 140, 45)         # orange — knockdown/getup window (#350)
 LOCKOUT_BAR_COLOR = (230, 70, 70)       # red — post-drop regrab lockout (#357)
 INVULN_BAR_COLOR = (95, 225, 120)       # green — intangibility window (#358)
+CHARGE_BAR_COLOR = (255, 205, 40)       # gold — smash charge, the one FILL bar (#380)
 
 # The getup-attack (#225) intangibility window = the whole swing, so its bar's
 # max is the move's total frames (kept in sync with the move data, not hardcoded).
@@ -519,6 +520,18 @@ def timer_bar_specs(p):
         seconds = math.ceil(remaining / FPS)
         bars.append((max_frames - remaining,
                      TimerBar(ratio, f"{seconds}s", INVULN_BAR_COLOR, label="INVULN")))
+
+    # CHARGE (#380) — the one FILL bar: it grows 0->100% as smash_charge_timer
+    # accumulates (#371), rather than draining. Readout shows the % and the
+    # seconds-to-full (0s once maxed, i.e. it holds at 100%). Recency key = the
+    # up-count itself (frames elapsed since the charge began), consistent with the
+    # count-down bars' `max - remaining`.
+    if f.smash_charge_timer > 0:
+        ratio = min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES)
+        seconds_to_full = math.ceil((SMASH_CHARGE_FRAMES - f.smash_charge_timer) / FPS)
+        bars.append((f.smash_charge_timer,
+                     TimerBar(ratio, f"{round(ratio * 100)}%·{seconds_to_full}s",
+                              CHARGE_BAR_COLOR, label="CHARGE")))
 
     bars.sort(key=lambda kb: kb[0])   # newest-on-top (least elapsed first)
     return [bar for _, bar in bars]
