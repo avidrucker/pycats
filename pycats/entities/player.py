@@ -40,7 +40,11 @@ from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
 from ..combat.data import load_fighter_data, GETUP_ATTACK
-from ..combat.charge import scale_hitboxes
+from ..combat.charge import scale_hitboxes, angle_smash_hitboxes
+from ..config import FSMASH_ANGLE_UP, FSMASH_ANGLE_DOWN
+
+# Angled f-smash (#327/4): map the captured direction to a launch angle.
+_FSMASH_ANGLE = {"up": FSMASH_ANGLE_UP, "down": FSMASH_ANGLE_DOWN}
 from ..combat.move_clock import MoveClock
 from ..combat.knockback import decay_velocity
 from ..core.physics import apply_horizontal_friction
@@ -456,6 +460,13 @@ class Player(pygame.sprite.Sprite):
                 boxes = tick.spawn
                 if getattr(mv, "chargeable", False):
                     boxes = scale_hitboxes(boxes, self.fighter.smash_charge_fraction)
+                # Angled f-smash (#327/4): a forward smash aimed up/down replaces its
+                # launch angle. Only set for an fsmash press, consumed here so it
+                # never leaks onto a later move.
+                if self.fighter.smash_angle_dir is not None:
+                    boxes = angle_smash_hitboxes(
+                        boxes, _FSMASH_ANGLE[self.fighter.smash_angle_dir])
+                    self.fighter.smash_angle_dir = None
                 attack_group.add(
                     Attack(self, hitboxes=boxes, in_air=tick.in_air,
                            disappear_on_hit=False, lifetime=tick.lifetime,

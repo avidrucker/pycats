@@ -147,6 +147,9 @@ class Fighter:
         self.smash_charge_timer = 0
         self.pending_smash_key = None
         self.smash_charge_fraction = 0.0
+        # Angled f-smash (#327 slice 4): None / "up" / "down", captured at the smash
+        # press and applied (then cleared) at the fsmash's Attack spawn.
+        self.smash_angle_dir = None
         self.invulnerable_timer = 0  # invulnerability mid-dodge, post-respawn, or while ledge grabbing
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True  # players can only air dodge once per sustained jump/fall, until they land
@@ -317,6 +320,7 @@ class Fighter:
                 kb *= CROUCH_CANCEL_FACTOR
             self.hurt_timer = hitstun_frames(kb)
             self.cancel_smash_charge()   # a hit mid-charge abandons the smash (#327/3a)
+            self.smash_angle_dir = None  # ...and its aimed angle (#327/4)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
             direction = (
                 1 if atk.owner.fighter.facing_right else -1
@@ -454,6 +458,7 @@ class Fighter:
         self.invulnerable = False
         self.spot_dodge_shield_held = False
         self.cancel_smash_charge()  # don't carry a pending charge across KO/respawn (#327/3a)
+        self.smash_angle_dir = None  # nor a pending aimed-fsmash angle (#327/4)
         self.dodge_blocked_by_edge = False
         # (#321/F3: done_attacking is derived on Player; the clock reset below
         #  in Player.reset_to_spawn makes it True.)

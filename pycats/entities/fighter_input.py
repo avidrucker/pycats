@@ -45,6 +45,25 @@ class FighterInput:
             move_speed=p.fighter.move_speed,
         )
 
+    def _smash_direction_and_angle(self, held):
+        """Direction + f-smash angle for a smash (#327 slice 4). Unlike the normal
+        token, the HORIZONTAL component wins over the vertical, so up/down is an
+        f-smash ANGLE modifier rather than a u/d-smash: a forward/back smash with
+        up/down held aims the swing. Pure vertical (no left/right) stays u/d-smash.
+        Returns (direction, angle_dir) with angle_dir in {"up","down",None}."""
+        p = self._p
+        right = self._pressed(held, "right")
+        left = self._pressed(held, "left")
+        horiz = (right and not left) or (left and not right)
+        if horiz:
+            toward_facing = right if p.fighter.facing_right else left
+            direction = "forward" if toward_facing else "back"
+            angle_dir = ("up" if self._pressed(held, "up")
+                         else "down" if self._pressed(held, "down") else None)
+            return direction, angle_dir
+        # no horizontal -> pure vertical / neutral -> u/d-smash via the normal token
+        return self._move_direction(held), None
+
     def _move_direction(self, held):
         """Direction token for move selection (#143) from held input + facing:
         neutral / up / down / forward (toward facing) / back (away). Precedence
@@ -224,11 +243,19 @@ class FighterInput:
             # smash-key falls back to the tilt (move_select).
             is_smash = ground_smash
             is_special = sp_pressed and not atk_pressed and not ground_smash
-            direction = self._move_direction(held)
+            # Smashes use horizontal-wins direction + an f-smash angle (#327/4);
+            # attacks/specials use the normal token.
+            if is_smash:
+                direction, angle_dir = self._smash_direction_and_angle(held)
+            else:
+                direction, angle_dir = self._move_direction(held), None
             key = resolve_move_key(p.fighter_data.moves, direction,
                                    p.fighter.on_ground, is_special, is_smash)
             if key is not None:
                 move = p.fighter_data.moves[key]
+                # Capture the aimed angle only when the smash resolves to a real
+                # fsmash (a u/d-smash or a tilt fallback clears it).
+                p.fighter.smash_angle_dir = angle_dir if key == "fsmash" else None
                 if is_smash and move.chargeable:
                     # Chargeable smash (#327/3a): begin charging instead of firing —
                     # the swing starts on release/max (the charge block above). A

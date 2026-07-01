@@ -1,10 +1,12 @@
-"""Smash-charge output scaling (#327 slice 3b).
+"""Spawn-time smash hitbox rewrites (#327 slices 3b + 4).
 
-A charged smash hits harder: at Attack spawn, each hitbox's offensive magnitudes
-(damage / base_knockback / knockback_growth) scale by a factor derived from the
-charge fraction `c ∈ [0,1]` captured at fire time (fighter.smash_charge_fraction,
-#371). Uncharged (c=0) is an exact identity, so an uncharged smash — and every
-non-chargeable move — spawns its authored values unchanged (golden-safe).
+At Attack spawn, a smash's hitboxes are rewritten from live smash state:
+- charge output scaling (3b): damage/base_knockback/knockback_growth scale by a
+  factor from the charge fraction `c ∈ [0,1]` (fighter.smash_charge_fraction, #371);
+  c=0 is an exact identity, so uncharged + non-chargeable moves are unchanged.
+- angled f-smash (4): a forward smash held up/down replaces its launch angle.
+Both use dataclasses.replace (Hitbox is frozen) and are golden-safe (the default
+cat has no smash, so neither path is reached on the sim/golden cat).
 """
 from dataclasses import replace
 
@@ -35,3 +37,10 @@ def scale_hitboxes(hitboxes, fraction):
         )
         for hb in hitboxes
     )
+
+
+def angle_smash_hitboxes(hitboxes, angle):
+    """Return a new tuple with every hitbox's launch `angle` replaced by `angle`
+    (for an angled f-smash, #327 slice 4). Damage/KB/position/windows are unchanged;
+    the authored angle (often the Sakurai sentinel) is swapped for the aimed literal."""
+    return tuple(replace(hb, angle=angle) for hb in hitboxes)

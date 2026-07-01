@@ -68,6 +68,11 @@ SMASH_CHARGE_FRAMES = 60
 # damage/BKB/KBG scale by 1 + c*(SMASH_CHARGE_SCALE - 1) for charge fraction c
 # (c=0 -> authored, c=1 -> base x SCALE). ⚠ playtest (PM ≈ 1.4).
 SMASH_CHARGE_SCALE = 1.4
+# Angleable f-smash (#327 slice 4): a forward smash held with up/down aims the swing.
+# The angled variant REPLACES the fsmash hitboxes' launch angle with these literals
+# (facing-right-relative degrees: 0=forward, 90=up, 270=down). ⚠ playtest.
+FSMASH_ANGLE_UP = 50      # up-forward (anti-air / juggle)
+FSMASH_ANGLE_DOWN = 330   # down-forward = -30° (edgeguard poke)
 # Data-authoring scale (#195, operationalizes #120): pycats authors combat data in
 # raw Smash *units* and scales SPATIAL values (hitbox radii/offsets) to pixels by this
 # factor. Named here so the px↔unit boundary is single-sourced + greppable, and so the
