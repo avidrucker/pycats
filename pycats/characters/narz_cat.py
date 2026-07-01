@@ -148,6 +148,28 @@ _NARZ_FAIR = MoveData(
     ),
 )
 
+# --- Back-air (slice 8, #316): a strong disjoint tipper BEHIND the body -------------
+# Marth's backward KO/spacing poke: the 2-box tipper shape (tip box FIRST, stronger;
+# priority = tuple order) authored with NEGATIVE dx so it swings behind a right-facing
+# fighter (mirrored for left by the consumers). The tip is the strongest aerial tip so
+# far (a KO hit). PM3.6 Marth `AttackAirB`, ⚠ playtest / rukaidata-confirm. Tip at
+# dx -76..-52 — wholly behind the hurtbox (back edge dx 6).
+_NARZ_BAIR = MoveData(
+    name="bair",
+    in_air=True,
+    startup=5,
+    active=3,
+    recovery=15,  # 5 + 3 + 15 = 23
+    hitboxes=(
+        # TIP (box 0): farthest-behind + strongest (the KO tip).
+        Hitbox(circle=Circle(dx=-64, dy=28, r=12), damage=13.0, angle=45,
+               base_knockback=18.0, knockback_growth=90.0),
+        # BASE (box 1): nearer-behind + weaker.
+        Hitbox(circle=Circle(dx=-42, dy=30, r=14), damage=9.0, angle=45,
+               base_knockback=10.0, knockback_growth=70.0),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
@@ -156,7 +178,7 @@ NARZ_FIGHTER_DATA = FighterData(
     hurtbox=_DEFAULT.hurtbox,
     moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
            "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT, "nair": _NARZ_NAIR,
-           "fair": _NARZ_FAIR},
+           "fair": _NARZ_FAIR, "bair": _NARZ_BAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
