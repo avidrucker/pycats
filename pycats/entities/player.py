@@ -40,6 +40,7 @@ from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
 from ..combat.data import load_fighter_data, GETUP_ATTACK
+from ..combat.charge import scale_hitboxes
 from ..combat.move_clock import MoveClock
 from ..combat.knockback import decay_velocity
 from ..core.physics import apply_horizontal_friction
@@ -449,8 +450,14 @@ class Player(pygame.sprite.Sprite):
                                max_bounces=getattr(mv, "projectile_max_bounces", 3))
                 )
             else:
+                # Smash charge (#327/3b): a chargeable move's hitboxes scale by the
+                # captured charge fraction; c=0 (and non-chargeable moves) is an exact
+                # identity, so the default cat's spawns are byte-identical (golden-safe).
+                boxes = tick.spawn
+                if getattr(mv, "chargeable", False):
+                    boxes = scale_hitboxes(boxes, self.fighter.smash_charge_fraction)
                 attack_group.add(
-                    Attack(self, hitboxes=tick.spawn, in_air=tick.in_air,
+                    Attack(self, hitboxes=boxes, in_air=tick.in_air,
                            disappear_on_hit=False, lifetime=tick.lifetime,
                            rehit_rate=mv.rehit_rate)  # #213 looping; static hit-box
                 )
