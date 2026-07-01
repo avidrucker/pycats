@@ -127,6 +127,27 @@ _NARZ_NAIR = MoveData(
     ),
 )
 
+# --- Forward-air (slice 7, #313): the ICONIC spacing wall — longest disjoint tipper --
+# The move that most defines the Marth archetype: a forward aerial sword swipe with the
+# LONGEST disjoint reach of the kit (tip at dx 58..82, farther than the n-air's 48..72).
+# The 2-box tipper shape (tip box FIRST, stronger; priority = tuple order) rewards spacing
+# the very end of the blade. PM3.6 Marth `AttackAirF`, ⚠ playtest / rukaidata-confirm.
+_NARZ_FAIR = MoveData(
+    name="fair",
+    in_air=True,
+    startup=5,
+    active=3,
+    recovery=16,  # 5 + 3 + 16 = 24
+    hitboxes=(
+        # TIP (box 0): farthest + strongest — the spacing wall.
+        Hitbox(circle=Circle(dx=70, dy=28, r=12), damage=12.0, angle=45,
+               base_knockback=15.0, knockback_growth=95.0),
+        # BASE (box 1): nearer + weaker.
+        Hitbox(circle=Circle(dx=46, dy=30, r=14), damage=9.0, angle=45,
+               base_knockback=10.0, knockback_growth=75.0),
+    ),
+)
+
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
@@ -134,7 +155,8 @@ NARZ_FIGHTER_DATA = FighterData(
     # the default cat until their slices land (#294). Body still the default (#290 v1).
     hurtbox=_DEFAULT.hurtbox,
     moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
-           "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT, "nair": _NARZ_NAIR},
+           "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT, "nair": _NARZ_NAIR,
+           "fair": _NARZ_FAIR},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
