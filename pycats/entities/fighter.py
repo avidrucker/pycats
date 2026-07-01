@@ -139,6 +139,14 @@ class Fighter:
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
         self.shieldstun_timer = 0  # locked-in-shield frames after a block (#140)
         # attack_timer is a derived property on Player over its MoveClock (#71).
+        # Smash charge (#327 slice 3a): while charging a chargeable smash, the
+        # timer accumulates 0..SMASH_CHARGE_FRAMES and pending_smash_key holds the
+        # move being charged; the release/max fires it (fighter_input). The #334
+        # CHARGE bar reads smash_charge_timer. smash_charge_fraction is captured at
+        # fire time for the slice-3b output scaling.
+        self.smash_charge_timer = 0
+        self.pending_smash_key = None
+        self.smash_charge_fraction = 0.0
         self.invulnerable_timer = 0  # invulnerability mid-dodge, post-respawn, or while ledge grabbing
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True  # players can only air dodge once per sustained jump/fall, until they land
@@ -308,6 +316,7 @@ class Fighter:
             if is_crouching:
                 kb *= CROUCH_CANCEL_FACTOR
             self.hurt_timer = hitstun_frames(kb)
+            self.cancel_smash_charge()   # a hit mid-charge abandons the smash (#327/3a)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
             direction = (
                 1 if atk.owner.fighter.facing_right else -1
@@ -444,6 +453,7 @@ class Fighter:
         self.invulnerable_timer = 0
         self.invulnerable = False
         self.spot_dodge_shield_held = False
+        self.cancel_smash_charge()  # don't carry a pending charge across KO/respawn (#327/3a)
         self.dodge_blocked_by_edge = False
         # (#321/F3: done_attacking is derived on Player; the clock reset below
         #  in Player.reset_to_spawn makes it True.)
@@ -454,6 +464,13 @@ class Fighter:
         # resets self._clock + self.tail. The aggregate no longer reaches `owner`.
 
     # state starters ----------------------------
+    def cancel_smash_charge(self) -> None:
+        """Abandon an in-progress smash charge (#327/3a): drop the accumulated
+        timer + the pending move. Called on a mid-charge hit (receive_hit) and on
+        KO/respawn (reset_to_spawn); the input handler also uses it to release."""
+        self.smash_charge_timer = 0
+        self.pending_smash_key = None
+
     def tick_shield(self, shielding: bool) -> None:
         """Per-frame shield-HP tick (#341).
 

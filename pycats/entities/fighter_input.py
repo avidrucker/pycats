@@ -12,7 +12,7 @@ shipped DEBUG print() calls.
 """
 from __future__ import annotations
 
-from ..config import DODGE_SPEED
+from ..config import DODGE_SPEED, SMASH_CHARGE_FRAMES
 from ..systems.movement import step_horizontal
 from ..combat.move_select import resolve_move_key
 
@@ -41,7 +41,7 @@ class FighterInput:
             self._pressed(keys, "left"),
             self._pressed(keys, "right"),
             locked=p.state
-            in ("shield", "crouch", "helpless"),  # no walking while shielding/crouching (#124) or helpless (#184)
+            in ("shield", "crouch", "helpless", "smash_charge"),  # no walking while shielding/crouching (#124), helpless (#184), or charging a smash (#327/3a)
             move_speed=p.fighter.move_speed,
         )
 
@@ -69,6 +69,26 @@ class FighterInput:
         pressed = (
             input_frame.pressed
         )  # formerly prev_keys, refers to keys just freshly pressed this frame
+
+        # ------- Smash charge (#327 slice 3a): hold to charge, release to fire ---
+        # While a chargeable smash is being charged (pending_smash_key set, the
+        # `smash_charge` state), accumulate the timer (capped) and fire on release
+        # or at max. The fighter is rooted this frame (early return + handle_move
+        # locks on the state). A mid-charge hit clears the charge via receive_hit
+        # (input is gated during hitstun), so this block only runs while charging.
+        f = p.fighter
+        if f.pending_smash_key is not None:
+            if f.smash_charge_timer < SMASH_CHARGE_FRAMES:
+                f.smash_charge_timer += 1
+            smash_held = self._pressed(held, "smash")
+            if (not smash_held) or f.smash_charge_timer >= SMASH_CHARGE_FRAMES:
+                # Capture the charge fraction for the slice-3b output scaling, then
+                # start the swing on the move clock and drop the charge.
+                f.smash_charge_fraction = f.smash_charge_timer / SMASH_CHARGE_FRAMES
+                p._clock.start(p.fighter_data.moves[f.pending_smash_key])
+                f.record_attack_made()
+                f.cancel_smash_charge()
+            return False   # rooted while charging; no other action this frame
 
         # ------- Jump ---------------------------------------------
         jump_pressed = self._pressed(pressed, "up")
@@ -208,10 +228,19 @@ class FighterInput:
             key = resolve_move_key(p.fighter_data.moves, direction,
                                    p.fighter.on_ground, is_special, is_smash)
             if key is not None:
-                p._clock.start(p.fighter_data.moves[key])
-                p.fighter.record_attack_made()  # Track attack statistics
-                # (#321/F3: done_attacking is derived (attack_timer == 0); starting
-                #  the clock above makes it False — no flag to set.)
+                move = p.fighter_data.moves[key]
+                if is_smash and move.chargeable:
+                    # Chargeable smash (#327/3a): begin charging instead of firing —
+                    # the swing starts on release/max (the charge block above). A
+                    # smash that fell back to a tilt (not chargeable) fires normally.
+                    p.fighter.smash_charge_timer = 0
+                    p.fighter.pending_smash_key = key
+                    p.engine.force("smash_charge")
+                else:
+                    p._clock.start(move)
+                    p.fighter.record_attack_made()  # Track attack statistics
+                    # (#321/F3: done_attacking is derived (attack_timer == 0); starting
+                    #  the clock above makes it False — no flag to set.)
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
 
         # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs

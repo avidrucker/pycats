@@ -300,15 +300,36 @@ def build_fighter_chart(p):
         _tick(lambda e, d: p.fighter.grabbed_ledge is None and not p.fighter.on_ground, "fall"),
     )
 
+    # Smash charge (#327 slice 3a): a pre-swing HOLD, force-entered on a chargeable
+    # smash press (fighter_input sends force_smash_charge). The charge accumulates
+    # in fighter_input (smash_charge_timer, capped); on release/max it starts the
+    # move clock (attack_timer > 0) and this state routes into `attacking` for the
+    # actual swing. A mid-charge hit sets hurt_timer (and cancel_smash_charge clears
+    # the pending key) -> exit to hurt. Charge happens BEFORE the move clock, so the
+    # move-clock invariant (#71) is untouched.
+    smash_charge = state(
+        {"id": "smash_charge"},
+        _tick(lambda e, d: p.attack_timer > 0, "attacking"),   # released/maxed -> swing
+        _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),  # hit mid-charge
+        _tick(lambda e, d: p.fighter.stun_timer > 0, "stun"),
+        _tick(lambda e, d: not p.fighter.is_alive, "ko"),
+        # Charge abandoned without firing (pending cleared, no swing started).
+        _tick(lambda e, d: p.fighter.pending_smash_key is None and p.attack_timer == 0
+              and p.fighter.on_ground, "idle"),
+        _tick(lambda e, d: p.fighter.pending_smash_key is None and p.attack_timer == 0
+              and not p.fighter.on_ground, "fall"),
+    )
+
     action = state(
         {"id": "action", "initial": "idle"},
-        # force_ko / force_idle / force_prone / force_ledge_grab hoisted to the
-        # action parent: they fire on distinct events, so they never reorder the
-        # per-leaf tick transitions.
+        # force_ko / force_idle / force_prone / force_ledge_grab / force_smash_charge
+        # hoisted to the action parent: they fire on distinct events, so they never
+        # reorder the per-leaf tick transitions.
         on("force_ko", "ko"),
         on("force_idle", "idle"),
         on("force_prone", "prone"),
         on("force_ledge_grab", "ledge_hang"),
+        on("force_smash_charge", "smash_charge"),
         actionable,
         attacking,
         dodging,
@@ -320,6 +341,7 @@ def build_fighter_chart(p):
         helpless,
         landing_lag,
         ledge_hang,
+        smash_charge,
     )
 
     defensive_status = state(

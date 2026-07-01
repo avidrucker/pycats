@@ -52,6 +52,9 @@ SHIELD_BREAK_STUN_MIN = 90   # frames at >= 400% damage
 SHIELDSTUN_FACTOR = 0.345
 DODGE_TIME = 14
 DODGE_SPEED = 14  # horizontal boost for a roll
+# Smash charge (#327 slice 3a): frames of holding the smash input to reach full
+# charge (fraction 0 -> 1). ⚠ playtest (~1s @60fps; PM smashes charge over ~1s).
+SMASH_CHARGE_FRAMES = 60
 # Data-authoring scale (#195, operationalizes #120): pycats authors combat data in
 # raw Smash *units* and scales SPATIAL values (hitbox radii/offsets) to pixels by this
 # factor. Named here so the px↔unit boundary is single-sourced + greppable, and so the

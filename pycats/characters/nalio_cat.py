@@ -367,6 +367,7 @@ _FIREBALL = MoveData(
 _FSMASH = MoveData(
     name="forward smash",
     in_air=False,
+    chargeable=True,   # hold-to-charge (#327/3a)
     startup=7,
     active=5,
     recovery=26,
@@ -404,6 +405,7 @@ def _usmash_late(dx, dy):
 _USMASH = MoveData(
     name="up smash",
     in_air=False,
+    chargeable=True,   # hold-to-charge (#327/3a)
     startup=2,
     active=4,
     recovery=33,
@@ -435,6 +437,7 @@ def _dsmash_back(dx, r, dmg):
 _DSMASH = MoveData(
     name="down smash",
     in_air=False,
+    chargeable=True,   # hold-to-charge (#327/3a)
     startup=2,
     active=11,
     recovery=23,

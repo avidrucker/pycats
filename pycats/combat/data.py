@@ -128,6 +128,10 @@ class MoveData:
     # rukaidata units/frame × PX_PER_UNIT / playtest — tracked like #192).
     projectile_speed: int | None = None
     projectile_lifetime: int | None = None
+    # Smash charge (#327 slice 3a): a chargeable move is HELD to charge and
+    # released to fire (the smash_charge state). Defaults False, so every existing
+    # move is byte-identical (golden-safe); slice 3b scales a charged hit's output.
+    chargeable: bool = False
 
     def __post_init__(self) -> None:
         # Per-hitbox temporal-window cross-checks (#204). Per-box shape (paired,
