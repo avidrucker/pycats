@@ -44,7 +44,7 @@ from .config import (
     CAT_CHARACTERS,
 )
 from .entities import Platform
-from .core import input as inp
+from . import input_poll as inp
 from . import stats_print
 from .screen_manager import ScreenStateManager
 from .battle_screen import BattleScreen

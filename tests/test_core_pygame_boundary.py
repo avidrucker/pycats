@@ -7,8 +7,9 @@ able-to-fail AST guard: any `pygame.<attr>` outside the allow-list (or a
 `import pygame.<attr>` / `from pygame import <attr>` of one) in a guarded module
 reds the test. See ADR-0004.
 
-`core/input.py` is intentionally NOT guarded yet — its `poll()` still imports
-`pygame.event`; it joins the set once #342 splits `poll()` out (decision #9).
+`core/input.py` joined the guarded set in #342 — its `poll()` (which imported
+`pygame.event`) moved to `pycats/input_poll.py` (present layer, decision #9), so
+the port is now pygame-free.
 """
 import ast
 import pathlib
@@ -32,6 +33,7 @@ def _guarded_files() -> list[pathlib.Path]:
         _ROOT / "config.py",
         _ROOT / "stats_print.py",
         _ROOT / "core" / "physics.py",
+        _ROOT / "core" / "input.py",
         _ROOT / "entities" / "fighter.py",
     ]
     return [f for f in files if f.exists() and "__pycache__" not in f.parts]
