@@ -130,8 +130,10 @@ class BattleScreen:
         if self.player1 and self.player2:
             draw_hud(surface, self.player1, "P1")
             draw_hud(surface, self.player2, "P2", topright=True)
-            draw_controls(surface, self.player1, "P1")
-            draw_controls(surface, self.player2, "P2", topright=True)
+            # Fighter-controls display (#284), gated on the live toggle (default ON).
+            if runtime_settings.show_controls():
+                draw_controls(surface, self.player1, "P1")
+                draw_controls(surface, self.player2, "P2", topright=True)
             # Input-history strip (#21), gated on the live toggle (default ON).
             if runtime_settings.show_input_history():
                 draw_input_history(surface, self.p1_history, "P1")

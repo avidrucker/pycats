@@ -45,3 +45,8 @@ def show_hitbox_overlay():
 def show_input_history():
     """Live toggle the in-battle input-history HUD strip honours (#21)."""
     return bool(get("show_input_history"))
+
+
+def show_controls():
+    """Live toggle the in-battle fighter-controls display honours (#284)."""
+    return bool(get("show_controls"))

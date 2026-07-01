@@ -33,6 +33,9 @@ _DEFAULTS = {
     # In-battle input-history HUD strip (#21): per-fighter last-10 raw inputs,
     # toggleable from the Options sub-menu (mirrors show_status_timer_bars).
     "show_input_history": True,
+    # In-battle fighter-controls display (#284): the per-fighter control-scheme
+    # readout below the HUD, now toggleable + persisted (was always-on).
+    "show_controls": True,
     # Hold-ESC-to-quit feature (#113): when True, holding ESC for 2s quits the
     # current context (battle→menu, menu→game). Toggleable in Options sub-menu.
     "esc_hold_to_quit": True,
@@ -80,6 +83,9 @@ def _validated(raw):
     )
     out["show_input_history"] = bool(
         raw.get("show_input_history", out["show_input_history"])
+    )
+    out["show_controls"] = bool(
+        raw.get("show_controls", out["show_controls"])
     )
     out["esc_hold_to_quit"] = bool(
         raw.get("esc_hold_to_quit", out["esc_hold_to_quit"])
