@@ -35,14 +35,21 @@ def test_two_columns():
 
 
 # ---- 2-column grid: navigation --------------------------------------------- #
+def _nrows(m):
+    return (len(m.rows) + NCOLS - 1) // NCOLS
+
+
 def test_down_moves_within_column_by_a_full_row():
-    """8 rows / 2 cols => down steps 0 -> 2 -> 4 -> 6 -> wrap 0 (stays in column 0)."""
+    """Down steps a full grid row within column 0 and wraps back to 0 (derived from
+    the live row count so it survives rows being added — e.g. #345's font_scale)."""
     m = _opts()
+    nrows = _nrows(m)
+    expected = [(r % nrows) * NCOLS for r in range(1, nrows + 1)]  # col0 of each row
     assert m.selected_option == 0
-    for expected in (2, 4, 6, 0):
+    for want in expected:
         m.input_cooldown = 0
         m.update({DOWN})
-        assert m.selected_option == expected
+        assert m.selected_option == want
 
 
 def test_right_moves_to_the_other_column():
@@ -54,7 +61,7 @@ def test_right_moves_to_the_other_column():
 def test_up_from_top_wraps_to_the_bottom_row():
     m = _opts()  # index 0 = row0,col0
     m.update({UP})
-    assert m.selected_option == 6  # row3,col0
+    assert m.selected_option == (_nrows(m) - 1) * NCOLS  # bottom row, col0
 
 
 def test_left_from_left_column_wraps_within_the_row():

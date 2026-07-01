@@ -99,13 +99,16 @@ def test_b_key_backs_out_from_any_row():
 
 def test_nav_down_wraps_within_column():
     # 2-column grid (#389): down steps a full row within the column and wraps.
-    # 8 rows / 2 cols => column 0 is 0 -> 2 -> 4 -> 6 -> wrap 0.
+    # Derived from the live row count so adding a row (e.g. #345 font_scale) is fine.
+    from pycats.options_menu import NCOLS
     m = _opts()
+    nrows = (len(m.rows) + NCOLS - 1) // NCOLS
+    expected = [(r % nrows) * NCOLS for r in range(1, nrows + 1)]
     assert m.selected_option == 0
-    for expected in (2, 4, 6, 0):
+    for want in expected:
         m.input_cooldown = 0
         m.update({pygame.K_s})  # down
-        assert m.selected_option == expected
+        assert m.selected_option == want
 
 
 def test_display_rows_inert_without_hooks():
