@@ -12,7 +12,7 @@ shipped DEBUG print() calls.
 """
 from __future__ import annotations
 
-from ..config import DODGE_SPEED, SMASH_CHARGE_FRAMES
+from ..config import DODGE_SPEED, SMASH_CHARGE_FRAMES, DOUBLE_TAP_WINDOW
 from ..systems.movement import step_horizontal
 from ..combat.move_select import resolve_move_key
 
@@ -48,6 +48,40 @@ class FighterInput:
             move_speed=(p.fighter.dash_speed if p.fighter.dash_timer > 0
                         else p.fighter.move_speed),
         )
+
+    def _maybe_start_dash(self, held, pressed):
+        """Double-tap edge-detection (#388 slice 2b, #403).
+
+        On a fresh single-direction press: a second same-direction press while
+        `dash_input_window > 0` is a double-tap → `_start_dash`; otherwise the
+        window is (re)armed to `DOUBLE_TAP_WINDOW` (it counts down in
+        `Fighter.tick_timers`). Only an actionable, grounded idle/walk fighter
+        dashes.
+
+        Gated on the hitstun TIMERS, not just the `state` label (#370): the FSM
+        label lags the hurt/stun timer by a frame, so a stale window must not
+        dash the frame a hit lands. (The caller — `Player.update` — already skips
+        `handle_actions` during hitstun; this guard keeps the seam correct if the
+        detector is ever driven directly.) A held shield makes a directional
+        press a dodge, not a dash, so shield-held taps are excluded."""
+        p, f = self._p, self._p.fighter
+        left = self._pressed(pressed, "left")
+        right = self._pressed(pressed, "right")
+        if left == right:            # neither pressed, or both: no directional edge
+            return
+        direction = 1 if right else -1
+        if not (f.on_ground and f.dash_timer == 0
+                and f.hurt_timer == 0 and f.stun_timer == 0
+                and not self._pressed(held, "shield")
+                and p.state in ("idle", "walk")):
+            return
+        if f.dash_input_window > 0 and f.dash_input_dir == direction:
+            f._start_dash(direction)          # double-tap → burst
+            f.dash_input_window = 0
+            f.dash_input_dir = 0
+        else:                                 # first tap (or a new direction): arm
+            f.dash_input_window = DOUBLE_TAP_WINDOW
+            f.dash_input_dir = direction
 
     def _smash_direction_and_angle(self, held):
         """Direction + f-smash angle for a smash (#327 slice 4). Unlike the normal
@@ -112,6 +146,14 @@ class FighterInput:
                 f.record_attack_made()
                 f.cancel_smash_charge()
             return False   # rooted while charging; no other action this frame
+
+        # ------- Double-tap dash (#388 slice 2b, #403) ------------
+        # A fast double-tap of one direction fires the dash burst (_start_dash,
+        # slice 2a). Reads `pressed` (fresh down-frames) — a held key is fresh
+        # only once, so holding never double-taps and plain-hold stays walk
+        # (golden-safe). Placed before the movement/attack branches; it only
+        # (re)arms or starts a dash and never consumes the frame.
+        self._maybe_start_dash(held, pressed)
 
         # ------- Jump ---------------------------------------------
         jump_pressed = self._pressed(pressed, "up")

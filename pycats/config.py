@@ -37,6 +37,11 @@ MOVE_SPEED = 6
 # sustained state after the burst — is slice 3 of #388). Per-fighter via FighterData.
 DASH_SPEED = 8
 DASH_DURATION = 12
+# Double-tap dash window (#388 slice 2b, #403): frames after a fresh directional
+# press during which a second same-direction press counts as a double-tap and
+# fires the dash burst. A HELD key is `pressed` only on its down-frame, so holding
+# never double-taps → walk stays golden-safe. (⚠ tuning start, ~8–10 frames.)
+DOUBLE_TAP_WINDOW = 8
 JUMP_VEL = -13
 DODGE_FRAMES = 15
 MAX_JUMPS = 2  # single + double

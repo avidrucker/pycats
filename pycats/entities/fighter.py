@@ -128,6 +128,12 @@ class Fighter:
         self.respawn_timer = 0  # frames until next spawn
         self.dodge_timer = 0
         self.dash_timer = 0  # #388: initial-dash burst window; `dash` state while > 0
+        # #388 slice 2b (#403): double-tap edge-detection. `dash_input_window`
+        # counts down after a fresh directional press; a second same-direction
+        # press while it's > 0 is a double-tap → `_start_dash`. `dash_input_dir`
+        # records the first tap's direction (+1 right / -1 left, 0 = disarmed).
+        self.dash_input_window = 0
+        self.dash_input_dir = 0
         self.hurt_timer = 0
         self.stun_timer = 0
         self.prone_timer = 0  # knockdown/getup window (#13); prone while > 0
@@ -232,7 +238,8 @@ class Fighter:
         regions) and `hitlag` (bound to the freeze early-return) stay in
         `Player.update()` until later slices (#264 S4b/S5)."""
         for name in ("hurt_timer", "stun_timer", "landing_lag_timer",
-                     "ledge_regrab_lockout_timer", "shieldstun_timer"):
+                     "ledge_regrab_lockout_timer", "shieldstun_timer",
+                     "dash_input_window"):  # #403: double-tap window (stateless)
             v = getattr(self, name)
             if v > 0:
                 setattr(self, name, v - 1)
