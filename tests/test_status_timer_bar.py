@@ -23,16 +23,19 @@ import pytest  # noqa: E402
 from pycats import render_battle as rb  # noqa: E402
 from pycats.config import (  # noqa: E402
     SHIELD_MAX_HP, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, FPS,
-    SHIELD_COLOR, YELLOW, EAR_HEIGHT,
+    SHIELD_COLOR, YELLOW, EAR_HEIGHT, LEDGE_HANG_FRAMES,
 )
 from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402
 
 
-def _fake(state="idle", shield_hp=SHIELD_MAX_HP, stun_timer=0, cx=120, top=200):
-    # status_bar_spec reads shield_hp/stun_timer through `.fighter` (#90); `state`
-    # stays a direct Player attr. Self-ref so the flat stand-in satisfies both.
+def _fake(state="idle", shield_hp=SHIELD_MAX_HP, stun_timer=0,
+          ledge_hang_timer=0, cx=120, top=200):
+    # timer_bar_specs reads shield_hp/stun_timer/ledge_hang_timer through `.fighter`
+    # (#90); `state` stays a direct Player attr. Self-ref so the flat stand-in
+    # satisfies both.
     ns = types.SimpleNamespace(
         state=state, shield_hp=shield_hp, stun_timer=stun_timer,
+        ledge_hang_timer=ledge_hang_timer,
         rect=pygame.Rect(cx - 20, top, 40, 60),
     )
     ns.fighter = ns
@@ -75,6 +78,33 @@ def test_toggle_off_suppresses_bar(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
     assert rb.timer_bar_specs(_fake(stun_timer=200)) == []
     assert rb.timer_bar_specs(_fake(state="shield", shield_hp=40)) == []
+    assert rb.timer_bar_specs(
+        _fake(state="ledge_hang", ledge_hang_timer=90)) == []
+
+
+# --- HANG bar (#348, slice 2 of #334) ----------------------------------------
+# A teal count-down bar labelled HANG while a fighter clings to a ledge, draining
+# as the ~2s ledge_hang_timer (#14) runs out.
+
+def test_hang_bar_ratio_seconds_label_colour():
+    p = _fake(state="ledge_hang", ledge_hang_timer=90)
+    (bar,) = rb.timer_bar_specs(p)
+    assert bar.label == "HANG"
+    assert bar.color == rb.HANG_BAR_COLOR
+    assert bar.ratio == 90 / LEDGE_HANG_FRAMES
+    assert bar.readout == f"{math.ceil(90 / FPS)}s"
+
+
+def test_no_hang_bar_when_not_hanging():
+    # ledge_hang_timer 0 (or a non-hang state) shows no HANG bar.
+    assert rb.timer_bar_specs(_fake(state="ledge_hang", ledge_hang_timer=0)) == []
+    assert rb.timer_bar_specs(_fake(state="idle", ledge_hang_timer=90)) == []
+
+
+def test_hang_bar_suppressed_by_toggle(monkeypatch):
+    monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
+    assert rb.timer_bar_specs(
+        _fake(state="ledge_hang", ledge_hang_timer=90)) == []
 
 
 @pytest.mark.usefixtures("render_isolation")

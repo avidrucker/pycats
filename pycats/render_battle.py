@@ -23,7 +23,7 @@ from .config import (
     WHISKER_OFFSET_Y, WHISKER_OFFSET_X, STRIPE_COUNT, STRIPE_WIDTH,
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
-    FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME,
+    FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, LEDGE_HANG_FRAMES,
     SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
     TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH, TAPER_MODIFER,
 )
@@ -398,6 +398,10 @@ STATUS_BAR_STACK_STRIDE = STATUS_BAR_HEIGHT + STATUS_BAR_SECONDS_SIZE + 4
 _STAR_HALO = DIZZY_ORBIT_RADIUS * 0.4 + DIZZY_STAR_OUTER
 STATUS_BAR_GAP_ABOVE_STARS = 6
 
+# Per-timer bar colours (#334 spec). Shield/stun keep their existing colours
+# (SHIELD_COLOR / YELLOW) unlabelled; labelled bars add one hue each per slice.
+HANG_BAR_COLOR = (0, 210, 200)          # teal — ledge-hang timeout (#348)
+
 
 class TimerBar(NamedTuple):
     """One above-head bar: a coloured 0..1 fill, a text readout, and an optional
@@ -417,8 +421,10 @@ def timer_bar_specs(p):
     and a bar tracks mid-effect changes (e.g. a blocked hit chipping shield).
     Honours the live status-bars toggle (runtime_settings, #111/#121). Shield
     takes precedence: a shielding fighter is never simultaneously stunned. Slice
-    1 (#340) surfaces only shield/stun (label=None, colours unchanged) so the
-    live render stays byte-identical; later slices add labelled bars.
+    1 (#340) surfaced shield/stun unlabelled (byte-identical); #348 adds the
+    labelled HANG bar. Hang is mutually exclusive with shield/stun (a hanging
+    fighter is neither shielding nor stunned), so at most one bar is active here;
+    recency ordering for genuinely co-active bars lands in a later slice.
     """
     if not runtime_settings.show_status_timer_bars():
         return []
@@ -430,6 +436,10 @@ def timer_bar_specs(p):
         ratio = p.fighter.stun_timer / SHIELD_BREAK_STUN_MAX
         seconds = math.ceil(p.fighter.stun_timer / FPS)
         return [TimerBar(ratio, f"{seconds}s", YELLOW)]
+    if p.state == "ledge_hang" and p.fighter.ledge_hang_timer > 0:
+        ratio = p.fighter.ledge_hang_timer / LEDGE_HANG_FRAMES
+        seconds = math.ceil(p.fighter.ledge_hang_timer / FPS)
+        return [TimerBar(ratio, f"{seconds}s", HANG_BAR_COLOR, label="HANG")]
     return []
 
 
