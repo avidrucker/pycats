@@ -37,5 +37,10 @@ Critical rules:
   ending in `"$PY" -m pycats.game`. **There is no `main.py`** (entry points are
   `-m pycats.game`, `watch.py`, `bench.py`); never emit `python main.py`.
   See [RULES.md](./RULES.md) → "Surfacing run/sim commands".
+- **Banned words in ALL output** (replies, tickets, commits, docs): avoid **crisp**
+  and **honest / honestly / honesty** — they read as vague filler / throat-clearing.
+  Name the concrete quality instead (crisp → specific / precise / clean; honest →
+  plain / direct / candid / faithful). Proofread the closing line, where they slip in.
+  Full list + replacements: [docs/banned_words.md](./docs/banned_words.md).
 
 Run & test: see [README.md](./README.md).
