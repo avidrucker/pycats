@@ -377,7 +377,15 @@ class AttackerController(BaseController):
                         # naturally enters `shield` state on a threat, then this rolls.
                         # evade_chance 0.0 short-circuits the rng, so a non-evading
                         # level's shield stream is byte-identical (golden-safe).
-                        dodge_able = getattr(a, "state", None) in _DODGEABLE_STATES
+                        # #379: gate on the REAL actionability timers, not just the FSM
+                        # `state` label — the label lags hurt_timer by a frame (#8/#370),
+                        # so a bot in hitstun still reads a dodge-able label and would emit
+                        # rolls that Player.update drops (100% wasted while juggled). Mirror
+                        # Player.update's `in_hitstun = hurt_timer > 0 or stun_timer > 0`.
+                        # getattr keeps minimal combat stubs working (#137/#291).
+                        dodge_able = (getattr(a, "state", None) in _DODGEABLE_STATES
+                                      and getattr(a.fighter, "hurt_timer", 0) == 0
+                                      and getattr(a.fighter, "stun_timer", 0) == 0)
                         if (dodge_able and self.evade_chance > 0.0
                                 and self.rng.random() < self.evade_chance):
                             away = keys["left"] if dx > 0 else keys["right"]
