@@ -60,3 +60,20 @@ def test_platform_renders_thickness_colour_pixels():
     thin = next(p for p in plats if p.thin)
     assert surf.get_at(thick.rect.center)[:3] == (164, 113, 73)
     assert surf.get_at(thin.rect.center)[:3] == (193, 153, 112)
+
+
+def test_tail_entity_is_pygame_free():
+    """#330/H-b slice 3: with rendering moved to render_battle.render_tail,
+    entities/tail.py is pure Verlet sim — it imports no pygame. Able-to-fail:
+    re-add `import pygame` and this reds."""
+    import ast
+    import pathlib
+
+    tree = ast.parse(pathlib.Path(pycats.entities.tail.__file__).read_text(encoding="utf-8"))
+    offenders = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            offenders += [a.name for a in node.names if a.name.split(".")[0] == "pygame"]
+        if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[0] == "pygame":
+            offenders.append(node.module)
+    assert offenders == [], f"tail.py imports pygame: {offenders}"

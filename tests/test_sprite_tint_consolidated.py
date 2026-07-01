@@ -116,7 +116,7 @@ def _draw_tail(p):
     surf = pg.Surface((300, 300), pg.SRCALPHA)
     # #265: the caller resolves the tint (was computed inside Tail.draw); this
     # mirrors render_battle's call site so the test still exercises the flash.
-    p.tail.draw(surf, rb.tinted(p.char_color, p))
+    rb.render_tail(surf, p.tail, rb.tinted(p.char_color, p))  # #330: adapter draws the tail
     return surf
 
 

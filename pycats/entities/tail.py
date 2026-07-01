@@ -17,12 +17,10 @@ _resolve_platform_collisions). Rendering keeps the cached rotated-rect blit.
 """
 import math
 from typing import List, Tuple
-import pygame as pg  # type: ignore
 
 from ..config import (
     TAIL_SEGMENTS,
     TAIL_SEGMENT_LENGTH,
-    TAIL_SEGMENT_WIDTH,
     TAIL_BASE_OFFSET_X,
     TAIL_BASE_OFFSET_Y,
     TAIL_ANCHOR_FLIP_STEP,
@@ -34,7 +32,6 @@ from ..config import (
     TAIL_UNDULATE_AMP,
     TAIL_UNDULATE_SPEED,
     TAIL_UNDULATE_WAVELENGTH,
-    TAPER_MODIFER,
 )
 
 # How many points at the root are pinned to the body. 1 = the tail dangles from a
@@ -66,7 +63,6 @@ class Tail:
         self.segments: List[TailSegment] = [
             TailSegment(0.0, 0.0) for _ in range(TAIL_SEGMENTS)
         ]
-        self._seg_cache: dict = {}  # (width, angle°) -> rotated surface
         self.reset()
 
     def reset(self):
@@ -237,31 +233,6 @@ class Tail:
                     seg.y = top
                     seg.prev_y = top  # kill downward velocity -> rests on surface
 
-    def draw(self, screen, color):
-        """Draw the segments as cached, rotated, tapering rects in `color`.
-
-        #109: the tail flashes with the body — `color` is the already-resolved
-        tint the *caller* computes (`render_battle.tinted(p.char_color, p)`), from
-        the same single source as the body composite. #265: the colour is passed
-        in rather than importing `render_battle`, so the entity no longer reaches
-        up into the render adapter (dependency points adapter → entity only)."""
-        cache = self._seg_cache
-        color = tuple(color)
-        length = TAIL_SEGMENT_LENGTH
-        n = len(self.segments)
-        blit = screen.blit
-        for i, segment in enumerate(self.segments):
-            width = int(TAIL_SEGMENT_WIDTH * (1.0 - (i / n) * TAPER_MODIFER))
-            deg = int(round(-math.degrees(segment.angle))) % 360
-            # `color` is in the key so a flash doesn't serve stale untinted
-            # segment surfaces (the cache spans tint states across frames).
-            key = (width, deg, color)
-            surf = cache.get(key)
-            if surf is None:
-                base = pg.Surface((length, width), pg.SRCALPHA)
-                base.fill(color)
-                surf = pg.transform.rotate(base, deg)
-                cache[key] = surf
-            rect = surf.get_rect()
-            rect.center = (int(segment.x), int(segment.y))
-            blit(surf, rect)
+    # Rendering moved to render_battle.render_tail (#330/H-b): the Tail holds only
+    # its Verlet sim; the adapter builds+blits the rotated segment surfaces. This is
+    # what makes tail.py pygame-free.

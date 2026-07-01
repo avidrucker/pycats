@@ -24,6 +24,7 @@ from .config import (
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME,
     SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
+    TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH, TAPER_MODIFER,
 )
 from . import runtime_settings
 from . import text_utils
@@ -279,7 +280,7 @@ def tinted(base_color, p, strength=TINT_STRENGTH):
     active hurt/stun/dodge flash, or unchanged when the fighter is calm (#109).
 
     The one helper every body part derives its colour from — body fill, ears,
-    whiskers, stripes (via the body composite) and the tail (`tail.draw`) — so
+    whiskers, stripes (via the body composite) and the tail (`render_tail`) — so
     no part keeps a hardcoded `char_color` path that can drift out of the flash.
     """
     return _blend(base_color, active_tint(p), strength)
@@ -436,6 +437,39 @@ def draw_status_bar(surface, p, ratio, seconds, fill_color):
     )
 
 
+# (width, deg°, color) -> rotated SRCALPHA segment surface. Module-level (#330/H-b,
+# was Tail._seg_cache): the key is position-independent so it's shareable across
+# tails; cleared by the render_isolation fixture (surfaces go stale after a
+# pygame.quit(), #63) like _body_cache.
+_tail_seg_cache: dict = {}
+
+
+def render_tail(surface, tail, color):
+    """Draw a fighter's Verlet `tail` as cached, rotated, tapering rects in `color`
+    (#330/H-b — was Tail.draw; the entity holds only sim data now). `color` is the
+    already-resolved tint the caller computes (#265)."""
+    cache = _tail_seg_cache
+    color = tuple(color)
+    length = TAIL_SEGMENT_LENGTH
+    n = len(tail.segments)
+    blit = surface.blit
+    for i, segment in enumerate(tail.segments):
+        width = int(TAIL_SEGMENT_WIDTH * (1.0 - (i / n) * TAPER_MODIFER))
+        deg = int(round(-math.degrees(segment.angle))) % 360
+        # `color` is in the key so a flash doesn't serve stale untinted segment
+        # surfaces (the cache spans tint states across frames).
+        key = (width, deg, color)
+        surf = cache.get(key)
+        if surf is None:
+            base = pygame.Surface((length, width), pygame.SRCALPHA)
+            base.fill(color)
+            surf = pygame.transform.rotate(base, deg)
+            cache[key] = surf
+        rect = surf.get_rect()
+        rect.center = (int(segment.x), int(segment.y))
+        blit(surf, rect)
+
+
 def render_battle(surface, players, platforms):
     """Draw platforms, alive fighters, and their attacks onto `surface`.
     Mirrors game.py's playing-branch draw block (no HUD/controls/FPS text)."""
@@ -446,7 +480,7 @@ def render_battle(surface, players, platforms):
     for p in players:
         if not p.fighter.is_alive:
             continue
-        p.tail.draw(surface, tinted(p.char_color, p))  # #265: caller owns the tint
+        render_tail(surface, p.tail, tinted(p.char_color, p))  # #330: adapter draws the tail
         # Body composite (rect + stripes + eyes + ears + whiskers + name).
         body = _cat_body_surface(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
         # Posture squash (#124 crouch / #173 prone): vertically scale the body
