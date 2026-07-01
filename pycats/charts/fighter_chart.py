@@ -9,7 +9,7 @@ Structure (Task 3 of PM Phase 0):
     │   ├── actionable  (compound, initial=idle)
     │   │   ├── grounded  (compound, initial=idle)
     │   │   │   ├── idle    (leaf)
-    │   │   │   ├── run     (leaf)
+    │   │   │   ├── walk     (leaf)
     │   │   │   └── shield  (leaf)
     │   │   └── airborne  (compound, initial=jump)
     │   │       ├── jump    (leaf)
@@ -28,7 +28,7 @@ Structure (Task 3 of PM Phase 0):
         ├── vulnerable   (leaf)
         └── intangible   (leaf)
 
-LEAF ids equal the flat labels (idle, run, jump, fall, shield, dodge, ko, hurt,
+LEAF ids equal the flat labels (idle, walk, jump, fall, shield, dodge, ko, hurt,
 stun) so in_state("idle") etc. keep working. The attacking sub-phase leaves
 (startup, active, recovery) do NOT match a flat label individually; instead
 StatechartEngine.state maps in_state("attacking") -> "attack", so the flat
@@ -44,8 +44,8 @@ Transition selection note (SCXML / statecharts-py): for each active atomic
 state the engine scans the leaf's transitions first (in document order), then
 climbs to ancestors only if none matched. So leaf transitions take priority
 over hoisted parent transitions. Because the legacy per-leaf transition
-ORDERING differs between leaves (e.g. idle/run check attack+dodge first, but
-fall checks idle/run/jump/ko before dodge), the tick transitions are kept on
+ORDERING differs between leaves (e.g. idle/walk check attack+dodge first, but
+fall checks idle/walk/jump/ko before dodge), the tick transitions are kept on
 their leaves verbatim to guarantee byte-identical priority/parity. Only the
 force_ko / force_idle transitions — which fire on distinct events and therefore
 never conflict with the per-leaf tick ordering — are hoisted to the `action`
@@ -70,14 +70,14 @@ def build_fighter_chart(p):
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
             _tick(lambda e, d: p.fighter.crouch_attempting and p.fighter.on_ground, "crouch"),
-            _tick(lambda e, d: p.fighter.vel.x != 0 and p.fighter.on_ground, "run"),
+            _tick(lambda e, d: p.fighter.vel.x != 0 and p.fighter.on_ground, "walk"),
             _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
             _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
             _tick(lambda e, d: p.fighter.shield_attempting, "shield"),
             _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
         ),
         state(
-            {"id": "run"},
+            {"id": "walk"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
             _tick(lambda e, d: p.fighter.crouch_attempting and p.fighter.on_ground, "crouch"),
@@ -124,7 +124,7 @@ def build_fighter_chart(p):
             {"id": "fall"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
             _tick(lambda e, d: p.fighter.on_ground and p.fighter.vel.x == 0, "idle"),
-            _tick(lambda e, d: p.fighter.on_ground and p.fighter.vel.x != 0, "run"),
+            _tick(lambda e, d: p.fighter.on_ground and p.fighter.vel.x != 0, "walk"),
             _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
             _tick(lambda e, d: not p.fighter.is_alive, "ko"),
             _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),

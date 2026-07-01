@@ -16,8 +16,8 @@
         "helpless",
         "idle",
         "jump",
-        "run",
-        "shield"
+        "shield",
+        "walk"
       ]
     },
     "P2": {
@@ -31,7 +31,7 @@
         "fall",
         "idle",
         "jump",
-        "run"
+        "walk"
       ]
     }
   },

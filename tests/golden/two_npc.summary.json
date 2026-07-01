@@ -15,7 +15,7 @@
         "fall",
         "idle",
         "jump",
-        "run"
+        "walk"
       ]
     },
     "P2": {
@@ -32,7 +32,7 @@
         "idle",
         "ko",
         "ledge_hang",
-        "run"
+        "walk"
       ]
     }
   },

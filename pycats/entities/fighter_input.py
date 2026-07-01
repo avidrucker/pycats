@@ -210,7 +210,7 @@ class FighterInput:
         # Don't enter shield state if we just initiated a dodge
         grounded_can_shield = (
             p.fighter.on_ground
-            and p.state in ("idle", "shield", "dodge", "run")
+            and p.state in ("idle", "shield", "dodge", "walk")
             and p.fighter.dodge_timer == 0
             and not dodge_initiated  # Don't shield if we just started dodging
         )
@@ -268,7 +268,7 @@ class FighterInput:
                     p.fighter.record_attack_made()  # Track attack statistics
                     # (#321/F3: done_attacking is derived (attack_timer == 0); starting
                     #  the clock above makes it False — no flag to set.)
-        #### TODO: implement grab from shield state or combo press of attack + shield from idle/run state
+        #### TODO: implement grab from shield state or combo press of attack + shield from idle/walk state
 
         # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs
         # attack_group.add(Attack(self, disappear_on_hit=True))

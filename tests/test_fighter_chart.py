@@ -26,7 +26,7 @@ def test_idle_to_run_on_velocity():
     p.fighter.vel.x = 5
     p.fighter.on_ground = True
     p.engine.tick(None)
-    assert p.state == "run"
+    assert p.state == "walk"
 
 
 def test_single_hop_per_tick():
@@ -57,7 +57,7 @@ def test_in_state_nested_and_container_ids():
         assert sess.in_state(sid), sid
     # Sibling containers that aren't on the active path are False.
     assert not sess.in_state("airborne")
-    assert not sess.in_state("run")
+    assert not sess.in_state("walk")
 
 
 def test_both_regions_active_simultaneously():
@@ -103,7 +103,7 @@ def test_reaches_expected_state_across_scenarios():
     # (ADR-0002, #178: the cross-engine legacy oracle is gone; statechart ==
     # frozen golden is now anchored in test_golden.py.)
     scenarios = [
-        (dict(vel=(5, 0), on_ground=True), "run"),
+        (dict(vel=(5, 0), on_ground=True), "walk"),
         (dict(vel=(0, -5), on_ground=False), "jump"),
         (dict(vel=(0, 5), on_ground=False), "fall"),
         (dict(shield_attempting=True, on_ground=True), "shield"),
@@ -133,7 +133,7 @@ def test_run_to_idle_and_ko():
     p = _mk_player()
     p.fighter.vel.x, p.fighter.on_ground = 5, True
     p.engine.tick(None)
-    assert p.state == "run"
+    assert p.state == "walk"
     p.fighter.vel.x = 0
     p.engine.tick(None)
     assert p.state == "idle"

@@ -16,8 +16,8 @@
         "helpless",
         "idle",
         "jump",
-        "run",
-        "shield"
+        "shield",
+        "walk"
       ]
     },
     "P2": {
@@ -35,7 +35,7 @@
         "idle",
         "ko",
         "ledge_hang",
-        "run"
+        "walk"
       ]
     }
   },

@@ -21,12 +21,12 @@ def _snap(players, atk=(), phase="in_play", winner=0):
 def test_summarize_counts_frames_and_states_and_max_percent():
     snaps = [
         _snap([_player("P1", "idle"), _player("P2", "idle")]),
-        _snap([_player("P1", "run"), _player("P2", "hurt", percent=10)]),
+        _snap([_player("P1", "walk"), _player("P2", "hurt", percent=10)]),
     ]
     s = summarize(snaps)
     assert s["frames"] == 2
     assert s["players"]["P2"]["states"] == ["hurt", "idle"]  # sorted, de-duped
-    assert s["players"]["P1"]["states"] == ["idle", "run"]
+    assert s["players"]["P1"]["states"] == ["idle", "walk"]
     assert s["players"]["P2"]["percent_max"] == 10
 
 

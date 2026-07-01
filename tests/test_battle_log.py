@@ -67,12 +67,12 @@ def test_attack_event_on_new_active_attack():
 
 
 def test_state_event_only_on_notable_transition():
-    # idle -> hurt is notable; idle -> run is not.
+    # idle -> hurt is notable; idle -> walk is not.
     notable = events_from_snaps([_snap([_part("P1", state="idle")]),
                                  _snap([_part("P1", state="hurt")])])
     assert notable == [BattleEvent(1, "P1", STATE, {"from": "idle", "to": "hurt"})]
     plain = events_from_snaps([_snap([_part("P1", state="idle")]),
-                              _snap([_part("P1", state="run")])])
+                              _snap([_part("P1", state="walk")])])
     assert plain == []
 
 
