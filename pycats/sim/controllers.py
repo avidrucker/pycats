@@ -11,6 +11,7 @@ import random
 from dataclasses import dataclass
 
 from ..core.input import InputFrame
+from ..combat.geometry import move_reach
 
 
 # ---------------------------------------------------------------------------
@@ -41,6 +42,10 @@ class LevelParams:
     # bot attacks while moving/airborne, and smash/grab don't exist in pycats yet —
     # they ride here as data for future gating.
     enabled_moves: frozenset = frozenset({"jab", "tilts", "aerials"})
+    # #335 (DEV-A of #285): derive the melee range from the reach of the move the bot
+    # actually commits (per-character/per-move) instead of the flat `attack_range=45`.
+    # On for the reactive levels (5/7/9), off for low/default → golden-safe.
+    reach_aware: bool = False
 
 
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
@@ -48,9 +53,9 @@ class LevelParams:
 LEVEL_PARAMS: dict[int, LevelParams] = {
     1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab"})),
     3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab", "tilts"})),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"})),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"})),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"})),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True),
 }
 
 
@@ -132,7 +137,7 @@ class AttackerController(BaseController):
                  reactive_shield=False, whiff_punish=False,
                  shield_threat_range=160, shield_threat_dy=80,
                  enabled_moves=frozenset({"jab", "tilts", "aerials"}),
-                 fireball_range=450):
+                 fireball_range=450, reach_aware=False):
         super().__init__(attacker_num, rng=rng)
         # #232/#238/#248: a difficulty `level` (1-9) overrides the knobs from the
         # #148 table; level=None keeps the explicit defaults (golden-safe).
@@ -146,6 +151,7 @@ class AttackerController(BaseController):
             reactive_shield = lp.reactive_shield
             whiff_punish = lp.whiff_punish
             enabled_moves = lp.enabled_moves
+            reach_aware = lp.reach_aware
         # #248: capability gate + ranged-special (fireball) poke distance. Default
         # excludes "specials" → the ranged-special branch never fires (golden-safe).
         self.enabled_moves = enabled_moves
@@ -178,6 +184,10 @@ class AttackerController(BaseController):
         self.attack_period = attack_period
         self.standoff = standoff          # desired horizontal gap (stand beside, not on top of)
         self.attack_range = attack_range
+        # #335 (DEV-A of #285): when on, the melee-range gates derive from the reach
+        # of the move the bot actually commits, per character, instead of this flat
+        # constant. Default off → `_melee_range` returns `attack_range` unchanged.
+        self.reach_aware = reach_aware
         self.safe_x = safe_x
         # Task 5 retune: drop_threshold — if attacker is grounded and target is
         # this many pixels *below* (positive dy), hold 'down' to drop through any
@@ -225,6 +235,33 @@ class AttackerController(BaseController):
             return True
         return False
 
+    def _committed_move_key(self) -> str:
+        """The ground move this bot actually throws (#335). Mirrors the #292 rule:
+        a leveled, tilt-enabled bot commits the forward-tilt; everything else jabs.
+        So the derived reach tracks the move that will actually land."""
+        if self.level is not None and "tilts" in self.enabled_moves:
+            return "ftilt"
+        return "jab"
+
+    def _melee_range(self, a) -> float:
+        """The center-to-center gap within which the bot will commit its attack.
+
+        #335 (DEV-A of #285): when `reach_aware`, derive it from the real reach of
+        the move the bot commits (`_committed_move_key`) on *this* character, so a
+        long-reach cat (Narz f-tilt 64) presses from farther than a short one and the
+        bot stops using one flat number for every fighter/move. Falls back to the
+        fixed `attack_range` when off, or when the character lacks that move (e.g. the
+        default cat) — keeping the level-less default byte-identical (golden-safe)."""
+        if not self.reach_aware:
+            return self.attack_range
+        # Tolerate a minimal combat stand-in with no `fighter_data` (the #283-style
+        # stub): fall back to the fixed range rather than reaching into absent data.
+        fd = getattr(a, "fighter_data", None)
+        if fd is None:
+            return self.attack_range
+        reach = move_reach(fd, self._committed_move_key(), a.rect.width)
+        return self.attack_range if reach is None else reach
+
     def _whiff_open(self, a, t) -> bool:
         """#274: is the opponent `t` in the RECOVERY phase of a move and within melee
         range of `a`? Recovery = move_frame past startup+active while the move is still
@@ -236,7 +273,7 @@ class AttackerController(BaseController):
             return False  # still startup/active (a threat, not an opening)
         adx = abs(t.rect.centerx - a.rect.centerx)
         dy = abs(t.rect.centery - a.rect.centery)
-        return adx <= self.attack_range and dy < 60
+        return adx <= self._melee_range(a) and dy < 60
 
     def decide(self, a, t, frame, attacks=None) -> set:
         keys = a.controls
@@ -332,7 +369,7 @@ class AttackerController(BaseController):
             # vertical tolerance is wide enough to keep engaging after knockback
             # nudges the target a platform up/down, avoiding a positional
             # deadlock under the post-startup hitbox timing.
-            in_range = (self.standoff - 18) <= adx <= self.attack_range and abs(dy) < 60
+            in_range = (self.standoff - 18) <= adx <= self._melee_range(a) and abs(dy) < 60
             # #232: reaction_delay — wait this many frames after entering range
             # before the first attack (a higher level reacts faster). With the
             # default reaction_delay=0 this is always satisfied → unchanged.

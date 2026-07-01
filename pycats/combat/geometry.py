@@ -116,3 +116,21 @@ def circles_overlap(ax: float, ay: float, ar: float,
         if circle_overlap(ax, ay, ar, bx, by, br):
             return True
     return False
+
+
+def move_reach(fighter_data, move_key: str, body_width: float):
+    """Center-relative forward reach of a fighter's move, or None if it lacks it.
+
+    The reach an AI controller cares about is measured from the body CENTRE (the
+    axis its `attack_range` compares against, `adx = |t.centerx - a.centerx|`).
+    A hitbox tip, facing right, sits at `origin_x + dx + r` (see resolve_circle);
+    the body centre is `origin_x + body_width/2`. So the forward reach past centre
+    is `max(dx + r) - body_width/2`. Pure; no pygame. Returns None when the
+    character does not define `move_key`, so callers can fall back (e.g. to the
+    fixed `attack_range`) rather than crash (#285/#335).
+    """
+    mv = fighter_data.moves.get(move_key)
+    if mv is None:
+        return None
+    tip = max(hb.circle.dx + hb.circle.r for hb in mv.hitboxes)
+    return tip - body_width / 2
