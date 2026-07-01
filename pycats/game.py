@@ -188,7 +188,9 @@ for font_name in [
         unicode_font_name = font_name
         break
 
-font = pygame.font.SysFont(unicode_font_name, GAME_HUD_FONT_SIZE)  # font size: config (#344)
+font = pygame.font.SysFont(
+    unicode_font_name, runtime_settings.scaled_font_size(GAME_HUD_FONT_SIZE)
+)  # size: config (#344) × live font_scale (#345)
 
 
 # ------------------------------------------------ helpers

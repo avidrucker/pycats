@@ -27,6 +27,8 @@ from .config import (
     MAIN_MENU_OPTION_SIZE,
     MAIN_MENU_PADDING,
     MAIN_MENU_OPTION_SPACING,
+    FONT_SCALE_ORDER,
+    FONT_SCALE_NAMES,
 )
 from . import runtime_settings
 from . import settings
@@ -46,7 +48,7 @@ class OptionsMenu:
 
         # Row keys in display order. "back" is the explicit exit row.
         self.rows = ["status_bars", "hitbox_overlay", "input_history", "controls",
-                     "window_scale", "fullscreen", "esc_quit", "back"]
+                     "font_scale", "window_scale", "fullscreen", "esc_quit", "back"]
         self.selected_option = 0
 
         self.input_cooldown = 0
@@ -110,6 +112,14 @@ class OptionsMenu:
             new = not runtime_settings.show_controls()
             runtime_settings.set("show_controls", new)
             settings.save({"show_controls": new})
+        elif row == "font_scale":
+            # Cycle Small -> Standard -> Large (#345); live + persisted.
+            cur = runtime_settings.get("font_scale")
+            order = FONT_SCALE_ORDER
+            idx = order.index(cur) if cur in order else order.index("standard")
+            new = order[(idx + 1) % len(order)]
+            runtime_settings.set("font_scale", new)
+            settings.save({"font_scale": new})
         elif row == "window_scale":
             hook = self.display_hooks.get("cycle_windowed_scale")
             if hook:
@@ -136,6 +146,9 @@ class OptionsMenu:
             return "Input History: " + ("ON" if runtime_settings.show_input_history() else "OFF")
         if row == "controls":
             return "Controls: " + ("ON" if runtime_settings.show_controls() else "OFF")
+        if row == "font_scale":
+            return "Font Size: " + FONT_SCALE_NAMES.get(
+                runtime_settings.get("font_scale"), "Standard")
         if row == "window_scale":
             getter = self.display_hooks.get("get_windowed_scale")
             return "Window Size: " + (f"{getter():g}x" if getter else "F10")

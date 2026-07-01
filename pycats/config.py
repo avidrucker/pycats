@@ -372,6 +372,15 @@ STATUS_BAR_LABEL_SIZE = 12     # above-head timer-bar word label (#334)
 GAME_HUD_FONT_SIZE = 24        # the shared in-game HUD font (game.py)
 TEXT_PROBE_SIZE = 16           # glyph-support probe / measurement fonts (text_utils)
 
+# Font-scale scalar (#345): a global multiplier over every font size above, chosen
+# from the Options menu. Applied at the text_utils font chokepoint (runtime_settings
+# .scaled_font_size); "standard" (1.0) is an exact identity, so the default render is
+# byte-identical. MIN_FONT_PX clamps a scaled-down size so it never rounds to 0.
+FONT_SCALES = {"small": 0.5, "standard": 1.0, "large": 2.0}
+FONT_SCALE_ORDER = ("small", "standard", "large")   # Options-menu cycle order
+FONT_SCALE_NAMES = {"small": "Small", "standard": "Standard", "large": "Large"}
+MIN_FONT_PX = 6
+
 # Cat character definitions.
 # Archived to pycats/characters/og_skins.py (#131, Part 1 of epic #127): these six
 # entries are colour-skins of one cat, not characters. CAT_CHARACTERS re-exports the

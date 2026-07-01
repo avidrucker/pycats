@@ -10,6 +10,7 @@ This module provides:
 import pygame
 
 from .config import TEXT_PROBE_SIZE  # font-probe size: single font-size source (#344)
+from . import runtime_settings  # live font_scale multiplier (#345)
 
 
 class TextRenderer:
@@ -228,6 +229,7 @@ class TextRenderer:
         hint; calling ``SysFont()`` every frame is a font-system (fontconfig)
         lookup that builds a new font each frame and hard-hangs on a real display
         (#375). Cache by ``(name, size)`` so it is built once and reused."""
+        size = runtime_settings.scaled_font_size(size)  # global font_scale (#345)
         key = ("sys", name, size)
         font = self.font_cache.get(key)
         if font is None:
@@ -236,7 +238,10 @@ class TextRenderer:
         return font
 
     def _get_font(self, font_name, size):
-        """Get a font from cache or create it."""
+        """Get a font from cache or create it. The authored size resolves through
+        the live global font_scale (#345) — the single UI-font chokepoint; standard
+        scale is the identity, so the default render is byte-identical."""
+        size = runtime_settings.scaled_font_size(size)
         cache_key = (font_name, size)
         if cache_key not in self.font_cache:
             try:

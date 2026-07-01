@@ -16,6 +16,7 @@ import json
 import os
 
 from .display import WINDOWED_SCALE_PRESETS
+from .config import FONT_SCALES
 
 SCHEMA_VERSION = 1
 _DEFAULTS = {
@@ -39,6 +40,9 @@ _DEFAULTS = {
     # Hold-ESC-to-quit feature (#113): when True, holding ESC for 2s quits the
     # current context (battle→menu, menu→game). Toggleable in Options sub-menu.
     "esc_hold_to_quit": True,
+    # Global font-scale (#345): "small"/"standard"/"large" — a UI-text size
+    # multiplier the Options menu cycles. "standard" (1.0) is byte-identical.
+    "font_scale": "standard",
 }
 
 
@@ -90,6 +94,9 @@ def _validated(raw):
     out["esc_hold_to_quit"] = bool(
         raw.get("esc_hold_to_quit", out["esc_hold_to_quit"])
     )
+    fs = raw.get("font_scale")
+    if fs in FONT_SCALES:  # snap an unknown preset back to the default
+        out["font_scale"] = fs
     return out
 
 

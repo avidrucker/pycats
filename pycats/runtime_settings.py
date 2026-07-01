@@ -9,6 +9,7 @@ Like settings.py this is **present-layer only**: the deterministic sim and the
 golden tests never read it. Keys mirror the persisted schema in settings.py.
 """
 from . import settings
+from . import config
 
 _state = settings.defaults()
 
@@ -50,3 +51,17 @@ def show_input_history():
 def show_controls():
     """Live toggle the in-battle fighter-controls display honours (#284)."""
     return bool(get("show_controls"))
+
+
+def font_scale():
+    """Live UI-text size multiplier (0.5 / 1.0 / 2.0) from the font_scale preset
+    (#345). Unknown presets fall back to 1.0 (standard)."""
+    return config.FONT_SCALES.get(get("font_scale"), 1.0)
+
+
+def scaled_font_size(base):
+    """An authored font size resolved through the live font_scale, clamped so a
+    scaled-down size never rounds below config.MIN_FONT_PX (never 0/unreadable).
+    At the "standard" scale this is the identity (round(base*1.0) == base), so the
+    default render is byte-identical (#345)."""
+    return max(config.MIN_FONT_PX, round(base * font_scale()))
