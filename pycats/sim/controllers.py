@@ -24,6 +24,16 @@ _DODGEABLE_STATES = frozenset({"idle", "jump", "fall", "shield", "crouch"})
 # genuine stuck standoff (hundreds of grounded-hold frames, #367) exceeds it.
 JUMP_UP_STUCK_MAX = 90
 
+# #368: narrow anti-stall backstop (defence-in-depth, per the #376 verdict). Fires ONLY
+# on a genuine no-progress lock — a leveled bot stuck within ANTI_STALL_MOVE_PX of a
+# reference with NO hit landing either way and a reachable target, sustained
+# ANTI_STALL_MAX frames — then injects one toward-target action. NOT a blanket idle
+# timer: a legitimately-spacing bot micro-adjusts or lands cadence hits well inside 1.5s,
+# so it never trips (that would kill Smash-faithful spacing/baiting, #343). Reuses #369's
+# 90-frame scale; state is deliberately NOT keyed on (a lock can oscillate idle↔fall).
+ANTI_STALL_MAX = 90
+ANTI_STALL_MOVE_PX = 8
+
 
 # ---------------------------------------------------------------------------
 # CPU difficulty levels (#232, #231 / #148 step 1) — DETERMINISTIC core only.
@@ -231,6 +241,11 @@ class AttackerController(BaseController):
         # jumps and brief blips are byte-identical (goldens/seeded battles safe). Only
         # a PROLONGED grounded-hold (the standoff limit cycle, #367) trips the pulse.
         self._jump_up_stuck = 0
+        # #368: no-progress detector state. `_noprog_ref` = (centre_x, centre_y, own %,
+        # target %) reference; `_noprog` = consecutive frames within ANTI_STALL_MOVE_PX
+        # of it with no percent change (a lock). Only the leveled path arms it.
+        self._noprog = 0
+        self._noprog_ref = None
 
     def _in_threat_band(self, a, ox, oy) -> bool:
         """Is point (ox, oy) within the shield threat band around the bot `a`?"""
@@ -484,6 +499,39 @@ class AttackerController(BaseController):
                             and keys["up"] not in held
                             and keys["down"] not in held):
                         held.add(toward)
+
+        # --- #368 anti-stall backstop (leveled-only, deterministic, no rng) --------
+        # Detect a no-progress lock and inject one toward-target action. A legit-
+        # spacing / engaging bot moves > ANTI_STALL_MOVE_PX or lands a hit (percent
+        # moves) within 1.5s, resetting the reference, so this never fires then.
+        if self.level is not None:
+            # getattr defaults keep minimal combat stubs (no .percent) working (#137/#291).
+            cur = (a.rect.centerx, a.rect.centery,
+                   getattr(a.fighter, "percent", 0), getattr(t.fighter, "percent", 0))
+            ref = self._noprog_ref
+            reachable = getattr(t.fighter, "is_alive", True)
+            progressed = (ref is None
+                          or abs(cur[0] - ref[0]) > ANTI_STALL_MOVE_PX
+                          or abs(cur[1] - ref[1]) > ANTI_STALL_MOVE_PX
+                          or cur[2] != ref[2] or cur[3] != ref[3])
+            if progressed or not reachable:
+                self._noprog = 0
+                self._noprog_ref = cur
+            else:
+                self._noprog += 1
+            if reachable and self._noprog >= ANTI_STALL_MAX:
+                # Policy locked -> force progress toward the target, overriding any
+                # conflicting horizontal decision above (no left+right cancel). The
+                # vertical is PULSED (alternate frames) for a fresh press edge (#369).
+                dx = t.rect.centerx - a.rect.centerx
+                dy = t.rect.centery - a.rect.centery
+                held.discard(keys["left"])
+                held.discard(keys["right"])
+                held.add(keys["right"] if dx > 0 else keys["left"])
+                if dy < -ANTI_STALL_MOVE_PX and self._noprog % 2 == 0:
+                    held.add(keys["up"])
+                elif dy > ANTI_STALL_MOVE_PX:
+                    held.add(keys["down"])
 
         return held
 
