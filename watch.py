@@ -15,12 +15,15 @@ import random
 from collections import Counter
 
 from pycats.config import FPS
-from pycats.sim.runner import run_battle
+from pycats.sim.runner import run_battle, KEYMAPS
 from pycats.sim.presenters import LivePresenter, VideoPresenter
 from pycats.sim.controllers import (
     AttackerController, IdlerController, FollowerController,
 )
 from pycats.sim.battle_log import events_from_snaps, render
+from pycats.sim.demo import (
+    DEMOS, demo_captions, demo_timeline, demo_frames, captions_from_srt,
+)
 from pycats.characters.roster import ARCHETYPE_ROSTER
 
 
@@ -110,22 +113,41 @@ def main(argv=None, presenter=None):
                     help="after the run, print the derived battle event-log "
                          "(jumps/attacks/hits/KOs/state changes) — a 'git-diff "
                          "for the fight' (#300). Pair with --seed for a repro.")
+    ap.add_argument("--demo", choices=sorted(DEMOS), default=None,
+                    help="play a registered scripted demo (its choreography + "
+                         "captions) instead of an AI/replay battle (#314/#308).")
+    ap.add_argument("--captions", default=None, metavar="FILE.srt",
+                    help="overlay captions from an SRT subtitle file onto the run "
+                         "(works with any mode, e.g. an NPC duel) (#314/#308).")
     args = ap.parse_args(argv)
 
-    if presenter is None:
-        presenter = (VideoPresenter(args.video) if args.video
-                     else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay))
     # Seed home is this CLI edge (#166): an explicit --seed is reproducible; absent
     # is clocktime (live variation). Injected into the controllers so the seed is
     # caller-controlled — controllers never import-and-call a module-level random.
     rng = random.Random(args.seed) if args.seed is not None else random.Random()
-    # `--vs <archetype>` drives BOTH players (controllers=): P1 is always an
-    # attacker, P2 is the chosen archetype. Otherwise the classic single-bot
-    # `--match` (P1 attacker vs idle P2) or the scripted replay.
+    # Captions overlay (#314): from an SRT file (any mode) and/or a demo's own captions.
+    captions = []
+    if args.captions:
+        with open(args.captions, encoding="utf-8") as fh:
+            captions = captions_from_srt(fh.read())
+    # Mode: --demo (scripted choreography) > leveled bots > --vs archetype > match/replay.
+    # `--vs <archetype>` drives BOTH players (controllers=): P1 is always an attacker,
+    # P2 is the chosen archetype. Otherwise the classic single-bot `--match` or replay.
     controller = None
     controllers = None
+    frame_inputs = None
+    p1_char, p2_char = args.p1_char, args.p2_char
     leveled = args.p1_level is not None or args.p2_level is not None
-    if leveled:
+    if args.demo:
+        demo = DEMOS[args.demo]
+        frame_inputs = demo_timeline(demo, KEYMAPS)
+        frames = args.frames if args.frames is not None else (demo_frames(demo) or len(frame_inputs))
+        stop_on_match_over = False
+        p1_char = p1_char or demo.p1_char
+        p2_char = p2_char or demo.p2_char
+        if not captions:                      # --captions overrides the demo's own
+            captions = demo_captions(demo)
+    elif leveled:
         # #244: per-player CPU-difficulty battle (overrides --vs). Runs like a --vs
         # demo (≤30s or KO, or --frames). Pair with --p1-char/--p2-char to pick who.
         controllers = cpu_controllers(args.p1_level, args.p2_level, rng)
@@ -139,12 +161,18 @@ def main(argv=None, presenter=None):
         if args.match:
             controller = AttackerController(attacker_num=1, rng=rng)
         frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
+
+    if presenter is None:
+        presenter = (VideoPresenter(args.video) if args.video
+                     else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay))
+    if captions:                              # attach; don't clobber an injected list (#306)
+        presenter.captions = list(captions)
     snaps = []
     try:
-        snaps = run_battle(frames=frames, presenter=presenter,
+        snaps = run_battle(frames=frames, frame_inputs=frame_inputs, presenter=presenter,
                            controller=controller, controllers=controllers,
                            stop_on_match_over=stop_on_match_over,
-                           p1_char=args.p1_char, p2_char=args.p2_char)
+                           p1_char=p1_char, p2_char=p2_char)
     except KeyboardInterrupt:
         presenter.close()
     if args.video:
