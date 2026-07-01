@@ -5,14 +5,18 @@ Two gates:
 1. `test_showcase_exercises_each_feature` — the original "feature-touched-SOMEWHERE"
    gate: each event/state occurs anywhere in the run. Kept as a weak safety net.
 2. The window-bound per-beat gate (#397, from the #395 audit) — each showcased feature
-   must occur inside ITS caption's frame window. 4 of 7 beats don't yet (they are
-   `xfail(strict=True)` until #398 re-choreographs them). See the section comment below.
+   must occur inside ITS caption's frame window. #398 re-choreographed the demo so all
+   seven beats pass. See the section comment below.
 
 `stun` (shield-break) is deliberately NOT required — a fixed input script can't reliably
 break a held shield (jabs whiff on the shield bubble, so it only drains passively, which
-doesn't trigger the hit-driven break). `battle_log.NOTABLE_STATES` also doesn't emit
-STATE events for `ledge_hang`, so those states are read from the raw snapshot state (part
-index 1), not the event-log.
+doesn't trigger the hit-driven break). `KO` is likewise NOT required (#398): the default
+cats are jab-only (no smash/launcher — see combat/charge.py), so jab knockback can't KO
+at reasonable percent; the *only* KO these fighters can produce is a walk-off
+self-destruct, which is the very anti-pattern #395 flagged. The demo therefore ends
+cleanly with P1 hanging on the ledge and does not stage a KO. `battle_log.NOTABLE_STATES`
+also doesn't emit STATE events for `ledge_hang`, so those states are read from the raw
+snapshot state (part index 1), not the event-log.
 """
 import os
 
@@ -44,9 +48,13 @@ def test_showcase_registered_with_captioned_segments():
 
 def test_showcase_exercises_each_feature():
     _d, snaps = _run_showcase()
-    # Event-log: attacks, jumps, a landed hit, and a KO all occur.
+    # Event-log: jumps and landed hits occur. (KO is not required — the jab-only cats can
+    # only KO via a walk-off self-destruct; see the module docstring. ATTACK is not
+    # required either: an ATTACK event only fires while a hitbox stays *active*, but the
+    # re-choreographed jabs all CONNECT, so `process_hits` consumes each hitbox before the
+    # snapshot — the connect surfaces as the stronger HIT event instead of ATTACK.)
     evtypes = {e.type for e in events_from_snaps(snaps)}
-    assert {"ATTACK", "JUMP", "HIT", "KO"} <= evtypes, sorted(evtypes)
+    assert {"JUMP", "HIT"} <= evtypes, sorted(evtypes)
     # Visited fighter states (snapshot part index 1): shield, dodge, ledge-grab.
     states = {part[1] for snap in snaps for part in snap[0]}
     assert {"shield", "dodge", "ledge_hang"} <= states, sorted(states)
@@ -63,12 +71,12 @@ def test_showcase_exercises_each_feature():
 # ever contacts the shield. The tests below instead bind each showcased feature to ITS
 # caption's frame window, so a beat that drifts out of its window FAILS.
 #
-# Per the #395 audit, 4 of 7 beats do not yet demonstrate their feature in-window —
-# those are `xfail(strict=True)`, so #398's re-choreography turns them green and a
-# leftover marker on a fixed beat fails (forcing its removal). Seg 2's real defect is
-# presentation-only (the #352 dwell freezes the wrong frame) and isn't visible in the
-# sim snapshots, so beat 2 asserts only that the airborne double-jump occurs in-window
-# (which it does today); the dwell-emphasis fix is tracked in #398.
+# The #395 audit found 4 of 7 beats (3/4/6/7) did not demonstrate their feature
+# in-window; #398 re-choreographed the demo so all seven now pass (the `xfail` markers
+# were removed as each beat was fixed). Seg 2's original defect was presentation-only
+# (the #352 dwell freezes the wrong frame) and isn't visible in the sim snapshots, so
+# beat 2 asserts only that the airborne double-jump occurs in-window; the dwell-emphasis
+# fix is tracked separately.
 #
 # PlayerSnap field indices (mirror `runner.PlayerSnap` field order).
 _STATE, _RECT_X, _ON_GROUND, _PERCENT, _SHIELD_HP, _JUMPS = 1, 2, 6, 7, 8, 11
@@ -115,8 +123,6 @@ def test_beat2_double_jump_is_airborne_in_window(showcase_run):
     assert airborne_jump, "an airborne (second) jump should occur inside the double-jump beat's window"
 
 
-@pytest.mark.xfail(strict=True, reason="#398: seg-3 'jab' is an airborne aerial that whiffs — "
-                                       "P2 is first damaged at f142 (seg 5), outside this window")
 def test_beat3_jab_connects_in_window(showcase_run):
     _d, snaps, caps = showcase_run
     fr = _frames(caps, snaps, 2)
@@ -125,8 +131,6 @@ def test_beat3_jab_connects_in_window(showcase_run):
     assert landed, "the jab beat should land a hit (P2 takes damage) inside its window"
 
 
-@pytest.mark.xfail(strict=True, reason="#398: P1 can't shield airborne & Birky never attacks — "
-                                       "shield only drains passively, no hit contacts it")
 def test_beat4_shield_blocks_a_hit_in_window(showcase_run):
     _d, snaps, caps = showcase_run
     # A blocked hit subtracts the full atk.damage (~3% for a jab) from shield_hp in one
@@ -148,8 +152,6 @@ def test_beat5_jab_combo_racks_damage_in_window(showcase_run):
     assert racked, "the jab-combo beat should rack damage on P2 inside its window"
 
 
-@pytest.mark.xfail(strict=True, reason="#398: the roll fires in open space — Birky is far right, "
-                                       "P1 rolls left away, so it never passes the opponent")
 def test_beat6_dodge_passes_the_opponent_in_window(showcase_run):
     _d, snaps, caps = showcase_run
     dodge_frames = [f for f in _frames(caps, snaps, 5) if _snap(snaps, f, 0)[_STATE] == "dodge"]
@@ -160,8 +162,6 @@ def test_beat6_dodge_passes_the_opponent_in_window(showcase_run):
     assert passed, "the roll should pass through/past the opponent (P2 x within P1's dodge sweep)"
 
 
-@pytest.mark.xfail(strict=True, reason="#398: only a 1-frame ledge_hang (f409) then a held-left "
-                                       "walk-off self-destruct — the ledge is never held")
 def test_beat7_ledge_hang_is_held_in_window(showcase_run):
     _d, snaps, caps = showcase_run
     held = sum(1 for f in _frames(caps, snaps, 6) if _snap(snaps, f, 0)[_STATE] == "ledge_hang")

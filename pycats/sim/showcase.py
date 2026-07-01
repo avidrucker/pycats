@@ -1,18 +1,31 @@
 # pycats/sim/showcase.py
-"""The curated Nalio-vs-Birky feature-showcase demo (#325, final child of #308).
+"""The curated Nalio-vs-Birky feature-showcase demo (#325, epic #308; re-choreographed #398).
 
-A deterministic scripted battle whose captioned `DemoSegment`s each demonstrate an
-implemented feature. Built on the `DEFAULT_SCRIPT`/`COMBAT_SCRIPT` choreography template
-(input_script.py): the opening movement + jabs + the knockback hit-chain come from that
-proven positioning (nalio's jab is a disjoint that only connects at its ~48px sweet-spot,
-which those scripts are tuned to), then two authored beats add the roll-dodge and the
-ledge-grab-into-blast-zone finish.
+A deterministic scripted battle whose seven captioned `DemoSegment`s each demonstrate an
+implemented feature **within that caption's own frame window** — so every beat a viewer
+reads is actually happening on screen. `tests/test_showcase_demo.py` binds each feature to
+its window and fails if a beat drifts out (the #395 audit found the earlier cut narrated
+beats the fighters never performed).
 
-Coverage is asserted by `tests/test_showcase_demo.py` via the derived event-log + the
-visited fighter-state set. **Shield-break stun is intentionally NOT covered here** — see
-that ticket's finding: a fixed script can't reliably break a held shield (the opponent's
-jab whiffs on the shield bubble, so it only drains passively, which does not trigger the
-hit-driven break).
+The beats, and what each depends on (the #398 re-choreography):
+  1. Approach — both walk onto the thick platform, ending ~48px apart with P1 (Nalio) on
+     the LEFT (facing Birky), so every offensive beat points the right way.
+  2. Jump & double-jump — a VERTICAL air-jump (no direction held) so P1 lands back in range.
+  3. Jab — a GROUNDED jab (fired after landing) that connects; Nalio's jab is a disjoint
+     that only lands at its ~48px sweet-spot, so P1 must be grounded and adjacent.
+  4. Shield — P1 shields while Birky jabs it, so the shield takes (and absorbs) hits
+     (a two-sided beat: Birky is given offence via p2 spans).
+  5. Jab combo — a short chain that racks damage + knockback but leaves Birky mid-stage.
+  6. Roll-dodge — P1 rolls RIGHT clean THROUGH Birky (a dodge is intangible and passes
+     through the body when it has room; the light combo above preserves that room).
+  7. Ledge grab — P1 walks to the right ledge and presses BACK as it slips off, so it
+     catches and HANGS (no walk-off).
+
+**Shield-break stun and KO are intentionally NOT staged.** A fixed script can't reliably
+break a held shield (the jab whiffs on the shield bubble, draining it only passively), and
+the default cats are jab-only — with no smash/launcher (combat/charge.py) their jab
+knockback can't KO at reasonable percent, so the only KO they could produce is a walk-off
+self-destruct (the #395 anti-pattern). The demo ends cleanly on the ledge hang instead.
 
 Play / record it:
     watch.py --demo showcase              # live
@@ -30,44 +43,51 @@ from .input_script import InputSpan
 _SEGMENTS = (
     DemoSegment(
         "Nalio (P1) vs Birky (P2) — approach",
-        anchor=TOP_CENTER, start=10, end=60,
-        spans=(InputSpan(10, 40, 1, "right"),   # P1 walks in
-               InputSpan(30, 60, 2, "left")),   # Birky closes the gap
+        anchor=TOP_CENTER, start=10, end=70,
+        spans=(InputSpan(10, 40, 1, "right"),   # P1 walks in off the left platform
+               InputSpan(30, 60, 2, "left")),   # Birky closes, staying to P1's right
     ),
     DemoSegment(
+        # Vertical jump + air jump — no direction held, so P1 lands back in jab range.
         "Jump & double-jump",
-        anchor=BOTTOM_CENTER,
-        spans=(InputSpan(50, 51, 1, "up"), InputSpan(60, 61, 1, "up")),
+        anchor=BOTTOM_CENTER, start=75, end=140,
+        spans=(InputSpan(80, 81, 1, "up"), InputSpan(92, 93, 1, "up")),
     ),
     DemoSegment(
-        "Jabs — a fast disjoint poke",
-        anchor=BOTTOM_CENTER,
-        spans=(InputSpan(90, 91, 1, "attack"), InputSpan(95, 96, 2, "attack")),
+        # P1 has landed and is still adjacent — a GROUNDED jab that connects.
+        "Jab — a fast disjoint poke",
+        anchor=BOTTOM_CENTER, start=145, end=185,
+        spans=(InputSpan(160, 161, 1, "attack"),),
     ),
     DemoSegment(
-        "Shield up",
-        anchor=BOTTOM_CENTER,
-        spans=(InputSpan(110, 140, 1, "shield"),),
+        # P1 raises the shield; Birky jabs it, so the shield takes (and absorbs) hits.
+        "Shield blocks Birky's jab",
+        anchor=BOTTOM_CENTER, start=185, end=245,
+        spans=(InputSpan(190, 235, 1, "shield"),
+               InputSpan(200, 201, 2, "attack"), InputSpan(214, 215, 2, "attack")),
     ),
     DemoSegment(
+        # A short jab combo — racks damage + knockback but leaves Birky mid-stage,
+        # with room for the roll-through beat to follow.
         "Jab combo racks up damage & knockback",
-        anchor=BOTTOM_CENTER, start=141, end=245,
-        spans=(InputSpan(141, 142, 1, "attack"), InputSpan(142, 165, 1, "right"),
-               InputSpan(165, 166, 1, "attack"), InputSpan(166, 185, 1, "right"),
-               InputSpan(185, 186, 1, "attack"), InputSpan(186, 210, 1, "right"),
-               InputSpan(210, 211, 1, "attack"), InputSpan(211, 240, 1, "right"),
-               InputSpan(240, 241, 1, "attack"),
-               InputSpan(150, 151, 2, "up")),     # Birky jumps mid-combo
+        anchor=BOTTOM_CENTER, start=250, end=340,
+        spans=(InputSpan(255, 256, 1, "attack"), InputSpan(256, 275, 1, "right"),
+               InputSpan(275, 276, 1, "attack"), InputSpan(276, 295, 1, "right"),
+               InputSpan(295, 296, 1, "attack")),
     ),
     DemoSegment(
-        "Shield roll-dodge (intangible)",
-        anchor=BOTTOM_CENTER,
-        spans=(InputSpan(250, 285, 1, "shield"), InputSpan(268, 269, 1, "left")),
+        # P1 rolls RIGHT clean through Birky (intangible — passes through the body).
+        "Shield roll-dodge — intangible, right through Birky",
+        anchor=BOTTOM_CENTER, start=345, end=400,
+        spans=(InputSpan(350, 385, 1, "shield"), InputSpan(365, 366, 1, "right")),
     ),
     DemoSegment(
-        "Edge-grab, then off the blast zone (KO)",
-        anchor=BOTTOM_CENTER, start=310, end=480,
-        spans=(InputSpan(310, 480, 1, "left"),),   # walk to the ledge, grab, then off
+        # Walk to the right ledge, then press BACK (left) as P1 slips off so it catches
+        # and HANGS on the edge (no walk-off self-destruct). The 1-frame input gap at the
+        # lip lets the grab register before the back-press holds the hang.
+        "Ledge grab — hang on the edge",
+        anchor=BOTTOM_CENTER, start=405, end=520,
+        spans=(InputSpan(405, 420, 1, "right"), InputSpan(422, 505, 1, "left")),
     ),
 )
 
