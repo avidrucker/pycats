@@ -47,6 +47,15 @@ red and I don't know why" is **never** a reason to regen — investigate first.
    were regenerated — a *semantic* regen, not a blind one.
 5. **Re-run the suite** after regen: `PYTHONPATH=. .venv/bin/python -m pytest -q`.
 
+## Tuning-value changes interlock with the provenance drift-guard (ADR-0003 / #233)
+
+A combat/physics tuning constant (`pycats/config.py`) is mirrored by a `Provenance`
+row in `pycats/combat/provenance.py`. If a golden regen is justified by **changing a
+tuning value**, the same diff must update that constant's `Provenance.value` (and its
+`status` / `issue`), or `tests/test_tuning_provenance.py` reds. So a value change
+forces both a reviewed golden regen (above) **and** a provenance update — never a
+silent regen.
+
 ## How to regen
 
 ```

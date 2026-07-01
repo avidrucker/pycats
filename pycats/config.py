@@ -19,6 +19,15 @@ Use: Shared constants across modules for tuning gameplay and UI.
 SCREEN_WIDTH, SCREEN_HEIGHT = 960, 540
 FPS = 60
 
+# ── Combat/physics tuning provenance ─────────────────────────────────────────
+# Structured, machine-enforced provenance (value / unit / source / status / issue
+# / derivation) for the combat-physics tuning SCALARS below lives in
+# `pycats/combat/provenance.py` (ADR-0003 / #233) — that registry is the source of
+# truth the drift-guard checks. Changing a value here must update its Provenance
+# row in the same diff or `tests/test_tuning_provenance.py` reds. The inline
+# comments below stay as human-readable narrative; deep sourcing write-ups live in
+# docs/research/*. (Render/UI/tail/platform/menu constants are out of scope.)
+
 GRAVITY = 0.5
 MAX_FALL_SPEED = 13
 MOVE_SPEED = 6

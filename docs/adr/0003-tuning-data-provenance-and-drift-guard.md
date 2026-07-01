@@ -1,6 +1,6 @@
 # ADR-0003 — Where tuning data + provenance live, and a drift-guard
 
-- **Status:** Proposed  *(module-vs-JSON pick flagged for human sign-off — see "Decision point" below; #226)*
+- **Status:** Accepted  *(2026-06-30 — option (d), the hybrid, ratified by human sign-off; see "Decision point"; #226 / #233)*
 - **Date:** 2026-06-29
 
 ## Context
@@ -122,11 +122,13 @@ the "not a silent regen" requirement. `REGEN_PROTOCOL.md` gains a one-line point
 
 ### Decision point (human sign-off)
 
-Per #226, the module-vs-JSON pick is flagged for human ratification. This ADR is filed
-**Proposed**, not self-Accepted: the constraints (C1 golden-stability + C2 no-dep) make (d)
-clearly dominant over (b)/(c), but acceptance of an architecture decision the ticket
-earmarked for sign-off is the human's call. **Accepting this ADR = approving (d)**; the
-follow-up refactor ticket is filed **blocked on that acceptance**.
+Per #226, the module-vs-JSON pick was flagged for human ratification. The constraints
+(C1 golden-stability + C2 no-dep) make (d) clearly dominant over (b)/(c), but acceptance
+of an architecture decision the ticket earmarked for sign-off was the human's call.
+
+**Ratified 2026-06-30 (human sign-off): option (d), the hybrid, is Accepted** (ruling on
+#226 / #233). The follow-up refactor **#233** — which was filed blocked on this acceptance —
+is now unblocked; this status flip lands as part of #233's implementation.
 
 ## Consequences
 
