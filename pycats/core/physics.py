@@ -4,8 +4,15 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Protocol
 import pygame as pg  # type: ignore
+
+
+class _DropThrough(Protocol):
+    """A drop-through platform token — the physics only reads its `.rect`. Typed
+    structurally so the core stays Sprite-free (ADR-0004 / #339): it needs a
+    thing-with-a-rect, not pygame's Sprite."""
+    rect: pg.Rect
 
 # Read tuning constants from config once
 from ..config import (
@@ -43,8 +50,8 @@ def solve_vertical(
     vel: pg.Vector2,
     platforms,
     press_down: bool,
-    drop_platform: Optional[pg.sprite.Sprite],
-) -> Tuple[pg.Vector2, bool, Optional[pg.sprite.Sprite]]:
+    drop_platform: Optional[_DropThrough],
+) -> Tuple[pg.Vector2, bool, Optional[_DropThrough]]:
     """
     Resolve vertical collisions against a list of platforms.
 
