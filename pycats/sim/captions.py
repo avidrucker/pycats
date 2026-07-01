@@ -28,13 +28,16 @@ CAPTION_MARGIN = 24  # px from the top/bottom edge for TOP/BOTTOM anchors
 @dataclass(frozen=True)
 class Caption:
     """One caption. `font` is a SysFont name OR a .ttf path OR None (the default font);
-    `frames=(start, end)` shows it only within that inclusive frame window (None = always)."""
+    `frames=(start, end)` shows it only within that inclusive frame window (None = always).
+    `dwell` (#352) = extra frames the presenter FREEZES on this caption's start frame so a
+    viewer can read it before the action resumes (0 = no hold; presentation-only)."""
     text: str
     anchor: str = BOTTOM_CENTER
     size: int = 36
     font: Optional[str] = None
     color: Tuple[int, int, int] = WHITE
     frames: Optional[Tuple[int, int]] = None
+    dwell: int = 0
 
 
 def is_active(caption: Caption, frame: int) -> bool:
@@ -43,6 +46,17 @@ def is_active(caption: Caption, frame: int) -> bool:
         return True
     start, end = caption.frames
     return start <= frame <= end
+
+
+def caption_hold_frames(captions: Sequence[Caption], frame: int) -> int:
+    """Extra frames the presenter should FREEZE on `frame` because a dwelling caption
+    starts here (#352). A caption with `dwell > 0` and a window starting at `frame`
+    holds the display (re-present the same frame) so the viewer reads it before the
+    action resumes. Returns the max dwell among coinciding starts (0 = no hold).
+    Untimed captions (no window) never hold — there is no single 'start' frame."""
+    holds = [c.dwell for c in captions
+             if c.dwell and c.frames is not None and c.frames[0] == frame]
+    return max(holds) if holds else 0
 
 
 def anchored_rect(anchor: str, surface_size, text_size, margin: int = CAPTION_MARGIN) -> pygame.Rect:

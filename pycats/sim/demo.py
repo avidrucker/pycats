@@ -36,6 +36,10 @@ class DemoSegment:
     anchor: str = BOTTOM_CENTER
     size: int = 32
     font: Optional[str] = None
+    # #352: frames to FREEZE the display on this caption's start so a viewer can read it
+    # (presenter-level hold, NOT idle timeline frames — the choreography is frame-tuned).
+    # None = inherit the demo's `default_dwell`.
+    dwell: Optional[int] = None
 
     def window(self) -> Optional[Tuple[int, int]]:
         if self.start is not None and self.end is not None:
@@ -53,12 +57,16 @@ class Demo:
     segments: Tuple[DemoSegment, ...]
     p1_char: Optional[str] = None
     p2_char: Optional[str] = None
+    default_dwell: int = 0  # #352: caption freeze applied to segments that don't set `dwell`
 
 
 def demo_captions(demo: Demo) -> List[Caption]:
-    """One timed Caption per segment (list order = draw order)."""
+    """One timed Caption per segment (list order = draw order). Each caption carries its
+    dwell (#352): the segment's `dwell` if set, else the demo's `default_dwell` — so the
+    presenter can freeze on the caption's start frame for readability."""
     return [Caption(seg.caption, anchor=seg.anchor, size=seg.size, font=seg.font,
-                    frames=seg.window())
+                    frames=seg.window(),
+                    dwell=(seg.dwell if seg.dwell is not None else demo.default_dwell))
             for seg in demo.segments]
 
 

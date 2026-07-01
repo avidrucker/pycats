@@ -20,6 +20,7 @@ Play / record it:
 """
 from __future__ import annotations
 
+from ..config import FPS
 from .captions import TOP_CENTER, BOTTOM_CENTER
 from .demo import Demo, DemoSegment
 from .input_script import InputSpan
@@ -70,4 +71,9 @@ _SEGMENTS = (
     ),
 )
 
-SHOWCASE = Demo(name="showcase", segments=_SEGMENTS, p1_char="nalio", p2_char="birky")
+# default_dwell (#352): freeze ~2.5s on each caption's start so the (fast) beats are
+# readable. 2.5s * 60fps = 150 frames. Presenter-level hold — the choreography is
+# unchanged (its jab/KO beats are frame-tuned; idle timeline frames would desync them).
+_DWELL = round(2.5 * FPS)  # 150
+SHOWCASE = Demo(name="showcase", segments=_SEGMENTS, p1_char="nalio", p2_char="birky",
+                default_dwell=_DWELL)

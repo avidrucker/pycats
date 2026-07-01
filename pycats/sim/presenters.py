@@ -7,7 +7,7 @@ import pygame
 from ..config import SCREEN_WIDTH, SCREEN_HEIGHT, BG_COLOR, FPS, WHITE, HUD_PADDING
 from ..render_battle import render_battle, render_attacks
 from .. import text_utils
-from .captions import draw_captions
+from .captions import draw_captions, caption_hold_frames
 
 
 # --- Playback-speed scalar (#351) --------------------------------------------
@@ -80,6 +80,14 @@ class LivePresenter:
         draw_captions(self.screen, self.captions, frame)
         pygame.display.flip()
         self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
+        # Caption dwell (#352): freeze on a caption's start frame — keep showing the
+        # same frame for `hold` more sim-frame-durations so it's readable, WITHOUT
+        # advancing the sim. Events still pump so the window stays responsive/quittable.
+        for _ in range(caption_hold_frames(self.captions, frame)):
+            for ev in pygame.event.get():
+                if ev.type == pygame.QUIT:
+                    raise KeyboardInterrupt
+            self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
 
     def close(self):
         pygame.display.quit()
@@ -110,7 +118,10 @@ class VideoPresenter:
         render_attacks(self._surface, attacks)
         draw_captions(self._surface, self.captions, frame)
         arr = pygame.surfarray.array3d(self._surface).transpose(1, 0, 2)
-        for _ in range(self._dup):
+        # `_dup` copies for slow-mo (#351); a caption's start frame also freezes for
+        # `hold` more sim-frame-durations (#352), each of which is `_dup` video frames.
+        reps = self._dup * (1 + caption_hold_frames(self.captions, frame))
+        for _ in range(reps):
             self._writer.append_data(arr)
 
     def close(self):
