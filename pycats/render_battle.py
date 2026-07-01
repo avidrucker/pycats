@@ -401,8 +401,11 @@ STATUS_BAR_STACK_STRIDE = STATUS_BAR_HEIGHT + STATUS_BAR_SECONDS_SIZE + 4
 _STAR_HALO = DIZZY_ORBIT_RADIUS * 0.4 + DIZZY_STAR_OUTER
 STATUS_BAR_GAP_ABOVE_STARS = 6
 
-# Per-timer bar colours (#334 spec). Shield/stun keep their existing colours
-# (SHIELD_COLOR / YELLOW) unlabelled; labelled bars add one hue each per slice.
+# Per-timer bar colours (#334 spec). These are the BAR hues only — distinct from
+# the shared SHIELD_COLOR (shield bubble) / YELLOW (dizzy stars + body flash),
+# which are left untouched so only the above-head bars recolour.
+SHIELD_BAR_COLOR = (70, 130, 255)       # blue — shield resource (#364)
+DIZZY_BAR_COLOR = (210, 90, 220)        # magenta — shield-break stun (#364)
 HANG_BAR_COLOR = (0, 210, 200)          # teal — ledge-hang timeout (#348)
 DOWN_BAR_COLOR = (255, 140, 45)         # orange — knockdown/getup window (#350)
 LOCKOUT_BAR_COLOR = (230, 70, 70)       # red — post-drop regrab lockout (#357)
@@ -484,12 +487,13 @@ def timer_bar_specs(p):
     if p.state == "shield":
         ratio = f.shield_hp / SHIELD_MAX_HP
         seconds = math.ceil(f.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))
-        bars.append((_SHIELD_RECENCY_KEY, TimerBar(ratio, f"{seconds}s", SHIELD_COLOR)))
+        bars.append((_SHIELD_RECENCY_KEY,
+                     TimerBar(ratio, f"{seconds}s", SHIELD_BAR_COLOR, label="SHIELD")))
     elif f.stun_timer > 0:
         ratio = f.stun_timer / SHIELD_BREAK_STUN_MAX
         seconds = math.ceil(f.stun_timer / FPS)
         bars.append((SHIELD_BREAK_STUN_MAX - f.stun_timer,
-                     TimerBar(ratio, f"{seconds}s", YELLOW)))
+                     TimerBar(ratio, f"{seconds}s", DIZZY_BAR_COLOR, label="DIZZY")))
     elif p.state == "ledge_hang" and f.ledge_hang_timer > 0:
         ratio = f.ledge_hang_timer / LEDGE_HANG_FRAMES
         seconds = math.ceil(f.ledge_hang_timer / FPS)
@@ -553,7 +557,7 @@ def draw_timer_bars(surface, p, specs):
         )
 
         # Optional label, right-aligned just left of the bar in the bar's colour.
-        # Omitted when None so the shield/stun bars stay byte-identical (#340).
+        # A None label draws nothing (the drawer stays label-agnostic).
         if spec.label:
             text_utils.render_text(
                 surface, spec.label,

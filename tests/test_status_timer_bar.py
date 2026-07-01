@@ -23,7 +23,7 @@ import pytest  # noqa: E402
 from pycats import render_battle as rb  # noqa: E402
 from pycats.config import (  # noqa: E402
     SHIELD_MAX_HP, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, FPS,
-    SHIELD_COLOR, YELLOW, EAR_HEIGHT, LEDGE_HANG_FRAMES, KNOCKDOWN_PRONE_FRAMES,
+    EAR_HEIGHT, LEDGE_HANG_FRAMES, KNOCKDOWN_PRONE_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES, DODGE_TIME, GETUP_ROLL_FRAMES,
 )
 from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402
@@ -57,8 +57,8 @@ def test_shield_ratio_and_seconds():
     assert bar.ratio == 25 / SHIELD_MAX_HP
     # seconds to depletion at the hold-drain rate.
     assert bar.readout == f"{math.ceil(25 / (SHIELD_DRAIN_PER_FRAME * FPS))}s"
-    assert bar.color == SHIELD_COLOR
-    assert bar.label is None   # unlabelled in slice 1 (byte-identity)
+    assert bar.color == rb.SHIELD_BAR_COLOR   # blue bar hue (#364), != shield bubble
+    assert bar.label == "SHIELD"
 
 
 def test_stun_ratio_and_seconds():
@@ -67,15 +67,16 @@ def test_stun_ratio_and_seconds():
     # Fill is remaining-frames over the CONSTANT max — no stored initial value.
     assert bar.ratio == 240 / SHIELD_BREAK_STUN_MAX
     assert bar.readout == f"{math.ceil(240 / FPS)}s"
-    assert bar.color == YELLOW
-    assert bar.label is None
+    assert bar.color == rb.DIZZY_BAR_COLOR    # magenta bar hue (#364), != dizzy stars
+    assert bar.label == "DIZZY"
 
 
 def test_shield_takes_precedence_over_stun():
     """A shielding fighter shows the shield bar even if stun_timer is nonzero."""
     p = _fake(state="shield", shield_hp=30, stun_timer=100)
     (bar,) = rb.timer_bar_specs(p)
-    assert bar.color == SHIELD_COLOR
+    assert bar.color == rb.SHIELD_BAR_COLOR
+    assert bar.label == "SHIELD"
 
 
 def test_toggle_off_suppresses_bar(monkeypatch):
@@ -177,13 +178,12 @@ def test_down_and_lockout_reverse_recency():
     assert labels == ["DOWN", "LOCKOUT"]
 
 
-def test_single_bar_cases_unchanged_by_recency_refactor():
-    # Byte-identity guard: the exclusive-state single-bar cases still return
-    # exactly one bar (the restructure must not change single-bar output).
+def test_single_bar_cases_each_return_one_labelled_bar():
+    # Each exclusive-state case returns exactly one bar with its spec label.
     (shield,) = rb.timer_bar_specs(_fake(state="shield", shield_hp=25))
-    assert shield.color == SHIELD_COLOR and shield.label is None
+    assert shield.color == rb.SHIELD_BAR_COLOR and shield.label == "SHIELD"
     (stun,) = rb.timer_bar_specs(_fake(stun_timer=240))
-    assert stun.color == YELLOW and stun.label is None
+    assert stun.color == rb.DIZZY_BAR_COLOR and stun.label == "DIZZY"
     (hang,) = rb.timer_bar_specs(_fake(state="ledge_hang", ledge_hang_timer=90))
     assert hang.label == "HANG"
     (down,) = rb.timer_bar_specs(_fake(state="prone", prone_timer=20))
@@ -195,7 +195,7 @@ def test_shield_sorts_last_under_a_lockout_overlay():
     # co-active LOCKOUT count-down stacks above it (nearer the head).
     p = _fake(state="shield", shield_hp=40, ledge_regrab_lockout_timer=10)
     labels = [b.label for b in rb.timer_bar_specs(p)]
-    assert labels == ["LOCKOUT", None]  # LOCKOUT nearest head, shield last
+    assert labels == ["LOCKOUT", "SHIELD"]  # LOCKOUT nearest head, shield last
 
 
 # --- INVULN bar (#358, slice 5 of #334; option 1 = per-source resolve) --------
