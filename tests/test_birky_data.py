@@ -206,3 +206,49 @@ def test_birky_dair_is_looping_spike_drill():
     assert dair.hitboxes
     assert all(h.damage == 3.0 and h.angle == 270 and h.base_knockback == 10.0
                for h in dair.hitboxes)
+
+
+# --- Zone-anchored hitbox dy on the 40x44 body (#309) -------------------------
+# Birky's move dy offsets were authored for the OLD 60-tall body, so on the 44 they
+# sat too low — worst case the d-tilt centre hung below the feet, into the floor.
+# After zone-anchoring, every hitbox centre resolves ON the body (dy <= height)
+# except the d-air, the one deliberate (bounded) below-feet spike.
+
+def test_no_birky_hitbox_center_below_feet_except_dair():
+    """#309: every Birky hitbox centre lands on the body (dy <= stand_size height),
+    except the bounded d-air spike. Able-to-fail: the pre-fix d-tilt dy was 48-50
+    on a 44 body (below the feet)."""
+    birky = load_fighter_data("birky")
+    height = birky.stand_size[1]
+    for key, move in birky.moves.items():
+        if key == "dair":
+            continue
+        for hb in move.hitboxes:
+            assert hb.circle.dy <= height, (
+                f"{key} hitbox dy={hb.circle.dy} is below the feet (height={height})")
+
+
+def test_birky_dair_is_a_bounded_below_feet_spike():
+    """#309: d-air is the one move whose centres sit just below the feet (a spike),
+    but bounded — not far below like the pre-fix 52-56 on a 44 body."""
+    birky = load_fighter_data("birky")
+    height = birky.stand_size[1]
+    dair = birky.moves["dair"]
+    assert all(hb.circle.dy > height for hb in dair.hitboxes)        # below the feet
+    assert all(hb.circle.dy <= height + 10 for hb in dair.hitboxes)  # but just below
+
+
+def test_birky_moves_land_in_intended_vertical_zones():
+    """#309: overhead moves (u-tilt/u-air) sit near the head; the down-tilt sits low
+    near the feet; the centre moves (jab/f-tilt/nair/fair/bair) sit mid-body. Able-to-
+    fail: the pre-fix f-tilt (dy 34) and b-air (dy 33) exceeded the centre band on 44."""
+    birky = load_fighter_data("birky")
+    height = birky.stand_size[1]
+    for key in ("utilt", "uair"):
+        for hb in birky.moves[key].hitboxes:
+            assert hb.circle.dy < height * 0.3, f"{key} not overhead"
+    for hb in birky.moves["attack"].hitboxes:      # attack slot == d-tilt
+        assert hb.circle.dy > height * 0.6, "d-tilt not low near the feet"
+    for key in ("jab", "ftilt", "nair", "fair", "bair"):
+        for hb in birky.moves[key].hitboxes:
+            assert height * 0.3 <= hb.circle.dy <= height * 0.7, f"{key} not centred"

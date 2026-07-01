@@ -125,7 +125,11 @@ def test_events_from_real_seeded_run():
     rng = random.Random(3)
     cs = (AttackerController(attacker_num=1, level=5, rng=rng),
           AttackerController(attacker_num=2, level=5, rng=rng))
-    snaps = run_battle(frames=600, controllers=cs, p1_char="nalio", p2_char="birky",
+    # 1200f window (#309): zone-anchoring Birky's hitboxes re-placed its move
+    # geometry, which perturbs this deterministic seed-3 trajectory and delays the
+    # first exchange past frame 600. The #292 signature (Birky takes HITs, ZERO KO
+    # conversion) is unchanged — it just needs a slightly longer window to observe.
+    snaps = run_battle(frames=1200, controllers=cs, p1_char="nalio", p2_char="birky",
                        stop_on_match_over=True)
     ev = events_from_snaps(snaps)
     kinds = {e.type for e in ev}
@@ -133,4 +137,4 @@ def test_events_from_real_seeded_run():
     hits_on_p2 = [e for e in ev if e.type == HIT and e.actor == "P2"]
     kos = [e for e in ev if e.type == KO]
     assert hits_on_p2, "birky should take hits in this matchup"
-    assert kos == [], "#292: no KO is converted in 600f — the log makes that assertable"
+    assert kos == [], "#292: no KO is converted in 1200f — the log makes that assertable"

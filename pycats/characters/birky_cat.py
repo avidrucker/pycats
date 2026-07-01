@@ -17,6 +17,7 @@ slow-walk / fast-air split can't be captured — `move_speed` leans to the
 slow-featherweight identity. The genuine `fast-fall` mechanic is a separate, shared
 engine ticket; selectability (making Birky human-pickable) is gated on #117/#127.
 """
+from pycats.characters.body_zones import zone_dy
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 
@@ -24,6 +25,13 @@ from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 # Shape stays a rect for now (circle is a possible later change). Width kept at 40 so the
 # authored horizontal move offsets hold; a fuller re-tune of move dx/dy is a follow-up.
 _STAND_SIZE = (40, 44)
+_H = _STAND_SIZE[1]  # 44 — Birky's body height, the anchor for every move's dy
+
+# Hitbox dy offsets are ZONE-ANCHORED to _H (#309): the move slices authored them for
+# the old 60-tall body, so on the 44 they sat too low (d-tilt hung below the feet, into
+# the floor). zone_dy(zone, _H, nudge) re-places each box body-relative — a "feet" poke
+# lands at the feet on any body. Every dy below is a ⚠ playtest starting point (ADR-0003);
+# faithful OG-derived positions are the #310 spike. dx/radii/frames/scalars are unchanged.
 _HURTBOX = Hurtbox(circles=(
     Circle(dx=20, dy=13, r=13),   # upper body
     Circle(dx=20, dy=30, r=13),   # lower body
@@ -43,9 +51,9 @@ _BIRKY_JAB = MoveData(
     active=2,
     recovery=12,  # 2 + 2 + 12 = 16 (PM3.6 total / IASA)
     hitboxes=(
-        Hitbox(circle=Circle(dx=38, dy=27, r=17), damage=3.0, angle=361,
+        Hitbox(circle=Circle(dx=38, dy=zone_dy("center", _H), r=17), damage=3.0, angle=361,
                base_knockback=8.0, knockback_growth=50.0),
-        Hitbox(circle=Circle(dx=30, dy=28, r=17), damage=3.0, angle=361,
+        Hitbox(circle=Circle(dx=30, dy=zone_dy("center", _H, 1), r=17), damage=3.0, angle=361,
                base_knockback=8.0, knockback_growth=50.0),
     ),
 )
@@ -63,11 +71,11 @@ _BIRKY_DTILT = MoveData(
     active=4,
     recovery=14,  # active f4-7; 3 + 4 + 14 = 21 (PM3.6 IASA)
     hitboxes=(
-        Hitbox(circle=Circle(dx=42, dy=48, r=25), damage=10.0, angle=20,
+        Hitbox(circle=Circle(dx=42, dy=zone_dy("feet", _H), r=25), damage=10.0, angle=20,
                base_knockback=40.0, knockback_growth=30.0),
-        Hitbox(circle=Circle(dx=34, dy=49, r=21), damage=10.0, angle=20,
+        Hitbox(circle=Circle(dx=34, dy=zone_dy("feet", _H, 1), r=21), damage=10.0, angle=20,
                base_knockback=40.0, knockback_growth=30.0),
-        Hitbox(circle=Circle(dx=28, dy=50, r=19), damage=10.0, angle=20,
+        Hitbox(circle=Circle(dx=28, dy=zone_dy("feet", _H, 2), r=19), damage=10.0, angle=20,
                base_knockback=40.0, knockback_growth=30.0),
     ),
 )
@@ -84,11 +92,11 @@ _BIRKY_FTILT = MoveData(
     active=4,
     recovery=20,  # active f5-8; 4 + 4 + 20 = 28 (PM3.6 IASA)
     hitboxes=(
-        Hitbox(circle=Circle(dx=38, dy=34, r=19), damage=11.0, angle=361,
+        Hitbox(circle=Circle(dx=38, dy=zone_dy("center", _H, 1), r=19), damage=11.0, angle=361,
                base_knockback=8.0, knockback_growth=100.0),
-        Hitbox(circle=Circle(dx=46, dy=33, r=21), damage=11.0, angle=361,
+        Hitbox(circle=Circle(dx=46, dy=zone_dy("center", _H), r=21), damage=11.0, angle=361,
                base_knockback=8.0, knockback_growth=100.0),
-        Hitbox(circle=Circle(dx=52, dy=33, r=20), damage=11.0, angle=361,
+        Hitbox(circle=Circle(dx=52, dy=zone_dy("center", _H), r=20), damage=11.0, angle=361,
                base_knockback=8.0, knockback_growth=100.0),
     ),
 )
@@ -112,10 +120,10 @@ _BIRKY_UTILT = MoveData(
     active=7,
     recovery=14,  # active f4-10; 3 + 7 + 14 = 24 (PM3.6 IASA)
     hitboxes=(
-        _utilt_box(dx=22, dy=8, r=25, damage=8.0, angle=92, kbg=118.0, start=4, end=5),
-        _utilt_box(dx=30, dy=10, r=30, damage=8.0, angle=92, kbg=114.0, start=4, end=5),
-        _utilt_box(dx=22, dy=8, r=25, damage=6.0, angle=88, kbg=118.0, start=6, end=10),
-        _utilt_box(dx=30, dy=10, r=30, damage=6.0, angle=88, kbg=114.0, start=6, end=10),
+        _utilt_box(dx=22, dy=zone_dy("head", _H), r=25, damage=8.0, angle=92, kbg=118.0, start=4, end=5),
+        _utilt_box(dx=30, dy=zone_dy("head", _H, 2), r=30, damage=8.0, angle=92, kbg=114.0, start=4, end=5),
+        _utilt_box(dx=22, dy=zone_dy("head", _H), r=25, damage=6.0, angle=88, kbg=118.0, start=6, end=10),
+        _utilt_box(dx=30, dy=zone_dy("head", _H, 2), r=30, damage=6.0, angle=88, kbg=114.0, start=6, end=10),
     ),
 )
 
@@ -131,10 +139,10 @@ _BIRKY_NAIR = MoveData(
     active=27,
     recovery=14,  # active f3-29; 2 + 27 + 14 = 43 (PM3.6 IASA)
     hitboxes=(
-        Hitbox(circle=Circle(dx=20, dy=30, r=22), damage=12.0, angle=55,
+        Hitbox(circle=Circle(dx=20, dy=zone_dy("center", _H), r=22), damage=12.0, angle=55,
                base_knockback=15.0, knockback_growth=100.0,
                active_start=3, active_end=6),
-        Hitbox(circle=Circle(dx=20, dy=30, r=14), damage=9.0, angle=55,
+        Hitbox(circle=Circle(dx=20, dy=zone_dy("center", _H), r=14), damage=9.0, angle=55,
                base_knockback=0.0, knockback_growth=100.0,
                active_start=7, active_end=29),
     ),
@@ -158,12 +166,12 @@ _BIRKY_FAIR = MoveData(
     active=18,
     recovery=16,  # active f7-24; 6 + 18 + 16 = 40 (PM3.6 IASA)
     hitboxes=(
-        _fair_box(dx=42, dy=30, r=26, damage=5.0, angle=60, kbg=100.0, start=7, end=8, wdsk=30),
-        _fair_box(dx=50, dy=28, r=25, damage=5.0, angle=75, kbg=100.0, start=7, end=8, wdsk=30),
-        _fair_box(dx=42, dy=30, r=24, damage=5.0, angle=60, kbg=100.0, start=14, end=15, wdsk=30),
-        _fair_box(dx=50, dy=28, r=25, damage=5.0, angle=75, kbg=100.0, start=14, end=15, wdsk=30),
-        _fair_box(dx=50, dy=29, r=30, damage=7.0, angle=361, kbg=160.0, start=22, end=24),
-        _fair_box(dx=42, dy=29, r=30, damage=7.0, angle=361, kbg=160.0, start=22, end=24),
+        _fair_box(dx=42, dy=zone_dy("center", _H), r=26, damage=5.0, angle=60, kbg=100.0, start=7, end=8, wdsk=30),
+        _fair_box(dx=50, dy=zone_dy("center", _H, -2), r=25, damage=5.0, angle=75, kbg=100.0, start=7, end=8, wdsk=30),
+        _fair_box(dx=42, dy=zone_dy("center", _H), r=24, damage=5.0, angle=60, kbg=100.0, start=14, end=15, wdsk=30),
+        _fair_box(dx=50, dy=zone_dy("center", _H, -2), r=25, damage=5.0, angle=75, kbg=100.0, start=14, end=15, wdsk=30),
+        _fair_box(dx=50, dy=zone_dy("center", _H, -1), r=30, damage=7.0, angle=361, kbg=160.0, start=22, end=24),
+        _fair_box(dx=42, dy=zone_dy("center", _H), r=30, damage=7.0, angle=361, kbg=160.0, start=22, end=24),
     ),
 )
 
@@ -185,10 +193,10 @@ _BIRKY_BAIR = MoveData(
     active=15,
     recovery=16,  # active f6-20; 5 + 15 + 16 = 36 (PM3.6 IASA)
     hitboxes=(
-        _bair_box(dx=-12, dy=30, r=30, damage=14.0, bkb=10.0, start=6, end=8),
-        _bair_box(dx=-2, dy=33, r=32, damage=14.0, bkb=10.0, start=6, end=8),
-        _bair_box(dx=-12, dy=30, r=27, damage=10.0, bkb=0.0, start=9, end=20),
-        _bair_box(dx=-2, dy=33, r=23, damage=10.0, bkb=0.0, start=9, end=20),
+        _bair_box(dx=-12, dy=zone_dy("center", _H), r=30, damage=14.0, bkb=10.0, start=6, end=8),
+        _bair_box(dx=-2, dy=zone_dy("center", _H, 3), r=32, damage=14.0, bkb=10.0, start=6, end=8),
+        _bair_box(dx=-12, dy=zone_dy("center", _H), r=27, damage=10.0, bkb=0.0, start=9, end=20),
+        _bair_box(dx=-2, dy=zone_dy("center", _H, 3), r=23, damage=10.0, bkb=0.0, start=9, end=20),
     ),
 )
 
@@ -203,11 +211,11 @@ _BIRKY_UAIR = MoveData(
     active=6,
     recovery=21,  # active f10-15; 9 + 6 + 21 = 36 (PM3.6 IASA)
     hitboxes=(
-        Hitbox(circle=Circle(dx=20, dy=6, r=23), damage=15.0, angle=75,
+        Hitbox(circle=Circle(dx=20, dy=zone_dy("head", _H), r=23), damage=15.0, angle=75,
                base_knockback=5.0, knockback_growth=115.0, active_start=10, active_end=12),
-        Hitbox(circle=Circle(dx=28, dy=6, r=23), damage=15.0, angle=75,
+        Hitbox(circle=Circle(dx=28, dy=zone_dy("head", _H), r=23), damage=15.0, angle=75,
                base_knockback=5.0, knockback_growth=115.0, active_start=10, active_end=12),
-        Hitbox(circle=Circle(dx=24, dy=6, r=23), damage=12.0, angle=30,
+        Hitbox(circle=Circle(dx=24, dy=zone_dy("head", _H), r=23), damage=12.0, angle=30,
                base_knockback=10.0, knockback_growth=90.0, active_start=13, active_end=15),
     ),
 )
@@ -225,9 +233,9 @@ _BIRKY_DAIR = MoveData(
     recovery=21,  # active f13-29; 12 + 17 + 21 = 50 (PM3.6 IASA)
     rehit_rate=3,  # 2-active / 1-gap loop → rehit every 3 frames (⚠ playtest start)
     hitboxes=(
-        Hitbox(circle=Circle(dx=18, dy=52, r=33), damage=3.0, angle=270,
+        Hitbox(circle=Circle(dx=18, dy=zone_dy("below_feet", _H), r=33), damage=3.0, angle=270,
                base_knockback=10.0, knockback_growth=100.0, active_start=13, active_end=29),
-        Hitbox(circle=Circle(dx=26, dy=56, r=25), damage=3.0, angle=270,
+        Hitbox(circle=Circle(dx=26, dy=zone_dy("below_feet", _H, 4), r=25), damage=3.0, angle=270,
                base_knockback=10.0, knockback_growth=100.0, active_start=13, active_end=29),
     ),
 )
