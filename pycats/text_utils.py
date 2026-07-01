@@ -392,7 +392,11 @@ class TextRenderer:
         `top` is the (<=0) topmost glyph offset relative to the baseline y, so the
         caller blits at (x, y + top) to reproduce the old per-glyph absolute
         positions exactly. Replicates the pre-#372 per-char font/baseline logic."""
-        key = (text, size, color)
+        # Key by the EFFECTIVE (scaled) size, not the authored one — else a live
+        # font_scale change (#345) is served the stale surface from the first scale
+        # to compose this string, so mixed text never resizes (#401). The passed-in
+        # fonts are already resolved through the scale, so the pixels match the key.
+        key = (text, runtime_settings.scaled_font_size(size), color)
         cached = self._mixed_surface_cache.get(key)
         if cached is not None:
             return cached
