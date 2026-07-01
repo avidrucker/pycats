@@ -18,6 +18,12 @@ from ..combat.geometry import move_reach
 # so the combo actually executes instead of being wasted mid-walk/attack.
 _DODGEABLE_STATES = frozenset({"idle", "jump", "fall", "shield", "crouch"})
 
+# #369: frames the jump-toward-elevated-target may stay HELD while grounded before
+# the pulse kicks in. Chosen well above any normal jump-up (which leaves the ground
+# in 1 frame) or brief blip, so ordinary + seeded battles are byte-identical; only a
+# genuine stuck standoff (hundreds of grounded-hold frames, #367) exceeds it.
+JUMP_UP_STUCK_MAX = 90
+
 
 # ---------------------------------------------------------------------------
 # CPU difficulty levels (#232, #231 / #148 step 1) — DETERMINISTIC core only.
@@ -219,6 +225,12 @@ class AttackerController(BaseController):
         # level.  Purely a policy parameter; 0 disables the behaviour.
         self.drop_threshold = drop_threshold
         self._last_attack = -10_000
+        # #369: consecutive frames the jump-toward-elevated-target gate has held while
+        # the bot is STILL grounded (the jump never took). A normal jump leaves the
+        # ground on frame 1 → gate's on_ground goes False → this resets, so normal
+        # jumps and brief blips are byte-identical (goldens/seeded battles safe). Only
+        # a PROLONGED grounded-hold (the standoff limit cycle, #367) trips the pulse.
+        self._jump_up_stuck = 0
 
     def _in_threat_band(self, a, ox, oy) -> bool:
         """Is point (ox, oy) within the shield threat band around the bot `a`?"""
@@ -405,8 +417,24 @@ class AttackerController(BaseController):
             # The horizontal window is wide enough to chase a target knocked onto
             # a neighbouring platform (Task 4's data-driven attack times can leave
             # the target on a different level after knockback).
+            # PULSED when stuck (#369, mechanism #367): the jump fires on a fresh
+            # press edge (`pressed = held - prev`), so HOLDING `up` every frame gives
+            # exactly ONE press -> one jump -> then the bot sits idle holding `up`
+            # forever (a stable standoff limit cycle). A NORMAL jump-up leaves the
+            # ground immediately, so `on_ground` goes False and `up` releases on its
+            # own — those are unchanged. Only when the bot held `up` last frame yet is
+            # STILL grounded (the jump didn't take) do we skip this frame, forcing a
+            # release so a fresh press re-fires the jump next frame and the bot climbs.
             if dy < -30 and a.fighter.on_ground and adx < 120:
-                held.add(keys["up"])
+                self._jump_up_stuck += 1
+                # Held for the first JUMP_UP_STUCK_MAX frames (byte-identical to the
+                # old always-hold, so normal jumps + short blips are unchanged); once
+                # the bot has been grounded-and-wanting-up that long it is genuinely
+                # stuck, so release on odd counts -> a fresh press re-fires the jump.
+                if self._jump_up_stuck <= JUMP_UP_STUCK_MAX or self._jump_up_stuck % 2 == 0:
+                    held.add(keys["up"])
+            else:
+                self._jump_up_stuck = 0
             # Drop through thin platforms when target is below.  Pressing 'down'
             # while grounded on a thin platform causes solve_vertical to let the
             # player fall through it, putting them on the same y-level as the
