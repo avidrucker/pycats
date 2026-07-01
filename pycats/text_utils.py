@@ -274,21 +274,12 @@ class TextRenderer:
 
         return self.font_cache[cache_key]
 
-    def render_text_mixed(self, text, size, color, surface, position, center=False):
-        """
-        Render text with mixed font support for Unicode characters.
+    def _select_mixed_fonts(self, size):
+        """(regular_font, unicode_font, supported_chars) for mixed rendering at `size`.
 
-        Args:
-            text: The text to render
-            size: Font size
-            color: Text color
-            surface: Surface to render onto
-            position: (x, y) position tuple
-            center: If True, center the text at the position
-
-        Returns:
-            pygame.Rect of the rendered text area
-        """
+        Shared by render_text_mixed and render_mixed_centered so the font-selection
+        logic lives in one place. ``unicode_font`` is None when no Unicode-capable
+        font is available (callers fall back to ASCII)."""
         regular_font = self._get_font(None, size)  # Default system font
 
         # Handle unicode font selection
@@ -317,6 +308,25 @@ class TextRenderer:
             unicode_font = None
             supported_chars = set()
 
+        return regular_font, unicode_font, supported_chars
+
+    def render_text_mixed(self, text, size, color, surface, position, center=False):
+        """
+        Render text with mixed font support for Unicode characters.
+
+        Args:
+            text: The text to render
+            size: Font size
+            color: Text color
+            surface: Surface to render onto
+            position: (x, y) position tuple
+            center: If True, center the text at the position
+
+        Returns:
+            pygame.Rect of the rendered text area
+        """
+        regular_font, unicode_font, supported_chars = self._select_mixed_fonts(size)
+
         if not unicode_font:
             # No unicode font available, use simple fallback
             return self.render_text_simple(
@@ -340,6 +350,40 @@ class TextRenderer:
         y = position[1]
         surface.blit(surf, (x, y + top))
         return pygame.Rect(x, y, total_width, max_height)
+
+    def render_mixed_centered(self, text, size, color, surface, center):
+        """Render mixed-font text centered on ``center`` — both axes.
+
+        Unlike ``render_text_mixed`` (which places the text *top* at the y and only
+        centers horizontally), this centers the composed text block vertically too,
+        so a menu-button label sits in the middle of its rect (#389). Returns the
+        blit ``pygame.Rect``."""
+        regular_font, unicode_font, supported_chars = self._select_mixed_fonts(size)
+
+        if not unicode_font:
+            # No unicode font: render the ASCII-substituted text and center it.
+            fallback = (
+                str(text)
+                .replace("►", ">").replace("◄", "<")
+                .replace("↑", "^").replace("↓", "v")
+                .replace("→", ">").replace("←", "<")
+                .replace("✓", "OK").replace("✗", "X")
+            )
+            surf = regular_font.render(fallback, True, color)
+            rect = surf.get_rect(center=center)
+            surface.blit(surf, rect)
+            return rect
+
+        composed = self._compose_mixed(
+            str(text), size, color, regular_font, unicode_font, supported_chars
+        )
+        if composed is None:  # empty text
+            return pygame.Rect(center[0], center[1], 0, 0)
+
+        surf = composed[0]
+        rect = surf.get_rect(center=center)
+        surface.blit(surf, rect)
+        return rect
 
     def _compose_mixed(self, text, size, color, regular_font, unicode_font, supported_chars):
         """Compose `text` to a single SRCALPHA surface (cached by text/size/colour).

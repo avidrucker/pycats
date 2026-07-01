@@ -50,5 +50,7 @@ def draw_menu_button(surface, label, center, size, focused, *, min_width=BUTTON_
         pygame.draw.rect(surface, BUTTON_BORDER_UNFOCUSED, rect, width=1, border_radius=BUTTON_RADIUS)
         color = MAIN_MENU_OPTION_COLOR
 
-    text_renderer.render_text_mixed(text, size, color, surface, center, center=True)
+    # Center the label in the rect on BOTH axes (#389) — render_text_mixed only
+    # centers horizontally (text top sits at y), which left labels low in the box.
+    text_renderer.render_mixed_centered(text, size, color, surface, center)
     return rect

@@ -35,6 +35,11 @@ from . import settings
 from .menu_widgets import draw_menu_button
 from .text_utils import text_renderer
 
+# The rows lay out as a 2-column grid (#389) — row-major, so index i is at
+# (row=i//NCOLS, col=i%NCOLS). Navigation is 2D: up/down move a full row within a
+# column, left/right move between columns.
+NCOLS = 2
+
 
 class OptionsMenu:
     """Consolidated Options screen: navigation, toggles, and rendering."""
@@ -60,38 +65,52 @@ class OptionsMenu:
         self.action_requested = None
 
     # ---- input ----
+    def _pressed(self, action, pressed_keys):
+        """True if either player's ``action`` key is down this frame. Uses .get so a
+        partial control dict (e.g. no left/right bound) is inert, not a KeyError."""
+        a = self.p1_controls.get(action)
+        b = self.p2_controls.get(action)
+        return (a is not None and a in pressed_keys) or (
+            b is not None and b in pressed_keys
+        )
+
     def update(self, pressed_keys):
         if self.input_cooldown > 0:
             self.input_cooldown -= 1
             return
 
         # B / special backs out from any row.
-        if (
-            self.p1_controls["special"] in pressed_keys
-            or self.p2_controls["special"] in pressed_keys
-        ):
+        if self._pressed("special", pressed_keys):
             self.action_requested = "back"
             self.input_cooldown = 20
             return
 
-        if (
-            self.p1_controls["up"] in pressed_keys
-            or self.p2_controls["up"] in pressed_keys
-        ):
-            self.selected_option = (self.selected_option - 1) % len(self.rows)
+        # 2D grid navigation (#389): up/down move a full row within a column,
+        # left/right move between columns. Both wrap.
+        n = len(self.rows)
+        nrows = (n + NCOLS - 1) // NCOLS
+        row, col = divmod(self.selected_option, NCOLS)
+        moved = False
+        if self._pressed("up", pressed_keys):
+            row = (row - 1) % nrows
+            moved = True
+        if self._pressed("down", pressed_keys):
+            row = (row + 1) % nrows
+            moved = True
+        if self._pressed("left", pressed_keys):
+            col = (col - 1) % NCOLS
+            moved = True
+        if self._pressed("right", pressed_keys):
+            col = (col + 1) % NCOLS
+            moved = True
+        if moved:
+            new = row * NCOLS + col
+            if new >= n:  # partial last row (odd count) — snap to the last cell
+                new = n - 1
+            self.selected_option = new
             self.input_cooldown = 10
 
-        if (
-            self.p1_controls["down"] in pressed_keys
-            or self.p2_controls["down"] in pressed_keys
-        ):
-            self.selected_option = (self.selected_option + 1) % len(self.rows)
-            self.input_cooldown = 10
-
-        if (
-            self.p1_controls["attack"] in pressed_keys
-            or self.p2_controls["attack"] in pressed_keys
-        ):
+        if self._pressed("attack", pressed_keys):
             self._activate(self.rows[self.selected_option])
             self.input_cooldown = 20
 
@@ -176,19 +195,24 @@ class OptionsMenu:
         )
 
         start_y = MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE + MAIN_MENU_PADDING
+        # 2-column grid (#389): row-major, one column centred either side of centre.
+        # Two columns halve the vertical extent so the rows no longer overflow into
+        # the instruction line below (#386 follow-up).
+        col_x = (SCREEN_WIDTH // 4, SCREEN_WIDTH * 3 // 4)
         for i, row in enumerate(self.rows):
-            option_y = start_y + i * MAIN_MENU_OPTION_SPACING
+            r, c = divmod(i, NCOLS)
+            center = (col_x[c], start_y + r * MAIN_MENU_OPTION_SPACING)
             # Each row is a menu-button widget (#359): a coloured rect that glows
             # when focused, with a redundant ► marker (focus not colour-only, #346).
             draw_menu_button(
                 surface,
                 self._row_label(row),
-                (SCREEN_WIDTH // 2, option_y),
+                center,
                 MAIN_MENU_OPTION_SIZE,
                 focused=(i == self.selected_option),
             )
 
-        instructions = ["Use W/S or ↑/↓ to navigate", "A to toggle, B to go back"]
+        instructions = ["Use WASD or arrows to navigate", "A to toggle, B to go back"]
         instruction_start_y = SCREEN_HEIGHT - len(instructions) * 30 - MAIN_MENU_PADDING
         for i, instruction in enumerate(instructions):
             text_renderer.render_text_mixed(

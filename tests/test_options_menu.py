@@ -11,9 +11,10 @@ from pycats.options_menu import OptionsMenu
 from pycats.screen_manager import ScreenStateManager
 from pycats.core.input import InputFrame
 
-P1 = {"up": pygame.K_w, "down": pygame.K_s, "attack": pygame.K_v, "special": pygame.K_c}
-P2 = {"up": pygame.K_UP, "down": pygame.K_DOWN, "attack": pygame.K_SLASH,
-      "special": pygame.K_PERIOD}
+P1 = {"up": pygame.K_w, "down": pygame.K_s, "left": pygame.K_a, "right": pygame.K_d,
+      "attack": pygame.K_v, "special": pygame.K_c}
+P2 = {"up": pygame.K_UP, "down": pygame.K_DOWN, "left": pygame.K_LEFT,
+      "right": pygame.K_RIGHT, "attack": pygame.K_SLASH, "special": pygame.K_PERIOD}
 
 ATTACK = pygame.K_v   # "A" / confirm-toggle
 BACK = pygame.K_c     # P1 "special" / B / back
@@ -96,14 +97,15 @@ def test_b_key_backs_out_from_any_row():
     assert m.action_requested == "back"
 
 
-def test_nav_wraps_over_rows():
+def test_nav_down_wraps_within_column():
+    # 2-column grid (#389): down steps a full row within the column and wraps.
+    # 8 rows / 2 cols => column 0 is 0 -> 2 -> 4 -> 6 -> wrap 0.
     m = _opts()
-    n = len(m.rows)
     assert m.selected_option == 0
-    for step in range(1, n + 1):
+    for expected in (2, 4, 6, 0):
         m.input_cooldown = 0
         m.update({pygame.K_s})  # down
-        assert m.selected_option == step % n
+        assert m.selected_option == expected
 
 
 def test_display_rows_inert_without_hooks():
