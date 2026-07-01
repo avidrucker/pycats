@@ -69,8 +69,8 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "SHIELD_DRAIN_PER_FRAME": Provenance(0.2, "hp/frame", "shield HP drain/regain per frame; pycats tuning, not sourced", "GUESS", 111),
 
     # ---- hitstun (#43/#44) ----
-    "HITSTUN_MULTIPLIER": Provenance(0.4, "factor", "hitstun_frames = floor(KB * this); approx Brawl/PM ~0.4, unverified", "GUESS", None),
-    "HITSTUN_FLOOR": Provenance(1, "frames", "minimum hitstun for any clean hit; tuning, not sourced", "GUESS", None),
+    "HITSTUN_MULTIPLIER": Provenance(0.4, "factor", "SmashWiki:Hitstun — 0.4 frames per unit of knockback (Melee; Brawl same; PM = Melee model)", "FOUND", 378),
+    "HITSTUN_FLOOR": Provenance(1, "frames", "pycats floor: >=1 frame for any clean hit; SmashWiki:Hitstun documents no canon minimum", "TUNED", 138),
 
     # ---- hitlag / freeze frames (#138) ----
     "HITLAG_DAMAGE_FACTOR": Provenance(0.3846154, "factor", "SmashWiki:Hitlag (Brawl onward) — d-term coefficient 1/2.6", "FOUND", 138),
@@ -93,10 +93,10 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
 
     # ---- auto landing-velocity knockdown (#145) ----
     "KNOCKDOWN_VY_THRESHOLD": Provenance(8.0, "px/frame", "downward impact speed that forces prone while in hitstun; not sourced", "GUESS", 145),
-    "KNOCKDOWN_PRONE_FRAMES": Provenance(30, "frames", "getup window the auto-knockdown sets (~0.5s @60 FPS); not sourced", "GUESS", 145),
+    "KNOCKDOWN_PRONE_FRAMES": Provenance(30, "frames", "pycats fixed getup window (~0.5s @60 FPS); Melee knockdown/getup is variable + per-character, no single canon value (SmashWiki:Floor_getup)", "TUNED", 145),
 
     # ---- getup-roll (#146) ----
-    "GETUP_ROLL_FRAMES": Provenance(16, "frames", "getup-roll duration = its intangibility window; playtest starting point", "GUESS", 146),
+    "GETUP_ROLL_FRAMES": Provenance(16, "frames", "pycats getup-roll duration = its intangibility window; DIVERGENCE from Melee (getup roll 35f, intangible frames 1-14..1-24 per Smashboards frame data) — pycats runs a shorter roll on its own scale", "DIVERGENCE", 146),
     "GETUP_ROLL_SPEED": Provenance(12.0, "px/frame", "initial getup-roll horizontal speed (decays under friction); playtest starting point", "GUESS", 146),
 
     # ---- clank / priority (#38 4c) ----
