@@ -159,7 +159,7 @@ def test_fireball_reaches_lower_platform_foe_in_real_battle():
             super().__init__(*a, **k)
             self.fired = False
 
-        def decide(self, a, t, frame, attacks=None):
+        def decide(self, a, t, frame, attacks=None, ledges=None):  # ledges: protocol (#404)
             if not self.fired and a.fighter.on_ground and self._f > 40:
                 self.fired = True
                 return {a.controls["special"]}

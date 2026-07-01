@@ -146,7 +146,7 @@ def _roll_emissions(evade_on, frames=400):
     from pycats.systems import combat
 
     class Swinger(BaseController):
-        def decide(self, a, t, frame, attacks=None):
+        def decide(self, a, t, frame, attacks=None, ledges=None):  # ledges: protocol (#404)
             return {a.controls["attack"]} if (self._f % 12 < 8) else set()
 
     plats = runner.build_stage()

@@ -34,6 +34,11 @@ JUMP_UP_STUCK_MAX = 90
 ANTI_STALL_MAX = 90
 ANTI_STALL_MOVE_PX = 8
 
+# #404 (edge-hog): how close to a ledge corner the bot must already be before it
+# commits to contesting it — bounds the walk so the bot never runs off-stage from
+# mid-stage into a self-destruct. ⚠ GUESS px (~2 char-lengths, like the #251 ranges).
+EDGE_HOG_RANGE = 120
+
 
 # ---------------------------------------------------------------------------
 # CPU difficulty levels (#232, #231 / #148 step 1) — DETERMINISTIC core only.
@@ -79,6 +84,11 @@ class LevelParams:
     # at/below Lv5 (keeps those tests byte-identical), graded up at 7/9. Default 0.0
     # → level-less/low never roll (golden-safe). ⚠ values are tuning starting points.
     evade_chance: float = 0.0
+    # #404 (slice 1 of #312): edge-hog — when the opponent recovers off-stage, go to
+    # the near ledge and hold/grab it so the one-occupant lockout (#14/#311) denies
+    # their regrab. Deliberately imperfect (the PM CPU weakness, #251 Q4). Off by
+    # default → level-less/low never edge-hog (golden-safe). ⚠ which levels = tuning.
+    edge_hog: bool = False
 
 
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
@@ -87,8 +97,8 @@ LEVEL_PARAMS: dict[int, LevelParams] = {
     1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab"})),
     3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab", "tilts"})),
     5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.15),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.30),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.15, edge_hog=True),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.30, edge_hog=True),
 }
 
 
@@ -135,7 +145,7 @@ class BaseController:
         # InputFrame but never reaches the (input-only) FSM backends.
         self.rng = rng if rng is not None else random.Random(DEFAULT_CONTROLLER_SEED)
 
-    def decide(self, a, t, frame, attacks=None) -> set:
+    def decide(self, a, t, frame, attacks=None, ledges=None) -> set:
         """Return the set of keys to HOLD this frame. `a` is this controller's
         player, `t` the other. `attacks` (#254) is the live `Attack` sprite group
         (opponent hitboxes + projectiles) for threat-aware policies; None when the
@@ -143,9 +153,9 @@ class BaseController:
         Override in an archetype."""
         raise NotImplementedError
 
-    def __call__(self, p1, p2, frame, attacks=None):
+    def __call__(self, p1, p2, frame, attacks=None, ledges=None):
         a, t = (p1, p2) if self.attacker_num == 1 else (p2, p1)
-        held = self.decide(a, t, frame, attacks)
+        held = self.decide(a, t, frame, attacks, ledges)
         pressed = held - self._prev
         released = self._prev - held
         self._prev = held
@@ -171,7 +181,7 @@ class AttackerController(BaseController):
                  shield_threat_range=160, shield_threat_dy=80,
                  enabled_moves=frozenset({"jab", "tilts", "aerials"}),
                  fireball_range=450, reach_aware=False, reactive_spacing=False,
-                 evade_chance=0.0):
+                 evade_chance=0.0, edge_hog=False):
         super().__init__(attacker_num, rng=rng)
         # #232/#238/#248: a difficulty `level` (1-9) overrides the knobs from the
         # #148 table; level=None keeps the explicit defaults (golden-safe).
@@ -188,6 +198,7 @@ class AttackerController(BaseController):
             reach_aware = lp.reach_aware
             reactive_spacing = lp.reactive_spacing
             evade_chance = lp.evade_chance
+            edge_hog = lp.edge_hog
         # #248: capability gate + ranged-special (fireball) poke distance. Default
         # excludes "specials" → the ranged-special branch never fires (golden-safe).
         self.enabled_moves = enabled_moves
@@ -226,6 +237,7 @@ class AttackerController(BaseController):
         self.reach_aware = reach_aware
         # #277 (model A): suppress the standoff back-off when the opponent is vulnerable.
         self.reactive_spacing = reactive_spacing
+        self.edge_hog = edge_hog  # #404: contest the ledge vs a recovering opponent
         # #338: seeded reactive roll-away (evade). Default 0.0 → never rolls (golden-safe).
         self.evade_chance = evade_chance
         self.safe_x = safe_x
@@ -326,7 +338,29 @@ class AttackerController(BaseController):
         dy = abs(t.rect.centery - a.rect.centery)
         return adx <= self._melee_range(a) and dy < 60
 
-    def decide(self, a, t, frame, attacks=None) -> set:
+    @staticmethod
+    def _off_stage_side(t, ledge) -> bool:
+        """#404: is `t` recovering off-stage past `ledge` — airborne AND horizontally
+        beyond the ledge corner (`ax`) toward the blast zone on that ledge's side?"""
+        if getattr(t.fighter, "on_ground", True) or not t.fighter.is_alive:
+            return False
+        ox = t.rect.centerx
+        return ox < ledge.ax if ledge.side == "left" else ox > ledge.ax
+
+    def _edge_hog_target(self, a, t, ledges):
+        """#404: the ledge to contest to deny a recovering opponent, or None. The
+        opponent must be recovering off-stage past a ledge the bot doesn't already
+        hold. Pure (positions + occupancy); ledges falsy → None (golden-safe)."""
+        if not ledges:
+            return None
+        for ledge in ledges:
+            if ledge.occupied_by is a:
+                continue
+            if self._off_stage_side(t, ledge):
+                return ledge
+        return None
+
+    def decide(self, a, t, frame, attacks=None, ledges=None) -> set:
         keys = a.controls
         held = set()
 
@@ -334,8 +368,13 @@ class AttackerController(BaseController):
         # neutral getup, #14) — otherwise it hangs to a timeout/drop KO. Skilled bots
         # (level >= 5) recover; low levels and the default (level=None) fall through
         # unchanged, so the baseline / golden-safe controller is untouched.
-        if (getattr(a.fighter, "grabbed_ledge", None) is not None
-                and self.level is not None and self.level >= 5):
+        grabbed = getattr(a.fighter, "grabbed_ledge", None)
+        if grabbed is not None and self.level is not None and self.level >= 5:
+            # #404 edge-hog: while the opponent is still recovering off-stage on THIS
+            # ledge's side, HOLD the hang (deny the regrab via the one-occupant
+            # lockout, #14/#311) instead of getting up. Off by default → golden-safe.
+            if self.edge_hog and self._off_stage_side(t, grabbed):
+                return set()
             return {keys["up"]}
 
         if t.fighter.is_alive:
@@ -343,6 +382,15 @@ class AttackerController(BaseController):
             dy = t.rect.centery - a.rect.centery
             adx = abs(dx)
             cx = a.rect.centerx
+            # #404 edge-hog: the opponent is recovering off-stage — go to the near
+            # ledge to contest/grab it (deny), but only when grounded and already near
+            # the edge (never run off-stage from mid-stage into a self-destruct).
+            # Deliberately imperfect (the PM CPU weakness, #251 Q4). Off by default /
+            # ledges=None → never evaluated (golden-safe; deterministic, no rng).
+            if self.edge_hog and a.fighter.on_ground:
+                hog = self._edge_hog_target(a, t, ledges)
+                if hog is not None and abs(cx - hog.ax) <= EDGE_HOG_RANGE:
+                    return {keys["left"] if hog.ax < cx else keys["right"]}
             # #248 (thread 3): ranged fireball poke (B), for a specials-enabled level.
             # Checked BEFORE the shield roll so a specials bot zones/pokes rather than
             # shielding it away; it still falls through to movement on non-poke frames,
@@ -565,7 +613,7 @@ class IdlerController(BaseController):
         self.shield_hold = shield_hold
         self.shield_chance = shield_chance
 
-    def decide(self, a, t, frame, attacks=None) -> set:
+    def decide(self, a, t, frame, attacks=None, ledges=None) -> set:
         # #166 first consumer: an rng-jittered shield. A real PRNG roll per frame,
         # so two seeds diverge while a fixed seed repeats — the end-to-end proof
         # that the injected RNG reaches a chosen InputFrame (and nothing else).
@@ -590,7 +638,7 @@ class FollowerController(BaseController):
         self.standoff = standoff
         self.safe_x = safe_x
 
-    def decide(self, a, t, frame, attacks=None) -> set:
+    def decide(self, a, t, frame, attacks=None, ledges=None) -> set:
         held = set()
         if not t.fighter.is_alive:
             return held

@@ -145,7 +145,7 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
                 for c in controllers
             )
         elif controller is not None:
-            fi = controller(p1, p2, f, attacks)
+            fi = controller(p1, p2, f, attacks, ledges)  # ledges: AI edge-hog (#404)
         else:
             fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
         for p in players:
