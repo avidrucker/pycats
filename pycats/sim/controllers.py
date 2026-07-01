@@ -13,6 +13,11 @@ from dataclasses import dataclass
 from ..core.input import InputFrame
 from ..combat.geometry import move_reach
 
+# #338: states a fighter can start a ground roll/dodge from — mirrors
+# fighter_input.can_dodge_state. The evade only emits a roll when the bot is in one,
+# so the combo actually executes instead of being wasted mid-walk/attack.
+_DODGEABLE_STATES = frozenset({"idle", "jump", "fall", "shield", "crouch"})
+
 
 # ---------------------------------------------------------------------------
 # CPU difficulty levels (#232, #231 / #148 step 1) — DETERMINISTIC core only.
@@ -52,6 +57,12 @@ class LevelParams:
     # the reactive levels (5/7/9), off for low/default → golden-safe. NOT footsies:
     # `standoff` is never widened (Smash CPUs approach committally, #343).
     reactive_spacing: bool = False
+    # #338 (re-scoped per #343): reactive ROLL-AWAY — on a detected threat, roll away
+    # (a `shield`+away combo) instead of shielding, as a seeded alternative. Rolled
+    # BEFORE the shield and mutually exclusive with it. A higher-skill option: off
+    # at/below Lv5 (keeps those tests byte-identical), graded up at 7/9. Default 0.0
+    # → level-less/low never roll (golden-safe). ⚠ values are tuning starting points.
+    evade_chance: float = 0.0
 
 
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
@@ -60,8 +71,8 @@ LEVEL_PARAMS: dict[int, LevelParams] = {
     1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab"})),
     3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab", "tilts"})),
     5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.15),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.30),
 }
 
 
@@ -143,7 +154,8 @@ class AttackerController(BaseController):
                  reactive_shield=False, whiff_punish=False,
                  shield_threat_range=160, shield_threat_dy=80,
                  enabled_moves=frozenset({"jab", "tilts", "aerials"}),
-                 fireball_range=450, reach_aware=False, reactive_spacing=False):
+                 fireball_range=450, reach_aware=False, reactive_spacing=False,
+                 evade_chance=0.0):
         super().__init__(attacker_num, rng=rng)
         # #232/#238/#248: a difficulty `level` (1-9) overrides the knobs from the
         # #148 table; level=None keeps the explicit defaults (golden-safe).
@@ -159,6 +171,7 @@ class AttackerController(BaseController):
             enabled_moves = lp.enabled_moves
             reach_aware = lp.reach_aware
             reactive_spacing = lp.reactive_spacing
+            evade_chance = lp.evade_chance
         # #248: capability gate + ranged-special (fireball) poke distance. Default
         # excludes "specials" → the ranged-special branch never fires (golden-safe).
         self.enabled_moves = enabled_moves
@@ -197,6 +210,8 @@ class AttackerController(BaseController):
         self.reach_aware = reach_aware
         # #277 (model A): suppress the standoff back-off when the opponent is vulnerable.
         self.reactive_spacing = reactive_spacing
+        # #338: seeded reactive roll-away (evade). Default 0.0 → never rolls (golden-safe).
+        self.evade_chance = evade_chance
         self.safe_x = safe_x
         # Task 5 retune: drop_threshold — if attacker is grounded and target is
         # this many pixels *below* (positive dy), hold 'down' to drop through any
@@ -324,9 +339,25 @@ class AttackerController(BaseController):
                     if self._threat_since is None:
                         self._threat_since = self._f
                     reacted = (self._f - self._threat_since) >= self.reaction_delay
-                    if (reacted and self.shield_chance > 0.0
-                            and self.rng.random() < self.shield_chance):
-                        return {keys["shield"]}
+                    if reacted:
+                        # #338: reactive ROLL-AWAY — rolled BEFORE the shield and
+                        # mutually exclusive with it. A ground roll is a `shield`+away
+                        # combo (fighter_input Priority-1/3 → _start_dodge(±1, 0)); away
+                        # is the key pointing away from the opponent. Only emitted when
+                        # the bot is in a DODGE-ABLE state (matches fighter_input's
+                        # `can_dodge_state`), so the roll actually executes rather than
+                        # being a wasted input mid-walk/attack — the reactive shield
+                        # naturally enters `shield` state on a threat, then this rolls.
+                        # evade_chance 0.0 short-circuits the rng, so a non-evading
+                        # level's shield stream is byte-identical (golden-safe).
+                        dodge_able = getattr(a, "state", None) in _DODGEABLE_STATES
+                        if (dodge_able and self.evade_chance > 0.0
+                                and self.rng.random() < self.evade_chance):
+                            away = keys["left"] if dx > 0 else keys["right"]
+                            return {keys["shield"], away}
+                        if (self.shield_chance > 0.0
+                                and self.rng.random() < self.shield_chance):
+                            return {keys["shield"]}
                 else:
                     self._threat_since = None
             # #238: low-level stochastic shield (seeded, #166) — "shields at random
