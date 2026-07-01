@@ -125,7 +125,7 @@ class MoveData:
     # MOVING projectile (an Attack with velocity = facing * projectile_speed) that
     # lives projectile_lifetime frames, detached from the owner. None = a normal
     # static-hitbox move. projectile_speed is a GUESS in px/frame (derive via
-    # rukaidata units/frame × PX_PER_UNIT≈5.4 / playtest — tracked like #192).
+    # rukaidata units/frame × PX_PER_UNIT / playtest — tracked like #192).
     projectile_speed: int | None = None
     projectile_lifetime: int | None = None
 

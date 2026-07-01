@@ -5,7 +5,7 @@ from the #229 scoping spike (PM Kirby, proportional-to-Mario; pin/playtest later
 
     weight 70 · gravity 0.42 · max_fall_speed 12 · move_speed 5 · max_jumps 6 · jump_vel -11
 
-Per #120, these scalars are entered RAW (the ×5.4 unit scale is for *spatial* values,
+Per #120, these scalars are entered RAW (the ×PX_PER_UNIT unit scale is for *spatial* values,
 not needed this slice).
 
 Birky owns its full normals + aerials (#240-#260), a Kirby-proportioned `stand_size`
@@ -40,7 +40,7 @@ _HURTBOX = Hurtbox(circles=(
 # --- Jab (slice 2, #240): PM3.6 Kirby jab 1 (Attack11) ------------------------
 # rukaidata PM3.6 Kirby Attack11: 16 frames total (IASA 16), hitbox active ~frame 3,
 # damage 3.0, angle 361 (Sakurai sentinel), BKB 8, KBG 50 (normal knockback, not
-# WDSK). #120 units: frames/%/angle/BKB/KBG RAW; radius 3.13u × 5.4 ≈ 17 px. Active
+# WDSK). #120 units: frames/%/angle/BKB/KBG RAW; radius 3.13u × PX_PER_UNIT ≈ 17 px. Active
 # widened to 2f (rukaidata is 1f on f3) for pycats hit detection — playtest. dx/dy
 # approximated by the short-reach convention (featherweight: closer than the default
 # attack's dx=46), per the nalio_cat.py precedent (bone-relative offsets not mapped).
@@ -61,7 +61,7 @@ _BIRKY_JAB = MoveData(
 # --- Down-tilt, mapped to the "attack" slot (slice 2, #245): PM3.6 Kirby AttackLw3 -
 # rukaidata PM3.6 Kirby AttackLw3: 30f total, IASA 21, active 4-7; four hitboxes
 # (skip the r=0 one), all damage 10, angle 20, BKB 40, KBG 30. #120 units: scalars
-# RAW; radii round(size×5.4) for 3.91/4.69/3.55u ≈ 21/25/19. A low poke → high dy
+# RAW; radii round(size×PX_PER_UNIT) for 3.91/4.69/3.55u ≈ 21/25/19. A low poke → high dy
 # (near the feet); dx short (featherweight). dx/dy approximated by convention
 # (bone-relative offsets not mapped), flagged for playtest — per nalio_cat.py.
 _BIRKY_DTILT = MoveData(
@@ -83,7 +83,7 @@ _BIRKY_DTILT = MoveData(
 # --- Forward-tilt (slice 2, #247): PM3.6 Kirby AttackS3S -----------------------
 # rukaidata PM3.6 Kirby AttackS3S: 33f total, IASA 28, active 5-8; three hitboxes,
 # all damage 11, angle 361 (Sakurai), BKB 8, KBG 100 (no WDSK). #120 units: scalars
-# RAW; radii round(size×5.4) for 3.52/3.91/3.75u ≈ 19/21/20. A forward poke → dx
+# RAW; radii round(size×PX_PER_UNIT) for 3.52/3.91/3.75u ≈ 19/21/20. A forward poke → dx
 # increasing (offsets 0/3.95/7.7u), mid-height dy. Approximated/playtest per precedent.
 _BIRKY_FTILT = MoveData(
     name="ftilt",
@@ -105,8 +105,8 @@ _BIRKY_FTILT = MoveData(
 # rukaidata PM3.6 Kirby AttackHi3: 24f total, IASA 24, active 4-10. Two windows
 # (per-hitbox active_start/active_end, like nalio_cat.py u-air): early f4-5 (dmg 8,
 # angle 92), late f6-10 (dmg 6, angle 88); both BKB 40, KBG 118/114; sizes 4.69/5.47u
-# → radii ≈ 25/30 (×5.4). Hits above the cat (low dy, near/over the head), centred dx.
-# Approximated/playtest per precedent. #120 units: scalars RAW, radius ×5.4.
+# → radii ≈ 25/30 (×PX_PER_UNIT). Hits above the cat (low dy, near/over the head), centred dx.
+# Approximated/playtest per precedent. #120 units: scalars RAW, radius ×PX_PER_UNIT.
 def _utilt_box(dx, dy, r, damage, angle, kbg, start, end):
     return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=angle,
                   base_knockback=40.0, knockback_growth=kbg,
@@ -130,7 +130,7 @@ _BIRKY_UTILT = MoveData(
 # --- Neutral-air (slice 3, #255): PM3.6 Kirby AttackAirN — a lingering sex-kick ----
 # rukaidata PM3.6 Kirby AttackAirN: 56f total, IASA 43, active 3-29. Two windows
 # (per-hitbox active_start/active_end): early f3-6 (dmg 12, BKB 15), late f7-29
-# (dmg 9, BKB 0); both angle 55, KBG 100; radii 4.0/2.5u × 5.4 ≈ 22/14, centred
+# (dmg 9, BKB 0); both angle 55, KBG 100; radii 4.0/2.5u × PX_PER_UNIT ≈ 22/14, centred
 # (offset 0). 4 identical boxes per window collapse to one. Approximated/playtest.
 _BIRKY_NAIR = MoveData(
     name="nair",
@@ -151,7 +151,7 @@ _BIRKY_NAIR = MoveData(
 # --- Forward-air (slice 3, #256): PM3.6 Kirby AttackAirF — 3-window multihit -------
 # rukaidata PM3.6 Kirby AttackAirF: 51f total, IASA 40. Drag hits f7-8 & f14-15
 # (dmg 5, angle 60/75, set_knockback/WDSK 30, BKB 0, KBG 100) + a Sakurai finisher
-# f22-24 (dmg 7, angle 361, KBG 160). Radii round(size×5.4) for 4.75/4.69/4.5/5.5u.
+# f22-24 (dmg 7, angle 361, KBG 160). Radii round(size×PX_PER_UNIT) for 4.75/4.69/4.5/5.5u.
 # Forward dx; mid dy. Approximated/playtest per #120; WDSK like nalio_cat.py jab.
 def _fair_box(dx, dy, r, damage, angle, kbg, start, end, wdsk=None):
     return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=angle,
@@ -178,7 +178,7 @@ _BIRKY_FAIR = MoveData(
 # --- Back-air (slice 3, #258): PM3.6 Kirby AttackAirB — 2-window backward hit ------
 # rukaidata PM3.6 Kirby AttackAirB: 41f total, IASA 36, active 6-20. Early f6-8
 # (dmg 14, BKB 10), late f9-20 (dmg 10, BKB 0); both angle 361, KBG 100; radii
-# round(size×5.4) for 5.5/5.99/5.08/4.3u ≈ 30/32/27/23. Behind the cat (dx < 0,
+# round(size×PX_PER_UNIT) for 5.5/5.99/5.08/4.3u ≈ 30/32/27/23. Behind the cat (dx < 0,
 # mirroring nalio_cat.py bair). Approximated/playtest per #120.
 def _bair_box(dx, dy, r, damage, bkb, start, end):
     return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=361,
@@ -203,7 +203,7 @@ _BIRKY_BAIR = MoveData(
 # --- Up-air (slice 3, #259): PM3.6 Kirby AttackAirHi — 2-window juggle -------------
 # rukaidata PM3.6 Kirby AttackAirHi: 48f total, IASA 36, active 10-15. Early f10-12
 # (dmg 15, angle 75, BKB 5, KBG 115), late f13-15 (dmg 12, angle 30, BKB 10, KBG 90);
-# radius round(4.32×5.4) ≈ 23. Above the cat (low dy). Approximated/playtest per #120.
+# radius round(4.32×PX_PER_UNIT) ≈ 23. Above the cat (low dy). Approximated/playtest per #120.
 _BIRKY_UAIR = MoveData(
     name="uair",
     in_air=True,
@@ -223,7 +223,7 @@ _BIRKY_UAIR = MoveData(
 # --- Down-air (slice 3, #260): PM3.6 Kirby AttackAirLw — a looping spike drill ------
 # rukaidata PM3.6 Kirby AttackAirLw: 55f total, IASA 50; active windows 13-14/16-17/
 # 19-20/22-23/25-26/28-29 (2 active / 1 gap → rehit every 3 frames). All hits dmg 3,
-# angle 270 (down spike), BKB 10, KBG 100; 2 hitboxes, radii round(size×5.4) for
+# angle 270 (down spike), BKB 10, KBG 100; 2 hitboxes, radii round(size×PX_PER_UNIT) for
 # 6.05/4.69u ≈ 33/25, BELOW the cat (high dy). rehit_rate like nalio d-air. Playtest.
 _BIRKY_DAIR = MoveData(
     name="dair",

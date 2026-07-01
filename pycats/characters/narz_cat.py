@@ -10,7 +10,7 @@ Values from the #290 scoping spec (PM3.6 Marth; ⚠ playtest / rukaidata-confirm
     weight 87 · gravity 0.45 · jump_vel -12   (deltas)
     max_jumps 2 · move_speed 6 · max_fall_speed 13   (= baseline, left as defaults)
 
-Per #120, these scalars are entered RAW (the ×5.4 unit scale is for *spatial* values).
+Per #120, these scalars are entered RAW (the ×PX_PER_UNIT unit scale is for *spatial* values).
 
 This slice authors **no moves** — `hurtbox`, `moves`, and crouch/prone geometry reuse the
 default cat as placeholders, so Narz differs from the default *only* in the three scalars.

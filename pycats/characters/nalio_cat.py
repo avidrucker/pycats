@@ -8,11 +8,11 @@ feline character that *plays as* the Project M Mario archetype.
 Source: Project M 3.6 Mario (canonical reference, see
 docs/research-spec-119-mario-cat-pm.md and docs/research-120-smash-units-and-sources.md).
 Unit convention from #120: combat numbers (frames / %, damage, weight, BKB, KBG,
-angle) are entered RAW; spatial values scale by PX_PER_UNIT ≈ 5.4 px/unit.
+angle) are entered RAW; spatial values scale by PX_PER_UNIT (config.py, #120).
 
 Why Nalio maps so cleanly to PM Mario:
   PM3.6 Mario's weight (100), gravity, jump velocity, walk speed, and jump count
-  already match pycats' global defaults at 5.4 px/unit — so the all-rounder feel
+  already match pycats' global defaults at PX_PER_UNIT px/unit — so the all-rounder feel
   is the baseline pycats already ships. This module pins it as DISTINCT data so
   the other four archetypes have something to diverge from.
 
@@ -27,7 +27,7 @@ Jab ("jab") — PM3.6 Mario `Attack11` (rukaidata), first neutral-A slice (#154)
 
   rukaidata reports three same-set hitboxes:
 
-    id  bone  damage  size(u)  -> r px (×5.4)  angle  WDSK  BKB  KBG  x(u)
+    id  bone  damage  size(u)  -> r px (×PX_PER_UNIT)  angle  WDSK  BKB  KBG  x(u)
     0   25    3       3.52     19              83     20    0    100  2.58
     1   22    3       2.34     13              83     20    0    100  1.29
     2   46    3       2.73     15              85     20    0    100  0.00
@@ -47,7 +47,7 @@ Down-tilt ("attack") — PM3.6 Mario `AttackLw3` (rukaidata), real 3-hitbox form
   listed in PRIORITY order (rukaidata hitbox id 0->2; lower id wins on overlap,
   the Smash convention #130 implements):
 
-    id  bone  damage  size(u)  -> r px (×5.4)   along-limb y (u)
+    id  bone  damage  size(u)  -> r px (×PX_PER_UNIT)   along-limb y (u)
     0   10    9       2.34     13               0.0
     1   16    9       3.13     17               1.72
     2   17    8       3.91     21               3.80
@@ -55,15 +55,16 @@ Down-tilt ("attack") — PM3.6 Mario `AttackLw3` (rukaidata), real 3-hitbox form
   Timing: startup 5 / active 4 / recovery 21 (30f total, interruptible ~28).
 
   Raw values (damage, angle, BKB, KBG, sizes) are datamined from rukaidata; radii
-  = round(size × 5.4) per #120. POSITIONS are a documented approximation: rukaidata
+  = round(size × PX_PER_UNIT) per #120. POSITIONS are a documented approximation: rukaidata
   x/y/z are bone-relative and the skeleton isn't modelled, so (as #119 did for the
   single box) the mid box (id1) is anchored at the #64-validated reach dx=46, and
-  the others are spread by the rukaidata along-limb deltas ×5.4 (≈9px, ≈20px) →
+  the others are spread by the rukaidata along-limb deltas ×PX_PER_UNIT (≈9px, ≈20px) →
   id0 dx=37, id1 dx=46, id2 dx=57; dy=30 (the low d-tilt band) for all. Replacing
   this with a true skeleton→pixel mapping is a later refinement.
 """
 
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
+from pycats.combat.units import u  # units->px authoring scale (#195)
 
 # --- Hurtbox: reuse the 2-circle stack (40×60 body) as a medium-build ---------
 # approximation (spec §3: Mario's datamined capsules are a later refinement).
@@ -96,7 +97,7 @@ _JAB = MoveData(
 
 # --- Down-tilt, mapped to the "attack" slot (PM3.6 Mario AttackLw3) ------------
 # Real 3-hitbox form (#132). All active 5-8, angle 80 / BKB 30 / KBG 80; raw
-# damage 9/9/8 and radii 13/17/21 (sizes 2.34/3.13/3.91 u × 5.4). Listed in
+# damage 9/9/8 and radii 13/17/21 (sizes 2.34/3.13/3.91 u × PX_PER_UNIT). Listed in
 # priority order (rukaidata id 0->2). dx/dy approximated — see module docstring.
 # NB (#212): verified against rukaidata AttackLw3 — d-tilt uses NORMAL knockback
 # (WDSK 0, BKB 30), so it is already faithful; no set_knockback (#211) applies.
@@ -123,7 +124,7 @@ _DOWN_TILT = MoveData(
 # Sakurai-angle sentinel 361 (#203) — no literal-angle placeholder needed.
 # rukaidata AttackS3 (forward): active 5-7 -> startup 4 / active 3; FAF 30 ->
 # recovery 23. Three same-set hitboxes (priority id 0->2), all damage 9, angle
-# 361, BKB 6, KBG 100, WDSK 0 (so nothing deferred). Radii = round(size u × 5.4):
+# 361, BKB 6, KBG 100, WDSK 0 (so nothing deferred). Radii = round(size u × PX_PER_UNIT):
 # 3.91->21, 3.13->17, 2.73->15. Positions approximated like jab/d-tilt (bones not
 # modelled): along the forward arm at mid-body height (dy 28), mid box at the
 # #64-validated reach dx=46, fist (id0, r21) outermost.
@@ -148,7 +149,7 @@ _FORWARD_TILT = MoveData(
 # rukaidata AttackHi3: active 5-11 -> startup 4 / active 7; IASA 30 -> recovery 19.
 # Three same-set hitboxes (priority id 0->2), all damage 8, angle 96 (literal —
 # an up-and-slightly-back arc, NOT a sentinel), BKB 26, WDSK 0. KBG differs per
-# box (125/122/120), recorded faithfully. Radii = round(size u × 5.4): 2.73->15,
+# box (125/122/120), recorded faithfully. Radii = round(size u × PX_PER_UNIT): 2.73->15,
 # 3.52->19, 4.69->25. Positions approximated (bones not modelled): an overhead arc
 # clustered above the head (small dy), id2 (r25) the big sweep behind. Same
 # approximation convention as jab/d-tilt/f-tilt.
@@ -174,9 +175,9 @@ _UP_TILT = MoveData(
 # the classic Mario forward air. rukaidata AttackAirF: active 16-22 -> startup 15
 # / active 7; IASA 45 -> recovery 23. Two windows (MoveClock frame coords):
 #   - EARLY [16,17]: angle 60 (up-forward), strong — id0 dmg17/BKB50, id1 dmg16/
-#     BKB40, both KBG 100; radii 17/24 (sizes 3.13/4.49 u × 5.4).
+#     BKB40, both KBG 100; radii 17/24 (sizes 3.13/4.49 u × PX_PER_UNIT).
 #   - LATE  [18,22]: angle 280 (down-and-forward — the METEOR/spike), both dmg15 /
-#     BKB30 / KBG70; radii 17/21 (sizes 3.13/3.91 u × 5.4).
+#     BKB30 / KBG70; radii 17/21 (sizes 3.13/3.91 u × PX_PER_UNIT).
 # All WDSK 0; angles literal (280 launches downward via the existing code, no
 # sentinel). Positions approximated (no skeleton): in front of the body, the late
 # meteor boxes swung lower. Landing-lag / auto-cancel / L-cancel deferred (no
@@ -211,7 +212,7 @@ _FORWARD_AIR = MoveData(
 # AttackAirB: active 6-17 -> startup 5 / active 12; IASA 29 -> recovery 12.
 #   - CLEAN [6,8]:  angle 28 (literal), both dmg 11 / BKB 43 / KBG 65; r 25/19.
 #   - LATE  [9,17]: angle 361 (Sakurai), both dmg 9 / BKB 20 / KBG 100; r 25/19.
-# All WDSK 0. Radii = round(size u × 5.4): 4.69->25, 3.52->19. Positions
+# All WDSK 0. Radii = round(size u × PX_PER_UNIT): 4.69->25, 3.52->19. Positions
 # approximated BEHIND the body (negative dx — facing-right-relative; b-air hits
 # backward), same x/y for clean and late (same bones 16/17). Landing-lag/L-cancel
 # deferred (no landing-lag system — as n-air/f-air).
@@ -244,7 +245,7 @@ _BACK_AIR = MoveData(
 # / active 6; IASA 28 -> recovery 19. Both windows angle 55 (up-and-forward flip),
 # BKB 0 (pure-growth — a combo/juggle tool), KBG 100; they differ only in damage:
 #   - CLEAN [4,5]: dmg 11.   - LATE [6,9]: dmg 10.
-# All WDSK 0. Radii = round(size u × 5.4): 3.52->19, 4.69->25. Positions
+# All WDSK 0. Radii = round(size u × PX_PER_UNIT): 3.52->19, 4.69->25. Positions
 # approximated above the head (small dy), same x/y for clean and late (bones
 # 16/17). Landing-lag/L-cancel deferred (no system — as the other aerials).
 def _uair_box(dx, dy, r, damage, start, end):
@@ -277,7 +278,7 @@ _UP_AIR = MoveData(
 # rukaidata lists 4 phase-1 / 2 phase-2 boxes at one spot with descending WDSK;
 # pycats picks the FIRST overlapping box (priority), so each phase is modelled by
 # its priority box (the rest are redundant under first-box-wins). Radii ~5.0 u ×
-# 5.4 -> 27. Positions approximated BELOW the body (downward drill). rehit_rate=4
+# PX_PER_UNIT -> 27. Positions approximated BELOW the body (downward drill). rehit_rate=4
 # is a ⚠ playtest starting point (the per-hitbox rehit parameter isn't in the basic
 # table). Landing-lag/L-cancel deferred (no system — as the other aerials).
 def _dair_box(damage, sk, kbg, start, end, dy):
@@ -332,8 +333,8 @@ _NEUTRAL_AIR = MoveData(
 # docs/research/nalio-fireball-scoping-findings.md). FOUND values (Smashboards 3.6
 # / SmashWiki): throw startup 14, total ~48 (IASA 41 → recovery 33); the projectile
 # article lives ~73 frames, 7% damage, Sakurai angle 361 (#203/#206), BKB 22 / KBG
-# 20, size 3.5u → r≈19px (×PX_PER_UNIT 5.4). active=1 so a single projectile spawns.
-# ⚠ projectile_speed is a GUESS (px/frame) — derive via rukaidata units/frame × 5.4
+# 20, size 3.5u → r≈19px (×PX_PER_UNIT). active=1 so a single projectile spawns.
+# ⚠ projectile_speed is a GUESS (px/frame) — derive via rukaidata units/frame × PX_PER_UNIT
 # or playtest (tracked the #192 way). Bounce arc / reflect-absorb are out of scope.
 _FIREBALL = MoveData(
     name="fireball",
@@ -342,7 +343,7 @@ _FIREBALL = MoveData(
     active=1,
     recovery=33,
     hitboxes=(
-        Hitbox(circle=Circle(dx=50, dy=30, r=19), damage=7.0, angle=361,
+        Hitbox(circle=Circle(dx=50, dy=30, r=u(3.5)), damage=7.0, angle=361,  # 3.5u -> 19px
                base_knockback=22.0, knockback_growth=20.0),
     ),
     projectile_speed=10,     # ⚠ GUESS px/frame (#192/#195 derivation pending)

@@ -52,13 +52,22 @@ SHIELD_BREAK_STUN_MIN = 90   # frames at >= 400% damage
 SHIELDSTUN_FACTOR = 0.345
 DODGE_TIME = 14
 DODGE_SPEED = 14  # horizontal boost for a roll
+# Data-authoring scale (#195, operationalizes #120): pycats authors combat data in
+# raw Smash *units* and scales SPATIAL values (hitbox radii/offsets) to pixels by this
+# factor. Named here so the px↔unit boundary is single-sourced + greppable, and so the
+# ADR-0003 derivation-guard (#233) can re-evaluate `round(units * PX_PER_UNIT)` against
+# config. The SIM stays integer-pixel (a determinism asset, #80) — this only names the
+# authoring-time scale already in de-facto use. Author new spatial data via
+# `pycats.combat.units.u(units)`. Calibration ≈5.4 is documented in
+# docs/research-120-smash-units-and-sources.md.
+PX_PER_UNIT = 5.4
 # PM-faithful (Melee-style) air dodge directional burst (#184). The air dodge
 # *sets* (replaces) velocity to this magnitude in the stick direction, unlike the
 # ground roll which the sim reads separately. FOUND (#215): Melee's hardcoded
 # air-dodge speed `escapeair_force` = 3.1 units/frame — corroborated by the
 # meleelight reimplementation (ESCAPEAIR.js: `3.1 * cos(ang)`) and the doldecomp
 # /melee model (`escapeair_force × (cosθ,sinθ)`); PM restored Melee's air dodge.
-# px/frame = round(3.1 × PX_PER_UNIT≈5.4) = 17. (PX_PER_UNIT named-const = #195.)
+# px/frame = round(3.1 × PX_PER_UNIT) = 17 (kept a bare literal per ADR-0003 C1).
 DODGE_AIR_SPEED = 17
 # Wavedash (#202, follow-up to #184): a *diagonal-down* air dodge sets the
 # DODGE_AIR_SPEED burst at an angle below horizontal so it drives into the ground
