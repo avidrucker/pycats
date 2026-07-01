@@ -26,7 +26,7 @@ dizzy, ledge-hang, KO, startup/active/recovery, …) are defined once in the
 
 The reason the test oracle works — preserve these when changing the core:
 
-- The **rules core is pygame-free**: `combat/`, `statecharts/`, `systems/`, `sim/controllers`, `characters/`, `config`, `stats_print` import no pygame.
+- The **rules core is Sprite-free + display-free**: `combat/`, `statecharts/`, `systems/`, `sim/controllers`, `characters/`, `config`, `stats_print`, `core/physics` use pygame **only** for `Vector2`/`Rect` value types (deterministic, headless) — never `Sprite`/`Surface`/`display`/`event`/`draw` (sanctioned by [ADR-0004](./docs/adr/0004-pygame-math-value-types-sanctioned.md); guard #339).
 - **Frame-counter timing, no wall-clock**: timing is counted in frames, never `pygame.time` / real clock.
 - **No RNG in the core**: the sim is deterministic, so golden snapshots reproduce exactly. Any randomness (e.g. AI seeding) is an injected seam, not ambient `random`.
 - **Headless by design**: the suite runs under `SDL_VIDEODRIVER=dummy`; the core never *requires* a display.
