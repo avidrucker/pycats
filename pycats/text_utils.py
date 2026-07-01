@@ -9,6 +9,8 @@ This module provides:
 
 import pygame
 
+from .config import TEXT_PROBE_SIZE  # font-probe size: single font-size source (#344)
+
 
 class TextRenderer:
     """Utility class for rendering text with mixed font support."""
@@ -145,15 +147,15 @@ class TextRenderer:
         try:
             # Create font for testing
             if font_name is None:
-                test_font = pygame.font.Font(None, 16)
+                test_font = pygame.font.Font(None, TEXT_PROBE_SIZE)
             else:
                 try:
-                    test_font = pygame.font.SysFont(font_name, 16)
+                    test_font = pygame.font.SysFont(font_name, TEXT_PROBE_SIZE)
                 except:
                     try:
                         font_path = pygame.font.match_font(font_name)
                         if font_path:
-                            test_font = pygame.font.Font(font_path, 16)
+                            test_font = pygame.font.Font(font_path, TEXT_PROBE_SIZE)
                         else:
                             return {"score": 0, "supported": [], "failed": test_chars}
                     except:
@@ -690,17 +692,17 @@ def quick_unicode_test():
 
     # Test the actual font being used
     if text_renderer.unicode_font_name == "default":
-        font = pygame.font.Font(None, 16)
+        font = pygame.font.Font(None, TEXT_PROBE_SIZE)
         print("Using default font for Unicode")
     elif text_renderer.unicode_font_name:
         try:
-            font = pygame.font.SysFont(text_renderer.unicode_font_name, 16)
+            font = pygame.font.SysFont(text_renderer.unicode_font_name, TEXT_PROBE_SIZE)
             print(f"Using named font: {text_renderer.unicode_font_name}")
         except:
-            font = pygame.font.Font(None, 16)
+            font = pygame.font.Font(None, TEXT_PROBE_SIZE)
             print("Named font failed, using default")
     else:
-        font = pygame.font.Font(None, 16)
+        font = pygame.font.Font(None, TEXT_PROBE_SIZE)
         print("No Unicode font, using default")
 
     for char in test_chars:

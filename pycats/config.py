@@ -359,6 +359,19 @@ MAIN_MENU_SELECTED_COLOR = YELLOW
 MAIN_MENU_PADDING = 60
 MAIN_MENU_OPTION_SPACING = 50
 
+# ---------------- font sizes (single source, #344) ----------------
+# The one place every UI/HUD text size lives, so a size change — and the planned
+# font-scale scalar (#345) — has a single chokepoint. The per-screen title / option
+# / stat sizes above are part of this same family (WIN_SCREEN_*_SIZE,
+# CHAR_SELECT_*_SIZE, MAIN_MENU_*_SIZE); the HUD + text-probe sizes that used to be
+# scattered as literals across the render/game/text-util modules are gathered here.
+# NOTE: cat_faces._MONO_SIZE is deliberately NOT centralised — it is a monospace
+# FACE-render size (tuned to the ASCII face art), not a UI text size.
+STATUS_BAR_SECONDS_SIZE = 16   # above-head timer-bar seconds / percent readout (#111/#334)
+STATUS_BAR_LABEL_SIZE = 12     # above-head timer-bar word label (#334)
+GAME_HUD_FONT_SIZE = 24        # the shared in-game HUD font (game.py)
+TEXT_PROBE_SIZE = 16           # glyph-support probe / measurement fonts (text_utils)
+
 # Cat character definitions.
 # Archived to pycats/characters/og_skins.py (#131, Part 1 of epic #127): these six
 # entries are colour-skins of one cat, not characters. CAT_CHARACTERS re-exports the

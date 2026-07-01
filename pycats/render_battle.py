@@ -26,6 +26,7 @@ from .config import (
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, LEDGE_HANG_FRAMES,
     KNOCKDOWN_PRONE_FRAMES, LEDGE_REGRAB_LOCKOUT_FRAMES, DODGE_TIME,
     GETUP_ROLL_FRAMES, SMASH_CHARGE_FRAMES,
+    STATUS_BAR_SECONDS_SIZE, STATUS_BAR_LABEL_SIZE,
     SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
     TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH, TAPER_MODIFER,
 )
@@ -389,8 +390,8 @@ def draw_dizzy_stars(surface, p: Player):
 STATUS_BAR_WIDTH = int(1.5 * PLAYER_SIZE[0])  # ~1.5x the cat body width (tail excluded)
 STATUS_BAR_HEIGHT = 6
 STATUS_BAR_BG = (30, 30, 30)            # background (drained) rect colour
-STATUS_BAR_SECONDS_SIZE = 16
-STATUS_BAR_LABEL_SIZE = 12              # the short word label (e.g. "HANG")
+# STATUS_BAR_SECONDS_SIZE / STATUS_BAR_LABEL_SIZE now live in config.py (the single
+# font-size source, #344) and are imported above.
 STATUS_BAR_LABEL_GAP = 4               # gap between the label and the bar's left edge
 # Vertical stride between stacked bars: one bar row + its readout text + a gap,
 # so a bar and its "Ns" never overlap the bar above it.
