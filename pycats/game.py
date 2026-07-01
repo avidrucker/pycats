@@ -49,6 +49,7 @@ from . import stats_print
 from .screen_manager import ScreenStateManager
 from .battle_screen import BattleScreen
 from .render_battle import draw_shell_chrome
+from . import screen_render
 from . import text_utils
 from . import display
 from . import settings
@@ -410,65 +411,22 @@ while running:
     # entry/update actions (screen_manager._on_enter_win_screen / _update_char_select),
     # fed by the battle threaded into the engine ctx above — the previous_state loop
     # hack and the should_reset_game poll are retired.
-
-    if current_state == "main_menu":
-        # Render main menu
-        screen_manager.render(get_render_surface())
-
-    elif current_state == "char_select":
-        # (#230) battle reset on char-select-with-no-winner moved to
-        # screen_manager._update_char_select (engine action).
-        # Render character selection
-        screen_manager.render(get_render_surface())
-
-        # Draw fullscreen instructions on character select screen
-        fs_text = (
-            "F11: Toggle Fullscreen | "
-            + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
-            + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
-        )
-        text_utils.render_text(
-            get_render_surface(),
-            fs_text,
-            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-            24,
-            WHITE,
-            right_align=True,
-        )
-
-        # Draw back to menu instruction
-        back_text = "Hold B for 1 second to return to main menu"
-        text_utils.render_text(
-            get_render_surface(),
-            back_text,
-            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-            24,
-            WHITE,
-        )
-
-    elif current_state == "playing":
-        # The per-frame update (player creation, battle.step, winner-set) is owned by
-        # the playing state's engine action (screen_manager._update_playing, #246),
-        # which ran above in screen_manager.update — the loop body only renders now.
-        # ---- render: battle composite + 'P: Pause Game' hint owned by BattleScreen
-        # (#205 slice 2b, #279); the shell overlays (FPS/fullscreen/debug) read loop
-        # state — not battle state — so they live in a render helper the loop calls
-        # (#279), keeping shell state out of the battle object (cf. #100 Risks, #246).
-        render_surface = get_render_surface()
-        battle.render(render_surface, platforms)
-        draw_shell_chrome(render_surface, clock.get_fps(), is_fullscreen, frame_input)
-        screen_manager.render_esc_quit_progress(render_surface)
-
-    elif current_state == "pause":
-        # Game is paused — BattleScreen composites the frozen battle background and
-        # delegates to the pause menu (#205 slice 2b).
-        battle.render_paused(
-            get_render_surface(), platforms, screen_manager.get_pause_menu()
-        )
-
-    elif current_state == "win_screen":
-        # Render win screen
-        screen_manager.render(get_render_surface())
+    #
+    # The per-state render dispatch lives in screen_render.render_active_screen so it
+    # is importable + unit-testable (this loop is module-level and runs on import, so
+    # its inline dispatch never was) — see tests/test_game_render_dispatch.py. The
+    # per-frame update (player creation, battle.step, winner-set) already ran in
+    # screen_manager.update above (#246); the loop body only renders now.
+    screen_render.render_active_screen(
+        current_state,
+        screen_manager,
+        get_render_surface(),
+        battle=battle,
+        platforms=platforms,
+        is_fullscreen=is_fullscreen,
+        frame_input=frame_input,
+        fps=clock.get_fps(),
+    )
 
     present_frame()
 
