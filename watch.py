@@ -119,6 +119,11 @@ def main(argv=None, presenter=None):
     ap.add_argument("--captions", default=None, metavar="FILE.srt",
                     help="overlay captions from an SRT subtitle file onto the run "
                          "(works with any mode, e.g. an NPC duel) (#314/#308).")
+    ap.add_argument("--demo-speed", type=float, default=1.0, metavar="SPEED",
+                    help="playback speed (presentation-only; the sim is unchanged). "
+                         "0.5 = half-speed slow-motion so fast beats are legible; "
+                         "1.0 = real time (default). Live: paces the display tick; "
+                         "video: duplicates frames (#351/#308).")
     args = ap.parse_args(argv)
 
     # Seed home is this CLI edge (#166): an explicit --seed is reproducible; absent
@@ -163,8 +168,9 @@ def main(argv=None, presenter=None):
         frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
 
     if presenter is None:
-        presenter = (VideoPresenter(args.video) if args.video
-                     else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay))
+        presenter = (VideoPresenter(args.video, speed=args.demo_speed) if args.video
+                     else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay,
+                                        speed=args.demo_speed))
     if captions:                              # attach; don't clobber an injected list (#306)
         presenter.captions = list(captions)
     snaps = []
