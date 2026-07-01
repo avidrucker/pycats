@@ -4,7 +4,7 @@ A render-only DEV tool: a persisted, default-OFF toggle (mirroring the #111
 status-bars toggle) that draws every active attack's hitbox circles and every
 fighter's hurtbox circles as coloured outlines, reading the SAME data
 combat.process_hits resolves (``atk.resolved`` + ``resolve_circle`` on the
-fighter hurtbox). Combat is untouched; ``Attack.image``/``rect`` are untouched.
+fighter hurtbox). Combat is untouched; ``Attack.rect`` is untouched (Attack.image was removed in #326).
 """
 import json
 import os

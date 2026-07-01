@@ -22,6 +22,25 @@ def test_attack_visual_bounds_follow_all_hitbox_circles():
 
     attack = Attack(owner, hitboxes=hitboxes, lifetime=2)
 
-    assert attack.image.get_size() != ATTACK_SIZE
-    assert attack.image.get_width() >= 60
-    assert attack.image.get_height() >= 32
+    # #326/H-b: the entity no longer owns a Surface; its `rect` carries the same
+    # visual bounds (render_battle builds the Surface from that rect).
+    assert attack.rect.size != ATTACK_SIZE
+    assert attack.rect.width >= 60
+    assert attack.rect.height >= 32
+
+
+def test_attack_renders_reddish_visual_at_hitbox_center():
+    """#326/H-b slice 2: render_attacks paints the attack visual (was Attack.image).
+    A single-hitbox attack shows a red fill at its rect; the centre pixel reads
+    red-dominant over a black background. Able-to-fail: corrupt the fill -> not red.
+    """
+    from pycats.render_battle import render_attacks
+    owner = Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
+                   char_name="P1", facing_right=True)
+    atk = Attack(owner, hitbox=Hitbox(circle=Circle(dx=20, dy=20, r=10),
+                                      damage=1, angle=0), lifetime=2)
+    surf = pygame.Surface((400, 400))
+    surf.fill((0, 0, 0))
+    render_attacks(surf, [atk])
+    px = surf.get_at(atk.rect.center)
+    assert px[0] > 100 and px[0] > px[1] and px[0] > px[2], f"not red-dominant: {tuple(px)}"

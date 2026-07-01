@@ -41,8 +41,8 @@ class Attack(pygame.sprite.Sprite):
     unchanged.
     """
 
-    COLOR = (255, 60, 60, 120)  # semi-transparent red fill
-    OUTLINE_COLOR = (255, 230, 120, 220)
+    # (#326/H-b) The attack's visual colours moved to render_battle with the
+    # Surface-building — the entity holds only combat data + its bounds rect.
 
     def __init__(
         self,
@@ -107,13 +107,15 @@ class Attack(pygame.sprite.Sprite):
         self.hit_cy: float = prim_cy
         self.hit_r: float = prim_r
 
-        # ---------- rendering surface (kept for visuals only) ----------
+        # ---------- rendering rect (visual bounds only) ----------
+        # The visual Surface itself is built by render_battle now (#326/H-b) —
+        # combat uses `resolved` circles, not this. `rect` stays here: the projectile
+        # update() reads rect.center/width and the golden snapshot records rect.x/y.
         if len(self.resolved) == 1:
             # Preserve the legacy default-cat rect exactly; golden snapshots record
             # attack sprite rects even though combat uses circles.
-            self.image = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
-            self.image.fill((255, 60, 60, 180))
-            self.rect = self.image.get_rect(center=(int(prim_cx), int(prim_cy)))
+            self.rect = pygame.Rect(0, 0, *ATTACK_SIZE)
+            self.rect.center = (int(prim_cx), int(prim_cy))
         else:
             min_x = min(cx - r for cx, _cy, r, _hb in self.resolved)
             max_x = max(cx + r for cx, _cy, r, _hb in self.resolved)
@@ -124,12 +126,7 @@ class Attack(pygame.sprite.Sprite):
             top = int(min_y) - pad
             width = max(1, int(max_x - min_x) + pad * 2)
             height = max(1, int(max_y - min_y) + pad * 2)
-            self.image = pygame.Surface((width, height), pygame.SRCALPHA)
-            for cx, cy, r, _hb in self.resolved:
-                local = (round(cx - left), round(cy - top))
-                pygame.draw.circle(self.image, self.COLOR, local, round(r))
-                pygame.draw.circle(self.image, self.OUTLINE_COLOR, local, round(r), 2)
-            self.rect = self.image.get_rect(topleft=(left, top))
+            self.rect = pygame.Rect(left, top, width, height)
 
     # called every frame by sprite.Group.update(*args) — #266 forwards `platforms`
     # to every sprite; a static Attack ignores it (a Projectile uses it to bounce).

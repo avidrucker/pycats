@@ -23,7 +23,7 @@ from .config import (
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME,
-    SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING,
+    SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
 )
 from . import runtime_settings
 from . import text_utils
@@ -38,6 +38,11 @@ from .combat.geometry import resolve_circle
 # Surface) so the adapter paints the rect. Thick = solid stage, thin = pass-through.
 PLATFORM_THICK = (164, 113, 73)
 PLATFORM_THIN = (193, 153, 112)
+
+# Attack visual colours (#326/H-b): moved out of Attack with its Surface-building.
+ATTACK_SINGLE_FILL = (255, 60, 60, 180)   # legacy single-hitbox flat red
+ATTACK_FILL = (255, 60, 60, 120)          # per-circle semi-transparent red fill
+ATTACK_OUTLINE = (255, 230, 120, 220)     # per-circle outline
 
 HITBOX_OVERLAY_COLOR = RED            # attack hitbox circles
 HURTBOX_OVERLAY_COLOR = (0, 255, 255)  # cyan — fighter hurtbox circles
@@ -485,9 +490,27 @@ def render_battle(surface, players, platforms):
             draw_status_bar(surface, p, *spec)
 
 
+def _attack_surface(a):
+    """Build an attack's visual Surface from its resolved circles (#326/H-b — was
+    Attack.image). Pure presentation, rebuilt per frame; combat uses `a.resolved`,
+    not this. Single-hitbox keeps the legacy flat-red `ATTACK_SIZE` rect; multi
+    draws each circle (fill + outline) offset by the attack's rect top-left."""
+    if len(a.resolved) == 1:
+        surf = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
+        surf.fill(ATTACK_SINGLE_FILL)
+        return surf
+    surf = pygame.Surface(a.rect.size, pygame.SRCALPHA)
+    left, top = a.rect.topleft
+    for cx, cy, r, _hb in a.resolved:
+        local = (round(cx - left), round(cy - top))
+        pygame.draw.circle(surf, ATTACK_FILL, local, round(r))
+        pygame.draw.circle(surf, ATTACK_OUTLINE, local, round(r), 2)
+    return surf
+
+
 def render_attacks(surface, attacks):
     for a in attacks:
-        surface.blit(a.image, a.rect)
+        surface.blit(_attack_surface(a), a.rect)
 
 
 def _active_hurtbox(p):
