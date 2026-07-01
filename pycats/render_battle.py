@@ -24,7 +24,7 @@ from .config import (
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, LEDGE_HANG_FRAMES,
-    KNOCKDOWN_PRONE_FRAMES,
+    KNOCKDOWN_PRONE_FRAMES, LEDGE_REGRAB_LOCKOUT_FRAMES,
     SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
     TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH, TAPER_MODIFER,
 )
@@ -403,6 +403,13 @@ STATUS_BAR_GAP_ABOVE_STARS = 6
 # (SHIELD_COLOR / YELLOW) unlabelled; labelled bars add one hue each per slice.
 HANG_BAR_COLOR = (0, 210, 200)          # teal — ledge-hang timeout (#348)
 DOWN_BAR_COLOR = (255, 140, 45)         # orange — knockdown/getup window (#350)
+LOCKOUT_BAR_COLOR = (230, 70, 70)       # red — post-drop regrab lockout (#357)
+
+# Recency sentinel: the shield bar is a *resource* gauge (shield_hp), not a frame
+# counter, so it has no comparable "frames elapsed since start". Give it a key
+# that sorts it LAST (a held shield reads as background; action count-downs stack
+# newest-on-top above it). See timer_bar_specs' recency ordering (#357).
+_SHIELD_RECENCY_KEY = float("inf")
 
 
 class TimerBar(NamedTuple):
@@ -419,34 +426,59 @@ def timer_bar_specs(p):
 
     Pure function of live state (#111): each fill is the remaining value over the
     *known constant max* — shield -> shield_hp/SHIELD_MAX_HP, stun ->
-    stun_timer/SHIELD_BREAK_STUN_MAX — so no per-instance start value is stored
-    and a bar tracks mid-effect changes (e.g. a blocked hit chipping shield).
-    Honours the live status-bars toggle (runtime_settings, #111/#121). Shield
-    takes precedence: a shielding fighter is never simultaneously stunned. Slice
-    1 (#340) surfaced shield/stun unlabelled (byte-identical); #348/#350 add the
-    labelled HANG/DOWN bars. Each of shield/stun/hang/prone is a mutually
-    exclusive state, so at most one bar is active here; recency ordering for
-    genuinely co-active bars lands in a later slice.
+    stun_timer/SHIELD_BREAK_STUN_MAX, etc. — so no per-instance start value is
+    stored and a bar tracks mid-effect changes (e.g. a blocked hit chipping
+    shield). Honours the live status-bars toggle (runtime_settings, #111/#121).
+
+    Two kinds of bar (#357):
+    - **Exclusive-state** bars (shield / stun / hang / prone) — mutually exclusive
+      states, so at most one is added (shield takes precedence, via the elif
+      chain: a shielding fighter is never simultaneously stunned).
+    - **Overlay** timers — state-independent, so they co-activate with the above.
+      LOCKOUT (post-drop regrab suppression) is the first (#357).
+
+    Bars are returned **newest-on-top**: sorted by recency = frames elapsed since
+    the timer started (`max - remaining`), ascending, so the most recently started
+    bar is `specs[0]` (drawn nearest the head by draw_timer_bars). The shield
+    resource gauge has no frame elapsed and sorts last (`_SHIELD_RECENCY_KEY`).
+    Ordering is stable, so equal-recency bars keep insertion order. Single-bar
+    cases return the same one bar as before this slice (byte-identity preserved).
     """
     if not runtime_settings.show_status_timer_bars():
         return []
+    f = p.fighter
+    bars = []  # (recency_key, TimerBar); lower key = more recent = nearer head
+
+    # --- exclusive-state bar (at most one) ---
     if p.state == "shield":
-        ratio = p.fighter.shield_hp / SHIELD_MAX_HP
-        seconds = math.ceil(p.fighter.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))
-        return [TimerBar(ratio, f"{seconds}s", SHIELD_COLOR)]
-    if p.fighter.stun_timer > 0:
-        ratio = p.fighter.stun_timer / SHIELD_BREAK_STUN_MAX
-        seconds = math.ceil(p.fighter.stun_timer / FPS)
-        return [TimerBar(ratio, f"{seconds}s", YELLOW)]
-    if p.state == "ledge_hang" and p.fighter.ledge_hang_timer > 0:
-        ratio = p.fighter.ledge_hang_timer / LEDGE_HANG_FRAMES
-        seconds = math.ceil(p.fighter.ledge_hang_timer / FPS)
-        return [TimerBar(ratio, f"{seconds}s", HANG_BAR_COLOR, label="HANG")]
-    if p.state == "prone" and p.fighter.prone_timer > 0:
-        ratio = p.fighter.prone_timer / KNOCKDOWN_PRONE_FRAMES
-        seconds = math.ceil(p.fighter.prone_timer / FPS)
-        return [TimerBar(ratio, f"{seconds}s", DOWN_BAR_COLOR, label="DOWN")]
-    return []
+        ratio = f.shield_hp / SHIELD_MAX_HP
+        seconds = math.ceil(f.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))
+        bars.append((_SHIELD_RECENCY_KEY, TimerBar(ratio, f"{seconds}s", SHIELD_COLOR)))
+    elif f.stun_timer > 0:
+        ratio = f.stun_timer / SHIELD_BREAK_STUN_MAX
+        seconds = math.ceil(f.stun_timer / FPS)
+        bars.append((SHIELD_BREAK_STUN_MAX - f.stun_timer,
+                     TimerBar(ratio, f"{seconds}s", YELLOW)))
+    elif p.state == "ledge_hang" and f.ledge_hang_timer > 0:
+        ratio = f.ledge_hang_timer / LEDGE_HANG_FRAMES
+        seconds = math.ceil(f.ledge_hang_timer / FPS)
+        bars.append((LEDGE_HANG_FRAMES - f.ledge_hang_timer,
+                     TimerBar(ratio, f"{seconds}s", HANG_BAR_COLOR, label="HANG")))
+    elif p.state == "prone" and f.prone_timer > 0:
+        ratio = f.prone_timer / KNOCKDOWN_PRONE_FRAMES
+        seconds = math.ceil(f.prone_timer / FPS)
+        bars.append((KNOCKDOWN_PRONE_FRAMES - f.prone_timer,
+                     TimerBar(ratio, f"{seconds}s", DOWN_BAR_COLOR, label="DOWN")))
+
+    # --- overlay timers (state-independent; co-activate with the above) ---
+    if f.ledge_regrab_lockout_timer > 0:
+        ratio = f.ledge_regrab_lockout_timer / LEDGE_REGRAB_LOCKOUT_FRAMES
+        seconds = math.ceil(f.ledge_regrab_lockout_timer / FPS)
+        bars.append((LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer,
+                     TimerBar(ratio, f"{seconds}s", LOCKOUT_BAR_COLOR, label="LOCKOUT")))
+
+    bars.sort(key=lambda kb: kb[0])   # newest-on-top (least elapsed first)
+    return [bar for _, bar in bars]
 
 
 def draw_timer_bars(surface, p, specs):
