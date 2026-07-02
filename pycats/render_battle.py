@@ -15,6 +15,8 @@ DIZZY_ORBIT_LIFT = 8       # gap above the ear tips
 DIZZY_STAR_OUTER = 5       # star spike radius
 DIZZY_STAR_INNER = 2       # star inner radius
 DIZZY_SPIN_SPEED = 0.18    # radians of orbit advance per frame (per stun tick)
+DIZZY_STAR_POINTS = 5      # spikes per orbiting star
+DIZZY_ELLIPSE_FLATTEN = 0.4  # vertical-squash of the orbit (circle → head-hugging ellipse)
 
 from .config import (
     EYE_OFFSET_X, EYE_OFFSET_Y, EYE_RADIUS, GLINT_OFFSET_X, GLINT_OFFSET_Y,
@@ -50,10 +52,22 @@ PLATFORM_THIN = (193, 153, 112)
 ATTACK_SINGLE_FILL = (255, 60, 60, 180)   # legacy single-hitbox flat red
 ATTACK_FILL = (255, 60, 60, 120)          # per-circle semi-transparent red fill
 ATTACK_OUTLINE = (255, 230, 120, 220)     # per-circle outline
+ATTACK_OUTLINE_WIDTH = 2                  # per-circle outline stroke width (px)
 
 HITBOX_OVERLAY_COLOR = RED            # attack hitbox circles
 HURTBOX_OVERLAY_COLOR = (0, 255, 255)  # cyan — fighter hurtbox circles
 OVERLAY_LINE_WIDTH = 2                 # >0 → pygame draws an outline, not a disc
+
+# Fighter sprite drawing (#415: named from inline literals). Purely-local render
+# geometry/colour — cosmetic, so an identity extraction (values unchanged).
+STRIPE_BACK_OFFSET_X = 10    # stripes sit this far toward the back from center-x
+STRIPE_START_Y_OFFSET = 15   # first stripe starts this far below the head top
+FACE_BLIT_OFFSET_Y = 10      # glyph face centred this far below the head top
+NAME_FONT_SIZE = 20          # player-name label above the cat
+NAME_LABEL_OFFSET_Y = 25     # name sits this far above the head top
+NAME_COLOR_P1 = (255, 100, 100)  # red — P1's name
+NAME_COLOR_P2 = (100, 100, 255)  # blue — any other player's name
+SHIELD_FILL_ALPHA = 100      # alpha of the translucent shield-bubble fill
 
 
 # --- draw helpers moved verbatim from game.py ---
@@ -156,8 +170,9 @@ def draw_cat_features(surface, p: Player):
 def draw_stripes(surface, p: Player):
     """Draws triangular stripes on the player's back for pattern."""
     # Calculate stripe positions on the back of the player
-    back_center_x = p.rect.centerx + (-10 if p.facing_right else 10)
-    back_start_y = p.rect.top + 15  # Start stripes a bit down from the top
+    back_center_x = p.rect.centerx + (-STRIPE_BACK_OFFSET_X if p.facing_right
+                                      else STRIPE_BACK_OFFSET_X)
+    back_start_y = p.rect.top + STRIPE_START_Y_OFFSET  # a bit down from the top
 
     for i in range(STRIPE_COUNT):
         # Calculate vertical position for each stripe
@@ -204,12 +219,14 @@ def draw_player_name(surface, p: Player):
     """Draw the player name above the cat."""
     # Choose color based on player name
     if p.char_name == "P1":
-        color = (255, 100, 100)  # Red
+        color = NAME_COLOR_P1
     else:
-        color = (100, 100, 255)  # Blue
+        color = NAME_COLOR_P2
 
     text_utils.render_text(
-        surface, p.char_name, (p.rect.centerx, p.rect.top - 25), 20, color, center=True
+        surface, p.char_name,
+        (p.rect.centerx, p.rect.top - NAME_LABEL_OFFSET_Y), NAME_FONT_SIZE,
+        color, center=True
     )
 
 
@@ -336,7 +353,8 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
             face_style, p.fighter.facing_right, cat_faces.ink_for(p.char_color)
         )
         if face is not None:
-            surf.blit(face, face.get_rect(center=(vrect.centerx, vrect.top + 10)))
+            surf.blit(face, face.get_rect(
+                center=(vrect.centerx, vrect.top + FACE_BLIT_OFFSET_Y)))
         else:
             draw_eye(surf, shim)
             draw_eye(surf, shim, eye=False)
@@ -372,10 +390,11 @@ def draw_dizzy_stars(surface, p: Player):
     for i in range(DIZZY_STAR_COUNT):
         ang = phase + i * (2 * math.pi / DIZZY_STAR_COUNT)
         sx = cx + math.cos(ang) * DIZZY_ORBIT_RADIUS
-        sy = cy + math.sin(ang) * DIZZY_ORBIT_RADIUS * 0.4   # flatten to an ellipse
+        sy = cy + math.sin(ang) * DIZZY_ORBIT_RADIUS * DIZZY_ELLIPSE_FLATTEN  # ellipse
         pygame.draw.polygon(
             surface, YELLOW,
-            _star_points(sx, sy, DIZZY_STAR_OUTER, DIZZY_STAR_INNER, 5, ang),
+            _star_points(sx, sy, DIZZY_STAR_OUTER, DIZZY_STAR_INNER,
+                         DIZZY_STAR_POINTS, ang),
         )
 
 
@@ -399,7 +418,7 @@ STATUS_BAR_STACK_STRIDE = STATUS_BAR_HEIGHT + STATUS_BAR_SECONDS_SIZE + 4
 # Lift the bars above the dizzy-star halo so the two never overlap. The stars
 # orbit at (EAR_HEIGHT + DIZZY_ORBIT_LIFT) above the head with a vertical reach
 # of ~(DIZZY_ORBIT_RADIUS*0.4 + DIZZY_STAR_OUTER); clear that plus a small gap.
-_STAR_HALO = DIZZY_ORBIT_RADIUS * 0.4 + DIZZY_STAR_OUTER
+_STAR_HALO = DIZZY_ORBIT_RADIUS * DIZZY_ELLIPSE_FLATTEN + DIZZY_STAR_OUTER
 STATUS_BAR_GAP_ABOVE_STARS = 6
 
 # Per-timer bar colours (#334 spec). These are the BAR hues only — distinct from
@@ -658,7 +677,7 @@ def render_battle(surface, players, platforms):
             shield_radius = int(MAX_SHIELD_RADIUS * ratio)
             r = max(MIN_SHIELD_RADIUS, shield_radius)
             s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-            pygame.draw.circle(s, (*SHIELD_COLOR, 100), (r, r), r)
+            pygame.draw.circle(s, (*SHIELD_COLOR, SHIELD_FILL_ALPHA), (r, r), r)
             surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
         # Above-head timer bars (#111 -> #340) — drawn last so they sit above the
         # dizzy stars; the spec list is empty when SHOW_STATUS_TIMER_BARS is off.
@@ -679,7 +698,7 @@ def _attack_surface(a):
     for cx, cy, r, _hb in a.resolved:
         local = (round(cx - left), round(cy - top))
         pygame.draw.circle(surf, ATTACK_FILL, local, round(r))
-        pygame.draw.circle(surf, ATTACK_OUTLINE, local, round(r), 2)
+        pygame.draw.circle(surf, ATTACK_OUTLINE, local, round(r), ATTACK_OUTLINE_WIDTH)
     return surf
 
 
@@ -727,6 +746,15 @@ def render_hitbox_overlay(surface, players, attacks):
                                (int(cx), int(cy)), int(r), OVERLAY_LINE_WIDTH)
 
 
+# HUD / text-overlay layout (#415: named from inline literals). The overlay font
+# size was repeated at ~10 call sites; the line counts + block gap couple the
+# controls / input-history blocks' start-y to the HUD's row count.
+HUD_FONT_SIZE = 24        # shared size for HUD / controls / input-history / chrome text
+HUD_LINE_COUNT = 7        # rows drawn by draw_hud (label + 6 stats)
+CONTROLS_LINE_COUNT = 7   # rows drawn by draw_controls (header + 6 controls)
+HUD_BLOCK_GAP = 20        # vertical gap between stacked text blocks
+
+
 def draw_hud(surface, p: Player, label, topright=False):
     """Draws the HUD for a player, showing their state, jumps left, shield HP, lives, and damage percent."""
     fsm = f"FSM: {p.state.capitalize()}"
@@ -742,7 +770,7 @@ def draw_hud(surface, p: Player, label, topright=False):
         y_pos = HUD_PADDING + i * HUD_SPACING
 
         text_utils.render_text(
-            surface, txt, (x_pos, y_pos), 24, WHITE, right_align=topright
+            surface, txt, (x_pos, y_pos), HUD_FONT_SIZE, WHITE, right_align=topright
         )
 
 
@@ -777,7 +805,7 @@ def draw_controls(surface, p: Player, label, topright=False):
     ]
 
     # Start drawing below the HUD (7 lines of HUD + some spacing)
-    start_y = HUD_PADDING + 7 * HUD_SPACING + 20
+    start_y = HUD_PADDING + HUD_LINE_COUNT * HUD_SPACING + HUD_BLOCK_GAP
 
     for i, txt in enumerate(controls):
         x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
@@ -786,14 +814,14 @@ def draw_controls(surface, p: Player, label, topright=False):
         # Use mixed text rendering for Unicode arrow support
         if topright:
             # For right-aligned text, we need to calculate positioning differently
-            text_width = text_utils.text_renderer._get_font(None, 24).size(txt)[0]
+            text_width = text_utils.text_renderer._get_font(None, HUD_FONT_SIZE).size(txt)[0]
             adjusted_x = x_pos - text_width
             text_utils.text_renderer.render_text_mixed(
-                txt, 24, WHITE, surface, (adjusted_x, y_pos)
+                txt, HUD_FONT_SIZE, WHITE, surface, (adjusted_x, y_pos)
             )
         else:
             text_utils.text_renderer.render_text_mixed(
-                txt, 24, WHITE, surface, (x_pos, y_pos)
+                txt, HUD_FONT_SIZE, WHITE, surface, (x_pos, y_pos)
             )
 
 
@@ -807,17 +835,18 @@ def draw_input_history(surface, history, label, topright=False):
     line = format_line(label, history.entries())
 
     # Below the HUD (7 lines) and the controls block (header + 6 rows).
-    y_pos = HUD_PADDING + 14 * HUD_SPACING + 40
+    y_pos = (HUD_PADDING + (HUD_LINE_COUNT + CONTROLS_LINE_COUNT) * HUD_SPACING
+             + 2 * HUD_BLOCK_GAP)
     x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
 
     if topright:
-        text_width = text_utils.text_renderer._get_font(None, 24).size(line)[0]
+        text_width = text_utils.text_renderer._get_font(None, HUD_FONT_SIZE).size(line)[0]
         text_utils.text_renderer.render_text_mixed(
-            line, 24, WHITE, surface, (x_pos - text_width, y_pos)
+            line, HUD_FONT_SIZE, WHITE, surface, (x_pos - text_width, y_pos)
         )
     else:
         text_utils.text_renderer.render_text_mixed(
-            line, 24, WHITE, surface, (x_pos, y_pos)
+            line, HUD_FONT_SIZE, WHITE, surface, (x_pos, y_pos)
         )
 
 
@@ -828,7 +857,7 @@ def draw_pause_hint(surface):
     chrome — BattleScreen.render owns it (#279), beside draw_hud/draw_controls."""
     text_utils.render_text(
         surface, "P: Pause Game",
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3), 24, WHITE,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3), HUD_FONT_SIZE, WHITE,
         right_align=True,
     )
 
@@ -843,11 +872,11 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
     if frame_input:
         text_utils.render_text(
             surface, frame_input.__str__(),
-            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), 24, WHITE,
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), HUD_FONT_SIZE, WHITE,
         )
     text_utils.render_text(
         surface, f"FPS: {fps:.2f}",
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), 24, WHITE,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), HUD_FONT_SIZE, WHITE,
         right_align=True,
     )
     fs_text = (
@@ -857,6 +886,6 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
     )
     text_utils.render_text(
         surface, fs_text,
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2), 24, WHITE,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2), HUD_FONT_SIZE, WHITE,
         right_align=True,
     )
