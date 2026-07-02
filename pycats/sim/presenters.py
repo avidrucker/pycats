@@ -155,14 +155,17 @@ class ScreenshotPresenter:
 
     @staticmethod
     def _default_frames(captions):
-        """{frame: label} for each caption's start / mid / end (dedup by frame)."""
+        """{frame: label} for each caption's start / mid / end, plus its `dwell` frame —
+        the one the presenter actually FREEZES on (#412: `dwell_at`, else the window
+        start), i.e. what a viewer reads. Dedup by frame."""
         out = {}
         for i, c in enumerate(captions, 1):
             if c.frames is None:
                 continue
             s, e = c.frames
             mid = (s + e) // 2
-            for tag, f in (("start", s), ("mid", mid), ("end", e)):
+            dwell = s if c.dwell_at is None else c.dwell_at
+            for tag, f in (("start", s), ("dwell", dwell), ("mid", mid), ("end", e)):
                 out.setdefault(f, f"cap{i:02d}_{tag}_f{f:04d}")
         return out
 

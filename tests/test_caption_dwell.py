@@ -33,6 +33,38 @@ def test_caption_hold_frames_takes_the_max_when_captions_coincide():
     assert caption_hold_frames(caps, 10) == 150
 
 
+def test_caption_hold_frames_freezes_at_dwell_at_not_window_start():
+    # #412: dwell_at moves the freeze to the beat's payoff frame, off the window start.
+    caps = [Caption("late", frames=(10, 60), dwell=150, dwell_at=40)]
+    assert caption_hold_frames(caps, 40) == 150   # freezes at dwell_at
+    assert caption_hold_frames(caps, 10) == 0     # NOT at the window start anymore
+    # dwell_at=None keeps the window-start behaviour (unchanged).
+    assert caption_hold_frames([Caption("s", frames=(10, 60), dwell=150)], 10) == 150
+
+
+def test_caption_hold_frames_dwell_at_zero_is_honoured():
+    # #412: frame 0 is a valid dwell_at — must not be treated as unset (no `or` idiom).
+    assert caption_hold_frames([Caption("z", frames=(0, 10), dwell=90, dwell_at=0)], 0) == 90
+
+
+def test_demo_captions_rejects_dwell_at_outside_the_window():
+    demo = Demo(name="d", segments=(
+        DemoSegment("s", spans=(InputSpan(10, 40, 1, "right"),), dwell_at=100),))
+    with pytest.raises(ValueError):
+        demo_captions(demo)
+
+
+def test_demo_captions_rejects_dwell_at_on_a_windowless_segment():
+    demo = Demo(name="d", segments=(DemoSegment("always-on", dwell_at=5),))
+    with pytest.raises(ValueError):
+        demo_captions(demo)
+
+
+def test_demo_captions_carries_dwell_at_within_window():
+    demo = Demo(name="d", segments=(DemoSegment("s", start=10, end=60, dwell_at=40),))
+    assert demo_captions(demo)[0].dwell_at == 40
+
+
 def test_demo_default_dwell_flows_into_captions_with_per_segment_override():
     demo = Demo(name="d", default_dwell=150, segments=(
         DemoSegment("s1", spans=(InputSpan(10, 40, 1, "right"),)),

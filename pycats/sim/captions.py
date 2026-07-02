@@ -29,8 +29,11 @@ CAPTION_MARGIN = 24  # px from the top/bottom edge for TOP/BOTTOM anchors
 class Caption:
     """One caption. `font` is a SysFont name OR a .ttf path OR None (the default font);
     `frames=(start, end)` shows it only within that inclusive frame window (None = always).
-    `dwell` (#352) = extra frames the presenter FREEZES on this caption's start frame so a
-    viewer can read it before the action resumes (0 = no hold; presentation-only)."""
+    `dwell` (#352) = extra frames the presenter FREEZES on this caption so a viewer can
+    read it before the action resumes (0 = no hold; presentation-only). `dwell_at` (#412)
+    = the frame to freeze on; None freezes the window start (the default), but a beat whose
+    action lands late in its window can point it at the payoff frame so the frozen frame
+    shows the action, not a pre-action pose. Must lie within `frames` (validated upstream)."""
     text: str
     anchor: str = BOTTOM_CENTER
     size: int = 36
@@ -38,6 +41,7 @@ class Caption:
     color: Tuple[int, int, int] = WHITE
     frames: Optional[Tuple[int, int]] = None
     dwell: int = 0
+    dwell_at: Optional[int] = None
 
 
 def is_active(caption: Caption, frame: int) -> bool:
@@ -50,12 +54,15 @@ def is_active(caption: Caption, frame: int) -> bool:
 
 def caption_hold_frames(captions: Sequence[Caption], frame: int) -> int:
     """Extra frames the presenter should FREEZE on `frame` because a dwelling caption
-    starts here (#352). A caption with `dwell > 0` and a window starting at `frame`
-    holds the display (re-present the same frame) so the viewer reads it before the
-    action resumes. Returns the max dwell among coinciding starts (0 = no hold).
-    Untimed captions (no window) never hold — there is no single 'start' frame."""
+    holds here (#352). A caption with `dwell > 0` freezes the display (re-presents the
+    same frame) so the viewer reads it before the action resumes. The hold fires on the
+    caption's `dwell_at` frame if set, else its window start (#412) — so a late-payoff
+    beat can freeze on the action instead of a pre-action pose. Returns the max dwell
+    among captions holding on `frame` (0 = no hold). Untimed captions (no window) never
+    hold — there is no frame window to anchor to."""
     holds = [c.dwell for c in captions
-             if c.dwell and c.frames is not None and c.frames[0] == frame]
+             if c.dwell and c.frames is not None
+             and (c.frames[0] if c.dwell_at is None else c.dwell_at) == frame]
     return max(holds) if holds else 0
 
 

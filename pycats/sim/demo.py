@@ -36,10 +36,14 @@ class DemoSegment:
     anchor: str = BOTTOM_CENTER
     size: int = 32
     font: Optional[str] = None
-    # #352: frames to FREEZE the display on this caption's start so a viewer can read it
+    # #352: frames to FREEZE the display on this caption so a viewer can read it
     # (presenter-level hold, NOT idle timeline frames — the choreography is frame-tuned).
     # None = inherit the demo's `default_dwell`.
     dwell: Optional[int] = None
+    # #412: the frame to freeze on. None = the window start (default). A beat whose action
+    # lands late in its window points this at the payoff frame so the frozen frame shows
+    # the action, not a pre-action pose. Must lie within window() (validated in demo_captions).
+    dwell_at: Optional[int] = None
 
     def window(self) -> Optional[Tuple[int, int]]:
         if self.start is not None and self.end is not None:
@@ -68,12 +72,27 @@ def demo_captions(demo: Demo) -> List[Caption]:
     count, so reordering/adding a segment renumbers automatically. Numbering is
     demo-choreography only — SRT / `--captions` overlays (captions_from_srt) stay raw.
     Each caption also carries its dwell (#352): the segment's `dwell` if set, else the
-    demo's `default_dwell` — so the presenter can freeze on the caption's start frame."""
+    demo's `default_dwell`. A segment may also set `dwell_at` (#412) to freeze on a chosen
+    frame instead of the window start — validated here to lie within the caption's window,
+    so a mis-set value fails loudly rather than freezing a caption-less frame."""
     n = len(demo.segments)
-    return [Caption(f"{i}/{n} — {seg.caption}", anchor=seg.anchor, size=seg.size,
-                    font=seg.font, frames=seg.window(),
-                    dwell=(seg.dwell if seg.dwell is not None else demo.default_dwell))
-            for i, seg in enumerate(demo.segments, 1)]
+    caps = []
+    for i, seg in enumerate(demo.segments, 1):
+        win = seg.window()
+        if seg.dwell_at is not None:
+            if win is None:
+                raise ValueError(
+                    f"segment {i} ({seg.caption!r}) sets dwell_at={seg.dwell_at} but has no "
+                    f"frame window to anchor to")
+            if not (win[0] <= seg.dwell_at <= win[1]):
+                raise ValueError(
+                    f"segment {i} ({seg.caption!r}) dwell_at={seg.dwell_at} is outside its "
+                    f"window {win}")
+        caps.append(Caption(
+            f"{i}/{n} — {seg.caption}", anchor=seg.anchor, size=seg.size, font=seg.font,
+            frames=win, dwell=(seg.dwell if seg.dwell is not None else demo.default_dwell),
+            dwell_at=seg.dwell_at))
+    return caps
 
 
 def demo_timeline(demo: Demo, keymaps):

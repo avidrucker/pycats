@@ -167,3 +167,21 @@ def test_beat7_ledge_hang_is_held_in_window(showcase_run):
     held = sum(1 for f in _frames(caps, snaps, 6) if _snap(snaps, f, 0)[_STATE] == "ledge_hang")
     assert held >= _LEDGE_HANG_MIN_FRAMES, (
         f"the edge-grab beat should hold the ledge >= {_LEDGE_HANG_MIN_FRAMES} frames (got {held})")
+
+
+def test_late_payoff_beats_freeze_on_their_action_frame(showcase_run):
+    # #412: beats 2/3/7 pay off late in their window, so they set `dwell_at` to freeze on
+    # the action (not a pre-action pose). Assert P1 is in the beat's action state at each
+    # chosen dwell_at frame — the machine-verifiable half of "the dwelled frame shows the
+    # action" (the visual half is re-checkable via `watch.py --demo showcase --shots`).
+    _d, snaps, caps = showcase_run
+    checks = {
+        1: ("double-jump airborne", lambda p: not p[_ON_GROUND]),
+        2: ("jab attacking", lambda p: p[_STATE] == "attack"),
+        6: ("ledge hang", lambda p: p[_STATE] == "ledge_hang"),
+    }
+    for idx, (what, pred) in checks.items():
+        at = caps[idx].dwell_at
+        assert at is not None, f"beat {idx + 1} ({what}) should set dwell_at"
+        p1 = _snap(snaps, at, 0)
+        assert pred(p1), f"beat {idx + 1} dwell_at=f{at} should show {what}; P1 state={p1[_STATE]}"

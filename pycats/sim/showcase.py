@@ -49,14 +49,16 @@ _SEGMENTS = (
     ),
     DemoSegment(
         # Vertical jump + air jump — no direction held, so P1 lands back in jab range.
+        # dwell_at (#412): freeze at f107 while P1 is airborne mid-flight, not the pre-jump f75.
         "Jump & double-jump",
-        anchor=BOTTOM_CENTER, start=75, end=140,
+        anchor=BOTTOM_CENTER, start=75, end=140, dwell_at=107,
         spans=(InputSpan(80, 81, 1, "up"), InputSpan(92, 93, 1, "up")),
     ),
     DemoSegment(
         # P1 has landed and is still adjacent — a GROUNDED jab that connects.
+        # dwell_at (#412): freeze at f165 as the jab contacts Birky, not the pre-jab f145.
         "Jab — a fast disjoint poke",
-        anchor=BOTTOM_CENTER, start=145, end=185,
+        anchor=BOTTOM_CENTER, start=145, end=185, dwell_at=165,
         spans=(InputSpan(160, 161, 1, "attack"),),
     ),
     DemoSegment(
@@ -85,8 +87,9 @@ _SEGMENTS = (
         # Walk to the right ledge, then press BACK (left) as P1 slips off so it catches
         # and HANGS on the edge (no walk-off self-destruct). The 1-frame input gap at the
         # lip lets the grab register before the back-press holds the hang.
+        # dwell_at (#412): freeze at f462 while P1 hangs on the ledge, not the walking f405.
         "Ledge grab — hang on the edge",
-        anchor=BOTTOM_CENTER, start=405, end=520,
+        anchor=BOTTOM_CENTER, start=405, end=520, dwell_at=462,
         spans=(InputSpan(405, 420, 1, "right"), InputSpan(422, 505, 1, "left")),
     ),
 )
