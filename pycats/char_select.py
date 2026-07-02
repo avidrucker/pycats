@@ -53,6 +53,40 @@ from .config import (
 from . import text_utils
 from .characters.roster import ARCHETYPE_ROSTER, ARCHETYPE_NAME, palette_for
 
+# --- char-select layout + behaviour constants (#420: named from inline literals) ---
+# Input debounce windows (frames): movement repeats faster than a committing action.
+MOVE_COOLDOWN_FRAMES = 10       # cursor-move debounce
+ACTION_COOLDOWN_FRAMES = 15     # confirm / cancel / start-back debounce
+START_SCREEN_INPUT_DELAY = 5    # frames to ignore input after the start overlay opens
+
+# Player UI accent colours. These duplicate render_battle's NAME_COLOR_P1/P2; kept
+# local for now — the epic's final config-grouping pass (#410) may centralise them.
+P1_UI_COLOR = (255, 100, 100)   # red — P1 cursor / confirmation / controls
+P2_UI_COLOR = (100, 100, 255)   # blue — P2 cursor / confirmation / controls
+
+# Grid + tiles
+GRID_START_Y = 170              # grid top edge, below the title
+TILE_BG_COLOR = (50, 50, 60)    # per-tile background fill
+TILE_NAME_FONT_SIZE = 18        # archetype name under each tile
+CURSOR_LABEL_FONT_SIZE = 16     # "P1"/"P2" tag above a cursor
+CONFIRM_FONT_SIZE = 20          # "P1 ✓" confirmation label
+CONTROLS_FONT_SIZE = 16         # bottom control-scheme strip
+
+# Preview cat drawn inside each tile
+PREVIEW_SCALE_X = 0.6           # preview width as a fraction of the tile
+PREVIEW_SCALE_Y = 0.8           # preview height as a fraction of the tile
+PREVIEW_STRIPE_COUNT = 3        # simplified stripes on the preview body
+
+# Start overlay
+START_OVERLAY_ALPHA = 128       # ~50% dim over the grid
+START_OVERLAY_COLOR = (0, 0, 0)
+START_BOX_WIDTH = 400
+START_BOX_HEIGHT = 150
+START_BOX_BG_COLOR = (40, 40, 50)
+START_ACCENT_COLOR = (100, 255, 100)  # green — box border + "START" title
+START_TITLE_FONT_SIZE = 48
+START_HINT_FONT_SIZE = 24
+
 
 class CharacterSelector:
     """Handles character selection screen logic for both players."""
@@ -94,7 +128,7 @@ class CharacterSelector:
                 + (CHAR_SELECT_GRID_COLS - 1) * CHAR_SELECT_TILE_SPACING
             )
         ) // 2
-        self.grid_start_y = 170  # Below title
+        self.grid_start_y = GRID_START_Y  # Below title
 
     def reset(self):
         """Reset the character selector to initial state."""
@@ -133,7 +167,7 @@ class CharacterSelector:
         # Check if we should show start screen
         if self.both_confirmed() and not self.show_start_screen:
             self.show_start_screen = True
-            self.start_screen_delay = 5  # Wait 5 frames before allowing start input
+            self.start_screen_delay = START_SCREEN_INPUT_DELAY
             # Reset input cooldowns when showing start screen to allow immediate input
             self.p1_input_cooldown = 0
             self.p2_input_cooldown = 0
@@ -150,7 +184,7 @@ class CharacterSelector:
                     self.p1_confirmed = False
                     self.show_start_screen = False
                     self.start_screen_delay = 0
-                    self.p1_input_cooldown = 15
+                    self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
 
             if self.p2_input_cooldown == 0:
                 if self.p2_controls["special"] in pressed_keys:
@@ -158,7 +192,7 @@ class CharacterSelector:
                     self.p2_confirmed = False
                     self.show_start_screen = False
                     self.start_screen_delay = 0
-                    self.p2_input_cooldown = 15
+                    self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
             # Don't return here - let the main game loop handle A presses for starting
             return
 
@@ -168,31 +202,31 @@ class CharacterSelector:
             if not self.p1_confirmed:
                 if self.p1_controls["left"] in pressed_keys:
                     self.p1_cursor = max(0, self.p1_cursor - 1)
-                    self.p1_input_cooldown = 10
+                    self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p1_controls["right"] in pressed_keys:
                     self.p1_cursor = min(len(self.characters) - 1, self.p1_cursor + 1)
-                    self.p1_input_cooldown = 10
+                    self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p1_controls["up"] in pressed_keys:
                     new_cursor = self.p1_cursor - CHAR_SELECT_GRID_COLS
                     if new_cursor >= 0:
                         self.p1_cursor = new_cursor
-                    self.p1_input_cooldown = 10
+                    self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p1_controls["down"] in pressed_keys:
                     new_cursor = self.p1_cursor + CHAR_SELECT_GRID_COLS
                     if new_cursor < len(self.characters):
                         self.p1_cursor = new_cursor
-                    self.p1_input_cooldown = 10
+                    self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p1_controls["attack"] in pressed_keys:
                     # Confirm selection
                     self.p1_selected = self.characters[self.p1_cursor]
                     self.p1_confirmed = True
-                    self.p1_input_cooldown = 15
+                    self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
             else:
                 # If confirmed, B (special) cancels selection
                 if self.p1_controls["special"] in pressed_keys:
                     self.p1_confirmed = False
                     self.p1_selected = None
-                    self.p1_input_cooldown = 15
+                    self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
 
         # Handle P2 input (character selection)
         if self.p2_input_cooldown == 0:
@@ -200,31 +234,31 @@ class CharacterSelector:
             if not self.p2_confirmed:
                 if self.p2_controls["left"] in pressed_keys:
                     self.p2_cursor = max(0, self.p2_cursor - 1)
-                    self.p2_input_cooldown = 10
+                    self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p2_controls["right"] in pressed_keys:
                     self.p2_cursor = min(len(self.characters) - 1, self.p2_cursor + 1)
-                    self.p2_input_cooldown = 10
+                    self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p2_controls["up"] in pressed_keys:
                     new_cursor = self.p2_cursor - CHAR_SELECT_GRID_COLS
                     if new_cursor >= 0:
                         self.p2_cursor = new_cursor
-                    self.p2_input_cooldown = 10
+                    self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p2_controls["down"] in pressed_keys:
                     new_cursor = self.p2_cursor + CHAR_SELECT_GRID_COLS
                     if new_cursor < len(self.characters):
                         self.p2_cursor = new_cursor
-                    self.p2_input_cooldown = 10
+                    self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p2_controls["attack"] in pressed_keys:
                     # Confirm selection
                     self.p2_selected = self.characters[self.p2_cursor]
                     self.p2_confirmed = True
-                    self.p2_input_cooldown = 15
+                    self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
             else:
                 # If confirmed, B (special) cancels selection
                 if self.p2_controls["special"] in pressed_keys:
                     self.p2_confirmed = False
                     self.p2_selected = None
-                    self.p2_input_cooldown = 15
+                    self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
 
     def both_confirmed(self):
         """Check if both players have confirmed their character selection."""
@@ -247,10 +281,10 @@ class CharacterSelector:
         can_start = False
         if self.p1_input_cooldown == 0 and self.p1_controls["attack"] in pressed_keys:
             can_start = True
-            self.p1_input_cooldown = 15  # Prevent multiple presses
+            self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES  # Prevent multiple presses
         elif self.p2_input_cooldown == 0 and self.p2_controls["attack"] in pressed_keys:
             can_start = True
-            self.p2_input_cooldown = 15  # Prevent multiple presses
+            self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES  # Prevent multiple presses
 
         return can_start
 
@@ -269,7 +303,7 @@ class CharacterSelector:
         char_data = palette_for(char_key)  # archetype's default cosmetic palette
 
         # Scale down for preview
-        preview_size = (size * 0.6, size * 0.8)
+        preview_size = (size * PREVIEW_SCALE_X, size * PREVIEW_SCALE_Y)
         cat_rect = pygame.Rect(
             x + (size - preview_size[0]) // 2,
             y + (size - preview_size[1]) // 2,
@@ -283,7 +317,7 @@ class CharacterSelector:
         # Draw stripes (simplified)
         if char_data["stripe_color"] != char_data["color"]:
             stripe_height = preview_size[1] // 6
-            for i in range(3):
+            for i in range(PREVIEW_STRIPE_COUNT):
                 stripe_y = cat_rect.y + i * stripe_height * 2
                 stripe_rect = pygame.Rect(
                     cat_rect.x, stripe_y, preview_size[0], stripe_height
@@ -369,7 +403,7 @@ class CharacterSelector:
 
             # Draw tile background
             tile_rect = pygame.Rect(x, y, CHAR_SELECT_TILE_SIZE, CHAR_SELECT_TILE_SIZE)
-            pygame.draw.rect(screen, (50, 50, 60), tile_rect)
+            pygame.draw.rect(screen, TILE_BG_COLOR, tile_rect)
             pygame.draw.rect(screen, WHITE, tile_rect, 1)
 
             # Draw cat preview
@@ -380,7 +414,7 @@ class CharacterSelector:
                 screen,
                 ARCHETYPE_NAME[char_key],
                 (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + 10),
-                18,
+                TILE_NAME_FONT_SIZE,
                 WHITE,
                 center=True,
             )
@@ -388,21 +422,21 @@ class CharacterSelector:
         # Draw cursors (only if not confirmed)
         if not self.p1_confirmed:
             self._draw_cursor(
-                screen, self.p1_cursor, (255, 100, 100), "P1", large=True
+                screen, self.p1_cursor, P1_UI_COLOR, "P1", large=True
             )  # Red, large
         if not self.p2_confirmed:
             self._draw_cursor(
-                screen, self.p2_cursor, (100, 100, 255), "P2", large=False
+                screen, self.p2_cursor, P2_UI_COLOR, "P2", large=False
             )  # Blue, small
 
         # Draw selection confirmations
         if self.p1_confirmed and self.p1_selected:
             selected_idx = self.characters.index(self.p1_selected)
-            self._draw_confirmation(screen, selected_idx, (255, 100, 100), "P1", True)
+            self._draw_confirmation(screen, selected_idx, P1_UI_COLOR, "P1", True)
 
         if self.p2_confirmed and self.p2_selected:
             selected_idx = self.characters.index(self.p2_selected)
-            self._draw_confirmation(screen, selected_idx, (100, 100, 255), "P2", False)
+            self._draw_confirmation(screen, selected_idx, P2_UI_COLOR, "P2", False)
 
         # Control instructions at bottom
         self._draw_control_instructions(screen)
@@ -434,7 +468,7 @@ class CharacterSelector:
             screen,
             label,
             (x + CHAR_SELECT_TILE_SIZE // 2, y - 15),
-            16,
+            CURSOR_LABEL_FONT_SIZE,
             color,
             center=True,
         )
@@ -457,7 +491,7 @@ class CharacterSelector:
             label = f"{player_name} ✓"
             text_utils.text_renderer.render_text_mixed(
                 label,
-                20,
+                CONFIRM_FONT_SIZE,
                 color,
                 screen,
                 (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + 30),
@@ -470,7 +504,7 @@ class CharacterSelector:
                 screen,
                 label,
                 (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + 30),
-                20,
+                CONFIRM_FONT_SIZE,
                 color,
                 center=True,
             )
@@ -503,8 +537,8 @@ class CharacterSelector:
         p1_text = f"P1: Move({p1_move_keys}) Confirm({p1_attack_key}) Cancel({p1_special_key})"
         text_utils.text_renderer.render_text_mixed(
             p1_text,
-            16,
-            (255, 100, 100),
+            CONTROLS_FONT_SIZE,
+            P1_UI_COLOR,
             screen,
             (SCREEN_WIDTH // 4, SCREEN_HEIGHT - 40),
             center=True,
@@ -518,8 +552,8 @@ class CharacterSelector:
         p2_text = f"P2: Move({p2_move_keys}) Confirm({p2_attack_key}) Cancel({p2_special_key})"
         text_utils.text_renderer.render_text_mixed(
             p2_text,
-            16,
-            (100, 100, 255),
+            CONTROLS_FONT_SIZE,
+            P2_UI_COLOR,
             screen,
             (3 * SCREEN_WIDTH // 4, SCREEN_HEIGHT - 40),
             center=True,
@@ -529,28 +563,28 @@ class CharacterSelector:
         """Draw the start overlay that partially obscures the grid when both players are confirmed."""
         # Create a semi-transparent overlay
         overlay_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay_surface.set_alpha(128)  # 50% transparency
-        overlay_surface.fill((0, 0, 0))
+        overlay_surface.set_alpha(START_OVERLAY_ALPHA)
+        overlay_surface.fill(START_OVERLAY_COLOR)
         screen.blit(overlay_surface, (0, 0))
 
         # Calculate center position for the start box
-        box_width = 400
-        box_height = 150
+        box_width = START_BOX_WIDTH
+        box_height = START_BOX_HEIGHT
         box_x = (SCREEN_WIDTH - box_width) // 2
         box_y = (SCREEN_HEIGHT - box_height) // 2
 
         # Draw the start box background
         start_box = pygame.Rect(box_x, box_y, box_width, box_height)
-        pygame.draw.rect(screen, (40, 40, 50), start_box)
-        pygame.draw.rect(screen, (100, 255, 100), start_box, 3)
+        pygame.draw.rect(screen, START_BOX_BG_COLOR, start_box)
+        pygame.draw.rect(screen, START_ACCENT_COLOR, start_box, 3)
 
         # Draw "START" text
         text_utils.render_text(
             screen,
             "START",
             (SCREEN_WIDTH // 2, box_y + 40),
-            48,
-            (100, 255, 100),
+            START_TITLE_FONT_SIZE,
+            START_ACCENT_COLOR,
             center=True,
         )
 
@@ -559,7 +593,7 @@ class CharacterSelector:
             screen,
             "Press A to start the match",
             (SCREEN_WIDTH // 2, box_y + 80),
-            24,
+            START_HINT_FONT_SIZE,
             WHITE,
             center=True,
         )
@@ -569,7 +603,7 @@ class CharacterSelector:
             screen,
             "Press B to go back",
             (SCREEN_WIDTH // 2, box_y + 110),
-            24,
+            START_HINT_FONT_SIZE,
             WHITE,
             center=True,
         )
