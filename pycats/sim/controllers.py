@@ -39,6 +39,11 @@ ANTI_STALL_MOVE_PX = 8
 # mid-stage into a self-destruct. ⚠ GUESS px (~2 char-lengths, like the #251 ranges).
 EDGE_HOG_RANGE = 120
 
+# #413 (edge-guard): vertical reach of the edge-guard MELEE poke — the recovering foe
+# must be near the lip (below the on-stage poke's dy<60 band, but not far below). ⚠
+# GUESS px. The projectile mode has no dy cap (it zones a foe anywhere off-stage).
+EDGE_GUARD_DY = 120
+
 
 # ---------------------------------------------------------------------------
 # CPU difficulty levels (#232, #231 / #148 step 1) — DETERMINISTIC core only.
@@ -94,6 +99,11 @@ class LevelParams:
     # opponent further out. On at level >= 5 (mirrors the hang->getup gate, #291);
     # off by default → level-less/low never runs (golden-safe). ⚠ level cut = tuning.
     recover: bool = False
+    # #413 (slice 3 of #312): edge-guard — when the opponent recovers off-stage,
+    # contest from ON-STAGE (poke / projectile), never going off (the PM weakness,
+    # #251 Q4). On at level >= 5; the projectile mode is further gated by "specials"
+    # (level 9 only). Off by default → level-less/low never runs (golden-safe).
+    edge_guard: bool = False
 
 
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
@@ -101,9 +111,9 @@ class LevelParams:
 LEVEL_PARAMS: dict[int, LevelParams] = {
     1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab"})),
     3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab", "tilts"})),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, recover=True),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.15, edge_hog=True, recover=True),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.30, edge_hog=True, recover=True),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, recover=True, edge_guard=True),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.15, edge_hog=True, recover=True, edge_guard=True),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.30, edge_hog=True, recover=True, edge_guard=True),
 }
 
 
@@ -186,7 +196,7 @@ class AttackerController(BaseController):
                  shield_threat_range=160, shield_threat_dy=80,
                  enabled_moves=frozenset({"jab", "tilts", "aerials"}),
                  fireball_range=450, reach_aware=False, reactive_spacing=False,
-                 evade_chance=0.0, edge_hog=False, recover=False):
+                 evade_chance=0.0, edge_hog=False, recover=False, edge_guard=False):
         super().__init__(attacker_num, rng=rng)
         # #232/#238/#248: a difficulty `level` (1-9) overrides the knobs from the
         # #148 table; level=None keeps the explicit defaults (golden-safe).
@@ -205,6 +215,7 @@ class AttackerController(BaseController):
             evade_chance = lp.evade_chance
             edge_hog = lp.edge_hog
             recover = lp.recover
+            edge_guard = lp.edge_guard
         # #248: capability gate + ranged-special (fireball) poke distance. Default
         # excludes "specials" → the ranged-special branch never fires (golden-safe).
         self.enabled_moves = enabled_moves
@@ -245,6 +256,7 @@ class AttackerController(BaseController):
         self.reactive_spacing = reactive_spacing
         self.edge_hog = edge_hog  # #404: contest the ledge vs a recovering opponent
         self.recover = recover    # #409: aim for the ledge when the bot is off-stage
+        self.edge_guard = edge_guard  # #413: poke/projectile a recovering foe from on-stage
         # #338: seeded reactive roll-away (evade). Default 0.0 → never rolls (golden-safe).
         self.evade_chance = evade_chance
         self.safe_x = safe_x
@@ -411,6 +423,26 @@ class AttackerController(BaseController):
             dy = t.rect.centery - a.rect.centery
             adx = abs(dx)
             cx = a.rect.centerx
+            # #413 edge-guard: the opponent is recovering off-stage — contest it from
+            # ON-STAGE (poke / projectile), never going off (the PM weakness, #251 Q4).
+            # Takes precedence over the edge-hog grab (below) when a safe on-stage attack
+            # is in range; falls through to edge-hog otherwise. The projectile drops the
+            # on-stage poke's `abs(dy) < 60` cap (the recovering foe is below/beside the
+            # lip). Attack-only → the bot never leaves the stage. Off by default /
+            # ledges=None → never runs (golden-safe); rng consumed only when it fires.
+            if self.edge_guard and a.fighter.on_ground and self._edge_hog_target(a, t, ledges):
+                cadence = (self._f - self._last_attack) >= self.attack_period
+                if ("specials" in self.enabled_moves
+                        and self.attack_range < adx <= self.fireball_range and cadence
+                        and (self.follow_through_p >= 1.0
+                             or self.rng.random() < self.follow_through_p)):
+                    self._last_attack = self._f
+                    return {keys["special"]}
+                if (adx <= self._melee_range(a) and abs(dy) < EDGE_GUARD_DY and cadence
+                        and (self.follow_through_p >= 1.0
+                             or self.rng.random() < self.follow_through_p)):
+                    self._last_attack = self._f
+                    return {keys["attack"]}
             # #404 edge-hog: the opponent is recovering off-stage — go to the near
             # ledge to contest/grab it (deny), but only when grounded and already near
             # the edge (never run off-stage from mid-stage into a self-destruct).
