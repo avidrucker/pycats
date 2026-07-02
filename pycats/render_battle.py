@@ -25,6 +25,7 @@ from .config import (
     WHISKER_OFFSET_Y, WHISKER_OFFSET_X, STRIPE_COUNT, STRIPE_WIDTH,
     STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
     MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
+    P1_UI_COLOR, P2_UI_COLOR,
     FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, LEDGE_HANG_FRAMES,
     KNOCKDOWN_PRONE_FRAMES, LEDGE_REGRAB_LOCKOUT_FRAMES, DODGE_TIME,
     GETUP_ROLL_FRAMES, SMASH_CHARGE_FRAMES,
@@ -65,8 +66,7 @@ STRIPE_START_Y_OFFSET = 15   # first stripe starts this far below the head top
 FACE_BLIT_OFFSET_Y = 10      # glyph face centred this far below the head top
 NAME_FONT_SIZE = 20          # player-name label above the cat
 NAME_LABEL_OFFSET_Y = 25     # name sits this far above the head top
-NAME_COLOR_P1 = (255, 100, 100)  # red — P1's name
-NAME_COLOR_P2 = (100, 100, 255)  # blue — any other player's name
+# Name-label colours are the shared player accents (#450: config.P1_UI_COLOR/P2_UI_COLOR).
 SHIELD_FILL_ALPHA = 100      # alpha of the translucent shield-bubble fill
 
 
@@ -219,9 +219,9 @@ def draw_player_name(surface, p: Player):
     """Draw the player name above the cat."""
     # Choose color based on player name
     if p.char_name == "P1":
-        color = NAME_COLOR_P1
+        color = P1_UI_COLOR
     else:
-        color = NAME_COLOR_P2
+        color = P2_UI_COLOR
 
     text_utils.render_text(
         surface, p.char_name,

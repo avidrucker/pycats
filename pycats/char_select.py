@@ -49,6 +49,9 @@ from .config import (
     STRIPE_SPACING,
     WHITE,
     BLACK,
+    P1_UI_COLOR,
+    P2_UI_COLOR,
+    OVERLAY_DIM_ALPHA,
 )
 from . import text_utils
 from .characters.roster import ARCHETYPE_ROSTER, ARCHETYPE_NAME, palette_for
@@ -59,10 +62,8 @@ MOVE_COOLDOWN_FRAMES = 10       # cursor-move debounce
 ACTION_COOLDOWN_FRAMES = 15     # confirm / cancel / start-back debounce
 START_SCREEN_INPUT_DELAY = 5    # frames to ignore input after the start overlay opens
 
-# Player UI accent colours. These duplicate render_battle's NAME_COLOR_P1/P2; kept
-# local for now — the epic's final config-grouping pass (#410) may centralise them.
-P1_UI_COLOR = (255, 100, 100)   # red — P1 cursor / confirmation / controls
-P2_UI_COLOR = (100, 100, 255)   # blue — P2 cursor / confirmation / controls
+# Player UI accent colours (P1_UI_COLOR/P2_UI_COLOR) now come from config (#450),
+# shared with render_battle name labels + win_screen confirmation borders.
 
 # Grid + tiles
 GRID_START_Y = 170              # grid top edge, below the title
@@ -77,9 +78,7 @@ PREVIEW_SCALE_X = 0.6           # preview width as a fraction of the tile
 PREVIEW_SCALE_Y = 0.8           # preview height as a fraction of the tile
 PREVIEW_STRIPE_COUNT = 3        # simplified stripes on the preview body
 
-# Start overlay
-START_OVERLAY_ALPHA = 128       # ~50% dim over the grid
-START_OVERLAY_COLOR = (0, 0, 0)
+# Start overlay (dim uses the shared config.OVERLAY_DIM_ALPHA + config.BLACK, #450)
 START_BOX_WIDTH = 400
 START_BOX_HEIGHT = 150
 START_BOX_BG_COLOR = (40, 40, 50)
@@ -563,8 +562,8 @@ class CharacterSelector:
         """Draw the start overlay that partially obscures the grid when both players are confirmed."""
         # Create a semi-transparent overlay
         overlay_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay_surface.set_alpha(START_OVERLAY_ALPHA)
-        overlay_surface.fill(START_OVERLAY_COLOR)
+        overlay_surface.set_alpha(OVERLAY_DIM_ALPHA)
+        overlay_surface.fill(BLACK)
         screen.blit(overlay_surface, (0, 0))
 
         # Calculate center position for the start box

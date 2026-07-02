@@ -22,13 +22,13 @@ from .config import (
     MAIN_MENU_OPTION_SPACING,
     MENU_NAV_COOLDOWN,
     MENU_SELECT_COOLDOWN,
+    OVERLAY_DIM_ALPHA,
 )
 from .text_utils import text_renderer
 from .menu_widgets import draw_menu_button, PRESS_PULSE_FRAMES
 
 # Pause-screen layout literals (#433: named inline). Offsets are from the vertical
-# centre; the dim overlay reuses config.BLACK at PAUSE_OVERLAY_ALPHA.
-PAUSE_OVERLAY_ALPHA = 128        # ~50% dim over the frozen game
+# centre; the dim overlay reuses config.BLACK at config.OVERLAY_DIM_ALPHA (#450).
 PAUSE_TITLE_OFFSET_Y = 120       # "GAME PAUSED" above centre
 PAUSE_OPTIONS_OFFSET_Y = 60      # first option row above centre
 PAUSE_INSTRUCTIONS_OFFSET_Y = 120  # instruction block below centre
@@ -126,7 +126,7 @@ class PauseMenuManager:
 
         # Draw semi-transparent overlay to indicate pause
         pause_overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        pause_overlay.fill((*BLACK, PAUSE_OVERLAY_ALPHA))  # Black with ~50% transparency
+        pause_overlay.fill((*BLACK, OVERLAY_DIM_ALPHA))  # Black with ~50% transparency
         surface.blit(pause_overlay, (0, 0))
 
         # Title

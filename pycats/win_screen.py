@@ -22,6 +22,8 @@ from .config import (
     WIN_SCREEN_PADDING,
     WIN_SCREEN_LINE_SPACING,
     WIN_SCREEN_TEXT_COLOR,
+    P1_UI_COLOR,
+    P2_UI_COLOR,
 )
 from . import stats_print
 from . import text_utils
@@ -365,7 +367,7 @@ class WinScreenManager:
                 columns["p1_col_width"] + box_padding * 2,
                 box_height,
             )
-            pygame.draw.rect(screen, (255, 100, 100), p1_rect, 4)  # Red border
+            pygame.draw.rect(screen, P1_UI_COLOR, p1_rect, 4)  # Red border
 
         # Draw P2 confirmation box (blue)
         if self.p2_confirmed:
@@ -375,4 +377,4 @@ class WinScreenManager:
                 columns["p2_col_width"] + box_padding * 2,
                 box_height,
             )
-            pygame.draw.rect(screen, (100, 100, 255), p2_rect, 4)  # Blue border
+            pygame.draw.rect(screen, P2_UI_COLOR, p2_rect, 4)  # Blue border

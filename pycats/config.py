@@ -282,9 +282,16 @@ HUD_SPACING = 22
 
 # ---------------- colors -------------------
 BG_COLOR = (60, 60, 70)
-P1_COLOR = (255, 160, 64)  # orange
-P2_COLOR = (90, 90, 90)  # gray
+P1_COLOR = (255, 160, 64)  # orange — P1's body
+P2_COLOR = (90, 90, 90)  # gray — P2's body
 P1_STRIPE_COLOR = (204, 102, 0)  # dark orange — P1's secondary fur (P2's is BLACK)
+# Player identity ACCENT colours (#450): the red/blue used for name labels
+# (render_battle), cursors/confirmations (char_select), and confirmation borders
+# (win_screen). Distinct from the body colours above.
+P1_UI_COLOR = (255, 100, 100)  # red — P1 accent
+P2_UI_COLOR = (100, 100, 255)  # blue — P2 accent
+# Standard ~50% dim over a screen (char_select start overlay, pause menu) (#450).
+OVERLAY_DIM_ALPHA = 128
 BLACK = (0, 0, 0)  # black
 BLUE = (0, 0, 255)  # blue
 WHITE = (255, 255, 255)  # white
