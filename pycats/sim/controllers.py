@@ -89,6 +89,11 @@ class LevelParams:
     # their regrab. Deliberately imperfect (the PM CPU weakness, #251 Q4). Off by
     # default → level-less/low never edge-hog (golden-safe). ⚠ which levels = tuning.
     edge_hog: bool = False
+    # #409 (slice 2 of #312): deliberate recovery — when the bot itself is airborne
+    # off-stage, aim for the near ledge (move inward + jump) instead of chasing the
+    # opponent further out. On at level >= 5 (mirrors the hang->getup gate, #291);
+    # off by default → level-less/low never runs (golden-safe). ⚠ level cut = tuning.
+    recover: bool = False
 
 
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
@@ -96,9 +101,9 @@ class LevelParams:
 LEVEL_PARAMS: dict[int, LevelParams] = {
     1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab"})),
     3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab", "tilts"})),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.15, edge_hog=True),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.30, edge_hog=True),
+    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, recover=True),
+    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.15, edge_hog=True, recover=True),
+    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.30, edge_hog=True, recover=True),
 }
 
 
@@ -181,7 +186,7 @@ class AttackerController(BaseController):
                  shield_threat_range=160, shield_threat_dy=80,
                  enabled_moves=frozenset({"jab", "tilts", "aerials"}),
                  fireball_range=450, reach_aware=False, reactive_spacing=False,
-                 evade_chance=0.0, edge_hog=False):
+                 evade_chance=0.0, edge_hog=False, recover=False):
         super().__init__(attacker_num, rng=rng)
         # #232/#238/#248: a difficulty `level` (1-9) overrides the knobs from the
         # #148 table; level=None keeps the explicit defaults (golden-safe).
@@ -199,6 +204,7 @@ class AttackerController(BaseController):
             reactive_spacing = lp.reactive_spacing
             evade_chance = lp.evade_chance
             edge_hog = lp.edge_hog
+            recover = lp.recover
         # #248: capability gate + ranged-special (fireball) poke distance. Default
         # excludes "specials" → the ranged-special branch never fires (golden-safe).
         self.enabled_moves = enabled_moves
@@ -238,6 +244,7 @@ class AttackerController(BaseController):
         # #277 (model A): suppress the standoff back-off when the opponent is vulnerable.
         self.reactive_spacing = reactive_spacing
         self.edge_hog = edge_hog  # #404: contest the ledge vs a recovering opponent
+        self.recover = recover    # #409: aim for the ledge when the bot is off-stage
         # #338: seeded reactive roll-away (evade). Default 0.0 → never rolls (golden-safe).
         self.evade_chance = evade_chance
         self.safe_x = safe_x
@@ -360,6 +367,17 @@ class AttackerController(BaseController):
                 return ledge
         return None
 
+    def _self_recover_target(self, a, ledges):
+        """#409: the near ledge to recover to when the bot `a` is airborne off-stage
+        (beyond a ledge corner toward the blast zone), or None. Symmetric to
+        _edge_hog_target but keyed on `a` itself; ledges falsy → None (golden-safe)."""
+        if not ledges:
+            return None
+        for ledge in ledges:
+            if self._off_stage_side(a, ledge):
+                return ledge
+        return None
+
     def decide(self, a, t, frame, attacks=None, ledges=None) -> set:
         keys = a.controls
         held = set()
@@ -376,6 +394,17 @@ class AttackerController(BaseController):
             if self.edge_hog and self._off_stage_side(t, grabbed):
                 return set()
             return {keys["up"]}
+
+        # #409 deliberate recovery: when the bot ITSELF is airborne off-stage, aim for
+        # the near ledge — move inward toward the corner + jump for height — instead of
+        # chasing the opponent further out (a self-destruct). The hang→getup above
+        # returns it once #14's auto-grab catches. Off by default / ledges=None → never
+        # runs (golden-safe); deterministic, no rng. Deliberately imperfect (#251 Q4).
+        if self.recover:
+            rec = self._self_recover_target(a, ledges)
+            if rec is not None:
+                inward = keys["left"] if rec.ax < a.rect.centerx else keys["right"]
+                return {inward, keys["up"]}
 
         if t.fighter.is_alive:
             dx = t.rect.centerx - a.rect.centerx
