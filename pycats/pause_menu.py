@@ -18,12 +18,11 @@ from .config import (
     MAIN_MENU_TITLE_COLOR,
     MAIN_MENU_TITLE_SIZE,
     MAIN_MENU_OPTION_SIZE,
-    MAIN_MENU_OPTION_COLOR,
-    MAIN_MENU_SELECTED_COLOR,
     MAIN_MENU_PADDING,
     MAIN_MENU_OPTION_SPACING,
 )
 from .text_utils import text_renderer
+from .menu_widgets import draw_menu_button
 
 
 class PauseMenuManager:
@@ -118,55 +117,21 @@ class PauseMenuManager:
             center=True,
         )
 
-        # Menu options
+        # Menu options — the shared glowing menu-button widget (#359/#360): a coloured
+        # rect that glows when focused with a redundant ► marker (focus not colour-only,
+        # #346), replacing the old per-option colour + ►◄ arrows. Reads well over the
+        # dimmed game background (unfocused rows are outline-only).
         start_y = SCREEN_HEIGHT // 2 - 60
 
         for i, option in enumerate(self.options):
-            # Choose color based on selection
-            color = (
-                MAIN_MENU_SELECTED_COLOR
-                if i == self.selected_option
-                else MAIN_MENU_OPTION_COLOR
-            )
-
             option_y = start_y + i * MAIN_MENU_OPTION_SPACING
-            text_renderer.render_text_simple(
-                option,
-                MAIN_MENU_OPTION_SIZE,
-                color,
+            draw_menu_button(
                 surface,
+                option,
                 (SCREEN_WIDTH // 2, option_y),
-                center=True,
+                MAIN_MENU_OPTION_SIZE,
+                focused=(i == self.selected_option),
             )
-
-            # Draw selection indicator with unicode arrows
-            if i == self.selected_option:
-                arrow_offset = (
-                    text_renderer.sys_font(None, MAIN_MENU_OPTION_SIZE).size(option)[0]
-                    // 2
-                    + 30
-                )
-
-                # Use specialized Unicode character rendering for better alignment
-                text_renderer.render_unicode_char(
-                    "►",
-                    MAIN_MENU_OPTION_SIZE,
-                    MAIN_MENU_SELECTED_COLOR,
-                    surface,
-                    (SCREEN_WIDTH // 2 - arrow_offset, option_y),
-                    center=True,
-                    fallback_char=">",
-                )
-
-                text_renderer.render_unicode_char(
-                    "◄",
-                    MAIN_MENU_OPTION_SIZE,
-                    MAIN_MENU_SELECTED_COLOR,
-                    surface,
-                    (SCREEN_WIDTH // 2 + arrow_offset, option_y),
-                    center=True,
-                    fallback_char="<",
-                )
 
         # Instructions
         instructions = [

@@ -18,12 +18,11 @@ from .config import (
     MAIN_MENU_TITLE_COLOR,
     MAIN_MENU_TITLE_SIZE,
     MAIN_MENU_OPTION_SIZE,
-    MAIN_MENU_OPTION_COLOR,
-    MAIN_MENU_SELECTED_COLOR,
     MAIN_MENU_PADDING,
     MAIN_MENU_OPTION_SPACING,
 )
 from .text_utils import text_renderer
+from .menu_widgets import draw_menu_button
 from . import runtime_settings
 
 
@@ -110,58 +109,23 @@ class MainMenuManager:
             center=True,
         )
 
-        # Menu options — spacing scales with the live font_scale (#402) so the rows
-        # (and the oversized selection arrows) don't collide at a large scale.
+        # Menu options — the shared glowing menu-button widget (#359/#360): a coloured
+        # rect that glows when focused with a redundant ► marker (focus not colour-only,
+        # #346). Spacing scales with the live font_scale (#402). The widget owns the
+        # focus visual, replacing the old per-option colour + ►◄ arrows.
         scale = runtime_settings.font_scale()
         spacing = round(MAIN_MENU_OPTION_SPACING * scale)
         start_y = MAIN_MENU_PADDING + MAIN_MENU_TITLE_SIZE + MAIN_MENU_PADDING
 
         for i, option in enumerate(self.options):
-            # Choose color based on selection
-            color = (
-                MAIN_MENU_SELECTED_COLOR
-                if i == self.selected_option
-                else MAIN_MENU_OPTION_COLOR
-            )
-
             option_y = start_y + i * spacing
-            text_renderer.render_text_simple(
-                option,
-                MAIN_MENU_OPTION_SIZE,
-                color,
+            draw_menu_button(
                 surface,
+                option,
                 (SCREEN_WIDTH // 2, option_y),
-                center=True,
+                MAIN_MENU_OPTION_SIZE,
+                focused=(i == self.selected_option),
             )
-
-            # Draw selection indicator with unicode arrows
-            if i == self.selected_option:
-                arrow_offset = (
-                    text_renderer.sys_font(None, MAIN_MENU_OPTION_SIZE).size(option)[0]
-                    // 2
-                    + round(20 * scale)
-                )
-
-                # Use specialized Unicode character rendering for better alignment
-                text_renderer.render_unicode_char(
-                    "►",
-                    MAIN_MENU_OPTION_SIZE,
-                    MAIN_MENU_SELECTED_COLOR,
-                    surface,
-                    (SCREEN_WIDTH // 2 - arrow_offset, option_y),
-                    center=True,
-                    fallback_char=">",
-                )
-
-                text_renderer.render_unicode_char(
-                    "◄",
-                    MAIN_MENU_OPTION_SIZE,
-                    MAIN_MENU_SELECTED_COLOR,
-                    surface,
-                    (SCREEN_WIDTH // 2 + arrow_offset, option_y),
-                    center=True,
-                    fallback_char="<",
-                )
 
         # Instructions - use mixed rendering for the arrow symbols
         instructions = ["Use W/S or ↑/↓ to navigate", "Press A (/ or V) to select"]
