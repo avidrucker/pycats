@@ -8,7 +8,7 @@ import watch
 
 
 class _NullPresenter:
-    def show(self, platforms, players, attacks, frame):
+    def show(self, platforms, players, attacks, frame, inputs=None):
         pass
 
     def close(self):

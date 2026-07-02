@@ -30,8 +30,46 @@ def tick_fps(speed: float) -> int:
     return max(1, round(FPS * speed))
 
 
+# --- Input display (#405) ----------------------------------------------------
+# The on-screen controller overlay: demux a frame's InputFrame back to one player's
+# HELD inputs via that player's keymap (Player.controls / P1_KEYS/P2_KEYS, disjoint).
+# Pure + display-free so it's unit-testable; presenters render its tokens when
+# `show_inputs` is on. Directions render as arrow glyphs, buttons as their action word.
+_INPUT_ORDER = ("left", "right", "up", "down", "attack", "special", "shield")
+_DIR_GLYPH = {"left": "←", "right": "→", "up": "↑", "down": "↓"}
+
+
+def held_input_tokens(inputs, keymap) -> list:
+    """The held-input readout tokens for one player: their held keys (from `inputs`)
+    mapped through `keymap` (action -> pygame key), directions first as arrow glyphs
+    then buttons as action words. `inputs=None` (no overlay data) -> []."""
+    if inputs is None:
+        return []
+    held = inputs.held
+    tokens = []
+    for action in _INPUT_ORDER:
+        key = keymap.get(action)
+        if key is not None and key in held:
+            tokens.append(_DIR_GLYPH.get(action, action))
+    return tokens
+
+
+def _draw_input_display(surface, players, inputs, y):
+    """Draw each player's held-input readout at row `y` (P1 left, P2 right), read from
+    that player's own keymap (`Player.controls`). Presentation-only; no-op if `inputs`
+    is None (nothing to show)."""
+    if inputs is None:
+        return
+    for i, p in enumerate(players):
+        tokens = held_input_tokens(inputs, p.controls)
+        text = f"{p.char_name}: {'  '.join(tokens) if tokens else '·'}"
+        right = bool(i)  # P1 left-aligned, P2 right-aligned (mirrors the HUD)
+        x = SCREEN_WIDTH - HUD_PADDING if right else HUD_PADDING
+        text_utils.render_text(surface, text, (x, y), 22, WHITE, right_align=right)
+
+
 class HeadlessPresenter:
-    def show(self, platforms, players, attacks, frame): ...
+    def show(self, platforms, players, attacks, frame, inputs=None): ...
     def close(self): ...
 
 
@@ -44,7 +82,7 @@ class LivePresenter:
     plus each fighter's stocks/damage."""
 
     def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True, captions=(),
-                 speed=1.0):
+                 speed=1.0, show_inputs=False):
         import os
         os.environ.pop("SDL_VIDEODRIVER", None)
         pygame.display.quit()
@@ -56,6 +94,7 @@ class LivePresenter:
         self.overlay = overlay
         self.captions = list(captions)  # demo captions (#306); presentation overlay
         self.speed = speed              # <1 slow-mo (#351); paces the tick, not the sim
+        self.show_inputs = show_inputs  # #405: draw the per-player held-input overlay
 
     def _draw_overlay(self, players):
         cap = "capped@60" if self.cap_fps else "uncapped"
@@ -68,7 +107,7 @@ class LivePresenter:
                 f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
                 (HUD_PADDING, HUD_PADDING + i * 22), 22, WHITE)
 
-    def show(self, platforms, players, attacks, frame):
+    def show(self, platforms, players, attacks, frame, inputs=None):
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 raise KeyboardInterrupt
@@ -77,6 +116,8 @@ class LivePresenter:
         render_attacks(self.screen, attacks)
         if self.overlay:
             self._draw_overlay(players)
+        if self.show_inputs:
+            _draw_input_display(self.screen, players, inputs, HUD_PADDING + 2 * 22)
         draw_captions(self.screen, self.captions, frame)
         pygame.display.flip()
         self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
@@ -96,7 +137,7 @@ class LivePresenter:
 class VideoPresenter:
     """Writes each frame to a video file. Requires imageio (+ imageio-ffmpeg)."""
 
-    def __init__(self, path="battle.mp4", fps=FPS, captions=(), speed=1.0):
+    def __init__(self, path="battle.mp4", fps=FPS, captions=(), speed=1.0, show_inputs=False):
         try:
             import imageio.v2 as imageio
         except Exception as exc:  # pragma: no cover - optional dep
@@ -107,15 +148,18 @@ class VideoPresenter:
         self._writer = imageio.get_writer(path, fps=fps)
         self._surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.captions = list(captions)  # demo captions (#306); presentation overlay
+        self.show_inputs = show_inputs  # #405: draw the per-player held-input overlay
         # Slow-mo (#351): write each sim frame `_dup` times at the same fps, so the
         # video plays back `1/speed`x longer while staying 60fps-smooth (not choppy
         # half-fps). speed 1.0 -> 1 (unchanged).
         self._dup = frames_per_output(speed)
 
-    def show(self, platforms, players, attacks, frame):
+    def show(self, platforms, players, attacks, frame, inputs=None):
         self._surface.fill(BG_COLOR)
         render_battle(self._surface, players, platforms)
         render_attacks(self._surface, attacks)
+        if self.show_inputs:
+            _draw_input_display(self._surface, players, inputs, HUD_PADDING + 2 * 22)
         draw_captions(self._surface, self.captions, frame)
         arr = pygame.surfarray.array3d(self._surface).transpose(1, 0, 2)
         # `_dup` copies for slow-mo (#351); a caption's start frame also freezes for
@@ -142,12 +186,13 @@ class ScreenshotPresenter:
     `overlay=True` draws a per-fighter stocks/%/state line (no FPS — it's a still),
     so the inspector can read what each fighter is doing in the frame."""
 
-    def __init__(self, out_dir, captions=(), frames=None, overlay=True):
+    def __init__(self, out_dir, captions=(), frames=None, overlay=True, show_inputs=False):
         import os
         os.makedirs(out_dir, exist_ok=True)
         self.out_dir = out_dir
         self.captions = list(captions)
         self.overlay = overlay
+        self.show_inputs = show_inputs  # #405: draw the per-player held-input overlay
         self._surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self._frames = frames if frames is not None else self._default_frames(self.captions)
         self.saved = []            # (frame, path) in save order — inspection manifest
@@ -176,7 +221,7 @@ class ScreenshotPresenter:
                 f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
                 (HUD_PADDING, HUD_PADDING + i * 22), 22, WHITE)
 
-    def show(self, platforms, players, attacks, frame):
+    def show(self, platforms, players, attacks, frame, inputs=None):
         if frame not in self._frames:
             return
         self._surface.fill(BG_COLOR)
@@ -184,6 +229,8 @@ class ScreenshotPresenter:
         render_attacks(self._surface, attacks)
         if self.overlay:
             self._draw_overlay(players)
+        if self.show_inputs:
+            _draw_input_display(self._surface, players, inputs, HUD_PADDING + 2 * 22)
         draw_captions(self._surface, self.captions, frame)
         label = self._frames[frame]
         path = f"{self.out_dir}/{label}.png"

@@ -156,7 +156,7 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
         match.tick()
         snaps.append(snapshot(players, attacks, match))
         if presenter is not None:
-            presenter.show(platforms, players, attacks, f)
+            presenter.show(platforms, players, attacks, f, inputs=fi)  # #405: input overlay
         if stop_on_match_over and match.phase == "match_over":
             break
     if presenter is not None:
