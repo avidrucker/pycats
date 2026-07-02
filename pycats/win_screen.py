@@ -26,6 +26,10 @@ from .config import (
 from . import stats_print
 from . import text_utils
 
+# Win-screen input timing (frames) — #446: named from inline literals.
+WIN_INPUT_COOLDOWN = 15   # ignore repeat confirm/cancel presses for this long
+WIN_RETURN_DELAY = 30     # after both players confirm, wait this long, then return
+
 
 class WinScreenManager:
     """Handles win screen display and confirmation logic for both players."""
@@ -92,28 +96,28 @@ class WinScreenManager:
             if self.p1_controls["attack"] in pressed_keys:
                 # Confirm viewing stats
                 self.p1_confirmed = True
-                self.p1_input_cooldown = 15
+                self.p1_input_cooldown = WIN_INPUT_COOLDOWN
                 # If both players are now confirmed, start the return delay
                 if self.p1_confirmed and self.p2_confirmed:
-                    self.return_delay = 30  # 30 frames delay
+                    self.return_delay = WIN_RETURN_DELAY
             elif self.p1_controls["special"] in pressed_keys:
                 # Cancel confirmation
                 self.p1_confirmed = False
-                self.p1_input_cooldown = 15
+                self.p1_input_cooldown = WIN_INPUT_COOLDOWN
 
         # Handle P2 input
         if self.p2_input_cooldown == 0:
             if self.p2_controls["attack"] in pressed_keys:
                 # Confirm viewing stats
                 self.p2_confirmed = True
-                self.p2_input_cooldown = 15
+                self.p2_input_cooldown = WIN_INPUT_COOLDOWN
                 # If both players are now confirmed, start the return delay
                 if self.p1_confirmed and self.p2_confirmed:
-                    self.return_delay = 30  # 30 frames delay
+                    self.return_delay = WIN_RETURN_DELAY
             elif self.p2_controls["special"] in pressed_keys:
                 # Cancel confirmation
                 self.p2_confirmed = False
-                self.p2_input_cooldown = 15
+                self.p2_input_cooldown = WIN_INPUT_COOLDOWN
 
     def both_confirmed(self):
         """Check if both players have confirmed viewing the stats."""

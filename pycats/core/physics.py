@@ -23,6 +23,10 @@ from ..config import (
     JOSTLE_MIN_VOVERLAP_FRAC,
 )
 
+# Physics thresholds (#446: named from inline literals).
+VEL_DEADZONE = 0.05         # |vel.x| below this snaps to 0 after friction (dead-zone)
+COLLISION_PUSH_SPLIT = 0.5  # a one-sided push shares speed: both move at half the pusher's
+
 # ------------------------------------------------------------------ vertical
 
 
@@ -136,7 +140,7 @@ def apply_horizontal_friction(
     """
     factor = factor_ground if on_ground else AIR_FRICTION
     vel.x *= factor  # no rounding
-    if abs(vel.x) < 0.05:  # dead-zone
+    if abs(vel.x) < VEL_DEADZONE:  # dead-zone
         vel.x = 0
     return vel
 
@@ -188,11 +192,11 @@ def resolve_player_push(players: list["Player"]) -> None:
                 b.fighter.vel.x = 0.0
             # If only one is pushing, both move at half the pusher's speed
             elif a.fighter.vel.x != 0 and b.fighter.vel.x == 0:
-                push_speed = a.fighter.vel.x * 0.5
+                push_speed = a.fighter.vel.x * COLLISION_PUSH_SPLIT
                 a.fighter.vel.x = push_speed
                 b.fighter.vel.x = push_speed
             elif b.fighter.vel.x != 0 and a.fighter.vel.x == 0:
-                push_speed = b.fighter.vel.x * 0.5
+                push_speed = b.fighter.vel.x * COLLISION_PUSH_SPLIT
                 a.fighter.vel.x = push_speed
                 b.fighter.vel.x = push_speed
             # If both move the same direction, average them
