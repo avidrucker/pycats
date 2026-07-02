@@ -9,6 +9,11 @@ from ..render_battle import render_battle, render_attacks
 from .. import text_utils
 from .captions import draw_captions, caption_hold_frames
 
+# Live-replay overlay text sizes (#444: named from inline literals).
+OVERLAY_FPS_FONT_SIZE = 24    # the FPS readout (top-right)
+OVERLAY_STAT_FONT_SIZE = 22   # each fighter's stocks/damage line
+OVERLAY_STAT_LINE_SPACING = 22  # vertical stride between fighter stat lines
+
 
 # --- Playback-speed scalar (#351) --------------------------------------------
 # Slow-motion is presentation-only: the sim is fixed-timestep (#166/#80), so we pace
@@ -61,12 +66,14 @@ class LivePresenter:
         cap = "capped@60" if self.cap_fps else "uncapped"
         text_utils.render_text(
             self.screen, f"FPS: {self.clock.get_fps():.1f} ({cap})",
-            (SCREEN_WIDTH - HUD_PADDING, HUD_PADDING), 24, WHITE, right_align=True)
+            (SCREEN_WIDTH - HUD_PADDING, HUD_PADDING), OVERLAY_FPS_FONT_SIZE,
+            WHITE, right_align=True)
         for i, p in enumerate(players):
             text_utils.render_text(
                 self.screen,
                 f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
-                (HUD_PADDING, HUD_PADDING + i * 22), 22, WHITE)
+                (HUD_PADDING, HUD_PADDING + i * OVERLAY_STAT_LINE_SPACING),
+                OVERLAY_STAT_FONT_SIZE, WHITE)
 
     def show(self, platforms, players, attacks, frame):
         for ev in pygame.event.get():

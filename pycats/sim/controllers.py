@@ -44,6 +44,23 @@ EDGE_HOG_RANGE = 120
 # GUESS px. The projectile mode has no dy cap (it zones a foe anywhere off-stage).
 EDGE_GUARD_DY = 120
 
+# On-stage poke vertical band (#444: named from the inline dy<60): a melee poke only
+# connects when the foe is within this many px vertically (adx is gated separately).
+POKE_DY_BAND = 60
+
+# Jump-up-stuck trigger (#369 / #444): the bot wants "up" toward a foe more than
+# FOE_ABOVE_DY px above it AND within JUMP_UP_NEAR_ADX px horizontally.
+FOE_ABOVE_DY = 30
+JUMP_UP_NEAR_ADX = 120
+
+# The melee in-range window opens a touch closer than the nominal standoff
+# (standoff - IN_RANGE_NEAR_MARGIN) so the bot commits at the edge of reach (#444).
+IN_RANGE_NEAR_MARGIN = 18
+
+# Sentinel "no attack yet" timestamp — far in the past so the first attack's cadence
+# gate always passes (#444: named from the -10_000 magic).
+NEVER_ATTACKED = -10_000
+
 
 # ---------------------------------------------------------------------------
 # CPU difficulty levels (#232, #231 / #148 step 1) — DETERMINISTIC core only.
@@ -265,7 +282,7 @@ class AttackerController(BaseController):
         # thin platform the attacker is standing on so they reach the target's
         # level.  Purely a policy parameter; 0 disables the behaviour.
         self.drop_threshold = drop_threshold
-        self._last_attack = -10_000
+        self._last_attack = NEVER_ATTACKED
         # #369: consecutive frames the jump-toward-elevated-target gate has held while
         # the bot is STILL grounded (the jump never took). A normal jump leaves the
         # ground on frame 1 → gate's on_ground goes False → this resets, so normal
@@ -355,7 +372,7 @@ class AttackerController(BaseController):
             return False  # still startup/active (a threat, not an opening)
         adx = abs(t.rect.centerx - a.rect.centerx)
         dy = abs(t.rect.centery - a.rect.centery)
-        return adx <= self._melee_range(a) and dy < 60
+        return adx <= self._melee_range(a) and dy < POKE_DY_BAND
 
     @staticmethod
     def _off_stage_side(t, ledge) -> bool:
@@ -457,7 +474,7 @@ class AttackerController(BaseController):
             # shielding it away; it still falls through to movement on non-poke frames,
             # so it also closes in. Cadence + follow-through gated. Default enabled_moves
             # has no "specials" → never fires (golden-safe).
-            if ("specials" in self.enabled_moves and abs(dy) < 60
+            if ("specials" in self.enabled_moves and abs(dy) < POKE_DY_BAND
                     and self.attack_range < adx <= self.fireball_range
                     and (self._f - self._last_attack) >= self.attack_period
                     and (self.follow_through_p >= 1.0
@@ -557,7 +574,7 @@ class AttackerController(BaseController):
             # own — those are unchanged. Only when the bot held `up` last frame yet is
             # STILL grounded (the jump didn't take) do we skip this frame, forcing a
             # release so a fresh press re-fires the jump next frame and the bot climbs.
-            if dy < -30 and a.fighter.on_ground and adx < 120:
+            if dy < -FOE_ABOVE_DY and a.fighter.on_ground and adx < JUMP_UP_NEAR_ADX:
                 self._jump_up_stuck += 1
                 # Held for the first JUMP_UP_STUCK_MAX frames (byte-identical to the
                 # old always-hold, so normal jumps + short blips are unchanged); once
@@ -578,7 +595,8 @@ class AttackerController(BaseController):
             # vertical tolerance is wide enough to keep engaging after knockback
             # nudges the target a platform up/down, avoiding a positional
             # deadlock under the post-startup hitbox timing.
-            in_range = (self.standoff - 18) <= adx <= self._melee_range(a) and abs(dy) < 60
+            in_range = ((self.standoff - IN_RANGE_NEAR_MARGIN) <= adx <= self._melee_range(a)
+                        and abs(dy) < POKE_DY_BAND)
             # #232: reaction_delay — wait this many frames after entering range
             # before the first attack (a higher level reacts faster). With the
             # default reaction_delay=0 this is always satisfied → unchanged.
