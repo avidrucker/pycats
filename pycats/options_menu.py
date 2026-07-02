@@ -25,6 +25,7 @@ from .config import (
     MAIN_MENU_TITLE_COLOR,
     MAIN_MENU_TITLE_SIZE,
     MAIN_MENU_OPTION_SIZE,
+    MAIN_MENU_SELECTED_COLOR,
     FONT_SCALE_ORDER,
     FONT_SCALE_NAMES,
 )
@@ -39,6 +40,22 @@ from .text_utils import text_renderer
 # buttons fit, 1 at a large font_scale — via _effective_cols(). Navigation is 2D:
 # up/down move a full row within a column, left/right move between columns.
 NCOLS = 2
+
+# Focused-option captions (#390): one-line description of what each row does, shown
+# at bottom-centre in a reserved band above the hint lines (never overlaps a button).
+CAPTION_SIZE = 18
+CAPTION_COLOR = MAIN_MENU_SELECTED_COLOR  # ties the caption to the focused row
+ROW_DESCRIPTIONS = {
+    "status_bars": "Show the HUD stun / shield timer bars above each fighter.",
+    "hitbox_overlay": "Draw debug hit / hurtbox outlines during battle.",
+    "input_history": "Show your recent inputs in Project M notation, in-battle.",
+    "controls": "Show the on-screen control hints during battle.",
+    "font_scale": "Resize all menu / HUD text: Small / Standard / Large.",
+    "window_scale": "Cycle the windowed zoom (also F10).",
+    "fullscreen": "Toggle fullscreen (also F11).",
+    "esc_quit": "Hold ESC for 2 seconds to quit / return to menu.",
+    "back": "Return to the main menu.",
+}
 
 
 class OptionsMenu:
@@ -203,6 +220,31 @@ class OptionsMenu:
         bw, _ = self._button_size()
         return effective_columns(SCREEN_WIDTH, bw, NCOLS)
 
+    # ---- captions (#390) ----
+    def _focused_caption(self):
+        """The description line for the currently-focused row (empty if none)."""
+        return ROW_DESCRIPTIONS.get(self.rows[self.selected_option], "")
+
+    def _fit_caption(self, text, size, max_w):
+        """`text` ellipsized so it renders within `max_w` pixels at `size`."""
+        font = text_renderer._get_font(None, size)
+        if font.size(text)[0] <= max_w:
+            return text
+        while text and font.size(text + "…")[0] > max_w:
+            text = text[:-1]
+        return (text.rstrip() + "…") if text else "…"
+
+    def _caption_layout(self, meta):
+        """(text, rect) for the focused caption, ellipsized to fit and centred in the
+        reserved caption band. Shared by render and the no-overlap test (#390)."""
+        scale = runtime_settings.font_scale()
+        text = self._fit_caption(self._focused_caption(), CAPTION_SIZE,
+                                 SCREEN_WIDTH - round(40 * scale))
+        w, h = text_renderer._get_font(None, CAPTION_SIZE).size(text)
+        rect = pygame.Rect(0, 0, w, h)
+        rect.center = meta["caption_center"]
+        return text, rect
+
     def _layout(self):
         """Placement for this frame, updating scroll_top so the selected row stays on
         screen. Returns (placements, meta) — placements is [(row_index, (cx, cy))] for
@@ -218,12 +260,21 @@ class OptionsMenu:
 
         title_h = text_renderer._get_font(None, MAIN_MENU_TITLE_SIZE).get_height()
         instr_h = text_renderer._get_font(None, 20).get_height()
+        cap_h = text_renderer._get_font(None, CAPTION_SIZE).get_height()
         title_center_y = round(10 * scale) + title_h // 2
         grid_top = round(10 * scale) + title_h + round(10 * scale)
         instr_line = instr_h + round(4 * scale)
         instr_top = SCREEN_HEIGHT - (2 * instr_line + round(8 * scale))
+
+        # Reserved caption band (#390): one line just above the hints. The grid
+        # viewport ends above it (and above a bottom strip for the "↓ more" cue), so a
+        # caption can never overlap a button or the scroll affordance.
+        caption_center_y = instr_top - round(8 * scale) - cap_h // 2
+        caption_top = caption_center_y - cap_h // 2 - round(6 * scale)
+        more_strip = instr_h + round(6 * scale)
+
         row_spacing = bh + round(6 * scale)
-        viewport_h = max(row_spacing, instr_top - grid_top)
+        viewport_h = max(row_spacing, caption_top - grid_top - more_strip)
         visible_rows = max(1, viewport_h // row_spacing)
 
         sel_row = self.selected_option // ncols
@@ -240,11 +291,13 @@ class OptionsMenu:
                 if i < n:
                     placements.append((i, (col_x[c], cy)))
 
+        more_below_y = grid_top + visible_rows * row_spacing + more_strip // 2
         meta = dict(ncols=ncols, nrows=nrows, visible_rows=visible_rows,
                     title_center=(SCREEN_WIDTH // 2, title_center_y),
                     grid_top=grid_top, instr_top=instr_top, instr_line=instr_line,
+                    caption_center=(SCREEN_WIDTH // 2, caption_center_y),
                     more_above=self.scroll_top > 0, more_below=last < nrows,
-                    button_width=bw)
+                    more_below_y=more_below_y, button_width=bw)
         return placements, meta
 
     # ---- render ----
@@ -268,7 +321,8 @@ class OptionsMenu:
             )
 
         # Scroll affordances (#402): ↑/↓ "more" when the grid overflows the viewport
-        # (↑↓ are in the font-capability whitelist, unlike ▲▼).
+        # (↑↓ are in the font-capability whitelist, unlike ▲▼). ↓ sits in the reserved
+        # bottom strip, above the caption band (#390).
         if meta["more_above"]:
             text_renderer.render_mixed_centered(
                 "↑ more", 18, WHITE, surface,
@@ -276,7 +330,15 @@ class OptionsMenu:
         if meta["more_below"]:
             text_renderer.render_mixed_centered(
                 "↓ more", 18, WHITE, surface,
-                (SCREEN_WIDTH // 2, meta["instr_top"] - round(4 * scale)))
+                (SCREEN_WIDTH // 2, meta["more_below_y"]))
+
+        # Focused-option caption (#390): describes what the highlighted row does, in a
+        # reserved band above the hints so it never overlaps a button.
+        caption_text, _caption_rect = self._caption_layout(meta)
+        if caption_text:
+            text_renderer.render_text_mixed(
+                caption_text, CAPTION_SIZE, CAPTION_COLOR, surface,
+                meta["caption_center"], center=True)
 
         instructions = ["Use WASD or arrows to navigate", "A to toggle, B to go back"]
         for i, instruction in enumerate(instructions):

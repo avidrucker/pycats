@@ -143,3 +143,64 @@ def test_options_back_returns_to_main_menu():
     sm.options_menu.action_requested = "back"
     sm.update(_frame())
     assert sm.get_state() == "main_menu"
+
+
+# --- #390: focused-option captions (content + visibility/no-overlap) ---
+import contextlib
+from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAIN_MENU_OPTION_SIZE
+from pycats.options_menu import ROW_DESCRIPTIONS, CAPTION_SIZE
+from pycats.menu_widgets import menu_button_size
+
+
+@contextlib.contextmanager
+def _scale(preset):
+    prev = runtime_settings.get("font_scale")
+    runtime_settings.set("font_scale", preset)
+    try:
+        yield
+    finally:
+        runtime_settings.set("font_scale", prev)
+
+
+def test_focused_row_caption():
+    """Every row maps to its frozen description, and the focused caption tracks the
+    selection. Able-to-fail: no ROW_DESCRIPTIONS / _focused_caption before the feature."""
+    runtime_settings.seed(settings.defaults())
+    m = _opts()
+    for i, row in enumerate(m.rows):
+        m.selected_option = i
+        assert m._focused_caption() == ROW_DESCRIPTIONS[row]
+    m.selected_option = 0
+    first = m._focused_caption()
+    m.selected_option = 1
+    assert m._focused_caption() != first  # updates live as focus moves
+
+
+def test_caption_never_overlaps_buttons():
+    """#390 added acceptance: for EVERY option, when focused, the caption is fully on
+    screen and overlaps no button — at both standard and large font_scale."""
+    runtime_settings.seed(settings.defaults())
+    m = _opts()
+    for preset in ("standard", "large"):
+        with _scale(preset):
+            for sel in range(len(m.rows)):
+                m.selected_option = sel
+                m.scroll_top = 0
+                placements, meta = m._layout()
+                bw = meta["button_width"]
+                _, bh = menu_button_size(m._row_label(m.rows[0]), MAIN_MENU_OPTION_SIZE,
+                                         focused=True, min_width=bw)
+                button_rects = []
+                for _i, (cx, cy) in placements:
+                    r = pygame.Rect(0, 0, bw, bh)
+                    r.center = (cx, cy)
+                    button_rects.append(r)
+                _cap_text, cap_rect = m._caption_layout(meta)
+                assert cap_rect.width <= SCREEN_WIDTH, f"caption wider than screen @{preset}"
+                assert 0 <= cap_rect.left and cap_rect.right <= SCREEN_WIDTH, \
+                    f"caption off-screen horizontally @{preset} sel={sel}: {cap_rect}"
+                assert 0 <= cap_rect.top and cap_rect.bottom <= SCREEN_HEIGHT, \
+                    f"caption off-screen vertically @{preset} sel={sel}: {cap_rect}"
+                for br in button_rects:
+                    assert not cap_rect.colliderect(br), \
+                        f"caption overlaps a button @{preset} sel={sel}: {cap_rect} vs {br}"
