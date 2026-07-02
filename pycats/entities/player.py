@@ -35,6 +35,8 @@ from ..config import (
     LEDGE_HANG_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
     LEDGE_GETUP_FRAMES,
+    P1_COLOR, P2_COLOR, P1_STRIPE_COLOR, BLACK,
+    PROJECTILE_GRAVITY, PROJECTILE_RESTITUTION, PROJECTILE_MAX_BOUNCES,
 )
 from .attack import Attack, Projectile
 from .ledge import ledge_invuln_frames
@@ -106,10 +108,10 @@ class Player(pygame.sprite.Sprite):
         self.eye_color = eye_color
 
         # Secondary fur color for stripes
-        if color == (255, 160, 64):  # Orange player (P1_COLOR)
-            self.stripe_color = (204, 102, 0)  # Dark orange
-        elif color == (90, 90, 90):  # Gray player (P2_COLOR)
-            self.stripe_color = (0, 0, 0)  # Black
+        if color == P1_COLOR:
+            self.stripe_color = P1_STRIPE_COLOR
+        elif color == P2_COLOR:
+            self.stripe_color = BLACK
         else:
             self.stripe_color = color  # Default to same color if no match
 
@@ -489,9 +491,9 @@ class Player(pygame.sprite.Sprite):
                                lifetime=mv.projectile_lifetime or tick.lifetime,
                                rehit_rate=mv.rehit_rate,
                                velocity=(facing * mv.projectile_speed, 0),
-                               gravity=getattr(mv, "projectile_gravity", 0.5),
-                               restitution=getattr(mv, "projectile_restitution", 0.6),
-                               max_bounces=getattr(mv, "projectile_max_bounces", 3))
+                               gravity=getattr(mv, "projectile_gravity", PROJECTILE_GRAVITY),
+                               restitution=getattr(mv, "projectile_restitution", PROJECTILE_RESTITUTION),
+                               max_bounces=getattr(mv, "projectile_max_bounces", PROJECTILE_MAX_BOUNCES))
                 )
             else:
                 # Smash charge (#327/3b): a chargeable move's hitboxes scale by the

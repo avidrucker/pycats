@@ -18,7 +18,10 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame  # type: ignore
-from ..config import ATTACK_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT  # visual size; stage bounds (#223/#266 despawn)
+from ..config import (
+    ATTACK_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT,  # visual size; stage bounds (#223/#266 despawn)
+    PROJECTILE_GRAVITY, PROJECTILE_RESTITUTION, PROJECTILE_MAX_BOUNCES,
+)
 from ..combat.geometry import resolve_circle
 
 
@@ -160,7 +163,9 @@ class Projectile(Attack):
     (no measured PM values exist — see docs/research/2026-06-30-nalio-fireball-…md).
     """
 
-    def __init__(self, *args, gravity=0.5, restitution=0.6, max_bounces=3, **kwargs):
+    def __init__(self, *args, gravity=PROJECTILE_GRAVITY,
+                 restitution=PROJECTILE_RESTITUTION,
+                 max_bounces=PROJECTILE_MAX_BOUNCES, **kwargs):
         super().__init__(*args, **kwargs)
         self.gravity = gravity          # ⚠ GUESS px/frame² downward accel
         self.restitution = restitution  # ⚠ GUESS vertical energy kept per bounce (<1)

@@ -60,6 +60,10 @@ from ..combat.knockback import (
 from ..combat.shield import shieldstun_frames
 from ..combat.shield import shield_break_stun_frames
 
+# Where a KO'd fighter's rect is parked while dead — far off any stage so it can't
+# collide or render on-screen during the respawn wait (#425: named sentinel).
+_KO_OFFSCREEN_POS = (-1000, -1000)
+
 
 class Fighter:
     def __init__(self, x, y, facing_right, fighter_data):
@@ -416,7 +420,7 @@ class Fighter:
         self.is_alive = False
         self.respawn_timer = RESPAWN_DELAY_FRAMES
         # hide sprite off-screen
-        self.rect.center = (-1000, -1000)
+        self.rect.center = _KO_OFFSCREEN_POS
         self.vel.update(0, 0)
         # FSM transition applied by the caller (Player.update) — the domain no
         # longer drives the Player engine (#298/S5).

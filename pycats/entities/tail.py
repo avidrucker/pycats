@@ -42,6 +42,9 @@ _PINNED = 2
 # of the [-1, +1] direction), so the pinned base stub swings to the other side
 # smoothly instead of snapping (companion to the #3 hip-anchor ease).
 _BASE_TURN_STEP = 0.18
+# When BOTH endpoints of a distance constraint are free, each moves half the
+# correction (Jakobsen relaxation) so the segment splits the error evenly.
+_CONSTRAINT_HALF_SPLIT = 0.5
 
 
 class TailSegment:
@@ -179,10 +182,10 @@ class Tail:
                     a.x += dx * diff
                     a.y += dy * diff
                 else:
-                    a.x += dx * 0.5 * diff
-                    a.y += dy * 0.5 * diff
-                    b.x -= dx * 0.5 * diff
-                    b.y -= dy * 0.5 * diff
+                    a.x += dx * _CONSTRAINT_HALF_SPLIT * diff
+                    a.y += dy * _CONSTRAINT_HALF_SPLIT * diff
+                    b.x -= dx * _CONSTRAINT_HALF_SPLIT * diff
+                    b.y -= dy * _CONSTRAINT_HALF_SPLIT * diff
 
         # 4) Solid-platform collision (floor clamp; kills downward velocity).
         self._resolve_platform_collisions(platforms)

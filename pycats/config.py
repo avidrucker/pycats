@@ -30,6 +30,13 @@ FPS = 60
 
 GRAVITY = 0.5
 MAX_FALL_SPEED = 13
+# Projectile physics defaults (#266, #425). ⚠ GUESS tuning starting points — no
+# measured PM values (see docs/research/2026-06-30-nalio-fireball-*.md). Per-move
+# overridable via projectile_gravity/_restitution/_max_bounces; these are the
+# shared fallbacks used by Projectile.__init__ and the Player spawn path.
+PROJECTILE_GRAVITY = 0.5       # px/frame² downward accel
+PROJECTILE_RESTITUTION = 0.6   # vertical energy kept per bounce (<1)
+PROJECTILE_MAX_BOUNCES = 3     # bounces before despawn
 MOVE_SPEED = 6
 # Walk/dash/run layer (#388, design #374). MOVE_SPEED is the WALK (≈PM Mario walk
 # 1.1u ×5.4 ≈ 5.9px). DASH is the faster tap-burst (≈Mario dash 1.5u ×5.4 ≈ 8.1px).
@@ -276,6 +283,7 @@ HUD_SPACING = 22
 BG_COLOR = (60, 60, 70)
 P1_COLOR = (255, 160, 64)  # orange
 P2_COLOR = (90, 90, 90)  # gray
+P1_STRIPE_COLOR = (204, 102, 0)  # dark orange — P1's secondary fur (P2's is BLACK)
 BLACK = (0, 0, 0)  # black
 BLUE = (0, 0, 255)  # blue
 WHITE = (255, 255, 255)  # white
