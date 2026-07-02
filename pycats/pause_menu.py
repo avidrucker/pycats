@@ -24,7 +24,7 @@ from .config import (
     MENU_SELECT_COOLDOWN,
 )
 from .text_utils import text_renderer
-from .menu_widgets import draw_menu_button
+from .menu_widgets import draw_menu_button, PRESS_PULSE_FRAMES
 
 # Pause-screen layout literals (#433: named inline). Offsets are from the vertical
 # centre; the dim overlay reuses config.BLACK at PAUSE_OVERLAY_ALPHA.
@@ -51,6 +51,9 @@ class PauseMenuManager:
         # Input debouncing
         self.input_cooldown = 0
 
+        # Press-feedback flash: frames remaining on the focused button's pulse (#332).
+        self.press_pulse = 0
+
         # Action results
         self.action_requested = None  # Will be "resume", "end_match", "return_to_menu", or None
 
@@ -58,10 +61,15 @@ class PauseMenuManager:
         """Reset the menu state."""
         self.selected_option = 0
         self.input_cooldown = 0
+        self.press_pulse = 0
         self.action_requested = None
 
     def update(self, pressed_keys):
         """Update menu based on player input."""
+        # Decay the press-flash every frame, before the cooldown early-return (#332).
+        if self.press_pulse > 0:
+            self.press_pulse -= 1
+
         # Decrease input cooldown
         if self.input_cooldown > 0:
             self.input_cooldown -= 1
@@ -77,6 +85,7 @@ class PauseMenuManager:
         ):
             self.selected_option = (self.selected_option - 1) % len(self.options)
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
+            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
 
         if (
             self.p1_controls["down"] in pressed_keys
@@ -84,6 +93,7 @@ class PauseMenuManager:
         ):
             self.selected_option = (self.selected_option + 1) % len(self.options)
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
+            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
 
         # Handle selection input from either player (/ or V keys only)
         if (
@@ -98,6 +108,7 @@ class PauseMenuManager:
                 self.action_requested = "return_to_menu"
 
             self.input_cooldown = MENU_SELECT_COOLDOWN  # Prevent rapid selection
+            self.press_pulse = PRESS_PULSE_FRAMES        # flash the confirmed row
 
     def get_action(self):
         """Get the requested action and clear it."""
@@ -142,6 +153,7 @@ class PauseMenuManager:
                 (SCREEN_WIDTH // 2, option_y),
                 MAIN_MENU_OPTION_SIZE,
                 focused=(i == self.selected_option),
+                pressed=(i == self.selected_option and self.press_pulse > 0),
             )
 
         # Instructions

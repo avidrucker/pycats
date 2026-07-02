@@ -33,7 +33,7 @@ from .config import (
 )
 from . import runtime_settings
 from . import settings
-from .menu_widgets import draw_menu_button, menu_button_size, BUTTON_MIN_WIDTH
+from .menu_widgets import draw_menu_button, menu_button_size, BUTTON_MIN_WIDTH, PRESS_PULSE_FRAMES
 from .menu_layout import effective_columns, grid_dims, scroll_to_visible
 from .text_utils import text_renderer
 
@@ -81,12 +81,15 @@ class OptionsMenu:
         self.scroll_top = 0
 
         self.input_cooldown = 0
+        # Press-feedback flash: frames remaining on the focused row's pulse (#332).
+        self.press_pulse = 0
         self.action_requested = None  # "back" or None
 
     def reset(self):
         self.selected_option = 0
         self.scroll_top = 0
         self.input_cooldown = 0
+        self.press_pulse = 0
         self.action_requested = None
 
     # ---- input ----
@@ -100,6 +103,10 @@ class OptionsMenu:
         )
 
     def update(self, pressed_keys):
+        # Decay the press-flash every frame, before the cooldown early-return (#332).
+        if self.press_pulse > 0:
+            self.press_pulse -= 1
+
         if self.input_cooldown > 0:
             self.input_cooldown -= 1
             return
@@ -108,6 +115,7 @@ class OptionsMenu:
         if self._pressed("special", pressed_keys):
             self.action_requested = "back"
             self.input_cooldown = MENU_SELECT_COOLDOWN
+            self.press_pulse = PRESS_PULSE_FRAMES
             return
 
         # 2D grid navigation (#389): up/down move a full row within a column,
@@ -135,10 +143,12 @@ class OptionsMenu:
                 new = n - 1
             self.selected_option = new
             self.input_cooldown = MENU_NAV_COOLDOWN
+            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
 
         if self._pressed("attack", pressed_keys):
             self._activate(self.rows[self.selected_option])
             self.input_cooldown = MENU_SELECT_COOLDOWN
+            self.press_pulse = PRESS_PULSE_FRAMES     # flash the activated row
 
     def _activate(self, row):
         if row == "status_bars":
@@ -322,6 +332,7 @@ class OptionsMenu:
             draw_menu_button(
                 surface, self._row_label(self.rows[i]), center, MAIN_MENU_OPTION_SIZE,
                 focused=(i == self.selected_option), min_width=meta["button_width"],
+                pressed=(i == self.selected_option and self.press_pulse > 0),
             )
 
         # Scroll affordances (#402): ↑/↓ "more" when the grid overflows the viewport

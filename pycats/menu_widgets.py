@@ -23,8 +23,14 @@ BUTTON_PAD_Y = 8            # vertical padding
 BUTTON_MIN_WIDTH = 300       # keep rows a consistent width regardless of label
 BUTTON_RADIUS = 6
 BUTTON_FILL_FOCUSED = (60, 60, 20)          # warm glow fill behind the focused label
+BUTTON_FILL_PRESSED = (120, 120, 40)        # brighter flash on press (#332), decays to the glow
 BUTTON_BORDER_FOCUSED = MAIN_MENU_SELECTED_COLOR  # bright border = the "glow" edge
 BUTTON_BORDER_UNFOCUSED = (70, 70, 80)      # dim outline when not focused
+
+# How many frames the press-flash lingers after a confirm/navigation input (#332).
+# Screens own a ``press_pulse`` counter set to this on input and decremented each
+# frame; the button renders ``pressed`` while it is > 0.
+PRESS_PULSE_FRAMES = 6
 
 
 def focus_label(label, focused):
@@ -49,13 +55,16 @@ def menu_button_size(label, size, focused=False, *, min_width=BUTTON_MIN_WIDTH):
     return max(min_width, tw + 2 * pad_x), th + 2 * pad_y
 
 
-def draw_menu_button(surface, label, center, size, focused, *, min_width=BUTTON_MIN_WIDTH):
+def draw_menu_button(surface, label, center, size, focused, *, min_width=BUTTON_MIN_WIDTH,
+                     pressed=False):
     """Draw one menu row as a coloured rect that glows when focused, with a marker.
 
     ``center`` is the (x, y) the button is centred on; ``size`` the label font size.
-    Returns the button ``pygame.Rect``. Visual only — no navigation/state logic.
-    Chrome (padding/radius) scales with the live font_scale (#402); at the standard
-    scale this is the identity, so the default render is byte-identical.
+    ``pressed`` flashes the focused row a brighter fill (``BUTTON_FILL_PRESSED``) for
+    press feedback (#332); it is a no-op when unfocused. Returns the button
+    ``pygame.Rect``. Visual only — no navigation/state logic. Chrome (padding/radius)
+    scales with the live font_scale (#402); at the standard scale, with the default
+    ``pressed=False``, the render is byte-identical to before.
     """
     _, _, radius = _scaled_chrome()
     text = focus_label(label, focused)
@@ -64,7 +73,8 @@ def draw_menu_button(surface, label, center, size, focused, *, min_width=BUTTON_
     rect.center = center
 
     if focused:
-        pygame.draw.rect(surface, BUTTON_FILL_FOCUSED, rect, border_radius=radius)
+        fill = BUTTON_FILL_PRESSED if pressed else BUTTON_FILL_FOCUSED
+        pygame.draw.rect(surface, fill, rect, border_radius=radius)
         pygame.draw.rect(surface, BUTTON_BORDER_FOCUSED, rect, width=3, border_radius=radius)
         color = MAIN_MENU_SELECTED_COLOR
     else:

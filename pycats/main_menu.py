@@ -24,7 +24,7 @@ from .config import (
     MENU_SELECT_COOLDOWN,
 )
 from .text_utils import text_renderer
-from .menu_widgets import draw_menu_button
+from .menu_widgets import draw_menu_button, PRESS_PULSE_FRAMES
 from . import runtime_settings
 
 # Layout literals for the instruction/fullscreen-hint text (#433: named inline).
@@ -50,6 +50,9 @@ class MainMenuManager:
         # Input debouncing
         self.input_cooldown = 0
 
+        # Press-feedback flash: frames remaining on the focused button's pulse (#332).
+        self.press_pulse = 0
+
         # Action results
         self.action_requested = None  # Will be "play", "options", "quit", or None
 
@@ -57,10 +60,16 @@ class MainMenuManager:
         """Reset the menu state."""
         self.selected_option = 0
         self.input_cooldown = 0
+        self.press_pulse = 0
         self.action_requested = None
 
     def update(self, pressed_keys):
         """Update menu based on player input."""
+        # Decay the press-flash every frame (before the cooldown early-return, so it
+        # still ticks down while input is debounced) (#332).
+        if self.press_pulse > 0:
+            self.press_pulse -= 1
+
         # Decrease input cooldown
         if self.input_cooldown > 0:
             self.input_cooldown -= 1
@@ -76,6 +85,7 @@ class MainMenuManager:
         ):
             self.selected_option = (self.selected_option - 1) % len(self.options)
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
+            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
 
         if (
             self.p1_controls["down"] in pressed_keys
@@ -83,6 +93,7 @@ class MainMenuManager:
         ):
             self.selected_option = (self.selected_option + 1) % len(self.options)
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
+            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
 
         # Handle selection input from either player
         if (
@@ -96,6 +107,7 @@ class MainMenuManager:
             }.get(self.options[self.selected_option])
 
             self.input_cooldown = MENU_SELECT_COOLDOWN  # Prevent rapid selection
+            self.press_pulse = PRESS_PULSE_FRAMES        # flash the confirmed row
 
     def get_action(self):
         """Get the requested action and clear it."""
@@ -134,6 +146,7 @@ class MainMenuManager:
                 (SCREEN_WIDTH // 2, option_y),
                 MAIN_MENU_OPTION_SIZE,
                 focused=(i == self.selected_option),
+                pressed=(i == self.selected_option and self.press_pulse > 0),
             )
 
         # Instructions - use mixed rendering for the arrow symbols
