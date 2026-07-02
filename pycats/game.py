@@ -46,6 +46,7 @@ from .config import (
 from .entities import Platform
 from . import input_poll as inp
 from . import stats_print
+from .core.keymap import Keymap
 from .screen_manager import ScreenStateManager
 from .battle_screen import BattleScreen
 from .render_battle import draw_shell_chrome
@@ -90,7 +91,11 @@ platforms = [
     ),
 ]
 
-P1_KEYS = dict(
+# Rebindable per-player keymaps (#439/#447): the same `Keymap` instance is shared
+# by the battle and the Options screen, so a rebind there takes effect live. A
+# `Keymap` is a `dict` subclass, so every downstream `controls[...]`/`.get()` read is
+# unchanged; the factory defaults below are what "reset to defaults" restores.
+P1_KEYS = Keymap(dict(
     left=pygame.K_a,
     right=pygame.K_d,
     up=pygame.K_w,
@@ -99,8 +104,8 @@ P1_KEYS = dict(
     special=pygame.K_c,
     shield=pygame.K_x,
     smash=pygame.K_b,  # dedicated smash input (#331, slice 1 of #327)
-)
-P2_KEYS = dict(
+))
+P2_KEYS = Keymap(dict(
     left=pygame.K_LEFT,
     right=pygame.K_RIGHT,
     up=pygame.K_UP,
@@ -109,7 +114,7 @@ P2_KEYS = dict(
     special=pygame.K_PERIOD,
     shield=pygame.K_COMMA,
     smash=pygame.K_QUOTE,  # dedicated smash input (#331, slice 1 of #327)
-)
+))
 
 # Players will be created after character selection
 # Battle state + per-frame sim are owned by BattleScreen (#193); game.py reads
