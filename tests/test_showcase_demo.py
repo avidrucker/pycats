@@ -26,6 +26,7 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pytest
 
 from pycats.config import SHIELD_DRAIN_PER_FRAME
+from pycats.sim.captions import is_active
 from pycats.sim.demo import DEMOS, demo_timeline, demo_frames, demo_captions
 from pycats.sim.runner import run_battle, KEYMAPS
 from pycats.sim.battle_log import events_from_snaps
@@ -185,3 +186,15 @@ def test_late_payoff_beats_freeze_on_their_action_frame(showcase_run):
         assert at is not None, f"beat {idx + 1} ({what}) should set dwell_at"
         p1 = _snap(snaps, at, 0)
         assert pred(p1), f"beat {idx + 1} dwell_at=f{at} should show {what}; P1 state={p1[_STATE]}"
+
+
+def test_showcase_shows_at_most_one_caption_per_frame(showcase_run):
+    # #419: the showcase beats are SEQUENTIAL, so at most one caption may be active on any
+    # frame — two would render stacked (bottom-center) and, on a dwell freeze, hold ~2.5s.
+    # Windows are inclusive-inclusive, so an `end` equal to the next `start` double-renders.
+    # (Overlap is allowed in the demo model generally — nested spans — but not this
+    # sequential showcase, hence a showcase-specific invariant.)
+    _d, snaps, caps = showcase_run
+    for f in range(len(snaps)):
+        active = [c.text.split(" — ")[0] for c in caps if is_active(c, f)]
+        assert len(active) <= 1, f"frame {f} has >1 caption active: {active}"

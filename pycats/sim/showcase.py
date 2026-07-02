@@ -57,8 +57,10 @@ _SEGMENTS = (
     DemoSegment(
         # P1 has landed and is still adjacent — a GROUNDED jab that connects.
         # dwell_at (#412): freeze at f165 as the jab contacts Birky, not the pre-jab f145.
+        # end=184, not 185 (#419): windows are inclusive, so ending at the shield beat's
+        # start (185) would double-render both captions on that frame (frozen ~2.5s).
         "Jab — a fast disjoint poke",
-        anchor=BOTTOM_CENTER, start=145, end=185, dwell_at=165,
+        anchor=BOTTOM_CENTER, start=145, end=184, dwell_at=165,
         spans=(InputSpan(160, 161, 1, "attack"),),
     ),
     DemoSegment(
