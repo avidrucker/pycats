@@ -126,3 +126,70 @@ class VideoPresenter:
 
     def close(self):
         self._writer.close()
+
+
+class ScreenshotPresenter:
+    """Renders chosen frames to an off-screen Surface and saves them as PNGs — for
+    visual inspection of a demo (e.g. a shot per caption). Headless: it never opens a
+    window, so it works under the `dummy` SDL driver the runner sets by default.
+
+    `frames` (a {frame: label} dict) picks which frames to save. When omitted it
+    defaults to each caption's window **start** (the dwelled frame a viewer reads),
+    **mid** (the beat's action, still within the window and the run), and **end**
+    (clamped to the run) — so flipping through the shots shows what each beat looks
+    like. A `MANIFEST.txt` maps each shot to its caption text.
+
+    `overlay=True` draws a per-fighter stocks/%/state line (no FPS — it's a still),
+    so the inspector can read what each fighter is doing in the frame."""
+
+    def __init__(self, out_dir, captions=(), frames=None, overlay=True):
+        import os
+        os.makedirs(out_dir, exist_ok=True)
+        self.out_dir = out_dir
+        self.captions = list(captions)
+        self.overlay = overlay
+        self._surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self._frames = frames if frames is not None else self._default_frames(self.captions)
+        self.saved = []            # (frame, path) in save order — inspection manifest
+        self._manifest = []        # (label, caption text) lines
+
+    @staticmethod
+    def _default_frames(captions):
+        """{frame: label} for each caption's start / mid / end (dedup by frame)."""
+        out = {}
+        for i, c in enumerate(captions, 1):
+            if c.frames is None:
+                continue
+            s, e = c.frames
+            mid = (s + e) // 2
+            for tag, f in (("start", s), ("mid", mid), ("end", e)):
+                out.setdefault(f, f"cap{i:02d}_{tag}_f{f:04d}")
+        return out
+
+    def _draw_overlay(self, players):
+        for i, p in enumerate(players):
+            text_utils.render_text(
+                self._surface,
+                f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
+                (HUD_PADDING, HUD_PADDING + i * 22), 22, WHITE)
+
+    def show(self, platforms, players, attacks, frame):
+        if frame not in self._frames:
+            return
+        self._surface.fill(BG_COLOR)
+        render_battle(self._surface, players, platforms)
+        render_attacks(self._surface, attacks)
+        if self.overlay:
+            self._draw_overlay(players)
+        draw_captions(self._surface, self.captions, frame)
+        label = self._frames[frame]
+        path = f"{self.out_dir}/{label}.png"
+        pygame.image.save(self._surface, path)
+        self.saved.append((frame, path))
+        active = " | ".join(c.text for c in self.captions if c.frames and c.frames[0] <= frame <= c.frames[1])
+        self._manifest.append(f"{label}.png  (frame {frame})  captions: {active}")
+
+    def close(self):
+        if self._manifest:
+            with open(f"{self.out_dir}/MANIFEST.txt", "w", encoding="utf-8") as fh:
+                fh.write("\n".join(self._manifest) + "\n")

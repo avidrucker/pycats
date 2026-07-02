@@ -16,7 +16,7 @@ from collections import Counter
 
 from pycats.config import FPS
 from pycats.sim.runner import run_battle, KEYMAPS
-from pycats.sim.presenters import LivePresenter, VideoPresenter
+from pycats.sim.presenters import LivePresenter, VideoPresenter, ScreenshotPresenter
 from pycats.sim.controllers import (
     AttackerController, IdlerController, FollowerController,
 )
@@ -124,6 +124,10 @@ def main(argv=None, presenter=None):
                          "0.5 = half-speed slow-motion so fast beats are legible; "
                          "1.0 = real time (default). Live: paces the display tick; "
                          "video: duplicates frames (#351/#308).")
+    ap.add_argument("--shots", default=None, metavar="DIR",
+                    help="capture a PNG per caption (start/mid/end of each caption "
+                         "window) into DIR for visual inspection, headless — instead "
+                         "of live/video playback. Writes a MANIFEST.txt (#411/#308).")
     args = ap.parse_args(argv)
 
     # Seed home is this CLI edge (#166): an explicit --seed is reproducible; absent
@@ -168,9 +172,13 @@ def main(argv=None, presenter=None):
         frames, stop_on_match_over = resolve_battle_plan(args.vs, args.match, args.frames)
 
     if presenter is None:
-        presenter = (VideoPresenter(args.video, speed=args.demo_speed) if args.video
-                     else LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay,
-                                        speed=args.demo_speed))
+        if args.shots:
+            presenter = ScreenshotPresenter(args.shots, captions=captions)
+        elif args.video:
+            presenter = VideoPresenter(args.video, speed=args.demo_speed)
+        else:
+            presenter = LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay,
+                                      speed=args.demo_speed)
     if captions:                              # attach; don't clobber an injected list (#306)
         presenter.captions = list(captions)
     snaps = []
