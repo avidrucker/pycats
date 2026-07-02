@@ -20,9 +20,20 @@ from .config import (
     MAIN_MENU_OPTION_SIZE,
     MAIN_MENU_PADDING,
     MAIN_MENU_OPTION_SPACING,
+    MENU_NAV_COOLDOWN,
+    MENU_SELECT_COOLDOWN,
 )
 from .text_utils import text_renderer
 from .menu_widgets import draw_menu_button
+
+# Pause-screen layout literals (#433: named inline). Offsets are from the vertical
+# centre; the dim overlay reuses config.BLACK at PAUSE_OVERLAY_ALPHA.
+PAUSE_OVERLAY_ALPHA = 128        # ~50% dim over the frozen game
+PAUSE_TITLE_OFFSET_Y = 120       # "GAME PAUSED" above centre
+PAUSE_OPTIONS_OFFSET_Y = 60      # first option row above centre
+PAUSE_INSTRUCTIONS_OFFSET_Y = 120  # instruction block below centre
+PAUSE_INSTRUCTION_LINE_SPACING = 25
+PAUSE_INSTRUCTION_FONT_SIZE = 18
 
 
 class PauseMenuManager:
@@ -65,14 +76,14 @@ class PauseMenuManager:
             or self.p2_controls["up"] in pressed_keys
         ):
             self.selected_option = (self.selected_option - 1) % len(self.options)
-            self.input_cooldown = 10  # Prevent rapid navigation
+            self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
 
         if (
             self.p1_controls["down"] in pressed_keys
             or self.p2_controls["down"] in pressed_keys
         ):
             self.selected_option = (self.selected_option + 1) % len(self.options)
-            self.input_cooldown = 10  # Prevent rapid navigation
+            self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
 
         # Handle selection input from either player (/ or V keys only)
         if (
@@ -86,7 +97,7 @@ class PauseMenuManager:
             elif self.selected_option == 2:  # Return to Menu
                 self.action_requested = "return_to_menu"
 
-            self.input_cooldown = 20  # Prevent rapid selection
+            self.input_cooldown = MENU_SELECT_COOLDOWN  # Prevent rapid selection
 
     def get_action(self):
         """Get the requested action and clear it."""
@@ -104,7 +115,7 @@ class PauseMenuManager:
 
         # Draw semi-transparent overlay to indicate pause
         pause_overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-        pause_overlay.fill((0, 0, 0, 128))  # Black with 50% transparency
+        pause_overlay.fill((*BLACK, PAUSE_OVERLAY_ALPHA))  # Black with ~50% transparency
         surface.blit(pause_overlay, (0, 0))
 
         # Title
@@ -113,7 +124,7 @@ class PauseMenuManager:
             MAIN_MENU_TITLE_SIZE,
             MAIN_MENU_TITLE_COLOR,
             surface,
-            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 120),
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - PAUSE_TITLE_OFFSET_Y),
             center=True,
         )
 
@@ -121,7 +132,7 @@ class PauseMenuManager:
         # rect that glows when focused with a redundant ► marker (focus not colour-only,
         # #346), replacing the old per-option colour + ►◄ arrows. Reads well over the
         # dimmed game background (unfocused rows are outline-only).
-        start_y = SCREEN_HEIGHT // 2 - 60
+        start_y = SCREEN_HEIGHT // 2 - PAUSE_OPTIONS_OFFSET_Y
 
         for i, option in enumerate(self.options):
             option_y = start_y + i * MAIN_MENU_OPTION_SPACING
@@ -139,13 +150,13 @@ class PauseMenuManager:
             "Press V or / to select"
         ]
 
-        instruction_start_y = SCREEN_HEIGHT // 2 + 120
+        instruction_start_y = SCREEN_HEIGHT // 2 + PAUSE_INSTRUCTIONS_OFFSET_Y
 
         for i, instruction in enumerate(instructions):
-            instruction_y = instruction_start_y + i * 25
+            instruction_y = instruction_start_y + i * PAUSE_INSTRUCTION_LINE_SPACING
             text_renderer.render_text_mixed(
                 instruction,
-                18,
+                PAUSE_INSTRUCTION_FONT_SIZE,
                 WHITE,
                 surface,
                 (SCREEN_WIDTH // 2, instruction_y),

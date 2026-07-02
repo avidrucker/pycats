@@ -20,10 +20,19 @@ from .config import (
     MAIN_MENU_OPTION_SIZE,
     MAIN_MENU_PADDING,
     MAIN_MENU_OPTION_SPACING,
+    MENU_NAV_COOLDOWN,
+    MENU_SELECT_COOLDOWN,
 )
 from .text_utils import text_renderer
 from .menu_widgets import draw_menu_button
 from . import runtime_settings
+
+# Layout literals for the instruction/fullscreen-hint text (#433: named inline).
+INSTRUCTION_FONT_SIZE = 20      # bottom navigation-hint lines
+INSTRUCTION_LINE_SPACING = 30   # vertical stride between hint lines
+FS_HINT_FONT_SIZE = 20          # the "F11: Toggle Fullscreen" hint
+FS_HINT_MARGIN_X = 10           # right margin of the fullscreen hint
+FS_HINT_MARGIN_BOTTOM = 25      # bottom margin of the fullscreen hint
 
 
 class MainMenuManager:
@@ -66,14 +75,14 @@ class MainMenuManager:
             or self.p2_controls["up"] in pressed_keys
         ):
             self.selected_option = (self.selected_option - 1) % len(self.options)
-            self.input_cooldown = 10  # Prevent rapid navigation
+            self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
 
         if (
             self.p1_controls["down"] in pressed_keys
             or self.p2_controls["down"] in pressed_keys
         ):
             self.selected_option = (self.selected_option + 1) % len(self.options)
-            self.input_cooldown = 10  # Prevent rapid navigation
+            self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
 
         # Handle selection input from either player
         if (
@@ -86,7 +95,7 @@ class MainMenuManager:
                 "Quit": "quit",
             }.get(self.options[self.selected_option])
 
-            self.input_cooldown = 20  # Prevent rapid selection
+            self.input_cooldown = MENU_SELECT_COOLDOWN  # Prevent rapid selection
 
     def get_action(self):
         """Get the requested action and clear it."""
@@ -130,13 +139,14 @@ class MainMenuManager:
         # Instructions - use mixed rendering for the arrow symbols
         instructions = ["Use W/S or ↑/↓ to navigate", "Press A (/ or V) to select"]
 
-        instruction_start_y = SCREEN_HEIGHT - len(instructions) * 30 - MAIN_MENU_PADDING
+        instruction_start_y = (SCREEN_HEIGHT - len(instructions) * INSTRUCTION_LINE_SPACING
+                               - MAIN_MENU_PADDING)
 
         for i, instruction in enumerate(instructions):
-            instruction_y = instruction_start_y + i * 30
+            instruction_y = instruction_start_y + i * INSTRUCTION_LINE_SPACING
             text_renderer.render_text_mixed(
                 instruction,
-                20,
+                INSTRUCTION_FONT_SIZE,
                 WHITE,
                 surface,
                 (SCREEN_WIDTH // 2, instruction_y),
@@ -145,8 +155,10 @@ class MainMenuManager:
 
         # Draw fullscreen instructions
         fs_text = "F11: Toggle Fullscreen"
-        fs_font = text_renderer.sys_font(None, 20)
+        fs_font = text_renderer.sys_font(None, FS_HINT_FONT_SIZE)
         fs_surf = fs_font.render(fs_text, True, WHITE)
         surface.blit(
-            fs_surf, (SCREEN_WIDTH - fs_surf.get_width() - 10, SCREEN_HEIGHT - 25)
+            fs_surf,
+            (SCREEN_WIDTH - fs_surf.get_width() - FS_HINT_MARGIN_X,
+             SCREEN_HEIGHT - FS_HINT_MARGIN_BOTTOM),
         )

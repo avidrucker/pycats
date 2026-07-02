@@ -388,6 +388,10 @@ MAIN_MENU_OPTION_COLOR = WHITE
 MAIN_MENU_SELECTED_COLOR = YELLOW
 MAIN_MENU_PADDING = 60
 MAIN_MENU_OPTION_SPACING = 50
+# Menu input-debounce windows (frames), shared by main / options / pause menus
+# (#433): navigation repeats faster than a committing select/back.
+MENU_NAV_COOLDOWN = 10
+MENU_SELECT_COOLDOWN = 20
 
 # ---------------- font sizes (single source, #344) ----------------
 # The one place every UI/HUD text size lives, so a size change — and the planned

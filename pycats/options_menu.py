@@ -28,6 +28,8 @@ from .config import (
     MAIN_MENU_SELECTED_COLOR,
     FONT_SCALE_ORDER,
     FONT_SCALE_NAMES,
+    MENU_NAV_COOLDOWN,
+    MENU_SELECT_COOLDOWN,
 )
 from . import runtime_settings
 from . import settings
@@ -45,6 +47,8 @@ NCOLS = 2
 # at bottom-centre in a reserved band above the hint lines (never overlaps a button).
 CAPTION_SIZE = 18
 CAPTION_COLOR = MAIN_MENU_SELECTED_COLOR  # ties the caption to the focused row
+INSTRUCTION_FONT_SIZE = 20   # bottom nav-hint lines (also drives the instr-band height)
+MORE_CUE_FONT_SIZE = 18      # the "↑ more" / "↓ more" scroll affordances
 ROW_DESCRIPTIONS = {
     "status_bars": "Show the HUD stun / shield timer bars above each fighter.",
     "hitbox_overlay": "Draw debug hit / hurtbox outlines during battle.",
@@ -103,7 +107,7 @@ class OptionsMenu:
         # B / special backs out from any row.
         if self._pressed("special", pressed_keys):
             self.action_requested = "back"
-            self.input_cooldown = 20
+            self.input_cooldown = MENU_SELECT_COOLDOWN
             return
 
         # 2D grid navigation (#389): up/down move a full row within a column,
@@ -130,11 +134,11 @@ class OptionsMenu:
             if new >= n:  # partial last row (odd count) — snap to the last cell
                 new = n - 1
             self.selected_option = new
-            self.input_cooldown = 10
+            self.input_cooldown = MENU_NAV_COOLDOWN
 
         if self._pressed("attack", pressed_keys):
             self._activate(self.rows[self.selected_option])
-            self.input_cooldown = 20
+            self.input_cooldown = MENU_SELECT_COOLDOWN
 
     def _activate(self, row):
         if row == "status_bars":
@@ -259,7 +263,7 @@ class OptionsMenu:
         ncols, nrows = grid_dims(n, effective_columns(SCREEN_WIDTH, bw, NCOLS))
 
         title_h = text_renderer._get_font(None, MAIN_MENU_TITLE_SIZE).get_height()
-        instr_h = text_renderer._get_font(None, 20).get_height()
+        instr_h = text_renderer._get_font(None, INSTRUCTION_FONT_SIZE).get_height()
         cap_h = text_renderer._get_font(None, CAPTION_SIZE).get_height()
         title_center_y = round(10 * scale) + title_h // 2
         grid_top = round(10 * scale) + title_h + round(10 * scale)
@@ -325,11 +329,11 @@ class OptionsMenu:
         # bottom strip, above the caption band (#390).
         if meta["more_above"]:
             text_renderer.render_mixed_centered(
-                "↑ more", 18, WHITE, surface,
+                "↑ more", MORE_CUE_FONT_SIZE, WHITE, surface,
                 (SCREEN_WIDTH // 2, meta["grid_top"] - round(12 * scale)))
         if meta["more_below"]:
             text_renderer.render_mixed_centered(
-                "↓ more", 18, WHITE, surface,
+                "↓ more", MORE_CUE_FONT_SIZE, WHITE, surface,
                 (SCREEN_WIDTH // 2, meta["more_below_y"]))
 
         # Focused-option caption (#390): describes what the highlighted row does, in a
@@ -344,5 +348,6 @@ class OptionsMenu:
         for i, instruction in enumerate(instructions):
             cy = meta["instr_top"] + i * meta["instr_line"] + meta["instr_line"] // 2
             text_renderer.render_text_mixed(
-                instruction, 20, WHITE, surface, (SCREEN_WIDTH // 2, cy), center=True,
+                instruction, INSTRUCTION_FONT_SIZE, WHITE, surface,
+                (SCREEN_WIDTH // 2, cy), center=True,
             )
