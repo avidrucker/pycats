@@ -1,0 +1,211 @@
+"""
+Purpose: Defines the Attack hit-box sprite.
+
+Contents:
+- Attack is a pygame.sprite.Sprite
+- Spawned when a player attacks
+- Lives for a fixed number of frames, then self-deletes
+- Positioned based on the owner player's facing direction
+
+Use: Used to detect hit interactions between players.
+"""
+
+#### TODO: implement grabbing, which puts attacker into grabbing and, if successful, puts the defender into grabbed state, the duration is dependent on defender damage percent (low damager percent == shorter grab durations)
+#### TODO: implement attack hit-boxes that are larger for heavy characters and smaller for light characters
+#### TODO: implement throw attacks that can throw the opponent off the stage, with a directional key (forward, backward, up, down), and throw attacks can only be executed while the attacker is in grabbing state and the opponent is in grabbed state
+#### TODO: implement grab attacks ("pummeling") that can deal minor damage to a grabbed opponent
+#### TODO: implement grab escape mechanics where the grabbed player can mash their inputs to escape sooner
+#### TODO: implement ability for some attacks to hit more than one opponent
+
+import pygame  # type: ignore
+from ..config import (
+    ATTACK_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT,  # visual size; stage bounds (#223/#266 despawn)
+    PROJECTILE_GRAVITY, PROJECTILE_RESTITUTION, PROJECTILE_MAX_BOUNCES,
+)
+from ..combat.geometry import resolve_circle
+
+
+class Attack(pygame.sprite.Sprite):
+    """Hit-box sprite that disappears after N frames.
+
+    Task 5: Attack carries absolute hitbox circles resolved from the move's
+    Hitbox.circle(s) at spawn time using the owner's rect top-left as origin and
+    their facing direction. The circles are fixed at spawn (Phase 0: static
+    hitbox — they do not follow the owner once launched). combat.process_hits
+    uses these circles for hit detection instead of the rect; the rect is kept
+    for rendering only and bounds all resolved hitbox circles.
+
+    #130: a move may have MORE THAN ONE hitbox. Pass ``hitboxes=<tuple>`` for the
+    full set (priority order = tuple order); ``hitbox=<one>`` stays as a single-
+    box shorthand. ``self.resolved`` is the priority-ordered list of
+    ``(cx, cy, r, Hitbox)`` that process_hits walks; the legacy single-circle
+    fields (``hit_cx/hit_cy/hit_r`` + ``damage/angle/base_knockback/
+    knockback_growth``) mirror the PRIMARY box so existing readers/renderers are
+    unchanged.
+    """
+
+    # (#326/H-b) The attack's visual colours moved to render_battle with the
+    # Surface-building — the entity holds only combat data + its bounds rect.
+
+    def __init__(
+        self,
+        owner,
+        hitbox=None,        # single Hitbox shorthand (circle, damage, angle, kb)
+        lifetime: int = 0,  # frames the hit-box persists (a move's active window)
+        disappear_on_hit=False,
+        hitboxes=None,      # #130: tuple[Hitbox, ...] for a multi-hitbox move
+        in_air=False,       # #133: is this an aerial move's hitbox? (aerials don't clank)
+        rehit_rate=None,    # #213: frames between re-hits (None = single hit)
+        velocity=None,      # #223: (vx, vy) px/frame for a MOVING projectile (None = static)
+    ):
+        super().__init__()
+        self.owner = owner
+        self.disappear_on_hit = disappear_on_hit
+        self.active = True
+        self.in_air = in_air
+        # #223: a projectile (e.g. fireball) MOVES — its resolved circles + rect
+        # advance by `velocity` each frame. None = the Phase-0 static hitbox.
+        self.velocity = tuple(velocity) if velocity else None
+
+        # lifetime: how many frames the hit-box persists. Task 4 spawns the
+        # hit-box during a move's active window with lifetime == move.active.
+        self.frames_left = lifetime
+
+        # Rehit-rate / looping multi-hit (#213). When set, a connect doesn't
+        # deactivate the attack — instead it starts a cooldown; the attack re-hits
+        # once the cooldown drains. None = single hit (today's once-per-instance).
+        self.rehit_rate = rehit_rate
+        self._rehit_timer = 0
+
+        # Normalise to a non-empty tuple of hitboxes (priority order preserved).
+        if hitboxes is None:
+            if hitbox is None:
+                raise ValueError("Attack requires hitbox= or hitboxes=")
+            hitboxes = (hitbox,)
+        self.hitboxes = tuple(hitboxes)
+
+        # ---------- resolve every hitbox circle (Task 5 / #130) ----------
+        # Resolve each move circle to an absolute centre ONCE at spawn from the
+        # owner's current position (Phase 0: static hitboxes). Origin: owner.rect
+        # top-left. self.resolved is priority-ordered (cx, cy, r, Hitbox).
+        self.resolved: list[tuple[float, float, float, object]] = []
+        for hb in self.hitboxes:
+            cx, cy, r = resolve_circle(
+                hb.circle,
+                owner.rect.x,
+                owner.rect.y,
+                owner.fighter.facing_right,
+                owner.rect.width,
+            )
+            self.resolved.append((cx, cy, r, hb))
+
+        # Primary (first) box backs the legacy single-circle fields + rendering.
+        prim_cx, prim_cy, prim_r, prim = self.resolved[0]
+        self.damage = prim.damage
+        self.angle = prim.angle
+        self.base_knockback = prim.base_knockback
+        self.knockback_growth = prim.knockback_growth
+        self.set_knockback = prim.set_knockback  # WDSK (#211); None = normal scaling
+        self.hit_cx: float = prim_cx
+        self.hit_cy: float = prim_cy
+        self.hit_r: float = prim_r
+
+        # ---------- rendering rect (visual bounds only) ----------
+        # The visual Surface itself is built by render_battle now (#326/H-b) —
+        # combat uses `resolved` circles, not this. `rect` stays here: the projectile
+        # update() reads rect.center/width and the golden snapshot records rect.x/y.
+        if len(self.resolved) == 1:
+            # Preserve the legacy default-cat rect exactly; golden snapshots record
+            # attack sprite rects even though combat uses circles.
+            self.rect = pygame.Rect(0, 0, *ATTACK_SIZE)
+            self.rect.center = (int(prim_cx), int(prim_cy))
+        else:
+            min_x = min(cx - r for cx, _cy, r, _hb in self.resolved)
+            max_x = max(cx + r for cx, _cy, r, _hb in self.resolved)
+            min_y = min(cy - r for _cx, cy, r, _hb in self.resolved)
+            max_y = max(cy + r for _cx, cy, r, _hb in self.resolved)
+            pad = 2
+            left = int(min_x) - pad
+            top = int(min_y) - pad
+            width = max(1, int(max_x - min_x) + pad * 2)
+            height = max(1, int(max_y - min_y) + pad * 2)
+            self.rect = pygame.Rect(left, top, width, height)
+
+    # called every frame by sprite.Group.update(*args) — #266 forwards `platforms`
+    # to every sprite; a static Attack ignores it (a Projectile uses it to bounce).
+    def update(self, platforms=None):
+        if self.velocity is not None:  # #223: advance the moving projectile
+            vx, vy = self.velocity
+            self.resolved = [(cx + vx, cy + vy, r, hb)
+                             for (cx, cy, r, hb) in self.resolved]
+            self.hit_cx += vx
+            self.hit_cy += vy
+            self.rect.center = (int(self.hit_cx), int(self.hit_cy))
+            # despawn once it flies off the stage (the lifetime is the other bound)
+            if not (-self.rect.width <= self.hit_cx <= SCREEN_WIDTH + self.rect.width):
+                self.kill()
+                return
+        if self._rehit_timer > 0:  # #213: drain the looping-rehit cooldown
+            self._rehit_timer -= 1
+        self.frames_left -= 1
+        if self.frames_left <= 0:
+            self.kill()
+
+
+class Projectile(Attack):
+    """A MOVING hit-box with physics (#266): gravity pulls it down and it bounces off
+    platform tops, losing momentum each bounce, until it expires (max_bounces or
+    lifetime). Mario-faithful per #263 — a *flat* projectile is the Luigi model, so
+    pass ``gravity=0`` for that. It IS an ``Attack``, so ``combat.process_hits`` treats
+    it exactly like any other hit-box; only the per-frame motion differs.
+
+    ``gravity`` / ``restitution`` / ``max_bounces`` are ⚠ GUESS tuning starting points
+    (no measured PM values exist — see docs/research/2026-06-30-nalio-fireball-…md).
+    """
+
+    def __init__(self, *args, gravity=PROJECTILE_GRAVITY,
+                 restitution=PROJECTILE_RESTITUTION,
+                 max_bounces=PROJECTILE_MAX_BOUNCES, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.gravity = gravity          # ⚠ GUESS px/frame² downward accel
+        self.restitution = restitution  # ⚠ GUESS vertical energy kept per bounce (<1)
+        self.max_bounces = max_bounces  # ⚠ GUESS bounces before despawn
+        self._bounces = 0
+        if self.velocity is None:       # a Projectile is always moving
+            self.velocity = (0, 0)
+
+    def update(self, platforms=None):
+        vx, vy = self.velocity
+        vy += self.gravity              # gravity acts this frame
+        dx, dy = vx, vy
+        # Ground-bounce: a falling projectile whose BOTTOM would cross a platform top
+        # this frame (while horizontally over it) lands on the surface and reflects up,
+        # keeping `restitution` of its vertical speed (so successive bounces shrink).
+        if platforms is not None and dy > 0:
+            bottom_before = self.hit_cy + self.hit_r
+            x_after = self.hit_cx + dx
+            for plat in platforms:
+                pr = plat.rect
+                if pr.left <= x_after <= pr.right and bottom_before <= pr.top <= bottom_before + dy:
+                    dy = (pr.top - self.hit_r) - self.hit_cy  # land exactly on the surface
+                    vy = -vy * self.restitution               # reflect, losing momentum
+                    self._bounces += 1
+                    break
+        # Integrate: move the anchor AND every resolved circle by the same delta
+        # (keeps multi-box projectiles consistent; the fireball is single-box).
+        self.hit_cx += dx
+        self.hit_cy += dy
+        self.resolved = [(cx + dx, cy + dy, r, hb) for (cx, cy, r, hb) in self.resolved]
+        self.rect.center = (int(self.hit_cx), int(self.hit_cy))
+        self.velocity = (vx, vy)
+        # Despawn: too many bounces, or off the stage (either side / below the floor).
+        if (self._bounces > self.max_bounces
+                or not (-self.rect.width <= self.hit_cx <= SCREEN_WIDTH + self.rect.width)
+                or self.hit_cy > SCREEN_HEIGHT + self.rect.height):
+            self.kill()
+            return
+        if self._rehit_timer > 0:       # #213: drain the looping-rehit cooldown
+            self._rehit_timer -= 1
+        self.frames_left -= 1
+        if self.frames_left <= 0:
+            self.kill()

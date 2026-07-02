@@ -1,0 +1,4 @@
+# Paths pdd should not scan for @todo puzzles (non-application code)
+.claude/
+bench_results/
+docs/

@@ -1,0 +1,134 @@
+"""Issue #8 — a moving defender's momentum must COMBINE with knockback, not be
+zeroed, in both the moving and stationary cases.
+
+Two coupled defects:
+  (a) receive_hit overwrote velocity with knockback (`=`), discarding the
+      defender's existing horizontal momentum.
+  (b) the hit lands after the frame's engine.tick, so the FSM flips to "hurt"
+      one frame late — letting one extra handle_move clobber the horizontal
+      knockback with walk speed when a direction is held.
+
+These tests assert the COMBINE-don't-zero behaviour. The knockback magnitude is
+now the authentic Brawl/PM formula (#40); the expected launch is computed with the
+same pure `knockback()` so the assertions track the model, not a hard-coded number.
+"""
+import math
+
+import pygame as pg
+import pytest
+
+from pycats.entities.player import Player
+from pycats.entities.platform import Platform
+from pycats.entities.attack import Attack
+from pycats.combat.data import Hitbox, Circle
+from pycats.core.input import InputFrame
+from pycats.combat.knockback import knockback
+from pycats.config import (P1_COLOR, P2_COLOR, WHITE, MOVE_SPEED,
+                           KNOCKBACK_LAUNCH_FACTOR)
+
+# The default cat jab's data (see characters/default_cat.py). These tests build a
+# real Hitbox so the launch is non-zero and the model is exercised end-to-end.
+_JAB_DAMAGE = 10
+_JAB_BKB = 30.0
+_JAB_KBG = 100.0
+
+CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
+            "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
+RIGHT = pg.K_d
+
+
+def _frame(held):
+    return InputFrame(held=set(held), pressed=set(), released=set())
+
+
+def _setup(defender_vel_x=0.0):
+    plats = pg.sprite.Group()
+    plats.add(Platform(pg.Rect(200, 400, 600, 20), thin=False))
+    attacker = Player(x=360, y=400, controls=CONTROLS, color=P1_COLOR,
+                      eye_color=WHITE, char_name="Atk", facing_right=True)
+    defender = Player(x=420, y=400, controls=CONTROLS, color=P2_COLOR,
+                      eye_color=WHITE, char_name="Def", facing_right=True)
+    empty = pg.sprite.Group()
+    for _ in range(2):  # settle on platform
+        attacker.update(_frame([]), plats, empty)
+        defender.update(_frame([]), plats, empty)
+    defender.fighter.vel.x = defender_vel_x
+    return attacker, defender, plats, empty
+
+
+def _expected_launch(defender):
+    # Initial launch applied to vel.x: authentic KB * launch factor (angle 0 -> horizontal).
+    kb = knockback(defender.fighter.percent, _JAB_DAMAGE, defender.fighter.weight, _JAB_BKB, _JAB_KBG)
+    return kb * KNOCKBACK_LAUNCH_FACTOR
+
+
+def _jab(attacker):
+    hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=_JAB_DAMAGE,
+                angle=0, base_knockback=_JAB_BKB, knockback_growth=_JAB_KBG)
+    return Attack(owner=attacker, hitbox=hb, lifetime=1)  # horizontal +x
+
+
+def test_receive_hit_combines_horizontal_momentum():
+    """A stationary `=` overwrite is fine, but existing momentum must be added."""
+    attacker, defender, *_ = _setup(defender_vel_x=5.0)
+    defender.fighter.receive_hit(_jab(attacker))
+    # momentum (5) COMBINED with knockback, not overwritten
+    assert defender.fighter.vel.x == pytest.approx(5.0 + _expected_launch(defender))
+
+
+def test_stationary_knockback_unchanged():
+    """With no prior momentum, combine == plain knockback (no regression)."""
+    attacker, defender, *_ = _setup(defender_vel_x=0.0)
+    defender.fighter.receive_hit(_jab(attacker))
+    assert defender.fighter.vel.x == pytest.approx(_expected_launch(defender))
+
+
+def test_hitstun_is_computed_from_knockback_not_fixed():
+    """#40: hurt_timer comes from hitstun_frames(KB), not the old fixed 12."""
+    from pycats.combat.knockback import knockback, hitstun_frames
+    attacker, defender, *_ = _setup(defender_vel_x=0.0)
+    defender.fighter.receive_hit(_jab(attacker))
+    kb = knockback(defender.fighter.percent, _JAB_DAMAGE, defender.fighter.weight, _JAB_BKB, _JAB_KBG)
+    assert defender.fighter.hurt_timer == hitstun_frames(kb)
+    assert defender.fighter.hurt_timer != 12  # the retired HURT_TIME constant
+
+
+def test_moving_knockback_not_clobbered_by_input():
+    """End-to-end (game-loop order): a moving, still-holding-right defender keeps
+    its combined knockback on the frame after the hit instead of collapsing to
+    walk speed."""
+    attacker, defender, plats, empty = _setup()
+    held = [RIGHT]
+    for _ in range(6):  # ramp defender up to walk speed
+        defender.update(_frame(held), plats, empty)
+    # hit frame: update first, then receive_hit (mirrors game.py order)
+    attacker.update(_frame([]), plats, empty)
+    defender.update(_frame(held), plats, empty)
+    defender.fighter.receive_hit(_jab(attacker))
+    # frame after the hit, direction still held
+    defender.update(_frame(held), plats, empty)
+    assert defender.fighter.vel.x > MOVE_SPEED + 0.5  # knockback survived, not clobbered
+
+
+def test_launch_decays_each_hitstun_frame_not_constant():
+    """#44: the launch must EASE OUT — vel.x strictly decreases every hitstun
+    frame — instead of sliding at constant speed (the #43 'too hot' bug)."""
+    from pycats.config import KNOCKBACK_DECAY
+    attacker, defender, plats, empty = _setup(defender_vel_x=0.0)
+    defender.platforms = plats
+    defender.fighter.receive_hit(_jab(attacker))
+    v0 = defender.fighter.vel.x
+    assert v0 > 0
+    # #138: a clean hit now freezes both fighters for hitlag frames before the
+    # slide. Velocity is HELD (not decayed) during the freeze, so advance past it
+    # first; the ease-out assertion below is about the post-freeze hitstun slide.
+    for _ in range(defender.fighter.hitlag_timer):
+        defender.update(_frame([]), plats, empty)
+    assert defender.fighter.vel.x == pytest.approx(v0), "launch held through hitlag"
+    prev = defender.fighter.vel.x
+    for _ in range(5):
+        defender.update(_frame([]), plats, empty)
+        # within hitstun, only knockback decay touches vel.x (friction is skipped)
+        assert defender.fighter.vel.x == pytest.approx(max(0.0, prev - KNOCKBACK_DECAY))
+        assert defender.fighter.vel.x < prev           # strictly eases out, not constant
+        prev = defender.fighter.vel.x
