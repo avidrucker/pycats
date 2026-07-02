@@ -13,7 +13,7 @@ class _Rec:
         self.captions = []
         self.shows = 0
 
-    def show(self, platforms, players, attacks, frame, inputs=None):
+    def show(self, platforms, players, attacks, frame):
         self.shows += 1
 
     def close(self):

@@ -97,9 +97,6 @@ def main(argv=None, presenter=None):
                          "the true achievable rate (default paces to 60)")
     ap.add_argument("--no-overlay", dest="overlay", action="store_false",
                     help="hide the live FPS / stocks / damage overlay")
-    ap.add_argument("--show-inputs", action="store_true",
-                    help="draw a per-player held-input overlay (directions + "
-                         "attack/special/shield) so you can read the NPCs' controls (#405)")
     ap.add_argument("--seed", type=int, default=None,
                     help="PRNG seed for the NPC controllers (#166): pass an int "
                          "for a reproducible run; omit for a clocktime seed so a "
@@ -176,14 +173,12 @@ def main(argv=None, presenter=None):
 
     if presenter is None:
         if args.shots:
-            presenter = ScreenshotPresenter(args.shots, captions=captions,
-                                            show_inputs=args.show_inputs)
+            presenter = ScreenshotPresenter(args.shots, captions=captions)
         elif args.video:
-            presenter = VideoPresenter(args.video, speed=args.demo_speed,
-                                       show_inputs=args.show_inputs)
+            presenter = VideoPresenter(args.video, speed=args.demo_speed)
         else:
             presenter = LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay,
-                                      speed=args.demo_speed, show_inputs=args.show_inputs)
+                                      speed=args.demo_speed)
     if captions:                              # attach; don't clobber an injected list (#306)
         presenter.captions = list(captions)
     snaps = []
