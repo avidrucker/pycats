@@ -56,3 +56,32 @@ def test_cancel_capture_exits_without_binding():
     m.cancel_capture()
     assert not m.capturing
     assert m.binding(0, "attack") == 5    # nothing bound
+
+
+def test_nav_moves_the_focused_action_and_wraps():
+    m = _menu()                       # actions = [left, right, attack, shield]
+    assert m.action == "left"         # starts on the first action
+    m.nav(1)
+    assert m.action == "right"
+    m.nav(-1)
+    assert m.action == "left"
+    m.nav(-1)
+    assert m.action == "shield"       # wraps to the last
+
+
+def test_switch_player_toggles_the_focused_player():
+    m = _menu()
+    assert m.player == 0
+    m.switch_player()
+    assert m.player == 1
+    m.switch_player()
+    assert m.player == 0
+
+
+def test_activate_begins_capture_on_the_focused_action():
+    m = _menu()
+    m.nav(1)                          # focus 'right'
+    m.activate()
+    assert m.capturing
+    m.capture_key(88)
+    assert m.binding(0, "right") == 88

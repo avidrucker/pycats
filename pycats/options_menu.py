@@ -33,6 +33,7 @@ from .config import (
 )
 from . import runtime_settings
 from . import settings
+from .keybind_menu import KeybindMenu
 from .menu_widgets import draw_menu_button, menu_button_size, BUTTON_MIN_WIDTH, PRESS_PULSE_FRAMES
 from .menu_layout import effective_columns, grid_dims, scroll_to_visible
 from .text_utils import text_renderer
@@ -58,6 +59,7 @@ ROW_DESCRIPTIONS = {
     "window_scale": "Cycle the windowed zoom (also F10).",
     "fullscreen": "Toggle fullscreen (also F11).",
     "esc_quit": "Hold ESC for 2 seconds to quit / return to menu.",
+    "keybindings": "Remap each player's keys, or reset them to defaults.",
     "back": "Return to the main menu.",
 }
 
@@ -74,8 +76,13 @@ class OptionsMenu:
 
         # Row keys in display order. "back" is the explicit exit row.
         self.rows = ["status_bars", "hitbox_overlay", "input_history", "controls",
-                     "font_scale", "window_scale", "fullscreen", "esc_quit", "back"]
+                     "font_scale", "window_scale", "fullscreen", "esc_quit",
+                     "keybindings", "back"]
         self.selected_option = 0
+        # Keybinding sub-mode (#455): activating the "keybindings" row hands input +
+        # rendering to this KeybindMenu (#447) over the shared control maps until back.
+        self.keybind = KeybindMenu(p1_controls, p2_controls)
+        self.keybind_mode = False
         # Top visible grid-row when the grid is taller than the viewport (large
         # font_scale); kept in range by render via scroll_to_visible (#402).
         self.scroll_top = 0
@@ -91,6 +98,8 @@ class OptionsMenu:
         self.input_cooldown = 0
         self.press_pulse = 0
         self.action_requested = None
+        self.keybind_mode = False
+        self.keybind.cancel_capture()
 
     # ---- input ----
     def _pressed(self, action, pressed_keys):
@@ -106,6 +115,10 @@ class OptionsMenu:
         # Decay the press-flash every frame, before the cooldown early-return (#332).
         if self.press_pulse > 0:
             self.press_pulse -= 1
+
+        if self.keybind_mode:
+            self._update_keybind(pressed_keys)
+            return
 
         if self.input_cooldown > 0:
             self.input_cooldown -= 1
@@ -150,6 +163,43 @@ class OptionsMenu:
             self.input_cooldown = MENU_SELECT_COOLDOWN
             self.press_pulse = PRESS_PULSE_FRAMES     # flash the activated row
 
+    def _update_keybind(self, pressed_keys):
+        """Drive the KeybindMenu (#447/#455) while the sub-mode is active. Reads the same
+        `pressed` (edge) set as the options grid: while capturing, the first fresh key
+        binds the focused action; otherwise up/down navigate, left/right switch player,
+        attack begins capture, shield resets the player, special goes back."""
+        if self.input_cooldown > 0:
+            self.input_cooldown -= 1
+            return
+        kb = self.keybind
+        if kb.capturing:
+            fresh = [k for k in pressed_keys]
+            if fresh:
+                kb.capture_key(min(fresh))     # deterministic pick if several coincide
+                self.input_cooldown = MENU_SELECT_COOLDOWN
+            return
+        if self._pressed("special", pressed_keys):
+            self.keybind_mode = False           # back to the options grid
+            self.input_cooldown = MENU_SELECT_COOLDOWN
+            return
+        moved = False
+        if self._pressed("up", pressed_keys):
+            kb.nav(-1); moved = True
+        if self._pressed("down", pressed_keys):
+            kb.nav(1); moved = True
+        if self._pressed("left", pressed_keys) or self._pressed("right", pressed_keys):
+            kb.switch_player(); moved = True
+        if moved:
+            self.input_cooldown = MENU_NAV_COOLDOWN
+            return
+        if self._pressed("attack", pressed_keys):
+            kb.activate()
+            self.input_cooldown = MENU_SELECT_COOLDOWN
+            return
+        if self._pressed("shield", pressed_keys):
+            kb.reset_player(kb.player)
+            self.input_cooldown = MENU_SELECT_COOLDOWN
+
     def _activate(self, row):
         if row == "status_bars":
             new = not runtime_settings.show_status_timer_bars()
@@ -188,6 +238,11 @@ class OptionsMenu:
             settings.save(
                 {"esc_hold_to_quit": not prefs.get("esc_hold_to_quit", True)}
             )
+        elif row == "keybindings":
+            self.keybind_mode = True          # hand input + render to the KeybindMenu
+            self.keybind.player = 0
+            self.keybind.action_index = 0
+            self.keybind.cancel_capture()
         elif row == "back":
             self.action_requested = "back"
 
@@ -214,6 +269,8 @@ class OptionsMenu:
             return "Hold-ESC Quit: " + (
                 "ON" if settings.load().get("esc_hold_to_quit", True) else "OFF"
             )
+        if row == "keybindings":
+            return "Keybindings"
         if row == "back":
             return "Back"
         return row
@@ -316,6 +373,9 @@ class OptionsMenu:
 
     # ---- render ----
     def render(self, surface):
+        if self.keybind_mode:
+            self._render_keybind(surface)
+            return
         surface.fill(MAIN_MENU_BG_COLOR)
         scale = runtime_settings.font_scale()
         placements, meta = self._layout()
@@ -362,3 +422,43 @@ class OptionsMenu:
                 instruction, INSTRUCTION_FONT_SIZE, WHITE, surface,
                 (SCREEN_WIDTH // 2, cy), center=True,
             )
+
+    def _render_keybind(self, surface):
+        """The keybinding sub-view (#455): the focused player's actions + current keys,
+        a capture prompt on the focused row, the last status/conflict message, + hints."""
+        surface.fill(MAIN_MENU_BG_COLOR)
+        kb = self.keybind
+        scale = runtime_settings.font_scale()
+        text_renderer.render_text_simple(
+            f"Keybindings — Player {kb.player + 1}", MAIN_MENU_TITLE_SIZE,
+            MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, round(30 * scale)),
+            center=True)
+
+        row_h = round(30 * scale)
+        top = round(80 * scale)
+        for i, action in enumerate(kb.actions):
+            focused = (i == kb.action_index)
+            if focused and kb.capturing:
+                label = f"{action}:  < press a key >"
+            else:
+                label = f"{action}:  {pygame.key.name(kb.keymaps[kb.player][action]).upper()}"
+            text_renderer.render_text_mixed(
+                ("► " if focused else "   ") + label, MAIN_MENU_OPTION_SIZE,
+                MAIN_MENU_SELECTED_COLOR if focused else WHITE, surface,
+                (SCREEN_WIDTH // 2, top + i * row_h), center=True)
+
+        if kb.message:
+            text_renderer.render_text_mixed(
+                kb.message, CAPTION_SIZE, CAPTION_COLOR, surface,
+                (SCREEN_WIDTH // 2, top + len(kb.actions) * row_h + round(12 * scale)),
+                center=True)
+
+        hints = ["Up/Down: action    Left/Right: player    A: rebind",
+                 "Shield: reset player    B: back"]
+        instr_h = text_renderer._get_font(None, INSTRUCTION_FONT_SIZE).get_height()
+        step = instr_h + round(4 * scale)
+        base = SCREEN_HEIGHT - 2 * step
+        for i, hint in enumerate(hints):
+            text_renderer.render_text_mixed(
+                hint, INSTRUCTION_FONT_SIZE, WHITE, surface,
+                (SCREEN_WIDTH // 2, base + i * step), center=True)

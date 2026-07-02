@@ -12,14 +12,31 @@ from .core.keymap import KeyBindingConflict
 class KeybindMenu:
     def __init__(self, p1_keymap, p2_keymap):
         self.keymaps = [p1_keymap, p2_keymap]
+        # The rebindable actions, in the keymap's own order (both players share them).
+        self.actions = list(p1_keymap.keys())
         self.player = 0
-        self.action = None
+        self.action_index = 0
         self.capturing = False
         self.message = ""
 
+    @property
+    def action(self):
+        return self.actions[self.action_index]
+
     def focus(self, player, action):
         self.player = player
-        self.action = action
+        self.action_index = self.actions.index(action)
+
+    def nav(self, delta):
+        """Move the focused action by `delta` rows (wraps)."""
+        self.action_index = (self.action_index + delta) % len(self.actions)
+
+    def switch_player(self):
+        self.player = 1 - self.player
+
+    def activate(self):
+        """Enter capture on the focused action (press a key to bind next)."""
+        self.begin_capture()
 
     def begin_capture(self):
         self.capturing = True
