@@ -142,6 +142,19 @@
   `test_multi_hitbox`/`test_clank`) and **#143** (the move-selection seam read
   `controls["special"]` → `KeyError` on the 16 test control maps that omit it).
 
+- **Never restore a monkeypatched global by hand at the end of a test — use the
+  `monkeypatch` fixture (or `try/finally`).** A manual `orig = mod.fn; mod.fn = stub;
+  …; mod.fn = orig` restore only runs if the test reaches its last line; **any
+  exception before the restore leaks the stub into every later test in the session.**
+  In #453, renaming a setting made `test_hold_esc_integration::test_toggle_off_prevents_quit`
+  throw *before* its hand-restore of `settings.load`, poisoning ~19 unrelated
+  `settings`/`toggle` tests with `KeyError` — the tell was **collateral failures in
+  files the diff never touched**. `monkeypatch.setattr` / `try/finally` restore even
+  when the test fails. (Sibling of the `os.environ`-at-module-top pin, #345; both are
+  "test-scope state that outlives the test.") **Diagnostic:** a change that reddens
+  tests in untouched files is a leaked global from an *earlier* failing test, not your
+  diff touching those files.
+
 ## PM-parity markers (`⚠` / `🔬` / `❓`)
 
 Inline glyph markers make unresolved-vs-Project-M work **greppable**. Use them at write
