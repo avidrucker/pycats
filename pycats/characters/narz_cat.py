@@ -5,7 +5,7 @@ Narz's *mobility* is near-Mario (#290 finding): only the **weight** and a slight
 baseline. The archetype identity is NOT in these scalars — it is in **move geometry**
 (disjoint reach + tipper), which slice 2 (the forward-tilt) introduces.
 
-Values from the #290 scoping spec (PM3.6 Marth; ⚠ playtest / rukaidata-confirm later):
+Values from the #290 scoping spec (PM3.6 Marth; ⚠🔬 playtest / rukaidata-confirm later):
 
     weight 87 · gravity 0.45 · jump_vel -12   (deltas)
     max_jumps 2 · move_speed 6 · max_fall_speed 13   (= baseline, left as defaults)
@@ -13,7 +13,7 @@ Values from the #290 scoping spec (PM3.6 Marth; ⚠ playtest / rukaidata-confirm
 Per #120, these scalars are entered RAW (the ×PX_PER_UNIT unit scale is for *spatial* values).
 
 This slice authors **no moves** — `hurtbox`, `moves`, and crouch/prone geometry reuse the
-default cat as placeholders, so Narz differs from the default *only* in the three scalars.
+default cat as ⚠ placeholders, so Narz differs from the default *only* in the three scalars.
 Narz's disjoint/tipper moves arrive one slice at a time under #294.
 """
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
@@ -25,7 +25,7 @@ from pycats.combat.data import Circle, FighterData, Hitbox, MoveData
 # the current engine (#290): the tip box is FIRST in the tuple, so when a defender
 # overlaps both, priority = tuple order (attack.py:36; combat.py:141) makes the tip win.
 #
-# PM3.6 Marth `AttackS3` (forward-tilt), ⚠ playtest / rukaidata-confirm later. #120 units:
+# PM3.6 Marth `AttackS3` (forward-tilt), ⚠🔬 playtest / rukaidata-confirm later. #120 units:
 # frames / % / angle / BKB / KBG entered RAW; radii are px (the blade is thin → small r).
 # The default hurtbox spans dx 6..34; the tip sits at dx 60..84 — wholly disjoint.
 _NARZ_FTILT = MoveData(
@@ -47,7 +47,7 @@ _NARZ_FTILT = MoveData(
 # --- Jab (slice 3, #301): a fast, disjoint neutral-A poke -------------------------
 # Marth's jab (PM3.6 `Attack11`) is a quick sword stab — ONE box (not a tipper; that's
 # the f-tilt). It still reaches past the hurtbox (disjoint), but closer + weaker than
-# the f-tilt tip, and much faster (startup 4 vs 6). ⚠ playtest / rukaidata-confirm.
+# the f-tilt tip, and much faster (startup 4 vs 6). ⚠🔬 playtest / rukaidata-confirm.
 # #120 units: frames/%/angle/BKB/KBG RAW; the thin blade → small r. The default hurtbox
 # spans dx 6..34; this box sits at dx 48..68 — disjoint.
 _NARZ_JAB = MoveData(
@@ -66,7 +66,7 @@ _NARZ_JAB = MoveData(
 # Marth's low spacing tool: the same 2-box tipper shape as the f-tilt (tip box FIRST,
 # stronger; priority = tuple order, attack.py:36 / combat.py:141), but near the feet
 # (high dy) and at a LOW launch angle (sends low/outward — the edgeguard / 2-frame use),
-# unlike the f-tilt's 361 sentinel. PM3.6 Marth `AttackLw3`, ⚠ playtest / rukaidata-confirm.
+# unlike the f-tilt's 361 sentinel. PM3.6 Marth `AttackLw3`, ⚠🔬 playtest / rukaidata-confirm.
 # Tip at dx 56..76 (disjoint past the hurtbox 6..34).
 _NARZ_DTILT = MoveData(
     name="dtilt",
@@ -89,7 +89,7 @@ _NARZ_DTILT = MoveData(
 # order) hitting ABOVE the head (negative/low dy) and sending UP (angle ~90 — the
 # juggle use), distinct from the f-tilt (forward 361) and d-tilt (low 30). The disjoint
 # here is VERTICAL — the tip reaches above the hurtbox top. PM3.6 Marth `AttackHi3`,
-# ⚠ playtest / rukaidata-confirm. Completes the #294 ground normals.
+# ⚠🔬 playtest / rukaidata-confirm. Completes the #294 ground normals.
 _NARZ_UTILT = MoveData(
     name="utilt",
     in_air=False,
@@ -131,7 +131,7 @@ _NARZ_NAIR = MoveData(
 # The move that most defines the Marth archetype: a forward aerial sword swipe with the
 # LONGEST disjoint reach of the kit (tip at dx 58..82, farther than the n-air's 48..72).
 # The 2-box tipper shape (tip box FIRST, stronger; priority = tuple order) rewards spacing
-# the very end of the blade. PM3.6 Marth `AttackAirF`, ⚠ playtest / rukaidata-confirm.
+# the very end of the blade. PM3.6 Marth `AttackAirF`, ⚠🔬 playtest / rukaidata-confirm.
 _NARZ_FAIR = MoveData(
     name="fair",
     in_air=True,
@@ -152,7 +152,7 @@ _NARZ_FAIR = MoveData(
 # Marth's backward KO/spacing poke: the 2-box tipper shape (tip box FIRST, stronger;
 # priority = tuple order) authored with NEGATIVE dx so it swings behind a right-facing
 # fighter (mirrored for left by the consumers). The tip is the strongest aerial tip so
-# far (a KO hit). PM3.6 Marth `AttackAirB`, ⚠ playtest / rukaidata-confirm. Tip at
+# far (a KO hit). PM3.6 Marth `AttackAirB`, ⚠🔬 playtest / rukaidata-confirm. Tip at
 # dx -76..-52 — wholly behind the hurtbox (back edge dx 6).
 _NARZ_BAIR = MoveData(
     name="bair",
@@ -174,7 +174,7 @@ _NARZ_BAIR = MoveData(
 # Marth's juggle aerial: the up-tilt's vertical disjoint as an aerial — the 2-box tipper
 # (tip box FIRST, stronger; priority = tuple order) hitting ABOVE the fighter (tip dy=-10)
 # and sending UP (angle 90). The tip's top edge (dy-r=-24) clears the hurtbox top (dy 1).
-# PM3.6 Marth `AttackAirHi`, ⚠ playtest / rukaidata-confirm.
+# PM3.6 Marth `AttackAirHi`, ⚠🔬 playtest / rukaidata-confirm.
 _NARZ_UAIR = MoveData(
     name="uair",
     in_air=True,
@@ -195,7 +195,7 @@ _NARZ_UAIR = MoveData(
 # Marth's meteor: the 2-box tipper shape (tip box FIRST, stronger; priority = tuple order)
 # below the body (high dy) with a straight-DOWN spike angle (270), like birky_cat.py's
 # d-air. The tip's top edge (dy-r=64) is below the hurtbox bottom (dy 59). PM3.6 Marth
-# `AttackAirLw`, ⚠ playtest / rukaidata-confirm. NOTE: Marth's real d-air stall-then-fall
+# `AttackAirLw`, ⚠🔬 playtest / rukaidata-confirm. NOTE: Marth's real d-air stall-then-fall
 # is a MOVEMENT mechanic (kin to fast-fall #261), not move data — deferred; this is the
 # spike hitbox only. Completes the #294 sword aerials.
 _NARZ_DAIR = MoveData(
@@ -217,7 +217,7 @@ _NARZ_DAIR = MoveData(
 # --- Smashes (slice 5 of #327 / #294): the archetype's signature KO tools ----------
 # Narz's smashes are the strongest disjoint tippers — 2-box (tip box FIRST, priority =
 # tuple order, so the far tip wins on overlap), chargeable via the mechanic in #371/#377.
-# PM3.6 Marth (AttackS4 / AttackHi4 / AttackLw4), ⚠ playtest / rukaidata-confirm-later —
+# PM3.6 Marth (AttackS4 / AttackHi4 / AttackLw4), ⚠🔬 playtest / rukaidata-confirm-later —
 # the same fidelity caveat every Narz move carries (#290).
 
 # Forward-smash: Marth's iconic spacing KO. Far tip = the KO hit; near base = a punished
@@ -286,7 +286,7 @@ _NARZ_DSMASH = MoveData(
 NARZ_FIGHTER_DATA = FighterData(
     # Slice 2 (#299): Narz's own forward-tilt (the disjoint+tipper identity move) under
     # the "ftilt" key (forward+A via the move-select seam, combat/move_select.py); the
-    # default "attack" placeholder is kept as the neutral-A fallback. Other slots reuse
+    # default "attack" ⚠ placeholder is kept as the neutral-A fallback. Other slots reuse
     # the default cat until their slices land (#294). Body still the default (#290 v1).
     hurtbox=_DEFAULT.hurtbox,
     moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,

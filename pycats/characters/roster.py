@@ -15,7 +15,7 @@ _PAL = load_palettes()
 # Implemented archetypes only (Nalio #142, Birky #228, Narz #294). Tuple order = grid order.
 ARCHETYPE_ROSTER = ("nalio", "birky", "narz")
 
-# Default cosmetic palette per archetype (an OG skin; cosmetic only, playtest-TBD).
+# Default cosmetic palette per archetype (an OG skin; cosmetic only, ⚠ playtest-TBD).
 ARCHETYPE_PALETTE = {
     "nalio": _PAL["calico"],  # balanced all-rounder → warm orange
     "birky": _PAL["ghost"],   # floaty featherweight → light/round

@@ -72,7 +72,7 @@ _ATTACK_HITBOX = Hitbox(
     # gap ~12–45) AND when flush (settled push gap ~41), the hitbox centre must
     # land within sqrt((r+14)^2 - 15^2) ≈ 21 px of the opponent's body centre.
     # dx=46 (26 px right of centre, r=12 → reaches ~18 px past the 40-wide body)
-    # sits the hitbox in that window. Playtest starting point.
+    # sits the hitbox in that window. ⚠ Playtest starting point.
     circle=Circle(dx=46, dy=30, r=12),
     damage=10.0,
     angle=0,

@@ -1,7 +1,8 @@
 """FighterData for "Birky" — the Kirby archetype (floaty featherweight). Slice 1 of #228.
 
 Birky is the **first** fighter to diverge on the per-fighter MOVEMENT SCALARS. Values
-from the #229 scoping spike (PM Kirby, proportional-to-Mario; pin/playtest later):
+from the #229 scoping spike (PM Kirby, proportional-to-Mario; ⚠ pin/playtest later —
+hitbox positions follow the #120 approximation convention, see the ⚠ note at `_HURTBOX`):
 
     weight 70 · gravity 0.42 · max_fall_speed 12 · move_speed 5 · max_jumps 6 · jump_vel -11
 

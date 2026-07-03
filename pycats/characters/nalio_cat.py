@@ -9,6 +9,9 @@ Source: Project M 3.6 Mario (canonical reference, see
 docs/research-spec-119-mario-cat-pm.md and docs/research-120-smash-units-and-sources.md).
 Unit convention from #120: combat numbers (frames / %, damage, weight, BKB, KBG,
 angle) are entered RAW; spatial values scale by PX_PER_UNIT (config.py, #120).
+⚠ Hitbox POSITIONS are approximated (rukaidata offsets are bone-relative and pycats
+models no skeleton) — the per-move dx/dy notes below are playtest starting points, not
+PM-pinned. One marker here for the whole file (the #120 convention), not on every move.
 
 Why Nalio maps so cleanly to PM Mario:
   PM3.6 Mario's weight (100), gravity, jump velocity, walk speed, and jump count
@@ -334,7 +337,7 @@ _NEUTRAL_AIR = MoveData(
 # / SmashWiki): throw startup 14, total ~48 (IASA 41 → recovery 33); the projectile
 # article lives ~73 frames, 7% damage, Sakurai angle 361 (#203/#206), BKB 22 / KBG
 # 20, size 3.5u → r≈19px (×PX_PER_UNIT). active=1 so a single projectile spawns.
-# ⚠ projectile_speed is a GUESS (px/frame) — derive via rukaidata units/frame × PX_PER_UNIT
+# ⚠🔬 projectile_speed is a GUESS (px/frame) — derive via rukaidata units/frame × PX_PER_UNIT
 # or playtest (tracked the #192 way). Bounce arc / reflect-absorb are out of scope.
 _FIREBALL = MoveData(
     name="fireball",
@@ -346,7 +349,7 @@ _FIREBALL = MoveData(
         Hitbox(circle=Circle(dx=50, dy=30, r=u(3.5)), damage=7.0, angle=361,  # 3.5u -> 19px
                base_knockback=22.0, knockback_growth=20.0),
     ),
-    projectile_speed=10,     # ⚠ GUESS px/frame (#192/#195 derivation pending)
+    projectile_speed=10,     # ⚠🔬 GUESS px/frame (#192/#195 derivation pending)
     projectile_lifetime=73,
 )
 
