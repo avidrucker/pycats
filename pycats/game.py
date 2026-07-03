@@ -23,25 +23,20 @@ Use: This is the entry point for running the game.
 
 import sys
 import pygame  # type: ignore
-from .config import *  #### TODO: replace all global imports with specific imports from config.py (READY)
-
-# Also explicitly import the new cat feature constants
+# Explicit config imports — was `from .config import *` (#486 slice 2 / #490), which
+# blinded pyflakes to game.py (the one untested module). Only the names game.py uses;
+# the prior dead EAR_*/WHISKER_*/STRIPE_*/CAT_CHARACTERS block (nothing referenced it,
+# here or elsewhere) was dropped.
 from .config import (
-    EAR_WIDTH,
-    EAR_HEIGHT,
-    EAR_SPACING,
-    EAR_PADDING,
-    WHISKER_LENGTH,
-    WHISKER_THICKNESS,
-    WHISKER_COUNT,
-    WHISKER_ANGLE,
-    WHISKER_OFFSET_Y,
-    WHISKER_OFFSET_X,
-    STRIPE_COUNT,
-    STRIPE_WIDTH,
-    STRIPE_HEIGHT,
-    STRIPE_SPACING,
-    CAT_CHARACTERS,
+    FPS,
+    GAME_HUD_FONT_SIZE,
+    HUD_PADDING,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    THICK_PLAT_DICT,
+    THIN_PLAT_DICT_L,
+    THIN_PLAT_DICT_R,
+    WHITE,
 )
 from .entities import Platform
 from . import input_poll as inp
