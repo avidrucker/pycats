@@ -14,8 +14,8 @@ timeline (feed to `run_battle(frame_inputs=…)`); `demo_captions(demo)` builds 
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, Tuple
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
 
 from ..config import FPS
 from .captions import Caption, BOTTOM_CENTER

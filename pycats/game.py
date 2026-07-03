@@ -40,11 +40,9 @@ from .config import (
 )
 from .entities import Platform
 from . import input_poll as inp
-from . import stats_print
 from .core.keymap import Keymap
 from .screen_manager import ScreenStateManager
 from .battle_screen import BattleScreen
-from .render_battle import draw_shell_chrome
 from . import screen_render
 from . import text_utils
 from . import display

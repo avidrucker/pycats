@@ -8,12 +8,10 @@ This module handles:
 - Handling input for menu progression
 """
 
-import pygame
 from .config import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
     WHITE,
-    BLACK,
     MAIN_MENU_BG_COLOR,
     MAIN_MENU_TITLE_COLOR,
     MAIN_MENU_TITLE_SIZE,

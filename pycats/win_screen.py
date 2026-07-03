@@ -12,9 +12,6 @@ import pygame  # type: ignore
 from .config import (
     FPS,
     SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
-    BLACK,
     WIN_SCREEN_BG_COLOR,
     WIN_SCREEN_TITLE_SIZE,
     WIN_SCREEN_STATS_SIZE,
