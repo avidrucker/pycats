@@ -166,8 +166,8 @@ MIN_SHIELD_RADIUS = 10
 # Authentic Brawl/PM knockback feeds these. The formula lives in
 # pycats/combat/knockback.py; per-hitbox BKB/KBG and fighter weight are the
 # per-move/character inputs.
-HITSTUN_MULTIPLIER = 0.4   # hitstun_frames = floor(KB * this). ⚠ verify (Brawl/PM ~0.4).
-HITSTUN_FLOOR = 1          # minimum hitstun frames for any clean hit. ⚠ tuning, not sourced.
+HITSTUN_MULTIPLIER = 0.4   # hitstun_frames = floor(KB * this). ⚠🔬 verify (Brawl/PM ~0.4).
+HITSTUN_FLOOR = 1          # minimum hitstun frames for any clean hit. ⚠🔬 tuning, not sourced.
 # Hitlag / freeze frames (#138). SmashWiki Hitlag (Brawl onward):
 # floor((d * HITLAG_DAMAGE_FACTOR + HITLAG_BASE) * h * e) * c, capped at HITLAG_CAP.
 # This slice uses h = e = c = 1 (per-move/electric/crouch-cancel multipliers are
@@ -211,7 +211,7 @@ CROUCH_CANCEL_FACTOR = 0.67
 # getup frames. The hitstun gate is the real discriminator (normal jumps land at
 # the same MAX_FALL_SPEED but with hurt_timer == 0); the velocity threshold filters
 # out gentle pops. Teching (a tech input window that cancels the knockdown) is out
-# of scope — #146 sibling. ⚠ tuning starting points, not sourced — playtest.
+# of scope — #146 sibling. ⚠🔬 tuning starting points, not sourced — playtest.
 KNOCKDOWN_VY_THRESHOLD = 8.0   # downward impact speed (px/frame); MAX_FALL_SPEED is 13
 KNOCKDOWN_PRONE_FRAMES = 30    # getup window the auto-knockdown sets (~0.5s @ 60 FPS)
 # Getup-roll (#146): a directional getup out of `prone` — holding left/right as the

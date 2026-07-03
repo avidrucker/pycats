@@ -157,7 +157,7 @@ class FighterInput:
 
         # ------- Jump ---------------------------------------------
         jump_pressed = self._pressed(pressed, "up")
-        #### ❓ TODO: determine whether walking off of a ledge "consumes" a jump (open design question; no decision ticket yet)
+        #### ❓ TODO: determine whether walking off of a ledge "consumes" a jump (open design question — see #466)
         if (
             jump_pressed
             and p.fighter.jumps_remaining

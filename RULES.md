@@ -142,6 +142,30 @@
   `test_multi_hitbox`/`test_clank`) and **#143** (the move-selection seam read
   `controls["special"]` → `KeyError` on the 16 test control maps that omit it).
 
+## PM-parity markers (`⚠` / `🔬` / `❓`)
+
+Inline glyph markers make unresolved-vs-Project-M work **greppable**. Use them at write
+time. (Axis A of the labeling system #451; design #448; the human-facing key lives on
+**#452**. Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-audit.md`.)
+
+| Marker | Means | `grep -rn` answers |
+|---|---|---|
+| `⚠` (U+26A0) | **guessed** — value present but unconfirmed vs PM | "what's unpinned?" |
+| `🔬` (U+1F52C) | **needs research** — a concrete sourcing/derivation is queued | "what's the research backlog?" |
+| `❓` (U+2753) | **open question** — an undecided design/behaviour point | "what's undecided?" |
+
+- `⚠` and `🔬` **co-occur** (`⚠🔬`) on a guessed value that is also queued for sourcing.
+  `grep ⚠` = every unpinned value; `grep 🔬` = the subset with an active sourcing action.
+- Mark only **unresolved** things. The #233 provenance registry's *resolved* states —
+  `FOUND` / `TUNED` / `DIVERGENCE` — get **no** marker (marker = "still open"; the
+  registry classification is the resolution; the two compose).
+- **Convention once.** Mark a documented, repeated convention in **one** place (e.g. a
+  module-docstring note that "hitbox positions are approximated per #120"), not on every
+  repetition — repeated markers become noise (#448 "marker soup"). Don't re-mark a
+  continuation line whose comment is already marked.
+- An `❓` should **reference its `decision` / research ticket** where one exists
+  (e.g. `❓ … — see #466`), so the code points at the discussion instead of duplicating it.
+
 ## Surfacing run/sim commands
 
 When a change would **benefit from or require a live run or simulation** to verify
