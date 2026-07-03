@@ -41,7 +41,7 @@ Headless tests and the battle benchmark need pytest, pygame-ce, and the sibling
 use a project virtualenv:
 
     python3 -m venv .venv
-    .venv/bin/python -m pip install pytest pygame-ce
+    .venv/bin/python -m pip install pytest pygame-ce ruff   # ruff = linter (ADR-0006)
     .venv/bin/python -m pip install -e ../statecharts-py   # sibling repo
 
 **The statechart engine is the sole state engine** for the live game, `watch.py`,
@@ -55,6 +55,9 @@ are the regression oracle — regenerate them with `PYCATS_UPDATE_GOLDENS=1`.
 Run tests:        SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. .venv/bin/python -m pytest -q
                       # bare pytest is the source of truth — collects & runs the whole suite
                       # green (skips OK). Add -m "not slow" to skip the benchmark tests.
+Lint (ruff):      .venv/bin/ruff check --select F pycats/
+                      # ruff's F rules ≡ pyflakes (ADR-0006 / #492); scope is --select F for now.
+                      # Some findings are auto-fixable with --fix. Tested with ruff 0.15.20.
 
 Copy-paste one-liner (absolute paths, runs from anywhere):
 
