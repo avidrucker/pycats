@@ -58,7 +58,7 @@ ROW_DESCRIPTIONS = {
     "font_scale": "Resize all menu / HUD text: Small / Standard / Large.",
     "window_scale": "Cycle the windowed zoom (also F10).",
     "fullscreen": "Toggle fullscreen (also F11).",
-    "esc_quit": "Hold ESC for 2 seconds to quit / return to menu.",
+    "esc_quit": "Hold ESC 2s to go back one level (or quit from the main menu).",
     "keybindings": "Remap each player's keys, or reset them to defaults.",
     "back": "Return to the main menu.",
 }
@@ -236,7 +236,7 @@ class OptionsMenu:
         elif row == "esc_quit":
             prefs = settings.load()
             settings.save(
-                {"esc_hold_to_quit": not prefs.get("esc_hold_to_quit", True)}
+                {"esc_hold_to_navigate": not prefs.get("esc_hold_to_navigate", True)}
             )
         elif row == "keybindings":
             self.keybind_mode = True          # hand input + render to the KeybindMenu
@@ -266,8 +266,8 @@ class OptionsMenu:
             getter = self.display_hooks.get("is_fullscreen")
             return "Fullscreen: " + (("ON" if getter() else "OFF") if getter else "F11")
         if row == "esc_quit":
-            return "Hold-ESC Quit: " + (
-                "ON" if settings.load().get("esc_hold_to_quit", True) else "OFF"
+            return "Hold-ESC Back: " + (
+                "ON" if settings.load().get("esc_hold_to_navigate", True) else "OFF"
             )
         if row == "keybindings":
             return "Keybindings"

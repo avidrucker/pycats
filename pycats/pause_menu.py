@@ -45,7 +45,7 @@ class PauseMenuManager:
         self.p2_controls = p2_controls
 
         # Menu options
-        self.options = ["Resume", "End Match", "Return to Menu"]
+        self.options = ["Resume", "End Match", "Return to Character Select"]
         self.selected_option = 0  # Index of currently selected option
 
         # Input debouncing
@@ -55,7 +55,7 @@ class PauseMenuManager:
         self.press_pulse = 0
 
         # Action results
-        self.action_requested = None  # Will be "resume", "end_match", "return_to_menu", or None
+        self.action_requested = None  # "resume", "end_match", "return_to_char_select", or None
 
     def reset(self):
         """Reset the menu state."""
@@ -104,8 +104,8 @@ class PauseMenuManager:
                 self.action_requested = "resume"
             elif self.selected_option == 1:  # End Match
                 self.action_requested = "end_match"
-            elif self.selected_option == 2:  # Return to Menu
-                self.action_requested = "return_to_menu"
+            elif self.selected_option == 2:  # Return to Character Select
+                self.action_requested = "return_to_char_select"
 
             self.input_cooldown = MENU_SELECT_COOLDOWN  # Prevent rapid selection
             self.press_pulse = PRESS_PULSE_FRAMES        # flash the confirmed row

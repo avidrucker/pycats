@@ -41,12 +41,12 @@ class ScreenStateManager:
         self.back_timer = 0
         self.back_hold_frames = 60  # 1 second at 60 FPS
 
-        # Hold-ESC-to-quit (#113): 2-second hold on ESC quits current context.
+        # Hold-ESC-to-navigate (#113, generalised #453): a 2-second hold on ESC pops
+        # one level up the screen ladder (guards read esc_hold_complete()); at
+        # main_menu it quits the app. One shared timer, ticked once per frame in
+        # update() regardless of state.
         self.esc_quit_timer = 0
         self.esc_quit_hold_frames = 120  # 2 seconds at 60 FPS
-        # Context-aware quit signal: True = exit app (from main_menu),
-        #                            False = return to menu (from playing).
-        self.esc_quit_to_menu = False
 
         # Screen-flow engine (epic #100): runs on statecharts-py, the sole screen
         # engine (the legacy FSM was retired across slices 4a/4b/4c, ADR-0002). The
@@ -67,11 +67,12 @@ class ScreenStateManager:
             "playing": [
                 ("pause", self._guard_playing_to_pause),
                 ("win_screen", self._guard_playing_to_win_screen),
+                ("char_select", self._guard_playing_to_char_select),
             ],
             "pause": [
                 ("playing", self._guard_pause_to_playing),
                 ("win_screen", self._guard_pause_to_stats),
-                ("main_menu", self._guard_pause_to_main_menu),
+                ("char_select", self._guard_pause_to_char_select),
             ],
             "win_screen": [
                 ("char_select", self._guard_win_screen_to_char_select),
@@ -115,8 +116,17 @@ class ScreenStateManager:
         state's update action can own the per-frame ``battle.step`` (#246), instead
         of game.py's loop body running it.
         """
+        # Tick the hold-ESC timer once per frame, BEFORE the engine runs, so the
+        # per-state guards see the up-to-date hold when they decide to pop a level
+        # (#453). on_enter of a target state resets the timer, so popping one level
+        # never cascades into a second pop (or an app-quit) on the same hold.
+        self._tick_esc_hold(frame_input)
         self.engine.update({"frame_input": frame_input, "screen_manager": self,
                             "battle": battle, "platforms": platforms})
+        # main_menu is the top of the ladder: a completed hold there quits the app
+        # (there is no parent state to pop to).
+        if self.engine.state == "main_menu" and self.esc_hold_complete():
+            self.should_quit = True
 
     def render(self, surface):
         """Render the current screen."""
@@ -180,10 +190,12 @@ class ScreenStateManager:
     def _on_enter_main_menu(self, ctx):
         """Called when entering main menu state."""
         self.main_menu.reset()
+        self.esc_quit_timer = 0
 
     def _on_enter_options(self, ctx):
         """Called when entering the Options sub-menu state."""
         self.options_menu.reset()
+        self.esc_quit_timer = 0
 
     def _on_enter_char_select(self, ctx):
         """Called when entering character select state."""
@@ -192,20 +204,20 @@ class ScreenStateManager:
             self.char_selector.reset()
         self.back_timer = 0
         self.esc_quit_timer = 0
-        self.esc_quit_to_menu = False
 
     def _on_enter_playing(self, ctx):
         """Called when entering playing state."""
         self.esc_quit_timer = 0
-        self.esc_quit_to_menu = False
 
     def _on_enter_pause(self, ctx):
         """Called when entering pause state."""
         # Reset pause menu state
         self.pause_menu.reset()
+        self.esc_quit_timer = 0
 
     def _on_enter_win_screen(self, ctx):
         """Called when entering win screen state."""
+        self.esc_quit_timer = 0
         if self.winner and self.loser:
             # Normal win condition (playing -> win_screen): winner/loser were set
             # in the playing loop before the transition.
@@ -224,7 +236,6 @@ class ScreenStateManager:
         """Update main menu state."""
         frame_input = ctx["frame_input"]
         self.main_menu.update(frame_input.pressed)
-        self._tick_esc_quit_timer(frame_input)
 
     def _update_options(self, ctx):
         """Update the Options sub-menu state."""
@@ -264,7 +275,6 @@ class ScreenStateManager:
         Players are created lazily on the first playing frame (the engine action runs
         before game.py's old loop-body create, so it owns that too)."""
         frame_input = ctx["frame_input"]
-        self._tick_esc_quit_timer(frame_input)
         battle = ctx.get("battle")
         if battle is None:
             return
@@ -288,11 +298,7 @@ class ScreenStateManager:
 
     def should_quit_game(self):
         """Check if the app should exit (from main_menu ESC-hold)."""
-        return self.should_quit and not self.esc_quit_to_menu
-
-    def should_return_to_menu(self):
-        """Check if the game should return to main_menu (from playing ESC-hold)."""
-        return not self.should_quit and self.esc_quit_to_menu
+        return self.should_quit
 
     def esc_quit_progress(self):
         """Current ESC-hold progress as a 0..1 ratio for render callers."""
@@ -322,32 +328,28 @@ class ScreenStateManager:
             width,
         )
 
-    def _tick_esc_quit_timer(self, frame_input):
-        """Hold-ESC-to-quit (#113): count frames while ESC is held, trigger quit at threshold.
+    def _tick_esc_hold(self, frame_input):
+        """Hold-ESC-to-navigate (#113, generalised #453): count frames while ESC is
+        held; the value drives ``esc_hold_complete()``. The timer resets whenever
+        ESC is released, or immediately when the setting is off (ESC is then inert —
+        B / the menus still back out every screen).
 
-        Only active when the setting ``esc_hold_to_quit`` is True. The timer resets
-        whenever ESC is released.
-
-        When in ``playing`` state, the quit signal is ``esc_quit_to_menu`` (return
-        to main menu). When in any other state (``main_menu``, ``options``,
-        ``char_select``, ``pause``, ``win_screen``), the signal is ``should_quit``
-        (exit app).
+        This method no longer decides a *destination*: it only maintains the timer.
+        Each state's back-guard reads ``esc_hold_complete()`` to pop one level, and
+        ``update()`` turns a completed hold at ``main_menu`` into an app quit.
         """
         from .settings import load
-        if not load().get("esc_hold_to_quit", True):
+        if not load().get("esc_hold_to_navigate", True):
             self.esc_quit_timer = 0
             return
         if pygame.K_ESCAPE in frame_input.held:
             self.esc_quit_timer += 1
-            if self.esc_quit_timer >= self.esc_quit_hold_frames:
-                # Context-aware: playing -> quit-to-menu, anything else -> exit app
-                if self.engine.state == "playing":
-                    self.esc_quit_to_menu = True
-                else:
-                    self.should_quit = True
-                self.esc_quit_timer = 0
         else:
             self.esc_quit_timer = 0
+
+    def esc_hold_complete(self):
+        """True once ESC has been held for the full 2-second threshold (#453)."""
+        return self.esc_quit_timer >= self.esc_quit_hold_frames
 
     # FSM Guard Functions
     def _guard_menu_to_char_select(self, ctx):
@@ -378,14 +380,15 @@ class ScreenStateManager:
         return False
 
     def _guard_options_to_main_menu(self, ctx):
-        """Return to the main menu when the Options sub-menu backs out."""
+        """Return to the main menu when the Options sub-menu backs out (B / the
+        ``back`` row) or ESC is held for 2s (#453)."""
         if (
             hasattr(self.options_menu, "action_requested")
             and self.options_menu.action_requested == "back"
         ):
             self.options_menu.action_requested = None
             return True
-        return False
+        return self.esc_hold_complete()
 
     def _guard_char_select_to_playing(self, ctx):
         """Check if should transition from character select to playing."""
@@ -396,8 +399,9 @@ class ScreenStateManager:
         )
 
     def _guard_char_select_to_main_menu(self, ctx):
-        """Check if should go back to main menu from character select."""
-        return self.back_timer >= self.back_hold_frames
+        """Back to main menu from character select: hold-B for 1s (the existing
+        char-select back) or hold-ESC for 2s (#453)."""
+        return self.back_timer >= self.back_hold_frames or self.esc_hold_complete()
 
     def _guard_playing_to_pause(self, ctx):
         """Check if should transition from playing to pause."""
@@ -430,15 +434,25 @@ class ScreenStateManager:
             return True
         return False
 
-    def _guard_pause_to_main_menu(self, ctx):
-        """Check if should transition from pause to main menu."""
+    def _guard_playing_to_char_select(self, ctx):
+        """Leave an active match to character select on a 2s ESC-hold (#453). The
+        match is abandoned; char_select's entry/update resets the battle."""
+        if self.esc_hold_complete():
+            self.winner = None
+            self.loser = None
+            return True
+        return False
+
+    def _guard_pause_to_char_select(self, ctx):
+        """Leave a paused match to character select — via the pause menu's
+        ``return_to_char_select`` button (#453 #4) or a 2s ESC-hold. Abandons the
+        match (winner/loser cleared; char_select resets the battle)."""
         if (
-            hasattr(self.pause_menu, "action_requested")
-            and self.pause_menu.action_requested == "return_to_menu"
+            (hasattr(self.pause_menu, "action_requested")
+             and self.pause_menu.action_requested == "return_to_char_select")
+            or self.esc_hold_complete()
         ):
-            # Clear the action and reset game state
             self.pause_menu.action_requested = None
-            # Reset winner/loser to clean state
             self.winner = None
             self.loser = None
             return True
@@ -449,8 +463,10 @@ class ScreenStateManager:
         return self.winner is not None and self.loser is not None
 
     def _guard_win_screen_to_char_select(self, ctx):
-        """Check if should transition from win screen to character select."""
-        if self.win_screen_manager.ready_to_return():
+        """Back to character select from the win/stats screen: both players confirm
+        (the #10 gate) or a 2s ESC-hold bypasses it (#453 #3). Either way the match
+        is cleared."""
+        if self.win_screen_manager.ready_to_return() or self.esc_hold_complete():
             # Reset game state when transitioning back
             self.winner = None
             self.loser = None

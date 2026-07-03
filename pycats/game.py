@@ -207,11 +207,6 @@ font = pygame.font.SysFont(
 
 #### TODO: split off damage % and stock lives rendering so that they are rendering last and at the bottom left and right corners of the screen
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
-def reset_game():
-    """Reset the battle for a new match (delegates to BattleScreen, #193)."""
-    battle.reset()
-
-
 def toggle_fullscreen():
     """Toggle between fullscreen and windowed mode."""
     global screen, is_fullscreen, display_surface, game_surface, scale_factor, offset_x, offset_y
@@ -362,10 +357,6 @@ while running:
             if ev.key == pygame.K_F11:
                 toggle_fullscreen()
                 save_prefs()
-            elif ev.key == pygame.K_ESCAPE and is_fullscreen:
-                # Allow ESC to exit fullscreen
-                toggle_fullscreen()
-                save_prefs()
             elif ev.key == pygame.K_F10:
                 if is_fullscreen:
                     # Advance to the next *distinct* achievable zoom (wraps), so
@@ -404,14 +395,9 @@ while running:
         running = False
         continue
 
-    # Check if we should return to main menu (ESC-hold from playing)
-    if screen_manager.should_return_to_menu():
-        screen_manager.esc_quit_to_menu = False
-        screen_manager.should_quit = False
-        # Reset game state and transition to main menu
-        reset_game()
-        screen_manager.reset_to_main_menu()
-        continue
+    # Leaving an active match on a 2s ESC-hold now drops to char_select as a
+    # first-class FSM transition (#453); char_select's entry action resets the
+    # battle, so no game.py-side reset/force is needed here anymore.
 
     current_state = screen_manager.get_state()
     # (#230) The pause->win_screen stats wiring + char_select reset are now engine

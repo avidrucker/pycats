@@ -22,38 +22,38 @@ from pycats.settings import load, save, defaults
 
 
 class TestSettingsToggle:
-    """Test the esc_hold_to_quit settings key."""
+    """Test the esc_hold_to_navigate settings key."""
 
     @pytest.fixture(autouse=True)
     def _isolated_config(self, tmp_path, monkeypatch):
         monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
 
     def test_default_is_true(self):
-        """esc_hold_to_quit should default to True (on by default)."""
+        """esc_hold_to_navigate should default to True (on by default)."""
         prefs = load()
-        assert prefs.get("esc_hold_to_quit") is True, \
-            "esc_hold_to_quit should default to True"
+        assert prefs.get("esc_hold_to_navigate") is True, \
+            "esc_hold_to_navigate should default to True"
 
     def test_save_and_load_toggle(self):
         """Toggling the setting should persist across load."""
-        save({"esc_hold_to_quit": False})
+        save({"esc_hold_to_navigate": False})
         prefs = load()
-        assert prefs.get("esc_hold_to_quit") is False, \
-            "esc_hold_to_quit=False should persist"
+        assert prefs.get("esc_hold_to_navigate") is False, \
+            "esc_hold_to_navigate=False should persist"
 
-        save({"esc_hold_to_quit": True})
+        save({"esc_hold_to_navigate": True})
         prefs = load()
-        assert prefs.get("esc_hold_to_quit") is True, \
-            "esc_hold_to_quit=True should persist"
+        assert prefs.get("esc_hold_to_navigate") is True, \
+            "esc_hold_to_navigate=True should persist"
 
     def test_unknown_keys_ignored(self):
         """Unknown keys in settings file should be ignored."""
-        save({"esc_hold_to_quit": False, "unknown_key": 42})
+        save({"esc_hold_to_navigate": False, "unknown_key": 42})
         prefs = load()
         assert "unknown_key" not in prefs
-        assert prefs.get("esc_hold_to_quit") is False
+        assert prefs.get("esc_hold_to_navigate") is False
 
     def test_defaults_contain_all_required_keys(self):
-        """The defaults dict must contain esc_hold_to_quit."""
+        """The defaults dict must contain esc_hold_to_navigate."""
         d = defaults()
-        assert "esc_hold_to_quit" in d
+        assert "esc_hold_to_navigate" in d

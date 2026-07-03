@@ -61,26 +61,26 @@ def test_fullscreen_row_calls_injected_hook():
 
 def test_esc_quit_row_toggles_setting_and_persists(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    settings.save({"esc_hold_to_quit": True})
+    settings.save({"esc_hold_to_navigate": True})
     m = _opts()
     m.selected_option = m.rows.index("esc_quit")
     m.update({ATTACK})
-    assert settings.load()["esc_hold_to_quit"] is False
+    assert settings.load()["esc_hold_to_navigate"] is False
 
     m.input_cooldown = 0
     m.update({ATTACK})
-    assert settings.load()["esc_hold_to_quit"] is True
+    assert settings.load()["esc_hold_to_navigate"] is True
 
 
 def test_esc_quit_row_label_reflects_persisted_setting(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
     m = _opts()
 
-    settings.save({"esc_hold_to_quit": True})
-    assert m._row_label("esc_quit") == "Hold-ESC Quit: ON"
+    settings.save({"esc_hold_to_navigate": True})
+    assert m._row_label("esc_quit") == "Hold-ESC Back: ON"
 
-    settings.save({"esc_hold_to_quit": False})
-    assert m._row_label("esc_quit") == "Hold-ESC Quit: OFF"
+    settings.save({"esc_hold_to_navigate": False})
+    assert m._row_label("esc_quit") == "Hold-ESC Back: OFF"
 
 
 def test_back_row_requests_back():

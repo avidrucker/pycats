@@ -37,9 +37,11 @@ _DEFAULTS = {
     # In-battle fighter-controls display (#284): the per-fighter control-scheme
     # readout below the HUD, now toggleable + persisted (was always-on).
     "show_controls": True,
-    # Hold-ESC-to-quit feature (#113): when True, holding ESC for 2s quits the
-    # current context (battle→menu, menu→game). Toggleable in Options sub-menu.
-    "esc_hold_to_quit": True,
+    # Hold-ESC-to-navigate (#113, generalised #453): when True, holding ESC for 2s
+    # pops one level up the screen ladder (sub-menu/battle → its parent) and quits
+    # the app from main_menu. When False, ESC is inert (use B / the menus).
+    # Toggleable in the Options sub-menu.
+    "esc_hold_to_navigate": True,
     # Global font-scale (#345): "small"/"standard"/"large" — a UI-text size
     # multiplier the Options menu cycles. "standard" (1.0) is byte-identical.
     "font_scale": "standard",
@@ -91,8 +93,8 @@ def _validated(raw):
     out["show_controls"] = bool(
         raw.get("show_controls", out["show_controls"])
     )
-    out["esc_hold_to_quit"] = bool(
-        raw.get("esc_hold_to_quit", out["esc_hold_to_quit"])
+    out["esc_hold_to_navigate"] = bool(
+        raw.get("esc_hold_to_navigate", out["esc_hold_to_navigate"])
     )
     fs = raw.get("font_scale")
     if fs in FONT_SCALES:  # snap an unknown preset back to the default

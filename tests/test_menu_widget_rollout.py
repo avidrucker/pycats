@@ -64,7 +64,7 @@ def test_main_menu_renders_rows_via_widget():
 def test_pause_menu_renders_rows_via_widget():
     runtime_settings.seed(settings.defaults())
     m = PauseMenuManager(_P1, _P2)
-    m.selected_option = 2  # "Return to Menu"
+    m.selected_option = 2  # "Return to Character Select"
     surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     calls = _spy_button_calls("pause_menu", lambda: m.render(surf))
     _assert_one_focused_at_selected(calls, m.options, 2)
