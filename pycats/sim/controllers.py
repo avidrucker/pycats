@@ -39,6 +39,14 @@ ANTI_STALL_MOVE_PX = 8
 # mid-stage into a self-destruct. ⚠ GUESS px (~2 char-lengths, like the #251 ranges).
 EDGE_HOG_RANGE = 120
 
+# #424: while hold-to-deny hanging, climb to safety (neutral getup) once the bot's
+# own ledge_hang_timer falls to this floor — instead of holding to the auto-release
+# timeout and dropping (a self-KO when no jump is left to recover). Sits above
+# LEDGE_GETUP_FRAMES (16) so the climb completes before the drop would fire; the
+# getup freezes the hang timer, so any positive floor is drop-safe — the margin is
+# for reaction delay across levels. ⚠ tuning starting point.
+LEDGE_HOG_SAFETY_FLOOR = 20
+
 # #413 (edge-guard): vertical reach of the edge-guard MELEE poke — the recovering foe
 # must be near the lip (below the on-stage poke's dy<60 band, but not far below). ⚠
 # GUESS px. The projectile mode has no dy cap (it zones a foe anywhere off-stage).
@@ -420,8 +428,15 @@ class AttackerController(BaseController):
             # #404 edge-hog: while the opponent is still recovering off-stage on THIS
             # ledge's side, HOLD the hang (deny the regrab via the one-occupant
             # lockout, #14/#311) instead of getting up. Off by default → golden-safe.
+            # #424: but never hold past our OWN hang timeout — tick_ledge_hang counts
+            # the bot's ledge_hang_timer down every hang frame, and at 0 the hang
+            # auto-releases and drops (a self-KO if no jump is left). Once the timer
+            # falls to LEDGE_HOG_SAFETY_FLOOR, stop denying and climb to the stage
+            # (fall through to the neutral getup) so the deny never costs the denier.
             if self.edge_hog and self._off_stage_side(t, grabbed):
-                return set()
+                hang_timer = getattr(a.fighter, "ledge_hang_timer", 0)
+                if hang_timer > LEDGE_HOG_SAFETY_FLOOR:
+                    return set()
             return {keys["up"]}
 
         # #409 deliberate recovery: when the bot ITSELF is airborne off-stage, aim for

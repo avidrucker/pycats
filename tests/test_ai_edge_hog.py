@@ -13,6 +13,7 @@ import pygame as pg
 
 from pycats.sim.controllers import AttackerController, EDGE_HOG_RANGE
 from pycats.entities.ledge import Ledge
+from pycats.config import LEDGE_HANG_FRAMES
 
 pg.init()
 
@@ -20,13 +21,16 @@ _CTRL = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6, "
 
 
 def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None,
-          current_move=None, move_frame=0, state="idle"):
+          current_move=None, move_frame=0, state="idle", hang_timer=LEDGE_HANG_FRAMES):
+    # hang_timer defaults to a HEALTHY hang: the hold-to-deny branch only holds while
+    # the bot's own ledge_hang_timer is above LEDGE_HOG_SAFETY_FLOOR (#424).
     s = types.SimpleNamespace()
     s.rect = pg.Rect(0, 0, 40, 60)
     s.rect.center = (cx, cy)
     s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground,
                                       hurt_timer=0, stun_timer=0,
-                                      grabbed_ledge=grabbed_ledge)
+                                      grabbed_ledge=grabbed_ledge,
+                                      ledge_hang_timer=hang_timer)
     s.controls = _CTRL
     s.current_move = current_move
     s.move_frame = move_frame
