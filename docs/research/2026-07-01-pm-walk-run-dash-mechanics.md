@@ -91,6 +91,89 @@ The facts #374 needs are settled:
 - Any movement code; per-character balance tuning (#117); wavedash (#202) / fast-fall / air-speed
   (#229 caveat).
 
+---
+
+# Addendum (#407): the `DOUBLE_TAP_WINDOW` value — PM has no literal number to copy
+
+> Research findings for **#407** (`config.DOUBLE_TAP_WINDOW`, stamped `= 8` as a placeholder
+> in slice 2b **#403**). Date: 2026-07-03. Agent: FIG. Area: `area:entities`. Findings +
+> a recommended value only — no code.
+
+## TL;DR
+
+**PM/Melee has no "double-tap window" to port, because its walk↔dash split is analog** (stick
+magnitude, per #374/D2). The closest analog quantity — the **smash-input detection window** — is
+**1 frame in vanilla Melee** (2 with UCF), which is the number of frames the stick has to cross
+from neutral to the dash threshold. **That 1–2 frame value is the wrong thing to copy into
+`DOUBLE_TAP_WINDOW`:** a keyboard double-tap is *press → release → press*, physically impossible
+in 1–2 frames (≈17–33 ms). So `DOUBLE_TAP_WINDOW` is a **keyboard-port surrogate** that must be
+tuned to **human double-tap ergonomics**, not to PM's analog smash window. **Recommendation:
+`DOUBLE_TAP_WINDOW = 10` (≈167 ms) as a forgiving default, acceptable range 8–15 (≈133–250 ms);
+the current `8` is valid-but-tight, so this is a game-feel tuning call, not a parity bug.**
+
+## Q1 — Analog smash-input (dash) detection window · confidence: **explicit**
+
+Melee decides dash-vs-walk from a single stick motion, not a double press. From a neutral stick,
+a **dash (smash input)** registers when the X-axis goes from inside the **deadzone**
+(`|X| < 0.2875`, <23 stick units) on one frame to the **dash range** (`|X| ≥ 0.8`, ≥64 units) on
+the **next frame** — the documented **"one-frame dashback window."** A smash input is defined as
+crossing `X ≥ 0.8` **within ~2 frames** of leaving neutral. The **Universal Controller Fix (UCF)**
+widens the dashback window from **1 → 2 frames**; a proposed 2→3 widening (dash out of crouch) was
+rejected as making the input "too easy." So the analog anchor for our digital window is **1 frame
+(vanilla) / 2 frames (UCF-standard)** — cross the 0.8 threshold that fast and it's a dash; cross it
+slower and it's a walk.
+
+## Q2 — Dash-dance / initial-dash reversal window · confidence: **explicit, per-character**
+
+The window in which a reversed input reads as a **dash-dance** equals each character's
+**initial-dash animation length: 7–18 frames** depending on character (e.g. Fox's initial dash is
+21 frames but transitions to run on frame 12; a character can *turn around* after a single frame).
+This is a per-character `gap` to fill per archetype (rukaidata) when #117's cats are built; it does
+**not** bound `DOUBLE_TAP_WINDOW` (which gates dash *entry*, not dash-dance reversal) — noted for
+the dash-dance/pivot spike **#387**.
+
+## Q3 — Digital-controller precedent (B0XX / Smash Box) · confidence: **inferred**
+
+Box controllers (B0XX, Smash Box) replace the analog stick with buttons; a direction press maps to
+**full deflection (`|X| = 1.0`), which clears the 0.8 dash threshold instantly** — so the
+smash/dash transition is effectively **a single frame** and these controllers **do not expose a
+separate tunable "double-tap window."** (They're tuned to *match* GCC dash behaviour, and
+documented dash-speed differences between digital and analog inputs exist.) Takeaway: the box-controller
+precedent is *instant* dash on press — it offers **no digital double-tap window** number to borrow,
+which is why our surrogate has to come from ergonomics (Q4), not hardware precedent.
+
+## Q4 — Keyboard / fighting-game convention (the actual basis) · confidence: **convention, not parity**
+
+With no analog magnitude and no box-controller window to copy, the faithful anchor is **human
+double-tap ergonomics**. Double-tap-to-dash/run in keyboard fighters and RTS UIs conventionally
+sits around **~150–250 ms** between the two presses; at 60 FPS that is **≈9–15 frames**. The
+current `8` (≈133 ms) is at the tight/technical end — executable, but demands a fast repeat. This
+band is a **convention sanity-check, explicitly not a Melee-faithful number** (marked `gap` — no
+single sourced keyboard value exists).
+
+## Recommendation for pycats (60 FPS)
+
+- **PM has no faithful single number** for `DOUBLE_TAP_WINDOW` — it is analog. State this in
+  `config.py` beside the constant (drop the bare `⚠` guess framing; this value is a *justified
+  surrogate*, not an un-sourced guess).
+- **Recommended value: `DOUBLE_TAP_WINDOW = 10`** (≈167 ms) — a forgiving default squarely inside
+  the ergonomic band. **Acceptable range 8–15** (≈133–250 ms). Keep `8` if a deliberately tight,
+  technical feel is wanted; widen toward 12–15 if playtesting reports missed dashes.
+- **This is a game-feel tuning call, not a parity defect** — the one-line config change (value +
+  sourced comment) is filed as follow-up **#489**. No engine code in this research ticket.
+
+## Sources (#407)
+
+[SmashWiki — Universal Controller Fix](https://www.ssbwiki.com/Universal_Controller_Fix)
+(dashback window 1→2 frames), [SmashWiki — Dash](https://www.ssbwiki.com/Dash) &
+[SmashWiki — Dashdance](https://www.ssbwiki.com/Dashdance) (initial-dash 7–18 f, reversal =
+initial-dash length), [Smashboards — UCF](https://smashboards.com/ucf/) & [20XX — UCF](https://www.20xx.me/ucf.html)
+(deadzone `<0.2875`, dash range `≥0.8`, one-frame window), [SmashWiki — Control stick](https://www.ssbwiki.com/Control_stick),
+[B0XX](https://b0xx.com/) & [Smash Box (Wikipedia)](https://en.wikipedia.org/wiki/Smash_Box_controller)
+(digital→full-deflection mapping). Confidence tags per section above.
+
+---
+
 ## Cross-refs & sources
 
 Feeds **#374**. In-repo (primary, already-sourced): `docs/pm-reference/movement-and-tech.md`
