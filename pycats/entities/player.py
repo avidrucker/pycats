@@ -106,6 +106,12 @@ class Player(pygame.sprite.Sprite):
         self.char_color = color
         self.char_name = char_name
         self.eye_color = eye_color
+        # Optional display name (#478): shown above the fighter in place of the
+        # "P1"/"P2" label when set. Separate from char_name, which stays the
+        # win-attribution identity + P1/P2 slot colour selector. None → the label
+        # falls back to char_name (byte-identical default; the render-parity oracle
+        # stays green). Set by the profile create/select UI (slice 2, #479).
+        self.nickname = None
 
         # Secondary fur color for stripes
         if color == P1_COLOR:

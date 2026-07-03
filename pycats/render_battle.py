@@ -216,15 +216,19 @@ def draw_stripes(surface, p: Player):
 
 
 def draw_player_name(surface, p: Player):
-    """Draw the player name above the cat."""
-    # Choose color based on player name
-    if p.char_name == "P1":
-        color = P1_UI_COLOR
-    else:
-        color = P2_UI_COLOR
+    """Draw the fighter's name above the cat: the `nickname` if set (#478), else the
+    "P1"/"P2" identity.
+
+    Colour is selected by the player *slot* — `char_name`, the win-attribution identity
+    (`battle_screen.py`) — NOT by the displayed text, so setting a nickname changes the
+    label while keeping the slot's accent colour. `nickname` None → the label is
+    `char_name` in the same colour as before (byte-identical default → the render-parity
+    oracle stays green)."""
+    color = P1_UI_COLOR if p.char_name == "P1" else P2_UI_COLOR
+    label = getattr(p, "nickname", None) or p.char_name
 
     text_utils.render_text(
-        surface, p.char_name,
+        surface, label,
         (p.rect.centerx, p.rect.top - NAME_LABEL_OFFSET_Y), NAME_FONT_SIZE,
         color, center=True
     )
@@ -252,16 +256,17 @@ class _CatShim:
     """Minimal stand-in exposing the attributes the draw_* helpers read, with a
     virtual rect positioned inside the composite surface."""
     __slots__ = ("rect", "facing_right", "char_color", "eye_color",
-                 "stripe_color", "char_name", "tint")
+                 "stripe_color", "char_name", "nickname", "tint")
 
     def __init__(self, rect, facing_right, char_color, eye_color, stripe_color,
-                 char_name, tint=None):
+                 char_name, nickname=None, tint=None):
         self.rect = rect
         self.facing_right = facing_right
         self.char_color = char_color
         self.eye_color = eye_color
         self.stripe_color = stripe_color
         self.char_name = char_name
+        self.nickname = nickname   # #478: the name label draws this if set, else char_name
         # #109: the active flash overlay (RED/YELLOW/WHITE) or None. The draw_*
         # helpers blend it 50% over each part's base colour via `_blend`, so the
         # whole sprite flashes from one source instead of per-part char_color.
@@ -332,8 +337,11 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
     # in the cache key so different-sized fighters don't share one cached body.
     w, h = p.fighter.stand_size
     tint = tuple(body_tint(p))
+    # nickname (#478) is in the key so a nickname change re-renders the label instead of
+    # serving a stale composite; None (the default) leaves the key byte-identical.
     key = (tuple(p.char_color), tuple(p.stripe_color), tuple(p.eye_color),
-           p.char_name, p.fighter.facing_right, tint, face_style, (w, h))
+           p.char_name, getattr(p, "nickname", None), p.fighter.facing_right, tint,
+           face_style, (w, h))
     surf = _body_cache.get(key)
     if surf is None:
         cw = w + 2 * _BODY_PAD_X
@@ -342,7 +350,8 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
         vrect = pygame.Rect(_BODY_PAD_X, _BODY_PAD_TOP, w, h)
         overlay = active_tint(p)
         shim = _CatShim(vrect, p.fighter.facing_right, p.char_color, p.eye_color,
-                        p.stripe_color, p.char_name, tint=overlay)
+                        p.stripe_color, p.char_name,
+                        nickname=getattr(p, "nickname", None), tint=overlay)
         body = pygame.Surface((w, h))
         body.fill(_blend(p.char_color, overlay))
         surf.blit(body, vrect)
