@@ -1,5 +1,11 @@
 # pyflakes trade-offs — keep, adopt, or remove?
 
+> **⚠ VERDICT SUPERSEDED (2026-07-03).** The "do not adopt" recommendation below is
+> **reversed** by the human decision in [#486](https://github.com/avidrucker/pycats/issues/486),
+> recorded in **[ADR-0005](../adr/0005-adopt-pyflakes-quality-gate.md)**: pycats **will**
+> adopt pyflakes (pre-commit + on-demand; no CI gate). The **evidence** gathered here
+> still stands and shapes the adoption plan — only the keep/adopt verdict flips.
+
 **Research findings (#198).** Date: 2026-06-29. Agent: ELDERBERRY.
 Feeds a human keep/remove decision; **no dependency change made in this ticket** (per
 #197). Evidence gathered by running `pyflakes` across `pycats/` on this commit.
