@@ -1,6 +1,12 @@
 # ADR-0005 — Adopt pyflakes as a codebase-quality tool (pre-commit + on-demand)
 
-- **Status:** Accepted
+> **⚠ SUPERSEDED by [ADR-0006](0006-adopt-ruff-lint-format.md) (2026-07-03).** pycats adopts
+> **ruff** instead — ruff's `F` rules reimplement pyflakes' checks, with `# noqa` and a path to
+> import-sort/format. This ADR is retained as the decision record; the *adopt-pyflakes verdict*
+> no longer holds, but its **enforcement model (pre-commit + on-demand, no CI gate) and the
+> backlog-cleanup work (#490, #495) carry over unchanged** under ruff.
+
+- **Status:** Superseded by [ADR-0006](0006-adopt-ruff-lint-format.md) (2026-07-03)
 - **Date:** 2026-07-03
 - **Supersedes:** the keep/adopt **verdict** of research #198 (`docs/research/2026-06-29-pyflakes-tradeoffs.md`). The research *evidence* stands; only its "do not adopt" recommendation is reversed.
 - **Tracked by:** epic [#486](https://github.com/avidrucker/pycats/issues/486) (this ADR is its slice 1). Approval to declare the dependency is [#197](https://github.com/avidrucker/pycats/issues/197) (granted in #486).
