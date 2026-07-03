@@ -153,9 +153,24 @@ def test_beat5_jab_combo_racks_damage_in_window(showcase_run):
     assert racked, "the jab-combo beat should rack damage on P2 inside its window"
 
 
-def test_beat6_dodge_passes_the_opponent_in_window(showcase_run):
+def test_beat6_fireball_projectile_in_flight_in_window(showcase_run):
+    # #432: the fireball beat fires Nalio's neutral-B and the projectile travels in-window.
     _d, snaps, caps = showcase_run
-    dodge_frames = [f for f in _frames(caps, snaps, 5) if _snap(snaps, f, 0)[_STATE] == "dodge"]
+    fire = [i for i, c in enumerate(caps) if "fireball" in c.text.lower()]
+    assert fire, "there should be a fireball beat (caption mentioning 'fireball')"
+    idx = fire[0]
+    p1_name = snaps[0][0][0][0]  # P1 (Nalio)'s char_name — ties the projectile to its owner
+    # snaps[f] = (players, atk, phase, winner); atk entry = (x,y,frames_left,owner,active,cx,cy,r)
+    active = any(
+        any(a[3] == p1_name and a[4] for a in snaps[f][1])
+        for f in _frames(caps, snaps, idx)
+    )
+    assert active, "Nalio's fireball projectile should be active in the fireball beat's window"
+
+
+def test_beat7_dodge_passes_the_opponent_in_window(showcase_run):
+    _d, snaps, caps = showcase_run
+    dodge_frames = [f for f in _frames(caps, snaps, 6) if _snap(snaps, f, 0)[_STATE] == "dodge"]
     assert dodge_frames, "P1 should roll-dodge inside the beat's window"
     swept = [_snap(snaps, f, 0)[_RECT_X] for f in dodge_frames]
     lo, hi = min(swept), max(swept)
@@ -163,9 +178,9 @@ def test_beat6_dodge_passes_the_opponent_in_window(showcase_run):
     assert passed, "the roll should pass through/past the opponent (P2 x within P1's dodge sweep)"
 
 
-def test_beat7_ledge_hang_is_held_in_window(showcase_run):
+def test_beat8_ledge_hang_is_held_in_window(showcase_run):
     _d, snaps, caps = showcase_run
-    held = sum(1 for f in _frames(caps, snaps, 6) if _snap(snaps, f, 0)[_STATE] == "ledge_hang")
+    held = sum(1 for f in _frames(caps, snaps, 7) if _snap(snaps, f, 0)[_STATE] == "ledge_hang")
     assert held >= _LEDGE_HANG_MIN_FRAMES, (
         f"the edge-grab beat should hold the ledge >= {_LEDGE_HANG_MIN_FRAMES} frames (got {held})")
 
@@ -179,7 +194,7 @@ def test_late_payoff_beats_freeze_on_their_action_frame(showcase_run):
     checks = {
         1: ("double-jump airborne", lambda p: not p[_ON_GROUND]),
         2: ("jab attacking", lambda p: p[_STATE] == "attack"),
-        6: ("ledge hang", lambda p: p[_STATE] == "ledge_hang"),
+        7: ("ledge hang", lambda p: p[_STATE] == "ledge_hang"),
     }
     for idx, (what, pred) in checks.items():
         at = caps[idx].dwell_at

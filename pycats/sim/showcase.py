@@ -1,7 +1,7 @@
 # pycats/sim/showcase.py
 """The curated Nalio-vs-Birky feature-showcase demo (#325, epic #308; re-choreographed #398).
 
-A deterministic scripted battle whose seven captioned `DemoSegment`s each demonstrate an
+A deterministic scripted battle whose eight captioned `DemoSegment`s each demonstrate an
 implemented feature **within that caption's own frame window** — so every beat a viewer
 reads is actually happening on screen. `tests/test_showcase_demo.py` binds each feature to
 its window and fails if a beat drifts out (the #395 audit found the earlier cut narrated
@@ -16,9 +16,11 @@ The beats, and what each depends on (the #398 re-choreography):
   4. Shield — P1 shields while Birky jabs it, so the shield takes (and absorbs) hits
      (a two-sided beat: Birky is given offence via p2 spans).
   5. Jab combo — a short chain that racks damage + knockback but leaves Birky mid-stage.
-  6. Roll-dodge — P1 rolls RIGHT clean THROUGH Birky (a dodge is intangible and passes
+  6. Fireball — Nalio's neutral-B projectile, thrown at the knocked-back Birky and
+     connecting (the mid-stage gap from beat 5 gives the projectile room to travel).
+  7. Roll-dodge — P1 rolls RIGHT clean THROUGH Birky (a dodge is intangible and passes
      through the body when it has room; the light combo above preserves that room).
-  7. Ledge grab — P1 walks to the right ledge and presses BACK as it slips off, so it
+  8. Ledge grab — P1 walks to the right ledge and presses BACK as it slips off, so it
      catches and HANGS (no walk-off).
 
 **Shield-break stun and KO are intentionally NOT staged.** A fixed script can't reliably
@@ -80,19 +82,33 @@ _SEGMENTS = (
                InputSpan(295, 296, 1, "attack")),
     ),
     DemoSegment(
+        # P1 fires Nalio's neutral-B fireball at the knocked-back Birky (#432). The jab
+        # combo (beat 5) left Birky ~116px to P1's right at 12%, so a neutral `special`
+        # (no direction held → move_select._SPECIAL["neutral"] = neutral_b) throws the
+        # projectile, which travels right and CONNECTS (+~7%). Nalio is stationary during
+        # the throw, so the shifted roll/ledge beats below still start from the same P1
+        # position. dwell_at (#412): freeze at f366 while the fireball is airborne
+        # mid-flight between the fighters (the projectile is live f364-368), not f345.
+        "Fireball — Nalio's neutral-B projectile",
+        anchor=BOTTOM_CENTER, start=345, end=420, dwell_at=366,
+        spans=(InputSpan(350, 351, 1, "special"),),
+    ),
+    DemoSegment(
         # P1 rolls RIGHT clean through Birky (intangible — passes through the body).
+        # Frames shifted +80 by the inserted fireball beat (#432).
         "Shield roll-dodge — intangible, right through Birky",
-        anchor=BOTTOM_CENTER, start=345, end=400,
-        spans=(InputSpan(350, 385, 1, "shield"), InputSpan(365, 366, 1, "right")),
+        anchor=BOTTOM_CENTER, start=425, end=480,
+        spans=(InputSpan(430, 465, 1, "shield"), InputSpan(445, 446, 1, "right")),
     ),
     DemoSegment(
         # Walk to the right ledge, then press BACK (left) as P1 slips off so it catches
         # and HANGS on the edge (no walk-off self-destruct). The 1-frame input gap at the
         # lip lets the grab register before the back-press holds the hang.
-        # dwell_at (#412): freeze at f462 while P1 hangs on the ledge, not the walking f405.
+        # dwell_at (#412): freeze at f542 while P1 hangs on the ledge, not the walking f485.
+        # Frames shifted +80 by the inserted fireball beat (#432).
         "Ledge grab — hang on the edge",
-        anchor=BOTTOM_CENTER, start=405, end=520, dwell_at=462,
-        spans=(InputSpan(405, 420, 1, "right"), InputSpan(422, 505, 1, "left")),
+        anchor=BOTTOM_CENTER, start=485, end=600, dwell_at=542,
+        spans=(InputSpan(485, 500, 1, "right"), InputSpan(502, 585, 1, "left")),
     ),
 )
 
