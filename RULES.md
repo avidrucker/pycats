@@ -28,23 +28,21 @@
 
 ### Area labels (`area:*`)
 
-- **Every ticket gets exactly one `area:*` label at filing time.** Unlike the
-  shared `severity:*` taxonomy, areas are **project-local** — they name *this*
-  codebase's subsystems. The current set:
+- **Every ticket gets exactly one `area:*` label at filing time** — the
+  project-local subsystem it belongs to. The current set:
   - `area:display` — rendering, fullscreen, zoom, resolution, display preferences
   - `area:combat` — knockback, hitstun, hitboxes, dodges, attacks, off-stage mechanics
   - `area:entities` — Fighter/Player state machine (dizzy, prone, ledge-hang, decomposition)
   - `area:screens` — screen system/manager, start/win-loss screens, menus, skins, input feedback
   - `area:watch` — `--watch` / `--vs` spectator battles
   - `area:tracker` — ticket discipline, TODO reconciliation, rules/process docs
-- **One area per issue.** If a ticket spans two areas, pick the dominant one — the
-  orchestrator uses the *first-listed* `area:*` when several are present. Split the
-  ticket if it genuinely needs two lanes.
-- **Why it matters:** `/fruit-agent-orchestrate` partitions the backlog into
-  per-agent lanes by `area:*`, assigning at most one cluster per agent, so a ticket
-  with no area label falls into the wildcard pool and weakens the same-file
-  collision guard. Reproducible label *creation* (vs today's hand-created repo
-  labels) is tracked in `avidrucker/pmtools#69`.
+
+  **One area per issue:** if it spans two, pick the dominant one (the orchestrator
+  uses the *first-listed*) and **make a suggestion of how to effectively split the
+  ticket** if it genuinely needs two lanes. **Why:** `/fruit-agent-orchestrate`
+  partitions the backlog into per-agent lanes by `area:*` (at most one cluster per
+  agent), so an unlabelled ticket lands in the wildcard pool and weakens the
+  same-file collision guard. (Reproducible label *creation*: `avidrucker/pmtools#69`.)
 
 ## Filing work
 
@@ -72,17 +70,17 @@
   your (possibly stale) base. The claim-time guard cannot cover mid-session drift, and
   `pmtools status` does not surface it today (#171). (Cousin of "merged ≠ what your
   tree has" under *Closing work* and the stale-tracker caution.)
-- **Verify a delegated/audit finding in the code before filing or acting on it.** A
-  subagent's or audit's finding is a *lead, not a fact* — it reads with the authority
-  of prose but is one model's read of a few files under time pressure. Before turning
-  any reported "X is broken / unwired / mis-wired" into a ticket or an outward-facing
-  change, open the named `file:func` and confirm it. In #189 two reported follow-ups —
-  an "unwired" `StatechartScreenEngine` (actually wired behind a `PYCATS_SCREEN_BACKEND`
-  env toggle) and a "mis-keyed" Nalio d-tilt (actually resolved via a documented
-  `"attack"` fallback) — were both wrong on inspection; filing them would have
-  duplicated #100/#142 and committed false claims to the tracker. (Same spirit as the
-  reconcile-before-filing rule above and "surface the contradiction before an
-  outward-facing close" under *Fixing bugs*.)
+- **Verify a delegated/audit finding — or a user-reported symptom — in the code
+  before filing or acting on it.** A subagent's finding, an audit's claim, or a
+  user's "X is broken / it works like Y" is a *lead, not a fact* — it reads with the
+  authority of prose but may not match what the code does. Before turning any reported
+  "X is broken / unwired / works like Y" into a ticket or an outward-facing change,
+  open the named `file:func` and confirm it. Precedents: **#189** (two reported
+  follow-ups — an "unwired" `StatechartScreenEngine`, a "mis-keyed" Nalio d-tilt —
+  both wrong on inspection; filing them would have duplicated #100/#142); **#453**
+  (the "Esc doesn't back out of sub-menus" report was wrong on mechanism — Esc was
+  hold-to-quit, never a back key). (Same spirit as reconcile-before-filing above and
+  "surface the contradiction before an outward-facing close" under *Fixing bugs*.)
 - **Lazy decomposition for research epics.** A multi-thread investigation gets
   ONE umbrella `research` tracker issue listing the threads; file each child
   thread **one at a time**, finishing it before filing the next sibling. This
@@ -90,25 +88,15 @@
 
 ## Dependencies
 
-- **Installing a new dependency needs explicit human approval.** Do **not** add a
-  dependency on your own initiative. This covers, equivalently: `pip install <pkg>`
-  (**even into a throwaway/dev `.venv`**), adding or changing entries in a dependency
-  manifest or lockfile (`requirements*.txt`, `pyproject.toml`, `package.json`,
-  `package-lock.json`, …), `npm install <pkg>`, `apt`/system-package installs, and any
-  other way of pulling in code the project did not already declare. Ask the human and
-  proceed **only on an explicit "yes."**
-- **Using an already-declared dependency is fine; *adding* one is not.** `pygame-ce`,
-  `pytest`, and the sibling `statecharts-py` are declared (see README) — use them
-  freely. Reaching for anything new — including a "harmless dev-only" linter or
-  formatter — is the gated action: **propose it and wait; do not install it.** (The
-  `pyflakes`-into-`.venv` install during #193 is the exact case this forbids.)
-- **Why it's gated.** A new dep is supply-chain + reproducibility surface — a teammate
-  or CI without it gets a different result — and "it's dev-only / it's harmless" is the
-  rationalization that normalizes silent installs. This is the same discipline as
-  *Filing work* (a question isn't authorization) and *Closing work* (the racy push is
-  gated): agents act freely on reversible in-repo work, but environment- and
-  supply-chain-changing actions are human-gated. pycats already leans this way by
-  design — `settings.py` is deliberately stdlib-only "no new dependency, per #94."
+- **Adding a dependency needs explicit human approval — propose, don't install.**
+  Any way of pulling in undeclared code is gated: `pip install` (even a dev `.venv`),
+  manifest/lockfile edits, `npm`, `apt`. Proceed only on an explicit "yes" (the
+  `pyflakes`-into-`.venv` install during #193 is the case this forbids). Fine without
+  asking: **using** a declared dep (`pygame-ce`, `pytest`, `statecharts-py`), and
+  **suggesting/explaining** a library — the gate is on installing, not discussing.
+  **Why:** a new dep is supply-chain + reproducibility surface, and "it's
+  dev-only/harmless" is how silent installs get normalized. pycats is stdlib-only by
+  design (`settings.py`, "no new dependency, per #94").
 
 ## Fixing bugs
 
@@ -142,18 +130,12 @@
   `test_multi_hitbox`/`test_clank`) and **#143** (the move-selection seam read
   `controls["special"]` → `KeyError` on the 16 test control maps that omit it).
 
-- **Never restore a monkeypatched global by hand at the end of a test — use the
-  `monkeypatch` fixture (or `try/finally`).** A manual `orig = mod.fn; mod.fn = stub;
-  …; mod.fn = orig` restore only runs if the test reaches its last line; **any
-  exception before the restore leaks the stub into every later test in the session.**
-  In #453, renaming a setting made `test_hold_esc_integration::test_toggle_off_prevents_quit`
-  throw *before* its hand-restore of `settings.load`, poisoning ~19 unrelated
-  `settings`/`toggle` tests with `KeyError` — the tell was **collateral failures in
-  files the diff never touched**. `monkeypatch.setattr` / `try/finally` restore even
-  when the test fails. (Sibling of the `os.environ`-at-module-top pin, #345; both are
-  "test-scope state that outlives the test.") **Diagnostic:** a change that reddens
-  tests in untouched files is a leaked global from an *earlier* failing test, not your
-  diff touching those files.
+- **Never restore a monkeypatched global by hand in a test — use the `monkeypatch`
+  fixture (or `try/finally`).** A manual restore is skipped if the test throws before
+  its last line, leaking the stub into every later test. **Diagnostic:** a change that
+  reddens tests in *files the diff never touched* = a leaked global from an earlier
+  failing test. Bit twice: `os.environ` at module top (#345, ~15 tests), hand-restored
+  `settings.load` (#453, ~19 tests).
 
 ## PM-parity markers (`⚠` / `🔬` / `❓`)
 
