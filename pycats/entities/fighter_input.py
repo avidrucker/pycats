@@ -156,8 +156,10 @@ class FighterInput:
         self._maybe_start_dash(held, pressed)
 
         # ------- Jump ---------------------------------------------
+        # Walking/falling off the ground forfeits the grounded jump — enforced by
+        # the symmetric takeoff clamp in fighter_physics (Fighter._handle_takeoff),
+        # not here (resolved #466 → #473). This branch only spends a jump on a press.
         jump_pressed = self._pressed(pressed, "up")
-        #### ❓ TODO: determine whether walking off of a ledge "consumes" a jump (open design question — see #466)
         if (
             jump_pressed
             and p.fighter.jumps_remaining

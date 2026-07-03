@@ -109,6 +109,11 @@ def step_physics(p, platforms, held):
             if current_platform:
                 p.rect.bottom = current_platform.rect.top
 
+    # Symmetric takeoff clamp (#473): a ground->air transition forfeits the
+    # grounded jump. Runs after the spot-dodge on_ground maintenance above so a
+    # spot dodge isn't miscounted as a takeoff.
+    p.fighter._handle_takeoff(was_airborne)
+
     # Returns True on a #145 auto-knockdown landing; Player.update applies
     # force_prone on it (the domain no longer drives the engine — #298/S5).
     return p.fighter._handle_landing(was_airborne)

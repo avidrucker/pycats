@@ -398,6 +398,23 @@ class Fighter:
                 return True  # caller applies force_prone (#298/S5)
         return False
 
+    def _handle_takeoff(self, was_airborne: bool) -> None:
+        """Symmetric counterpart to _handle_landing (#473, ruling #466): on a
+        ground->air transition, forfeit the grounded jump so only the midair
+        jump(s) remain. PM-faithful — leaving the ground without jumping loses the
+        grounded jump.
+
+        The clamp is correct for every takeoff cause without knowing which:
+        - jumped off  → the jump press already set jumps_remaining = max_jumps-1,
+          so min(...) is a no-op;
+        - walked / fell / dropped off → max_jumps clamps down to max_jumps-1;
+        - launched (hitstun) → input gated, still max_jumps → clamps to max_jumps-1
+          (a launched fighter keeps its midair jump).
+        Respawn is not special-cased: today's airborne spawn has no ground->air
+        transition, so this never fires on spawn (#480)."""
+        if not was_airborne and not self.on_ground:
+            self.jumps_remaining = min(self.jumps_remaining, self.max_jumps - 1)
+
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
         return (
