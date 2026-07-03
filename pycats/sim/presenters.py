@@ -14,6 +14,12 @@ OVERLAY_FPS_FONT_SIZE = 24    # the FPS readout (top-right)
 OVERLAY_STAT_FONT_SIZE = 22   # each fighter's stocks/damage line
 OVERLAY_STAT_LINE_SPACING = 22  # vertical stride between fighter stat lines
 
+# Manual-advance mode (#393): at a caption's dwell frame the presenter freezes and
+# waits for one of these keys instead of the timed #352 dwell. Esc / window-close quit.
+ADVANCE_KEYS = (pygame.K_SPACE, pygame.K_RIGHT)
+MANUAL_HINT_TEXT = "space / right = advance    esc = quit"
+OVERLAY_HINT_FONT_SIZE = 20   # the small manual-advance hint (top-centre, ASCII-safe)
+
 
 # --- Playback-speed scalar (#351) --------------------------------------------
 # Slow-motion is presentation-only: the sim is fixed-timestep (#166/#80), so we pace
@@ -49,7 +55,7 @@ class LivePresenter:
     plus each fighter's stocks/damage."""
 
     def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True, captions=(),
-                 speed=1.0):
+                 speed=1.0, interactive=None):
         import os
         os.environ.pop("SDL_VIDEODRIVER", None)
         pygame.display.quit()
@@ -61,6 +67,9 @@ class LivePresenter:
         self.overlay = overlay
         self.captions = list(captions)  # demo captions (#306); presentation overlay
         self.speed = speed              # <1 slow-mo (#351); paces the tick, not the sim
+        # Interactivity (#393): "manual" makes each caption's dwell frame wait for an
+        # advance key (self-paced reading) instead of the timed #352 dwell. None = off.
+        self.interactive = interactive
 
     def _draw_overlay(self, players):
         cap = "capped@60" if self.cap_fps else "uncapped"
@@ -75,6 +84,66 @@ class LivePresenter:
                 (HUD_PADDING, HUD_PADDING + i * OVERLAY_STAT_LINE_SPACING),
                 OVERLAY_STAT_FONT_SIZE, WHITE)
 
+    def _tick(self):
+        """Advance the display clock one frame at the current speed (#351)."""
+        self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
+
+    @staticmethod
+    def _consume_advance(events):
+        """Classify a batch of pygame events for manual-advance mode (#393):
+        ``"advance"`` on Space/Right, ``"quit"`` on Esc or window-close, else
+        ``None`` (keep waiting). Pure — no window/loop, so it's unit-testable."""
+        for ev in events:
+            if ev.type == pygame.QUIT:
+                return "quit"
+            if ev.type == pygame.KEYDOWN:
+                if ev.key in ADVANCE_KEYS:
+                    return "advance"
+                if ev.key == pygame.K_ESCAPE:
+                    return "quit"
+        return None
+
+    def _draw_manual_hint(self):
+        """Small ASCII hint (top-centre, clear of bottom captions + the corner
+        overlays) shown while a manual pause is held (#393)."""
+        text_utils.render_text(
+            self.screen, MANUAL_HINT_TEXT, (SCREEN_WIDTH // 2, HUD_PADDING),
+            OVERLAY_HINT_FONT_SIZE, WHITE, center=True)
+
+    def _wait_for_advance(self):
+        """Freeze on the current frame until the viewer presses an advance key
+        (#393). Space/Right resume; Esc or window-close raise KeyboardInterrupt.
+        Draws the hint over the frozen frame and keeps ticking so the window stays
+        responsive. The sim frame never advances — the runner is blocked inside this
+        one show() call, so this is a pure presentation freeze (golden-safe)."""
+        self._draw_manual_hint()
+        pygame.display.flip()
+        while True:
+            action = self._consume_advance(pygame.event.get())
+            if action == "advance":
+                return
+            if action == "quit":
+                raise KeyboardInterrupt
+            self._tick()
+
+    def _hold(self, frame):
+        """Freeze on a caption's dwell frame (#352). Manual mode (#393) waits for an
+        advance key instead of the timed hold — the exit condition is generalized
+        from a tick count to a keypress. No hold on a non-dwell frame."""
+        hold = caption_hold_frames(self.captions, frame)
+        if not hold:
+            return
+        if self.interactive == "manual":
+            self._wait_for_advance()
+            return
+        # Timed dwell: keep showing the same frame for `hold` more sim-frame-durations
+        # WITHOUT advancing the sim. Events still pump so the window stays quittable.
+        for _ in range(hold):
+            for ev in pygame.event.get():
+                if ev.type == pygame.QUIT:
+                    raise KeyboardInterrupt
+            self._tick()
+
     def show(self, platforms, players, attacks, frame):
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
@@ -86,15 +155,8 @@ class LivePresenter:
             self._draw_overlay(players)
         draw_captions(self.screen, self.captions, frame)
         pygame.display.flip()
-        self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
-        # Caption dwell (#352): freeze on a caption's start frame — keep showing the
-        # same frame for `hold` more sim-frame-durations so it's readable, WITHOUT
-        # advancing the sim. Events still pump so the window stays responsive/quittable.
-        for _ in range(caption_hold_frames(self.captions, frame)):
-            for ev in pygame.event.get():
-                if ev.type == pygame.QUIT:
-                    raise KeyboardInterrupt
-            self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
+        self._tick()
+        self._hold(frame)
 
     def close(self):
         pygame.display.quit()

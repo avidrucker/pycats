@@ -124,6 +124,10 @@ def main(argv=None, presenter=None):
                          "0.5 = half-speed slow-motion so fast beats are legible; "
                          "1.0 = real time (default). Live: paces the display tick; "
                          "video: duplicates frames (#351/#308).")
+    ap.add_argument("--demo-manual", action="store_true",
+                    help="self-paced caption reading (#393): pause on each caption's "
+                         "dwell frame and wait for an advance key (space/right; esc "
+                         "quits) instead of the timed dwell. Live playback only.")
     ap.add_argument("--shots", default=None, metavar="DIR",
                     help="capture a PNG per caption (start/mid/end of each caption "
                          "window) into DIR for visual inspection, headless — instead "
@@ -178,7 +182,8 @@ def main(argv=None, presenter=None):
             presenter = VideoPresenter(args.video, speed=args.demo_speed)
         else:
             presenter = LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay,
-                                      speed=args.demo_speed)
+                                      speed=args.demo_speed,
+                                      interactive="manual" if args.demo_manual else None)
     if captions:                              # attach; don't clobber an injected list (#306)
         presenter.captions = list(captions)
     snaps = []
