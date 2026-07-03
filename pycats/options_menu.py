@@ -34,6 +34,8 @@ from .config import (
 from . import runtime_settings
 from . import settings
 from .keybind_menu import KeybindMenu
+from .keybind_sets_menu import KeybindSetsMenu
+from .text_entry import draw_text_entry
 from .menu_widgets import draw_menu_button, menu_button_size, BUTTON_MIN_WIDTH, PRESS_PULSE_FRAMES
 from .menu_layout import effective_columns, grid_dims, scroll_to_visible
 from .text_utils import text_renderer
@@ -83,6 +85,12 @@ class OptionsMenu:
         # rendering to this KeybindMenu (#447) over the shared control maps until back.
         self.keybind = KeybindMenu(p1_controls, p2_controls)
         self.keybind_mode = False
+        # Saved-scheme sub-mode (#463): the keybind screen gains a trailing "Schemes…"
+        # row that opens this save / load / rename / delete controller over the same
+        # shared control maps (so it saves/loads exactly what the rebind screen edits).
+        self.sets = KeybindSetsMenu([p1_controls, p2_controls])
+        self.sets_mode = False
+        self.keybind_on_schemes = False   # focus is on the trailing Schemes row, not an action
         # Top visible grid-row when the grid is taller than the viewport (large
         # font_scale); kept in range by render via scroll_to_visible (#402).
         self.scroll_top = 0
@@ -99,6 +107,8 @@ class OptionsMenu:
         self.press_pulse = 0
         self.action_requested = None
         self.keybind_mode = False
+        self.sets_mode = False
+        self.keybind_on_schemes = False
         self.keybind.cancel_capture()
 
     # ---- input ----
@@ -117,7 +127,10 @@ class OptionsMenu:
             self.press_pulse -= 1
 
         if self.keybind_mode:
-            self._update_keybind(pressed_keys)
+            if self.sets_mode:
+                self._update_sets(pressed_keys)
+            else:
+                self._update_keybind(pressed_keys)
             return
 
         if self.input_cooldown > 0:
@@ -182,22 +195,68 @@ class OptionsMenu:
             self.keybind_mode = False           # back to the options grid
             self.input_cooldown = MENU_SELECT_COOLDOWN
             return
+        # Nav spans the action list plus a trailing "Schemes…" row (#463). The schemes
+        # row lives one step below the last action; up/down wrap through it. It's tracked
+        # here (not in KeybindMenu) so KeybindMenu's action-only nav stays unchanged.
+        last = len(kb.actions) - 1
         moved = False
         if self._pressed("up", pressed_keys):
-            kb.nav(-1); moved = True
+            if self.keybind_on_schemes:
+                self.keybind_on_schemes = False; kb.action_index = last
+            elif kb.action_index == 0:
+                self.keybind_on_schemes = True
+            else:
+                kb.nav(-1)
+            moved = True
         if self._pressed("down", pressed_keys):
-            kb.nav(1); moved = True
+            if self.keybind_on_schemes:
+                self.keybind_on_schemes = False; kb.action_index = 0
+            elif kb.action_index == last:
+                self.keybind_on_schemes = True
+            else:
+                kb.nav(1)
+            moved = True
         if self._pressed("left", pressed_keys) or self._pressed("right", pressed_keys):
-            kb.switch_player(); moved = True
+            kb.switch_player(); moved = True   # also re-targets which player save/load uses
         if moved:
             self.input_cooldown = MENU_NAV_COOLDOWN
             return
         if self._pressed("attack", pressed_keys):
-            kb.activate()
+            if self.keybind_on_schemes:
+                self.sets_mode = True           # hand input + render to the sets menu
+                self.sets.open(kb.player)
+            else:
+                kb.activate()
             self.input_cooldown = MENU_SELECT_COOLDOWN
             return
-        if self._pressed("shield", pressed_keys):
+        if self._pressed("shield", pressed_keys) and not self.keybind_on_schemes:
             kb.reset_player(kb.player)
+            self.input_cooldown = MENU_SELECT_COOLDOWN
+
+    def _update_sets(self, pressed_keys):
+        """Drive the KeybindSetsMenu (#463) while its sub-mode is active. up/down/left/
+        right move the active cursor (2D in the name grid), attack selects, special backs
+        out; when the controller signals `done`, hand input back to the keybind screen."""
+        if self.input_cooldown > 0:
+            self.input_cooldown -= 1
+            return
+        sm = self.sets
+        if self._pressed("special", pressed_keys):
+            sm.back()
+            self.input_cooldown = MENU_SELECT_COOLDOWN
+        elif self._pressed("attack", pressed_keys):
+            sm.select()
+            self.input_cooldown = MENU_SELECT_COOLDOWN
+        else:
+            dx = (1 if self._pressed("right", pressed_keys) else 0) - \
+                 (1 if self._pressed("left", pressed_keys) else 0)
+            dy = (1 if self._pressed("down", pressed_keys) else 0) - \
+                 (1 if self._pressed("up", pressed_keys) else 0)
+            if dx or dy:
+                sm.move(dx, dy)
+                self.input_cooldown = MENU_NAV_COOLDOWN
+        if sm.done:
+            self.sets_mode = False          # back to the keybind screen (Schemes row)
             self.input_cooldown = MENU_SELECT_COOLDOWN
 
     def _activate(self, row):
@@ -242,6 +301,8 @@ class OptionsMenu:
             self.keybind_mode = True          # hand input + render to the KeybindMenu
             self.keybind.player = 0
             self.keybind.action_index = 0
+            self.keybind_on_schemes = False
+            self.sets_mode = False
             self.keybind.cancel_capture()
         elif row == "back":
             self.action_requested = "back"
@@ -374,7 +435,10 @@ class OptionsMenu:
     # ---- render ----
     def render(self, surface):
         if self.keybind_mode:
-            self._render_keybind(surface)
+            if self.sets_mode:
+                self._render_sets(surface)
+            else:
+                self._render_keybind(surface)
             return
         surface.fill(MAIN_MENU_BG_COLOR)
         scale = runtime_settings.font_scale()
@@ -447,13 +511,20 @@ class OptionsMenu:
                 MAIN_MENU_SELECTED_COLOR if focused else WHITE, surface,
                 (SCREEN_WIDTH // 2, top + i * row_h), center=True)
 
+        # Trailing "Schemes…" row (#463): opens the save / load / rename / delete menu.
+        schemes_focused = self.keybind_on_schemes
+        text_renderer.render_text_mixed(
+            ("► " if schemes_focused else "   ") + "Schemes...", MAIN_MENU_OPTION_SIZE,
+            MAIN_MENU_SELECTED_COLOR if schemes_focused else WHITE, surface,
+            (SCREEN_WIDTH // 2, top + len(kb.actions) * row_h), center=True)
+
         if kb.message:
             text_renderer.render_text_mixed(
                 kb.message, CAPTION_SIZE, CAPTION_COLOR, surface,
-                (SCREEN_WIDTH // 2, top + len(kb.actions) * row_h + round(12 * scale)),
+                (SCREEN_WIDTH // 2, top + (len(kb.actions) + 1) * row_h + round(12 * scale)),
                 center=True)
 
-        hints = ["Up/Down: action    Left/Right: player    A: rebind",
+        hints = ["Up/Down: row    Left/Right: player    A: rebind / open",
                  "Shield: reset player    B: back"]
         instr_h = text_renderer._get_font(None, INSTRUCTION_FONT_SIZE).get_height()
         step = instr_h + round(4 * scale)
@@ -462,3 +533,56 @@ class OptionsMenu:
             text_renderer.render_text_mixed(
                 hint, INSTRUCTION_FONT_SIZE, WHITE, surface,
                 (SCREEN_WIDTH // 2, base + i * step), center=True)
+
+    def _render_sets(self, surface):
+        """The saved-scheme sub-mode (#463): the top menu, a set list (load/rename/
+        delete), the text-entry name grid, or the delete-confirm prompt — plus the last
+        status message + nav hints. The name grid reuses draw_text_entry (#471)."""
+        sm = self.sets
+        if sm.view == "text":                       # the shared on-screen keyboard
+            title = "Rename scheme" if sm.entry_action == "rename" else "Name this scheme"
+            draw_text_entry(surface, sm.entry, title=title)
+            return
+
+        surface.fill(MAIN_MENU_BG_COLOR)
+        scale = runtime_settings.font_scale()
+        row_h = round(30 * scale)
+        top = round(90 * scale)
+
+        if sm.view == "confirm":
+            text_renderer.render_text_simple(
+                "Delete scheme?", MAIN_MENU_TITLE_SIZE, MAIN_MENU_TITLE_COLOR, surface,
+                (SCREEN_WIDTH // 2, round(30 * scale)), center=True)
+            text_renderer.render_text_mixed(
+                f"Delete '{sm.confirm_name}'?", MAIN_MENU_OPTION_SIZE, WHITE, surface,
+                (SCREEN_WIDTH // 2, top), center=True)
+            rows, focus_i, hint = [], -1, "A: delete    B: cancel"
+        elif sm.view == "list":
+            titles = {"load": "Load scheme", "rename": "Rename scheme", "delete": "Delete scheme"}
+            text_renderer.render_text_simple(
+                titles.get(sm.list_action, "Schemes"), MAIN_MENU_TITLE_SIZE,
+                MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, round(30 * scale)),
+                center=True)
+            rows, focus_i, hint = sm.sets, sm.list_index, "Up/Down: choose    A: select    B: back"
+        else:                                        # the top menu
+            text_renderer.render_text_simple(
+                f"Keybind Schemes — Player {sm.player + 1}", MAIN_MENU_TITLE_SIZE,
+                MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, round(30 * scale)),
+                center=True)
+            rows, focus_i, hint = sm.MENU, sm.menu_index, "Up/Down: choose    A: select    B: back"
+
+        for i, label in enumerate(rows):
+            focused = (i == focus_i)
+            text_renderer.render_text_mixed(
+                ("► " if focused else "   ") + label, MAIN_MENU_OPTION_SIZE,
+                MAIN_MENU_SELECTED_COLOR if focused else WHITE, surface,
+                (SCREEN_WIDTH // 2, top + i * row_h), center=True)
+
+        if sm.message:
+            text_renderer.render_text_mixed(
+                sm.message, CAPTION_SIZE, CAPTION_COLOR, surface,
+                (SCREEN_WIDTH // 2, top + (max(len(rows), 1) + 1) * row_h), center=True)
+
+        text_renderer.render_text_mixed(
+            hint, INSTRUCTION_FONT_SIZE, WHITE, surface,
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT - round(30 * scale)), center=True)
