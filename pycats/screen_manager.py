@@ -173,10 +173,6 @@ class ScreenStateManager:
         """Get the pause menu manager."""
         return self.pause_menu
 
-    def should_quit_game(self):
-        """Check if the game should quit."""
-        return self.should_quit
-
     def should_reset_game(self):
         """Check if the game should be reset (when returning from win screen)."""
         # Check if we just transitioned from win screen to char select

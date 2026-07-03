@@ -146,7 +146,7 @@ def apply_horizontal_friction(
 
 
 # -------------------------------------------------- player-to-player collision
-def resolve_player_push(players: list["Player"]) -> None:
+def resolve_player_push(players: list["Player"]) -> None:  # noqa: F821  ("Player" is a string forward-ref; not imported so core/ stays decoupled from entities)
     for i in range(len(players)):
         for j in range(i + 1, len(players)):
             a, b = players[i], players[j]

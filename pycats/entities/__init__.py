@@ -9,3 +9,7 @@ from .platform import Platform
 from .attack import Attack
 from .player import Player, PState
 from .tail import Tail
+
+# Public re-exports (this package is an export aggregator — see module docstring).
+# `__all__` both documents the API and tells ruff these F401 imports are intentional.
+__all__ = ["Platform", "Attack", "Player", "PState", "Tail"]

@@ -181,7 +181,6 @@ def print_match_summary_to_console(winner, loser, from_pause=False):
 
     # Handle the new structured format
     stats_table = summary["stats_table"]
-    header = stats_table["header"]
     print(f"{'Stat':>18} {'P1':^12} {'P2':^12}")
     print(f"{'─' * 18} {'─' * 12} {'─' * 12}")
 

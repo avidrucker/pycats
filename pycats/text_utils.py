@@ -255,7 +255,7 @@ class TextRenderer:
                             font_name, size
                         )
                         ### print(f"Successfully loaded font: {font_name} at size {size}")
-                    except Exception as e:
+                    except Exception:
                         ### print(f"SysFont failed for {font_name}: {e}")
                         # Try finding font file path
                         font_path = pygame.font.match_font(font_name)
@@ -268,7 +268,7 @@ class TextRenderer:
                             # Fall back to default font
                             ### print(f"Could not load font {font_name}, using default")
                             self.font_cache[cache_key] = pygame.font.Font(None, size)
-            except Exception as e:
+            except Exception:
                 ### print(f"Error creating font {font_name}: {e}, using default")
                 self.font_cache[cache_key] = pygame.font.Font(None, size)
 
@@ -597,7 +597,7 @@ class TextRenderer:
                                 char_surface.get_width(),
                                 char_surface.get_height(),
                             )
-                    except Exception as e:
+                    except Exception:
                         ### print(f"Exception rendering Unicode char '{char}': {e}")
                         pass
             else:
@@ -738,7 +738,7 @@ def quick_unicode_test():
     if not pygame.font.get_init():
         pygame.font.init()
 
-    print(f"=== Quick Unicode Test ===")
+    print("=== Quick Unicode Test ===")
     print(f"Unicode font name: {text_renderer.unicode_font_name}")
 
     test_chars = ["►", "◄", "↑", "↓", "✓"]
