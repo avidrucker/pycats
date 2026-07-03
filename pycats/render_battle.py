@@ -792,6 +792,8 @@ def draw_controls(surface, p: Player, label, topright=False):
         pygame.K_SLASH: "/",
         pygame.K_PERIOD: ".",
         pygame.K_COMMA: ",",
+        pygame.K_b: "B",        # P1 default smash (#462)
+        pygame.K_QUOTE: "'",    # P2 default smash — apostrophe glyph, not a typo (#462)
     }
 
     controls = [
@@ -802,6 +804,7 @@ def draw_controls(surface, p: Player, label, topright=False):
         f"Attack: {key_names.get(p.controls['attack'], '?')}",
         f"Shield: {key_names.get(p.controls['shield'], '?')}",
         f"Special: {key_names.get(p.controls['special'], '?')}",
+        f"Smash: {key_names.get(p.controls.get('smash'), '?')}",  # #462
     ]
 
     # Start drawing below the HUD (7 lines of HUD + some spacing)
