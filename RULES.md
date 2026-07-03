@@ -115,6 +115,32 @@
   commit that fixed it, add the can-fail guard), not a no-op close. Surface the
   contradiction to the reporter before an outward-facing close.
 
+## Testing
+
+- **Golden-safe by default-identity — not by hand.** A new present-layer or behavioral
+  feature is golden-safe when its **default is an exact identity on the sim/golden path**:
+  gate it off-by-default so the golden cat / scripted controller never exercises it, and the
+  goldens stay byte-identical *by construction*. Precedents — the default cat has no smash
+  (#327); the level-less controller has every AI flag `False` (#312); `font_scale=standard`
+  ⇒ `round(base*1.0) == base` (#345); a `dict`-subclass `Keymap` drops into `controls[...]`
+  unchanged and a `None` nickname renders the identical `"P1"`/`"P2"` (#438). Extend a shared
+  render primitive behind a **default-identity kwarg** for the same reason
+  (`draw_menu_button(pressed=False)`, #332). Assert the identity with a byte-identity /
+  render-parity oracle test, and prefer this to regenerating or hand-editing goldens to chase
+  a diff — regenerate only once every remaining diff is explained. See
+  `docs/learnings/today-i-learned-2026-07-01-dragonfruit.md`.
+- **AI / behavioral integration tests must (a) drive the REAL loop and (b) be
+  discriminating.** A controller test that calls `decide()` on a stub can pass while the live
+  loop **drops** the input — the #248/#370 "emit-but-don't-convert" gotcha — so drive the
+  actual `run_battle` loop, not just the policy. And a real-loop test that *also passes with
+  the feature turned off* is not testing the feature: **revert-check the integration test**
+  (mutate the feature off, confirm the test goes red), exactly as for a unit test (see *Fixing
+  bugs* → "able to fail"). Both halves bit in one session — a melee-poke test the ordinary
+  attack already satisfied (fixed with a below-the-lip foe, `dy > 60`; #413) and a recovery
+  `y`-comparison silently broken by a KO→respawn to `y = -1000` (switched to asserting the
+  input is emitted in-loop; #409). See
+  `docs/learnings/today-i-learned-2026-07-01-dragonfruit.md`.
+
 ## Code conventions
 
 - **Read the optional `Player`/control surface defensively in shared combat/input
