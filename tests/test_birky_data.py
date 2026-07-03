@@ -71,7 +71,8 @@ def test_birky_has_own_body_and_no_placeholder_moves():
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
     assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair", "fair",
-                                "bair", "uair", "dair"}
+                                "bair", "uair", "dair",
+                                "fsmash", "usmash", "dsmash"}  # smashes added (#459)
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():

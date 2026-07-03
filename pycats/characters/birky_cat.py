@@ -241,6 +241,73 @@ _BIRKY_DAIR = MoveData(
     ),
 )
 
+# --- Smashes (#459, child of #228): Birky's f/u/d-smash --------------------------
+# Short-range, single-box-per-window grounded smashes, chargeable via the mechanic in
+# #371/#377 (scaled at spawn, damage-only per #437). Values are PM3.6-Kirby-shaped
+# (rukaidata AttackS4S / AttackHi4 / AttackLw4): frames/%/angle/BKB/KBG entered RAW
+# (#120); dx/dy short-reach (featherweight) + zone-anchored (#309), radii round(size×
+# PX_PER_UNIT). All ⚠ playtest starting points (ADR-0003); faithful px is the #310 spike.
+# Angleable f-smash is engine-side: any move keyed "fsmash" gets the global
+# FSMASH_ANGLE_UP/DOWN when held up/down (#383) — no per-character field here.
+
+# Forward-smash (AttackS4S): a strong early hit (f8-14) → weaker, higher-launching late
+# hit (f15-17). Short reach; the Kirby fsmash is a stubby but committed KO poke.
+_BIRKY_FSMASH = MoveData(
+    name="fsmash",
+    in_air=False,
+    chargeable=True,
+    startup=7,
+    active=10,      # active window f8-17
+    recovery=22,    # 7 + 10 + 22 = 39
+    hitboxes=(
+        Hitbox(circle=Circle(dx=44, dy=zone_dy("center", _H), r=24), damage=15.0, angle=38,
+               base_knockback=40.0, knockback_growth=100.0, active_start=8, active_end=14),
+        Hitbox(circle=Circle(dx=44, dy=zone_dy("center", _H), r=22), damage=13.0, angle=73,
+               base_knockback=25.0, knockback_growth=100.0, active_start=15, active_end=17),
+    ),
+)
+
+# Up-smash (AttackHi4): an overhead flip-kick arc — the strong early hit (f6-8) launches
+# near-vertical; a weak "sour" late hit (f9-13) follows. Anti-air / juggle starter.
+_BIRKY_USMASH = MoveData(
+    name="usmash",
+    in_air=False,
+    chargeable=True,
+    startup=5,
+    active=8,       # active window f6-13
+    recovery=22,    # 5 + 8 + 22 = 35 (PM3.6 IASA 35)
+    hitboxes=(
+        Hitbox(circle=Circle(dx=20, dy=zone_dy("head", _H, -2), r=24), damage=15.0, angle=88,
+               base_knockback=30.0, knockback_growth=120.0, active_start=6, active_end=8),
+        Hitbox(circle=Circle(dx=22, dy=zone_dy("head", _H), r=22), damage=13.0, angle=70,
+               base_knockback=12.0, knockback_growth=55.0, active_start=9, active_end=13),
+    ),
+)
+
+# Down-smash (AttackLw4): a splits kick — FRONT and BACK boxes live TOGETHER (not Marth's
+# front-then-back split), with an early (f4-10) → late (f11-18) damage falloff. Front hits
+# harder/steeper (50deg), back is the low sweep (28deg).
+_BIRKY_DSMASH = MoveData(
+    name="dsmash",
+    in_air=False,
+    chargeable=True,
+    startup=3,
+    active=15,      # active window f4-18
+    recovery=29,    # 3 + 15 + 29 = 47 (PM3.6 IASA 47)
+    hitboxes=(
+        # Early window f4-10 (front + back simultaneous).
+        Hitbox(circle=Circle(dx=40, dy=zone_dy("feet", _H), r=21), damage=14.0, angle=50,
+               base_knockback=30.0, knockback_growth=100.0, active_start=4, active_end=10),
+        Hitbox(circle=Circle(dx=-40, dy=zone_dy("feet", _H), r=23), damage=14.0, angle=28,
+               base_knockback=20.0, knockback_growth=85.0, active_start=4, active_end=10),
+        # Late window f11-18 (weaker).
+        Hitbox(circle=Circle(dx=40, dy=zone_dy("feet", _H), r=21), damage=12.0, angle=50,
+               base_knockback=30.0, knockback_growth=100.0, active_start=11, active_end=18),
+        Hitbox(circle=Circle(dx=-40, dy=zone_dy("feet", _H), r=23), damage=10.0, angle=28,
+               base_knockback=20.0, knockback_growth=85.0, active_start=11, active_end=18),
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
     # own Kirby-sized body (#275) + body-matched hurtbox; crouch/prone reuse default;
     # ground normals (#240/#245/#247/#249) + aerials nair #255 / fair #256 / bair #258
@@ -249,7 +316,8 @@ BIRKY_FIGHTER_DATA = FighterData(
     stand_size=_STAND_SIZE,
     moves={"attack": _BIRKY_DTILT, "jab": _BIRKY_JAB, "ftilt": _BIRKY_FTILT,
            "utilt": _BIRKY_UTILT, "nair": _BIRKY_NAIR, "fair": _BIRKY_FAIR,
-           "bair": _BIRKY_BAIR, "uair": _BIRKY_UAIR, "dair": _BIRKY_DAIR},
+           "bair": _BIRKY_BAIR, "uair": _BIRKY_UAIR, "dair": _BIRKY_DAIR,
+           "fsmash": _BIRKY_FSMASH, "usmash": _BIRKY_USMASH, "dsmash": _BIRKY_DSMASH},
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,
