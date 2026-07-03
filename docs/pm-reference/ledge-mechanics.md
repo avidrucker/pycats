@@ -41,12 +41,20 @@ together the most decisive phase of a match.
 Holding the ledge puts the fighter in **ledge-hang** (a hang state — see
 [fighter-states](./fighter-states.md)) with **ledge intangibility**:
 
-- A fresh grab grants a burst of **intangibility** (the tangibility flag from
-  [combat-hitboxes-priority](./combat-hitboxes-priority.md)).
+- A fresh grab grants a **burst of intangibility** (the tangibility flag from
+  [combat-hitboxes-priority](./combat-hitboxes-priority.md)) — in Melee, **~7f
+  CliffCatch + ~30f = ~37f** total (per-character; ⚠ pull PM numbers at authoring).
+  This is a burst **that expires**, *not* a cap on how long you may hang.
 - That intangibility **scales DOWN with repeated grabs** — each regrab in quick
-  succession gives less, to prevent stalling/​infinite ledge-camping.
-- A fighter that hangs too long without acting eventually **falls** (or auto-getups
-  in some rulesets); you can't hang forever.
+  succession gives less, to curb stalling/​infinite ledge-camping. This *decay*, not
+  a hang clock, is the lineage's anti-planking tool.
+- **How long can you hang? ⚠ undocumented for Melee/PM.** No hard single-hang
+  auto-release timer is documented in Melee/PM — you sit in **CliffWait** until you
+  choose an option, and only the *intangibility burst* above expires. (A Brawl
+  ~360/300f figure appears in [#297](../research/2026-06-30-ledge-recovery-mechanics.md),
+  but it is itself unsourced/contested — needs a PM/Melee source or a debug-mode
+  capture; do **not** treat a hard hang timer as PM-faithful without one.) Per research
+  [#458](https://github.com/avidrucker/pycats/issues/458).
 
 ## Getup options
 
@@ -73,8 +81,18 @@ SmashWiki). PM ledge-attack reference (Smashboards PM 3.6; **Mario → Nalio arc
 ## Dropping off & re-recovering
 
 You can **drop from the ledge** (down/back) into a fall, then **double-jump** or
-aerial back — used to reposition, refresh options, or bait an edgeguard. Drop-down
-is also how you go for an offensive **ledge-trump** (below).
+aerial back — used to reposition, refresh options, or bait an edgeguard.
+
+**What makes you let go:** in Melee/PM you release by deflecting the control stick
+**down or away past an analog magnitude threshold** — a slight tilt does *not* drop
+you, and the direction you hold while recovering (usually *toward* the stage) keeps you
+on. Leaving is that same stick input past threshold, not a separate button. ⚠ **Keyboard
+implication (pycats):** a digital keyboard has **no magnitude axis**, and pycats reads
+the drop from **held** state, so a direction carried over from the recovery drops you on
+the very **grab frame** — measurably more eager than Melee/PM. See research
+[#458](https://github.com/avidrucker/pycats/issues/458) for the accidental-fall-off
+analysis and the keyboard-appropriate fixes (fresh-press-to-drop + a short post-grab
+grace window).
 
 ## Edgeguarding, edge-hog & trump
 
@@ -123,6 +141,7 @@ PM deliberately **reworked Brawl's ledge mechanics** — this is a defining chan
 
 - SmashWiki — [Ledge](https://www.ssbwiki.com/Ledge), [Edge-hogging](https://www.ssbwiki.com/Edge-hogging), [Ledge trump](https://www.ssbwiki.com/Ledge_trump), [Edge sweet spot](https://www.ssbwiki.com/Sweet_spot_(edge)), [Tech](https://www.ssbwiki.com/Tech).
 - PM-specific getup/intangibility data: [rukaidata PM 3.6](https://rukaidata.com/PM3.6/) / SmashWiki PM pages.
+- Hang **stay/leave** rules (#458): SmashWiki — [Ledgestall](https://www.ssbwiki.com/Ledgestall) (CliffCatch 7f + ~30f intangibility; letting go keeps intangibility), [Planking](https://www.ssbwiki.com/Planking), [Edge recovery](https://www.ssbwiki.com/Edge_recovery) (release = stick down/away); [SuperCombo SSBM Advanced Controls](https://wiki.supercombo.gg/w/SSBM/Advanced_Controls) (down/away analog zones). A hard single continuous-hang auto-release is ⚠ **undocumented** for Melee/PM.
 - State: [fighter-states](./fighter-states.md); recovery moves: [moveset-and-frame-data](./moveset-and-frame-data.md); intangibility: [combat-hitboxes-priority](./combat-hitboxes-priority.md); stage edges: [stages-and-environment](./00-overview.md). Conventions: [00-overview](./00-overview.md).
 
 ## pycats status
@@ -131,7 +150,9 @@ PM deliberately **reworked Brawl's ledge mechanics** — this is a defining chan
 grab at a **solid** stage edge (thin platforms are NOT grabbable — owner ruling),
 **ledge-hang** with full-window intangibility (reusing the `invulnerable` flag), and
 three exits — **neutral getup** (up, climb on), **drop** (down or away → fall with a
-regrab lockout), and **timeout** (auto-release). Occupancy is a **one-occupant lockout**
+regrab lockout), and a **timeout** (120f auto-release → off-stage drop; unfaithful,
+**slated for removal in [#475](https://github.com/avidrucker/pycats/issues/475)** per #458).
+Occupancy is a **one-occupant lockout**
 per edge (no trump yet). The state lives in the fighter chart
 ([fighter-states](./fighter-states.md)) as `ledge_hang`; design +
 plan in `docs/superpowers/specs/2026-06-30-ledge-hang-design.md` /
@@ -146,7 +167,11 @@ is ⚠ playtest (`LEDGE_HANG_FRAMES` et al.).
 **Researched values to apply** (#297, [findings](../research/2026-06-30-ledge-recovery-mechanics.md)):
 - Grab **intangibility** should be a **short burst (~23f, Brawl)** — pycats currently
   grants the *whole* `LEDGE_HANG_FRAMES` (120f), which is over-generous.
-- **Hang auto-release** ≈ 360/300f in Brawl vs pycats' 120f (2s) — playtest.
+- **Hang auto-release:** ⚠ **contested** (#458). The ≈360/300f Brawl figure is
+  unsourced, and #458 found **no documented** hard single-hang timer for Melee/PM.
+  pycats' 120f timeout that **drops you off-stage** is an invention (no lineage game
+  force-KOs a hanger) — **slated for removal in [#475](https://github.com/avidrucker/pycats/issues/475)**;
+  do not "tune" it toward a PM value until one is actually sourced.
 - Neutral getup is currently **instant**; needs a real frame window + the fast/slow
   (<100% / ≥100%) variant. Ledge attack ≈ 55f/69f (Mario ref).
 - **Occupied-edge: pycats' one-occupant lockout already models PM edge-hogging
