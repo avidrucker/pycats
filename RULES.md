@@ -161,6 +161,29 @@ time. (Axis A of the labeling system #451; design #448; the human-facing key liv
 - An `❓` should **reference its `decision` / research ticket** where one exists
   (e.g. `❓ … — see #466`), so the code points at the discussion instead of duplicating it.
 
+## Changing values
+
+- **A value change must cite its basis.** Any change to a tuning/gameplay constant — a
+  config value or balance number (frame windows, speeds, damage, knockback, thresholds,
+  timers, cooldowns, hitbox sizes) — must point to **one** of:
+  1. **Research findings / data** — a sourced PM/Melee value (rukaidata, SmashWiki, a PM
+     changelog, or an in-repo `docs/research/*` finding), cited in the commit **and** the
+     constant's comment; **or**
+  2. **A game-designer decision** — a citation to a design doc (an ADR, a `docs/` design
+     note, or a ratified `decision:` ticket) where the human designer chose the value.
+- **Game-feel alone is not a basis.** A round number, a mid-band guess, or bare "it feels
+  better" is **not** sufficient — such a change is declined and closed **`wont-do` /
+  `vapid`** (precedent: **#489**, a `DOUBLE_TAP_WINDOW` bump that rested on a feel-pick
+  after **#407** found PM has no faithful number to copy). A genuinely un-pinned value
+  **stays at its current number**, carrying its `⚠`/GUESS marker, until basis (1) or (2) exists.
+- **Picking a surrogate is a decision, not a DEV edit.** When no faithful value exists,
+  *choosing* one is a `decision:` ticket (e.g. **#491**); the ratified choice then becomes
+  basis (2). Record which basis applies in the commit, the constant's comment, and its
+  `combat/provenance.py` entry (**#233** / ADR-0003) as **FOUND** (sourced) or **TUNED**
+  (designer-chosen) — never presented as sourced when it is a guess.
+- This gates *changing* a value; the `⚠`/`🔬`/`❓` markers above only *label* an unpinned
+  one — the two compose (a changed value should shed its `⚠` and land a `FOUND`/`TUNED` entry).
+
 ## Surfacing run/sim commands
 
 When a change would **benefit from or require a live run or simulation** to verify

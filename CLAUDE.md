@@ -19,6 +19,10 @@ Critical rules:
 - **Every bugfix lands a regression test in the same commit**, and that test must
   be **able to fail** (red without the fix, green with it — revert-the-fix check).
   See [RULES.md](./RULES.md) → "Fixing bugs".
+- **Changing a game value needs a basis** — a tuning/balance/config number changes only
+  with a **research/data citation** or a **game-designer decision** (design doc / ratified
+  `decision:` ticket); bare game-feel is declined `wont-do`/`vapid`. Record it as
+  `FOUND`/`TUNED`, not as sourced-when-guessed. See [RULES.md](./RULES.md) → "Changing values".
 - **Research epics:** one umbrella `research` tracker; file child threads one at a
   time, finishing each before filing the next.
 - pycats runs **fleet** mode (`.claude/orchestrate.json`); claim work via
