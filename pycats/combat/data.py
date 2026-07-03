@@ -124,7 +124,7 @@ class MoveData:
     # Projectile special (#223): when projectile_speed is set, the move spawns a
     # MOVING projectile (an Attack with velocity = facing * projectile_speed) that
     # lives projectile_lifetime frames, detached from the owner. None = a normal
-    # static-hitbox move. projectile_speed is a GUESS in px/frame (derive via
+    # static-hitbox move. projectile_speed is a ⚠🔬 GUESS in px/frame (derive via
     # rukaidata units/frame × PX_PER_UNIT / playtest — tracked like #192).
     projectile_speed: int | None = None
     projectile_lifetime: int | None = None
