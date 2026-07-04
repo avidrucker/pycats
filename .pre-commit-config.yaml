@@ -1,0 +1,17 @@
+# Lint enforcement for pycats (#492 slice 4, ADR-0006): run ruff's F rules on commit.
+#
+# One-time per-clone setup:   .venv/bin/pre-commit install
+# Run manually against all files: .venv/bin/pre-commit run --all-files
+#
+# ruff-only by design — the hook must stay fast (seconds). The full pytest suite is the
+# on-demand source of truth (SDL_VIDEODRIVER=dummy ... pytest -q), too slow for a commit
+# hook. Enforcement model is pre-commit + on-demand, NOT a CI gate (there is no CI).
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-f
+        name: ruff (F rules — undefined-name / unused-import, ≡ pyflakes)
+        entry: .venv/bin/ruff check --select F pycats/
+        language: system
+        pass_filenames: false
+        always_run: true
