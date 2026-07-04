@@ -49,7 +49,8 @@ air_dodge_shield_frame = InputFrame(
 
 player.update(air_dodge_shield_frame, platforms, pg.sprite.Group())
 print(
-    f"After air dodge + shield: state={player.state}, spot_dodge_flag={player.fighter.spot_dodge_shield_held}, vel={player.fighter.vel}"
+    f"After air dodge + shield: state={player.state}, "
+    f"spot_dodge_flag={player.fighter.spot_dodge_shield_held}, vel={player.fighter.vel}"
 )
 
 # Step 3: Continue holding shield for several frames to see physics behavior
@@ -65,7 +66,8 @@ for frame in range(1, 8):
     player.update(continue_shield_frame, platforms, pg.sprite.Group())
 
     print(
-        f"Frame {frame}: state={player.state}, pos={player.rect.center}, vel={player.fighter.vel}, gravity_change={player.fighter.vel.y - prev_vel.y:.1f}"
+        f"Frame {frame}: state={player.state}, pos={player.rect.center}, "
+        f"vel={player.fighter.vel}, gravity_change={player.fighter.vel.y - prev_vel.y:.1f}"
     )
 
     # Check if gravity is being applied (velocity should increase by ~1 each frame)

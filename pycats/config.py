@@ -13,7 +13,9 @@ Use: Shared constants across modules for tuning gameplay and UI.
 #### TODO: implement unique attacks for each player
 #### TODO: implement attack cooldowns
 #### TODO: implement attack dodging
-#### TODO: implement character selection that offers heavy, medium, & light-weight choices where heavy characters do more damage but are slower, and lighter characters are faster but deal less damage
+#### TODO: implement character selection that offers heavy, medium, & light-weight
+# choices where heavy characters do more damage but are slower, and lighter
+# characters are faster but deal less damage
 #### TODO: implement attack combos that can be chained together for more damage
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 960, 540
@@ -140,7 +142,9 @@ LEDGE_INVULN_MAX_FRAMES = 60  # cap on the burst (~1s @60fps)
 LEDGE_GETUP_FRAMES = 16
 
 # ---------------- combat / attacks ----------------
-PLAYER_ATTACK_DURATION = 12  # this can be different than the lifetime of an attack, for example, a fireball could take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames
+# this can be different than the lifetime of an attack, for example, a fireball could
+# take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames
+PLAYER_ATTACK_DURATION = 12
 ATTACK_SIZE = (30, 18)  # width, height — render-only: sizes the drawn hit-box rect
 # Per-move damage/lifetime/knockback now live in the move data (MoveData/Hitbox,
 # see characters/default_cat.py); the old global ATTACK_LIFETIME / HIT_DAMAGE

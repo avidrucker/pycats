@@ -148,7 +148,8 @@ def draw_cat_features(surface, p: Player):
         ),  # Top point
     ]
 
-    # for both ears, if the player if facing right, move the ears to the left by PADDING, else, move the ears to the right by PADDING
+    # for both ears, if the player if facing right, move the ears to the left by PADDING,
+    # else, move the ears to the right by PADDING
     if p.facing_right:
         left_ear_points = [(x - EAR_PADDING, y) for x, y in left_ear_points]
         right_ear_points = [(x - EAR_PADDING, y) for x, y in right_ear_points]

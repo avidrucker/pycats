@@ -484,7 +484,12 @@ class CharacterSelector:
         }
 
         # P1 controls
-        p1_move_keys = f"{key_names.get(self.p1_controls['left'], '?')}{key_names.get(self.p1_controls['right'], '?')}{key_names.get(self.p1_controls['up'], '?')}{key_names.get(self.p1_controls['down'], '?')}"
+        p1_move_keys = (
+            f"{key_names.get(self.p1_controls['left'], '?')}"
+            f"{key_names.get(self.p1_controls['right'], '?')}"
+            f"{key_names.get(self.p1_controls['up'], '?')}"
+            f"{key_names.get(self.p1_controls['down'], '?')}"
+        )
         p1_attack_key = key_names.get(self.p1_controls["attack"], "?")
         p1_special_key = key_names.get(self.p1_controls["special"], "?")
 
@@ -499,7 +504,12 @@ class CharacterSelector:
         )
 
         # P2 controls
-        p2_move_keys = f"{key_names.get(self.p2_controls['left'], '?')}{key_names.get(self.p2_controls['right'], '?')}{key_names.get(self.p2_controls['up'], '?')}{key_names.get(self.p2_controls['down'], '?')}"
+        p2_move_keys = (
+            f"{key_names.get(self.p2_controls['left'], '?')}"
+            f"{key_names.get(self.p2_controls['right'], '?')}"
+            f"{key_names.get(self.p2_controls['up'], '?')}"
+            f"{key_names.get(self.p2_controls['down'], '?')}"
+        )
         p2_attack_key = key_names.get(self.p2_controls["attack"], "?")
         p2_special_key = key_names.get(self.p2_controls["special"], "?")
 

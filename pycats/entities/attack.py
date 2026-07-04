@@ -10,9 +10,13 @@ Contents:
 Use: Used to detect hit interactions between players.
 """
 
-#### TODO: implement grabbing, which puts attacker into grabbing and, if successful, puts the defender into grabbed state, the duration is dependent on defender damage percent (low damager percent == shorter grab durations)
+#### TODO: implement grabbing, which puts attacker into grabbing and, if successful, puts
+# the defender into grabbed state, the duration is dependent on defender damage percent
+# (low damager percent == shorter grab durations)
 #### TODO: implement attack hit-boxes that are larger for heavy characters and smaller for light characters
-#### TODO: implement throw attacks that can throw the opponent off the stage, with a directional key (forward, backward, up, down), and throw attacks can only be executed while the attacker is in grabbing state and the opponent is in grabbed state
+#### TODO: implement throw attacks that can throw the opponent off the stage, with a
+# directional key (forward, backward, up, down), and throw attacks can only be executed
+# while the attacker is in grabbing state and the opponent is in grabbed state
 #### TODO: implement grab attacks ("pummeling") that can deal minor damage to a grabbed opponent
 #### TODO: implement grab escape mechanics where the grabbed player can mash their inputs to escape sooner
 #### TODO: implement ability for some attacks to hit more than one opponent

@@ -3,8 +3,7 @@
 # Rule-expansion roadmap: docs/superpowers/plans/2026-07-04-ruff-rule-expansion.md (#505).
 #
 # line-length = 120: chosen 2026-07-04 (#512), relaxed from ruff's default 88 to match
-# the codebase's actual style. Changeable later. Note it only takes effect once E501
-# is enabled (not in the enforced set below yet).
+# the codebase's actual style. Changeable later. Enforced by E501 in the set below (#529).
 line-length = 120
 
 # target-version = py310: declares pycats' Python floor (#524). There is no packaging
@@ -22,8 +21,8 @@ target-version = "py310"
 #   E702  = no multiple-statements-per-line semicolon (#521)
 #   E402  = imports at top of file (#521)
 #   UP    = pyupgrade: pep604/pep585 syntax modernization, gated by target-version (#524)
-# Still to come: (E501 pairs with the line-length above), … .
-select = ["F", "I", "E722", "E702", "E402", "UP"]
+#   E501  = line-too-long, enforcing the line-length = 120 above (#529)
+select = ["F", "I", "E722", "E702", "E402", "UP", "E501"]
 
 [lint.per-file-ignores]
 # These three modules intentionally interleave module-level constants with their

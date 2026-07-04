@@ -145,14 +145,16 @@ try:
 
     if right_consistency > 5:
         print(
-            f"❌ RIGHT INCONSISTENCY: Idle={results['idle_right']}, Shield={results['shield_right']}, Diff={right_consistency}"
+            f"❌ RIGHT INCONSISTENCY: Idle={results['idle_right']}, "
+            f"Shield={results['shield_right']}, Diff={right_consistency}"
         )
     else:
         print(f"✅ Right dodge consistent between states")
 
     if left_consistency > 5:
         print(
-            f"❌ LEFT INCONSISTENCY: Idle={abs(results['idle_left'])}, Shield={abs(results['shield_left'])}, Diff={left_consistency}"
+            f"❌ LEFT INCONSISTENCY: Idle={abs(results['idle_left'])}, "
+            f"Shield={abs(results['shield_left'])}, Diff={left_consistency}"
         )
     else:
         print(f"✅ Left dodge consistent between states")

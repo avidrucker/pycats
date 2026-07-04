@@ -86,7 +86,7 @@ class TextRenderer:
         # Test the default font first with basic characters only
         default_result = self._test_font_unicode_support(None, basic_chars)
         if default_result["score"] >= len(basic_chars):
-            ### print(f"Default font works with basic Unicode (rendered {default_result['score']}/{len(basic_chars)} test chars)")
+            ### print(f"Default font works with basic Unicode (rendered {default_result['score']}/{len(basic_chars)} test chars)")  # noqa: E501
             ### print(f"Supported chars: {default_result['supported']}")
             return {
                 "name": "default",
@@ -99,14 +99,14 @@ class TextRenderer:
                 result = self._test_font_unicode_support(font_name, basic_chars)
 
                 if result["score"] == len(basic_chars):
-                    ### print(f"Using Unicode font: {font_name} (rendered {result['score']}/{len(basic_chars)} basic chars)")
+                    ### print(f"Using Unicode font: {font_name} (rendered {result['score']}/{len(basic_chars)} basic chars)")  # noqa: E501
                     ### print(f"Supported chars: {result['supported']}")
                     return {
                         "name": font_name,
                         "supported_chars": set(result["supported"]),
                     }
                 else:
-                    ### print(f"Font {font_name} only rendered {result['score']}/{len(basic_chars)} basic chars, skipping")
+                    ### print(f"Font {font_name} only rendered {result['score']}/{len(basic_chars)} basic chars, skipping")  # noqa: E501
                     pass
 
         # If no regular font works well, try emoji fonts (but they might be problematic)
@@ -116,7 +116,7 @@ class TextRenderer:
                 result = self._test_font_unicode_support(font_name, basic_chars + emoji_chars)
 
                 if result["score"] >= len(basic_chars):  # At least the basic chars should work
-                    # print(f"Using emoji font: {font_name} (rendered {result['score']}/{len(basic_chars + emoji_chars)} total chars)")
+                    # print(f"Using emoji font: {font_name} (rendered {result['score']}/{len(basic_chars + emoji_chars)} total chars)")  # noqa: E501
                     # print(f"Supported chars: {result['supported']}")
                     # print("WARNING: Emoji fonts may render very large characters")
                     return {
@@ -531,7 +531,7 @@ class TextRenderer:
 
                         # Character is known to work, render it
                         char_surface = font.render(char, True, color)
-                        ### print(f"Successfully rendered Unicode char '{char}' with size {char_surface.get_width()}x{char_surface.get_height()}")
+                        ### print(f"Successfully rendered Unicode char '{char}' with size {char_surface.get_width()}x{char_surface.get_height()}")  # noqa: E501
 
                         # Calculate vertical alignment adjustment for better centering
                         regular_font = self._get_font(None, size)

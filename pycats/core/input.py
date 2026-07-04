@@ -6,7 +6,9 @@
 from dataclasses import dataclass
 
 #### TODO: research how key buffering is typically done for fighting games
-#### TODO: implement buffered keys for smash attacks, consecutive regular attacks that require fresh presses, and directional inputs for attacks (e.g. up, down, left, right) that can be buffered for a short time
+#### TODO: implement buffered keys for smash attacks, consecutive regular attacks that
+# require fresh presses, and directional inputs for attacks (e.g. up, down, left, right)
+# that can be buffered for a short time
 
 
 @dataclass

@@ -14,17 +14,26 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: add thorough docstrings to all methods and classes
 #### TODO: change private method func signatures to start with underscore, make sure to update all calls
 #### DONE: implement ground dodging will not take players off the ledge
-#### DONE: implement spot dodge where player can dodge in place without moving, and this does not move them below a thin ledge if they are holding shield and down
+#### DONE: implement spot dodge where player can dodge in place without moving, and this
+# does not move them below a thin ledge if they are holding shield and down
 #### TODO: fix bug where consecutive quick hits will quickly cause the defender to be projected off the stage
 #### TODO: fix bug where player stays red sometimes after being hit while moving or attacking
-#### TODO: implement prone status where player is knocked down and cannot move or attack for a short time, and then can get up by pressing a button
+#### TODO: implement prone status where player is knocked down and cannot move or attack
+# for a short time, and then can get up by pressing a button
 
 #### LESS READY/LOW PRIORITY TODOS
 #### TODO: make player shielding ineffective against grabs
-#### TODO: implement grabs which are combo regular-attack + shield, and can be initiated from idle or shielding, and can be used against an opponent who is in idle, walking, running, or shielding state, and the grab will put the opponent into a grabbed state where they cannot move or attack, and the grabber can then throw them off the stage or do a follow-up attack
+#### TODO: implement grabs which are combo regular-attack + shield, and can be initiated
+# from idle or shielding, and can be used against an opponent who is in idle, walking,
+# running, or shielding state, and the grab will put the opponent into a grabbed state
+# where they cannot move or attack, and the grabber can then throw them off the stage or
+# do a follow-up attack
 #### TODO: research and implement move/input buffering
 #### TODO: implement fast fall by holding down which will cause the player to fall faster
-#### DONE (#14 v1): ledge grab/hang/getup(up)/drop(down or away)/timeout + ledge intangibility; thin platforms are NOT grabbable (only solid edges). See update() ledge-grab + ledge-hang blocks. Deferred follow-ups (roll/attack/jump getups, intangibility decay, trump, 2-frame, tech): #267.
+#### DONE (#14 v1): ledge grab/hang/getup(up)/drop(down or away)/timeout + ledge
+# intangibility; thin platforms are NOT grabbable (only solid edges). See update()
+# ledge-grab + ledge-hang blocks. Deferred follow-ups (roll/attack/jump getups,
+# intangibility decay, trump, 2-frame, tech): #267.
 
 from enum import Enum, auto
 
@@ -478,7 +487,7 @@ class Player(pygame.sprite.Sprite):
 
             # Handle spot dodge transition
             if self.fighter.spot_dodge_shield_held:
-                # print(f"SPOT DODGE END: {self.char_name} ending spot dodge, shield_held={self._pressed(held, 'shield')}")
+                # print(f"SPOT DODGE END: {self.char_name} ending spot dodge, shield_held={self._pressed(held, 'shield')}")  # noqa: E501
                 if self._pressed(held, "shield"):
                     # Force shield attempting to true for smooth transition
                     self.fighter.shield_attempting = True

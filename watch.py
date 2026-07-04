@@ -6,7 +6,7 @@
   python watch.py --match --video full_battle.mp4      # ...recorded to video
   python watch.py --vs chase                            # P1 vs an NPC: idle|chase|idler|follower (#61)
   python watch.py --vs chase --seed 42                  # ...reproducible: same seed + backend → same battle (#166)
-                                                        #   (omit --seed → clocktime seed, so the battle varies each run)
+                                                        #   (omit --seed → clocktime seed; battle varies each run)
 """
 from __future__ import annotations
 

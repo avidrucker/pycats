@@ -180,7 +180,9 @@ class FighterInput:
         #### DONE: implement dodge as a combo press of directional + shield
         #### DONE: reset air_dodge_ok when landing
         #### TODO: implement directional flipping when ground dodging/rolling
-        #### TODO: prevent repeated dodges by holding down shield and a directional, what happens instead is that the player will enter a shield state, and then can press a direction to dodge again
+        #### TODO: prevent repeated dodges by holding down shield and a directional, what
+        # happens instead is that the player will enter a shield state, and then can press
+        # a direction to dodge again
         #### DONE: make player rect flash semi-transparent white while in dodge state
         # Shield-plus-direction = dodge
         # "crouch" is dodge-able (#124): shield+down from a crouch spot-dodges,

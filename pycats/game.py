@@ -19,7 +19,12 @@ Use: This is the entry point for running the game.
 
 # ------------------------------------------------ stage & sprites
 #### TODO: implement stage selection w/ various platform layouts (NOT YET)
-#### TODO: implement player pushing & sliding where players can push each other left/right (if both players are pushing on each other, there is no horizontal movement, else, there is slowed movement in the pushed direction) and when one lands on the other they also get pushed apart and the bottom character gets their vertical velocity downward increased if they are both in the air and the top character gets their vertical velocity upward increased with a short hop/bounce up
+#### TODO: implement player pushing & sliding where players can push each other left/right
+# (if both players are pushing on each other, there is no horizontal movement, else, there
+# is slowed movement in the pushed direction) and when one lands on the other they also get
+# pushed apart and the bottom character gets their vertical velocity downward increased if
+# they are both in the air and the top character gets their vertical velocity upward
+# increased with a short hop/bounce up
 
 import sys
 
@@ -198,8 +203,10 @@ font = pygame.font.SysFont(
 # share one renderer.
 
 
-#### TODO: split off damage % and stock lives rendering so that they are rendering last and at the bottom left and right corners of the screen
-#### TODO: implement dev info bool flag that, when True, shows all infos, and when False, only shows what should be shown to players normally
+#### TODO: split off damage % and stock lives rendering so that they are rendering last
+# and at the bottom left and right corners of the screen
+#### TODO: implement dev info bool flag that, when True, shows all infos, and when False,
+# only shows what should be shown to players normally
 def toggle_fullscreen():
     """Toggle between fullscreen and windowed mode."""
     global screen, is_fullscreen, display_surface, game_surface, scale_factor, offset_x, offset_y

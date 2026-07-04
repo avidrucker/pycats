@@ -53,7 +53,7 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "MAX_FALL_SPEED": Provenance(
         13,
         "px/frame",
-        "DIVERGENCE: pycats uses a single global fall speed ~= PM Mario fast-fall 2.3 u/f; the Melee/PM base 1.7 / fast-fall 2.3 split is not modelled (SmashWiki:Mario_(PM); #120)",
+        "DIVERGENCE: pycats uses a single global fall speed ~= PM Mario fast-fall 2.3 u/f; the Melee/PM base 1.7 / fast-fall 2.3 split is not modelled (SmashWiki:Mario_(PM); #120)",  # noqa: E501
         "DIVERGENCE",
         384,
     ),
@@ -63,7 +63,7 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "JUMP_VEL": Provenance(
         -13,
         "px/frame",
-        "calibrated to PM Mario full-hop 30.19 u (SmashWiki:Mario_(PM); #120) via height = JUMP_VEL^2/(2*GRAVITY) = 169 px ~= 31 u @ PX_PER_UNIT",
+        "calibrated to PM Mario full-hop 30.19 u (SmashWiki:Mario_(PM); #120) via height = JUMP_VEL^2/(2*GRAVITY) = 169 px ~= 31 u @ PX_PER_UNIT",  # noqa: E501
         "FOUND",
         384,
     ),
@@ -73,7 +73,7 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "DODGE_SPEED": Provenance(
         14,
         "px/frame",
-        "pycats ground-roll horizontal boost; Melee rolls are animation-driven per-character, no single canon speed to derive",
+        "pycats ground-roll horizontal boost; Melee rolls are animation-driven per-character, no single canon speed to derive",  # noqa: E501
         "TUNED",
         None,
     ),
@@ -141,14 +141,14 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "KNOCKBACK_LAUNCH_FACTOR": Provenance(
         0.085,
         "factor",
-        "DIVERGENCE from Smash launch_speed = KB*0.03 (docs/research/knockback-launch-physics-findings.md, #43): deliberately scaled to the 960px stage",
+        "DIVERGENCE from Smash launch_speed = KB*0.03 (docs/research/knockback-launch-physics-findings.md, #43): deliberately scaled to the 960px stage",  # noqa: E501
         "DIVERGENCE",
         44,
     ),
     "KNOCKBACK_DECAY": Provenance(
         0.145,
         "px/frame",
-        "DIVERGENCE from Smash decay 0.051/frame (#43): deliberately scaled to the 960px stage, preserving the 1.7 decay/launch ratio",
+        "DIVERGENCE from Smash decay 0.051/frame (#43): deliberately scaled to the 960px stage, preserving the 1.7 decay/launch ratio",  # noqa: E501
         "DIVERGENCE",
         44,
     ),
@@ -203,7 +203,7 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "KNOCKDOWN_PRONE_FRAMES": Provenance(
         30,
         "frames",
-        "pycats fixed getup window (~0.5s @60 FPS); Melee knockdown/getup is variable + per-character, no single canon value (SmashWiki:Floor_getup)",
+        "pycats fixed getup window (~0.5s @60 FPS); Melee knockdown/getup is variable + per-character, no single canon value (SmashWiki:Floor_getup)",  # noqa: E501
         "TUNED",
         145,
     ),
@@ -211,7 +211,7 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "GETUP_ROLL_FRAMES": Provenance(
         16,
         "frames",
-        "pycats getup-roll duration = its intangibility window; DIVERGENCE from Melee (getup roll 35f, intangible frames 1-14..1-24 per Smashboards frame data) — pycats runs a shorter roll on its own scale",
+        "pycats getup-roll duration = its intangibility window; DIVERGENCE from Melee (getup roll 35f, intangible frames 1-14..1-24 per Smashboards frame data) — pycats runs a shorter roll on its own scale",  # noqa: E501
         "DIVERGENCE",
         146,
     ),
