@@ -179,9 +179,12 @@ def print_match_summary_to_console(winner, loser, from_pause=False):
     print()
     print("Game Statistics:")
 
-    # Handle the new structured format
+    # Handle the new structured format. Header labels come from the table (same source
+    # win_screen.py renders from) so named player profiles (#441) show through here too,
+    # rather than a hardcoded P1/P2 (#501).
     stats_table = summary["stats_table"]
-    print(f"{'Stat':>18} {'P1':^12} {'P2':^12}")
+    header = stats_table["header"]
+    print(f"{header['stat_label']:>18} {header['p1_label']:^12} {header['p2_label']:^12}")
     print(f"{'─' * 18} {'─' * 12} {'─' * 12}")
 
     for row in stats_table["rows"]:
