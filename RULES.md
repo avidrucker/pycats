@@ -297,6 +297,14 @@ incident"). Hand-closing also leaves a dangling `refs/claims/issue-N` that
   shell's `getcwd` fails and the process returns **1** *after* printing
   `CLOSE OK …` and `commit <sha> … on origin/main`. The close succeeded; do not
   retry it. (Upstream: pmtools#8.)
+- **Recover your shell: `cd` to the main checkout as the very next command.**
+  Teardown left your cwd a *deleted* directory, so every later command errors
+  `getcwd: cannot access parent directories` and any cwd-derived branch / prompt /
+  status line keeps showing the stale, removed `wt-…-issue-N` until you move. Run
+  `cd /abs/path/to/pycats` (the `Shell re-root:` hint `pmtools close` prints) *before*
+  commenting or anything else. **Durable fix: pmtools#104** — make `close` runnable
+  from the main checkout so `cd <main> && pmtools close <N>` never strands the shell;
+  until that lands, the works-today form is `close` from the worktree, then `cd <main>`.
 - **Post the closing comment from the main checkout.** Because the worktree is gone
   after `CLOSE OK`, `cd` back to the main repo to comment:
 
