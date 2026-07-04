@@ -269,10 +269,15 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    MUST carry the `Closes #N` keyword: it is both the GitHub auto-close trigger
    *and* exactly what `pmtools close` scans for (and recovers on). `git log
    --oneline` only shows the subject — put the keyword in the body, not the title.
-3. **Land + tear down with `pmtools close <N>`, run from inside the worktree.** It
-   loops fetch → rebase `origin/main` → push `HEAD:main` until it lands, then —
-   and only after confirming the commit reached `origin/main` — deletes the claim
-   ref, closes the issue, and removes the worktree + branch.
+3. **Land + tear down with `cd <main> && pmtools close <N>`, run from the main
+   checkout.** `close` resolves the worktree + branch from the issue number
+   (pmtools#104, `008cb2a`), so run it from the main repo root — **not** from inside
+   the worktree it deletes. It loops fetch → rebase `origin/main` → push `HEAD:main`
+   until it lands, then — only after confirming the commit reached `origin/main` —
+   deletes the claim ref, closes the issue, and removes the worktree + branch.
+   Because your shell stayed in the main checkout the whole time, it is never
+   stranded in a deleted directory. (Running from *inside* the worktree still works
+   but strands your shell — prefer from-main.)
 
 **Never `git push` to `main` directly, and never manually `git merge` your feature
 branch into `main`.** `pmtools close` exists to make the close atomic and
@@ -290,27 +295,23 @@ incident"). Hand-closing also leaves a dangling `refs/claims/issue-N` that
 - **Fallback only if `pmtools` is unavailable:** `gh issue close <N>` plus a
   closing comment. Prefer the tool whenever it is installed.
 
-**Close-time caveats (learned after the protocol was first written):**
+**Close-time caveats:**
 
-- **`pmtools close` exits 1 even after a successful close — trust the banner, not
-  the exit code.** Its final step deletes the worktree you are standing in, so the
-  shell's `getcwd` fails and the process returns **1** *after* printing
-  `CLOSE OK …` and `commit <sha> … on origin/main`. The close succeeded; do not
-  retry it. (Upstream: pmtools#8.)
-- **Recover your shell: `cd` to the main checkout as the very next command.**
-  Teardown left your cwd a *deleted* directory, so every later command errors
-  `getcwd: cannot access parent directories` and any cwd-derived branch / prompt /
-  status line keeps showing the stale, removed `wt-…-issue-N` until you move. Run
-  `cd /abs/path/to/pycats` (the `Shell re-root:` hint `pmtools close` prints) *before*
-  commenting or anything else. **Durable fix: pmtools#104** — make `close` runnable
-  from the main checkout so `cd <main> && pmtools close <N>` never strands the shell;
-  until that lands, the works-today form is `close` from the worktree, then `cd <main>`.
-- **Post the closing comment from the main checkout.** Because the worktree is gone
-  after `CLOSE OK`, `cd` back to the main repo to comment:
+- **Run from the main checkout and `close` exits 0 cleanly.** Before teardown,
+  `pmtools close` chdirs its *own* process back to the main root, so from `<main>` it
+  never deletes the cwd it is standing in — it returns **0** after `CLOSE OK …` /
+  `commit <sha> … on origin/main`. Your shell also stayed in `<main>` the whole time,
+  so there is no strand and no cwd to recover: comment and keep working in place.
+- **Legacy from-worktree behaviour (avoid — prefer from-main above).** If you instead
+  run `close` from *inside* the worktree, its final step deletes the cwd you are
+  standing in: the process returns **exit 1** after a *successful* close (trust the
+  `CLOSE OK` banner, not the code — pmtools#8), and your shell is left in a deleted
+  directory (`getcwd: cannot access parent directories`, with a stale `wt-…-issue-N`
+  in your prompt) until you `cd /abs/path/to/pycats`. From-main (pmtools#104) avoids
+  all of this — which is why it is the default in step 3.
+- **Post the closing comment from `<main>` (where you already are):**
 
-      cd /abs/path/to/pycats && gh issue comment <N> --body "Closed in <sha>. <summary>"
-
-  (`pmtools close` prints this exact hint in its final lines.)
+      gh issue comment <N> --body "Closed in <sha>. <summary>"
 - **No-code tickets close differently.** `pmtools close` needs a `Closes #N`
   *commit* to land and verify; a **decision / research / comment-only** ticket has
   none. Close those with `gh issue close <N>` (after posting the ruling/finding as
