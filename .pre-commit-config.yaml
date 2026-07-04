@@ -9,9 +9,9 @@
 repos:
   - repo: local
     hooks:
-      - id: ruff-fi
-        name: ruff (F + I — undefined-name / unused-import / import-sort)
-        entry: .venv/bin/ruff check --select F,I pycats/
+      - id: ruff-lint
+        name: ruff (F,I,E722 — undefined-name / unused-import / import-sort / no-bare-except)
+        entry: .venv/bin/ruff check --select F,I,E722 pycats/
         language: system
         pass_filenames: false
         always_run: true

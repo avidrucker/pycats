@@ -152,14 +152,14 @@ class TextRenderer:
             else:
                 try:
                     test_font = pygame.font.SysFont(font_name, TEXT_PROBE_SIZE)
-                except:
+                except Exception:
                     try:
                         font_path = pygame.font.match_font(font_name)
                         if font_path:
                             test_font = pygame.font.Font(font_path, TEXT_PROBE_SIZE)
                         else:
                             return {"score": 0, "supported": [], "failed": test_chars}
-                    except:
+                    except Exception:
                         return {"score": 0, "supported": [], "failed": test_chars}
 
             # Test each character using a more sophisticated approach
@@ -213,7 +213,7 @@ class TextRenderer:
                 # it's probably rendering as the same replacement glyph
                 if char_width == missing_width and char_width <= 6:
                     return False
-            except:
+            except Exception:
                 pass
 
             # Character passed all tests
@@ -647,7 +647,7 @@ class TextRenderer:
                                 char_surface.get_width(),
                                 char_surface.get_height(),
                             )
-                except:
+                except Exception:
                     pass
 
         # Fall back to ASCII
@@ -751,7 +751,7 @@ def quick_unicode_test():
         try:
             font = pygame.font.SysFont(text_renderer.unicode_font_name, TEXT_PROBE_SIZE)
             print(f"Using named font: {text_renderer.unicode_font_name}")
-        except:
+        except Exception:
             font = pygame.font.Font(None, TEXT_PROBE_SIZE)
             print("Named font failed, using default")
     else:
