@@ -32,33 +32,36 @@ import math
 
 import pygame  # type: ignore
 
+from ..combat.knockback import (
+    hitlag_frames,
+    hitstun_frames,
+    knockback,
+    sakurai_angle,
+    set_knockback,
+)
+from ..combat.shield import shield_break_stun_frames, shieldstun_frames
 from ..config import (
-    PLAYER_SIZE,
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    INITIAL_LIVES,
-    SHIELD_MAX_HP,
-    SHIELD_DRAIN_PER_FRAME,
     BLAST_PADDING,
-    RESPAWN_DELAY_FRAMES,
-    DODGE_TIME,
-    DODGE_SPEED,
+    CROUCH_CANCEL_FACTOR,
     DASH_DURATION,
     DODGE_AIR_SPEED,
-    WAVEDASH_ANGLE_DEG,
-    WAVEDASH_LANDING_LAG,
-    KNOCKBACK_LAUNCH_FACTOR,
-    CROUCH_CANCEL_FACTOR,
-    SAKURAI_ANGLE_CODE,
+    DODGE_SPEED,
+    DODGE_TIME,
     GETUP_ROLL_FRAMES,
     GETUP_ROLL_SPEED,
+    INITIAL_LIVES,
+    KNOCKBACK_LAUNCH_FACTOR,
     KNOCKDOWN_VY_THRESHOLD,
+    PLAYER_SIZE,
+    RESPAWN_DELAY_FRAMES,
+    SAKURAI_ANGLE_CODE,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    SHIELD_DRAIN_PER_FRAME,
+    SHIELD_MAX_HP,
+    WAVEDASH_ANGLE_DEG,
+    WAVEDASH_LANDING_LAG,
 )
-from ..combat.knockback import (
-    knockback, hitstun_frames, hitlag_frames, sakurai_angle, set_knockback,
-)
-from ..combat.shield import shieldstun_frames
-from ..combat.shield import shield_break_stun_frames
 
 # Where a KO'd fighter's rect is parked while dead — far off any stage so it can't
 # collide or render on-screen during the respawn wait (#425: named sentinel).

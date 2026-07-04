@@ -1,5 +1,6 @@
 # pycats/systems/movement.py
 from typing import Tuple
+
 import pygame as pg  # type: ignore
 
 from ..config import MOVE_SPEED

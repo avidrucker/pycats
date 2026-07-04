@@ -9,25 +9,26 @@ This module handles:
 """
 
 import pygame
+
+from . import text_utils
+from .characters.roster import ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
 from .config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
+    BLACK,
     CHAR_SELECT_BG_COLOR,
-    CHAR_SELECT_TITLE_COLOR,
-    CHAR_SELECT_TITLE_SIZE,
-    CHAR_SELECT_INSTRUCTION_SIZE,
+    CHAR_SELECT_CURSOR_WIDTH,
     CHAR_SELECT_GRID_COLS,
+    CHAR_SELECT_INSTRUCTION_SIZE,
     CHAR_SELECT_TILE_SIZE,
     CHAR_SELECT_TILE_SPACING,
-    CHAR_SELECT_CURSOR_WIDTH,
-    WHITE,
-    BLACK,
+    CHAR_SELECT_TITLE_COLOR,
+    CHAR_SELECT_TITLE_SIZE,
+    OVERLAY_DIM_ALPHA,
     P1_UI_COLOR,
     P2_UI_COLOR,
-    OVERLAY_DIM_ALPHA,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
 )
-from . import text_utils
-from .characters.roster import ARCHETYPE_ROSTER, ARCHETYPE_NAME, palette_for
 
 # --- char-select layout + behaviour constants (#420: named from inline literals) ---
 # Input debounce windows (frames): movement repeats faster than a committing action.

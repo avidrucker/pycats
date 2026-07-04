@@ -12,10 +12,10 @@ Platforms is passed in (not stashed on the entity), so the old
 """
 from ..core.physics import (
     apply_gravity,
-    move_rect,
-    solve_vertical,
-    solve_horizontal,
     find_current_platform,
+    move_rect,
+    solve_horizontal,
+    solve_vertical,
     would_dodge_off_platform,
 )
 

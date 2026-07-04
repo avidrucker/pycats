@@ -17,27 +17,27 @@ Nav convention (research #115 §10.4): up/down move, A (attack) confirms/toggles
 B (special) backs out.
 """
 import pygame  # type: ignore
+
+from . import runtime_settings, settings
 from .config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
+    FONT_SCALE_NAMES,
+    FONT_SCALE_ORDER,
     MAIN_MENU_BG_COLOR,
-    MAIN_MENU_TITLE_COLOR,
-    MAIN_MENU_TITLE_SIZE,
     MAIN_MENU_OPTION_SIZE,
     MAIN_MENU_SELECTED_COLOR,
-    FONT_SCALE_ORDER,
-    FONT_SCALE_NAMES,
+    MAIN_MENU_TITLE_COLOR,
+    MAIN_MENU_TITLE_SIZE,
     MENU_NAV_COOLDOWN,
     MENU_SELECT_COOLDOWN,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
 )
-from . import runtime_settings
-from . import settings
 from .keybind_menu import KeybindMenu
 from .keybind_sets_menu import KeybindSetsMenu
-from .text_entry import draw_text_entry
-from .menu_widgets import draw_menu_button, menu_button_size, BUTTON_MIN_WIDTH, PRESS_PULSE_FRAMES
 from .menu_layout import effective_columns, grid_dims, scroll_to_visible
+from .menu_widgets import BUTTON_MIN_WIDTH, PRESS_PULSE_FRAMES, draw_menu_button, menu_button_size
+from .text_entry import draw_text_entry
 from .text_utils import text_renderer
 
 # The rows lay out as a row-major grid (#389). NCOLS is the MAX columns; the actual

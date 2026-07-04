@@ -12,9 +12,9 @@ shipped DEBUG print() calls.
 """
 from __future__ import annotations
 
-from ..config import DODGE_SPEED, SMASH_CHARGE_FRAMES, DOUBLE_TAP_WINDOW
-from ..systems.movement import step_horizontal
 from ..combat.move_select import resolve_move_key
+from ..config import DODGE_SPEED, DOUBLE_TAP_WINDOW, SMASH_CHARGE_FRAMES
+from ..systems.movement import step_horizontal
 
 
 class FighterInput:

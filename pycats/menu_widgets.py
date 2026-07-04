@@ -10,9 +10,9 @@ the pixels. Headless-safe (plain pygame Surface ops; no display hooks needed).
 """
 import pygame
 
+from . import runtime_settings
 from .config import MAIN_MENU_OPTION_COLOR, MAIN_MENU_SELECTED_COLOR
 from .text_utils import text_renderer
-from . import runtime_settings
 
 # ► (U+25BA) is in text_utils' font-capability probe, so it always renders.
 FOCUS_MARKER = "►"

@@ -14,8 +14,8 @@ from typing import Optional, Sequence, Tuple
 
 import pygame
 
-from ..config import WHITE
 from .. import text_utils
+from ..config import WHITE
 
 # Anchors — horizontally centred; vertical position per name.
 TOP_CENTER = "top_center"

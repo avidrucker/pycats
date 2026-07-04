@@ -9,8 +9,8 @@ This module provides:
 
 import pygame
 
-from .config import TEXT_PROBE_SIZE  # font-probe size: single font-size source (#344)
 from . import runtime_settings  # live font_scale multiplier (#345)
+from .config import TEXT_PROBE_SIZE  # font-probe size: single font-size source (#344)
 
 
 class TextRenderer:

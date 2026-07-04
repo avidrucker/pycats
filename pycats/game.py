@@ -22,7 +22,13 @@ Use: This is the entry point for running the game.
 #### TODO: implement player pushing & sliding where players can push each other left/right (if both players are pushing on each other, there is no horizontal movement, else, there is slowed movement in the pushed direction) and when one lands on the other they also get pushed apart and the bottom character gets their vertical velocity downward increased if they are both in the air and the top character gets their vertical velocity upward increased with a short hop/bounce up
 
 import sys
+
 import pygame  # type: ignore
+
+from . import cat_faces, display, runtime_settings, screen_render, settings, text_utils
+from . import input_poll as inp
+from .battle_screen import BattleScreen
+
 # Explicit config imports — was `from .config import *` (#486 slice 2 / #490), which
 # blinded pyflakes to game.py (the one untested module). Only the names game.py uses;
 # the prior dead EAR_*/WHISKER_*/STRIPE_*/CAT_CHARACTERS block (nothing referenced it,
@@ -38,17 +44,9 @@ from .config import (
     THIN_PLAT_DICT_R,
     WHITE,
 )
-from .entities import Platform
-from . import input_poll as inp
 from .core.keymap import Keymap
+from .entities import Platform
 from .screen_manager import ScreenStateManager
-from .battle_screen import BattleScreen
-from . import screen_render
-from . import text_utils
-from . import display
-from . import settings
-from . import runtime_settings
-from . import cat_faces
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")

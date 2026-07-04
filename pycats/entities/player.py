@@ -26,31 +26,39 @@ Use: Core gameplay logic for player control and interaction.
 #### TODO: implement fast fall by holding down which will cause the player to fall faster
 #### DONE (#14 v1): ledge grab/hang/getup(up)/drop(down or away)/timeout + ledge intangibility; thin platforms are NOT grabbable (only solid edges). See update() ledge-grab + ledge-hang blocks. Deferred follow-ups (roll/attack/jump getups, intangibility decay, trump, 2-frame, tech): #267.
 
-import pygame  # type: ignore
 from enum import Enum, auto
+
+import pygame  # type: ignore
+
+from ..combat.charge import angle_smash_hitboxes, scale_hitboxes
+from ..combat.data import GETUP_ATTACK, load_fighter_data
 from ..config import (
-    PLAYER_SIZE,
+    BLACK,
+    FSMASH_ANGLE_DOWN,
+    FSMASH_ANGLE_UP,
     KNOCKBACK_DECAY,
     KNOCKDOWN_PRONE_FRAMES,
+    LEDGE_GETUP_FRAMES,
     LEDGE_HANG_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
-    LEDGE_GETUP_FRAMES,
-    P1_COLOR, P2_COLOR, P1_STRIPE_COLOR, BLACK,
-    PROJECTILE_GRAVITY, PROJECTILE_RESTITUTION, PROJECTILE_MAX_BOUNCES,
+    P1_COLOR,
+    P1_STRIPE_COLOR,
+    P2_COLOR,
+    PLAYER_SIZE,
+    PROJECTILE_GRAVITY,
+    PROJECTILE_MAX_BOUNCES,
+    PROJECTILE_RESTITUTION,
 )
 from .attack import Attack, Projectile
-from .ledge import ledge_invuln_frames
 from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
-from ..combat.data import load_fighter_data, GETUP_ATTACK
-from ..combat.charge import scale_hitboxes, angle_smash_hitboxes
-from ..config import FSMASH_ANGLE_UP, FSMASH_ANGLE_DOWN
+from .ledge import ledge_invuln_frames
 
 # Angled f-smash (#327/4): map the captured direction to a launch angle.
 _FSMASH_ANGLE = {"up": FSMASH_ANGLE_UP, "down": FSMASH_ANGLE_DOWN}
-from ..combat.move_clock import MoveClock
 from ..combat.knockback import decay_velocity
+from ..combat.move_clock import MoveClock
 from ..core.physics import apply_horizontal_friction
 from ..systems.state_engine import make_state_engine
 

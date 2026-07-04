@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 
-from ..config import SHIELD_BREAK_STUN_MIN, SHIELD_BREAK_STUN_MAX, SHIELDSTUN_FACTOR
+from ..config import SHIELD_BREAK_STUN_MAX, SHIELD_BREAK_STUN_MIN, SHIELDSTUN_FACTOR
 
 
 def shield_break_stun_frames(percent: float) -> int:

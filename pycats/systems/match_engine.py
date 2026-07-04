@@ -4,7 +4,7 @@ win_condition.winner_index; this drives match phase. The statechart engine is
 the only backend (ADR-0002: the legacy match engine was removed in #178)."""
 from __future__ import annotations
 
-from statecharts import state, statechart, transition, Session
+from statecharts import Session, state, statechart, transition
 
 from .win_condition import winner_index
 

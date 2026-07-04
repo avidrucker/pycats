@@ -18,28 +18,62 @@ DIZZY_SPIN_SPEED = 0.18    # radians of orbit advance per frame (per stun tick)
 DIZZY_STAR_POINTS = 5      # spikes per orbiting star
 DIZZY_ELLIPSE_FLATTEN = 0.4  # vertical-squash of the orbit (circle → head-hugging ellipse)
 
-from .config import (
-    EYE_OFFSET_X, EYE_OFFSET_Y, EYE_RADIUS, GLINT_OFFSET_X, GLINT_OFFSET_Y,
-    GLINT_RADIUS, EAR_WIDTH, EAR_HEIGHT, EAR_SPACING, EAR_PADDING,
-    WHISKER_LENGTH, WHISKER_THICKNESS, WHISKER_COUNT, WHISKER_ANGLE,
-    WHISKER_OFFSET_Y, WHISKER_OFFSET_X, STRIPE_COUNT, STRIPE_WIDTH,
-    STRIPE_HEIGHT, STRIPE_SPACING, SHIELD_COLOR, SHIELD_MAX_HP,
-    MAX_SHIELD_RADIUS, MIN_SHIELD_RADIUS, WHITE, RED, YELLOW, PLAYER_SIZE,
-    P1_UI_COLOR, P2_UI_COLOR,
-    FPS, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, LEDGE_HANG_FRAMES,
-    KNOCKDOWN_PRONE_FRAMES, LEDGE_REGRAB_LOCKOUT_FRAMES, DODGE_TIME,
-    GETUP_ROLL_FRAMES, SMASH_CHARGE_FRAMES,
-    STATUS_BAR_SECONDS_SIZE, STATUS_BAR_LABEL_SIZE,
-    SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, ATTACK_SIZE,
-    TAIL_SEGMENT_LENGTH, TAIL_SEGMENT_WIDTH, TAPER_MODIFER,
-)
-from . import runtime_settings
-from . import text_utils
-from .input_history import format_line
-from . import cat_faces
-from .entities import Player
-from .combat.geometry import resolve_circle
+from . import cat_faces, runtime_settings, text_utils
 from .combat.data import GETUP_ATTACK
+from .combat.geometry import resolve_circle
+from .config import (
+    ATTACK_SIZE,
+    DODGE_TIME,
+    EAR_HEIGHT,
+    EAR_PADDING,
+    EAR_SPACING,
+    EAR_WIDTH,
+    EYE_OFFSET_X,
+    EYE_OFFSET_Y,
+    EYE_RADIUS,
+    FPS,
+    GETUP_ROLL_FRAMES,
+    GLINT_OFFSET_X,
+    GLINT_OFFSET_Y,
+    GLINT_RADIUS,
+    HUD_PADDING,
+    HUD_SPACING,
+    KNOCKDOWN_PRONE_FRAMES,
+    LEDGE_HANG_FRAMES,
+    LEDGE_REGRAB_LOCKOUT_FRAMES,
+    MAX_SHIELD_RADIUS,
+    MIN_SHIELD_RADIUS,
+    P1_UI_COLOR,
+    P2_UI_COLOR,
+    PLAYER_SIZE,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    SHIELD_BREAK_STUN_MAX,
+    SHIELD_COLOR,
+    SHIELD_DRAIN_PER_FRAME,
+    SHIELD_MAX_HP,
+    SMASH_CHARGE_FRAMES,
+    STATUS_BAR_LABEL_SIZE,
+    STATUS_BAR_SECONDS_SIZE,
+    STRIPE_COUNT,
+    STRIPE_HEIGHT,
+    STRIPE_SPACING,
+    STRIPE_WIDTH,
+    TAIL_SEGMENT_LENGTH,
+    TAIL_SEGMENT_WIDTH,
+    TAPER_MODIFER,
+    WHISKER_ANGLE,
+    WHISKER_COUNT,
+    WHISKER_LENGTH,
+    WHISKER_OFFSET_X,
+    WHISKER_OFFSET_Y,
+    WHISKER_THICKNESS,
+    WHITE,
+    YELLOW,
+)
+from .entities import Player
+from .input_history import format_line
 
 # Hit/hurtbox debug overlay (#219). Outline-only circles in two distinct colours
 # so an active attack's hitbox(es) and each fighter's hurtbox are directly

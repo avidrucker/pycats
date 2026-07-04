@@ -8,14 +8,16 @@ This module handles:
 """
 
 import math
+
 import pygame  # type: ignore
-from .systems.screen_engine import make_screen_engine
-from .main_menu import MainMenuManager
+
 from .char_select import CharacterSelector
-from .win_screen import WinScreenManager
-from .pause_menu import PauseMenuManager
+from .config import MAIN_MENU_SELECTED_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from .main_menu import MainMenuManager
 from .options_menu import OptionsMenu
-from .config import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, MAIN_MENU_SELECTED_COLOR
+from .pause_menu import PauseMenuManager
+from .systems.screen_engine import make_screen_engine
+from .win_screen import WinScreenManager
 
 
 class ScreenStateManager:

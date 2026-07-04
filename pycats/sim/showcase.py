@@ -36,7 +36,7 @@ Play / record it:
 from __future__ import annotations
 
 from ..config import FPS
-from .captions import TOP_CENTER, BOTTOM_CENTER
+from .captions import BOTTOM_CENTER, TOP_CENTER
 from .demo import Demo, DemoSegment
 from .input_script import InputSpan
 

@@ -55,7 +55,7 @@ Config home (child 0) + Decision 1 (line-length) + `I` (child 2) + `E722` (child
 |---|---|---|
 | This plan doc | #509 | ✅ done |
 | 0+1. ruff config home + line-length decision | #512 | ✅ done — `ruff.toml`, `line-length = 120` |
-| 2. `I` import-sort | — | not filed (next) |
+| 2. `I` import-sort | #516 | ✅ done — 40 sorted; `F,I` enforced (ruff.toml + hook) |
 | 3. `E722` bare-except | — | not filed |
 | 4. `E702`/`E402` | — | not filed |
 | 5. `UP` pyupgrade | — | not filed |

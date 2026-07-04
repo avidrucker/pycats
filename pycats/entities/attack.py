@@ -18,11 +18,16 @@ Use: Used to detect hit interactions between players.
 #### TODO: implement ability for some attacks to hit more than one opponent
 
 import pygame  # type: ignore
-from ..config import (
-    ATTACK_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT,  # visual size; stage bounds (#223/#266 despawn)
-    PROJECTILE_GRAVITY, PROJECTILE_RESTITUTION, PROJECTILE_MAX_BOUNCES,
-)
+
 from ..combat.geometry import resolve_circle
+from ..config import (
+    ATTACK_SIZE,  # visual size; stage bounds (#223/#266 despawn)
+    PROJECTILE_GRAVITY,
+    PROJECTILE_MAX_BOUNCES,
+    PROJECTILE_RESTITUTION,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+)
 
 
 class Attack(pygame.sprite.Sprite):

@@ -9,22 +9,23 @@ This module handles:
 """
 
 import pygame  # type: ignore
+
 from .config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
     BLACK,
     MAIN_MENU_BG_COLOR,
-    MAIN_MENU_TITLE_COLOR,
-    MAIN_MENU_TITLE_SIZE,
     MAIN_MENU_OPTION_SIZE,
     MAIN_MENU_OPTION_SPACING,
+    MAIN_MENU_TITLE_COLOR,
+    MAIN_MENU_TITLE_SIZE,
     MENU_NAV_COOLDOWN,
     MENU_SELECT_COOLDOWN,
     OVERLAY_DIM_ALPHA,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
 )
+from .menu_widgets import PRESS_PULSE_FRAMES, draw_menu_button
 from .text_utils import text_renderer
-from .menu_widgets import draw_menu_button, PRESS_PULSE_FRAMES
 
 # Pause-screen layout literals (#433: named inline). Offsets are from the vertical
 # centre; the dim overlay reuses config.BLACK at config.OVERLAY_DIM_ALPHA (#450).

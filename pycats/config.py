@@ -427,4 +427,6 @@ MIN_FONT_PX = 6
 # Archived to pycats/characters/og_skins.py (#131, Part 1 of epic #127): these six
 # entries are colour-skins of one cat, not characters. CAT_CHARACTERS re-exports the
 # archive so existing consumers (char_select, game, sim/runner) read the one source.
-from .characters.og_skins import OG_SKINS as CAT_CHARACTERS  # noqa: E402,F401 (re-export; consumed by sim/runner, char_select — see comment above)
+from .characters.og_skins import (  # noqa: E402 (deliberate late import — see comment above)
+    OG_SKINS as CAT_CHARACTERS,  # noqa: F401 (re-export; consumed by sim/runner, char_select)
+)

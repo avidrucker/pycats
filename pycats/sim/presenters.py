@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pygame
 
-from ..config import SCREEN_WIDTH, SCREEN_HEIGHT, BG_COLOR, FPS, WHITE, HUD_PADDING
-from ..render_battle import render_battle, render_attacks
 from .. import text_utils
-from .captions import draw_captions, caption_hold_frames
+from ..config import BG_COLOR, FPS, HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from ..render_battle import render_attacks, render_battle
+from .captions import caption_hold_frames, draw_captions
 
 # Live-replay overlay text sizes (#444: named from inline literals).
 OVERLAY_FPS_FONT_SIZE = 24    # the FPS readout (top-right)

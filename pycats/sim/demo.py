@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 from ..config import FPS
-from .captions import Caption, BOTTOM_CENTER
+from .captions import BOTTOM_CENTER, Caption
 from .input_script import InputSpan, compile_timeline
 
 

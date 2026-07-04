@@ -9,21 +9,21 @@ This module handles:
 """
 
 import pygame  # type: ignore
+
+from . import stats_print, text_utils
 from .config import (
     FPS,
-    SCREEN_WIDTH,
-    WIN_SCREEN_BG_COLOR,
-    WIN_SCREEN_TITLE_SIZE,
-    WIN_SCREEN_STATS_SIZE,
-    WIN_SCREEN_INSTRUCTION_SIZE,
-    WIN_SCREEN_PADDING,
-    WIN_SCREEN_LINE_SPACING,
-    WIN_SCREEN_TEXT_COLOR,
     P1_UI_COLOR,
     P2_UI_COLOR,
+    SCREEN_WIDTH,
+    WIN_SCREEN_BG_COLOR,
+    WIN_SCREEN_INSTRUCTION_SIZE,
+    WIN_SCREEN_LINE_SPACING,
+    WIN_SCREEN_PADDING,
+    WIN_SCREEN_STATS_SIZE,
+    WIN_SCREEN_TEXT_COLOR,
+    WIN_SCREEN_TITLE_SIZE,
 )
-from . import stats_print
-from . import text_utils
 
 # Win-screen input timing (frames) — #446: named from inline literals.
 WIN_INPUT_COOLDOWN = 15   # ignore repeat confirm/cancel presses for this long

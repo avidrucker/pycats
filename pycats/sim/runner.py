@@ -15,19 +15,24 @@ import pygame  # noqa: E402
 if not pygame.get_init():
     pygame.init()
 
+from ..combat.data import load_fighter_data  # noqa: E402
 from ..config import (  # noqa: E402
-    THICK_PLAT_DICT, THIN_PLAT_DICT_L, THIN_PLAT_DICT_R,
-    PLAYER1_START_X, PLAYER1_START_Y, PLAYER2_START_X, PLAYER2_START_Y,
     CAT_CHARACTERS,
+    PLAYER1_START_X,
+    PLAYER1_START_Y,
+    PLAYER2_START_X,
+    PLAYER2_START_Y,
+    THICK_PLAT_DICT,
+    THIN_PLAT_DICT_L,
+    THIN_PLAT_DICT_R,
 )
+from ..core.input import merge_frames  # noqa: E402
+from ..core.physics import resolve_player_push  # noqa: E402
 from ..entities import Platform, Player  # noqa: E402
 from ..entities.ledge import ledges_from_platforms  # noqa: E402
-from ..combat.data import load_fighter_data  # noqa: E402
 from ..systems import combat  # noqa: E402
-from ..core.physics import resolve_player_push  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
 from .input_script import default_timeline  # noqa: E402
-from ..core.input import merge_frames  # noqa: E402
 
 # Self-describing per-player golden snapshot row (#322/B-b). A `namedtuple` so the
 # golden oracle + tests read fields by name instead of magic indices — and it's a

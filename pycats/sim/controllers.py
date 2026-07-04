@@ -10,8 +10,8 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 
-from ..core.input import InputFrame
 from ..combat.geometry import move_reach
+from ..core.input import InputFrame
 
 # #338: states a fighter can start a ground roll/dodge from — mirrors
 # fighter_input.can_dodge_state. The evade only emits a roll when the bot is in one,

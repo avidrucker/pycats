@@ -28,8 +28,7 @@ from dataclasses import dataclass
 # Movement-constant defaults live in config; FighterData uses them as field
 # defaults so any data that doesn't specify movement == today's globals (the
 # default cat / golden sim is unchanged). #126.
-from ..config import GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, MAX_JUMPS, DASH_SPEED
-
+from ..config import DASH_SPEED, GRAVITY, JUMP_VEL, MAX_FALL_SPEED, MAX_JUMPS, MOVE_SPEED
 
 # ---------------------------------------------------------------------------
 # Primitives

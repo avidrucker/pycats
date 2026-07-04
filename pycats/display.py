@@ -10,7 +10,7 @@ Use: window_size_for / blit_mode_for / cycle_preset from game.py's present path.
 """
 import pygame  # type: ignore
 
-from .config import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+from .config import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 
 # How long the zoom toast stays on screen after an F10 change (#89).
 TOAST_DURATION_FRAMES = 3 * FPS

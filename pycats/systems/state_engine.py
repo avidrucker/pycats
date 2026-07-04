@@ -30,6 +30,7 @@ def make_state_engine(player) -> StateEngine:
     The statechart engine is the only backend (ADR-0002, #178/#183).
     """
     from statecharts import Session
+
     from ..charts.fighter_chart import build_fighter_chart
     from .state_engine_sc import StatechartEngine
 

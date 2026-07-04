@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from statecharts import state, statechart, transition, Session
+from statecharts import Session, state, statechart, transition
 
 ScreenGuard = Callable[[Any], bool]
 ScreenHandler = Callable[[Any], None]

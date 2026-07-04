@@ -8,22 +8,22 @@ This module handles:
 - Handling input for menu progression
 """
 
+from . import runtime_settings
 from .config import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    WHITE,
     MAIN_MENU_BG_COLOR,
+    MAIN_MENU_OPTION_SIZE,
+    MAIN_MENU_OPTION_SPACING,
+    MAIN_MENU_PADDING,
     MAIN_MENU_TITLE_COLOR,
     MAIN_MENU_TITLE_SIZE,
-    MAIN_MENU_OPTION_SIZE,
-    MAIN_MENU_PADDING,
-    MAIN_MENU_OPTION_SPACING,
     MENU_NAV_COOLDOWN,
     MENU_SELECT_COOLDOWN,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
 )
+from .menu_widgets import PRESS_PULSE_FRAMES, draw_menu_button
 from .text_utils import text_renderer
-from .menu_widgets import draw_menu_button, PRESS_PULSE_FRAMES
-from . import runtime_settings
 
 # Layout literals for the instruction/fullscreen-hint text (#433: named inline).
 INSTRUCTION_FONT_SIZE = 20      # bottom navigation-hint lines

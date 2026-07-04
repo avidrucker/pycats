@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import Tuple, Optional, Protocol
+from typing import Optional, Protocol, Tuple
+
 import pygame as pg  # type: ignore
 
 
@@ -16,11 +17,11 @@ class _DropThrough(Protocol):
 
 # Read tuning constants from config once
 from ..config import (
-    GRAVITY,
-    MAX_FALL_SPEED,
-    GROUND_FRICTION,
     AIR_FRICTION,
+    GRAVITY,
+    GROUND_FRICTION,
     JOSTLE_MIN_VOVERLAP_FRAC,
+    MAX_FALL_SPEED,
 )
 
 # Physics thresholds (#446: named from inline literals).

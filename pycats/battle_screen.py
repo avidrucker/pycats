@@ -13,6 +13,9 @@ from __future__ import annotations
 
 import pygame
 
+from . import runtime_settings
+from .characters.roster import palette_for
+from .combat.data import load_fighter_data
 from .config import (
     BG_COLOR,
     INITIAL_LIVES,
@@ -23,8 +26,6 @@ from .config import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
-from .characters.roster import palette_for
-from .combat.data import load_fighter_data
 from .core.physics import resolve_player_push
 from .entities import Player
 from .entities.ledge import ledges_from_platforms
@@ -38,7 +39,6 @@ from .render_battle import (
     render_battle,
     render_hitbox_overlay,
 )
-from . import runtime_settings
 from .systems import combat
 from .systems.win_condition import winner_loser
 

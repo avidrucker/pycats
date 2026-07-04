@@ -15,8 +15,8 @@ Use: settings.load() at startup; settings.save({...}) on a display change.
 import json
 import os
 
-from .display import WINDOWED_SCALE_PRESETS
 from .config import FONT_SCALES
+from .display import WINDOWED_SCALE_PRESETS
 
 SCHEMA_VERSION = 1
 _DEFAULTS = {
