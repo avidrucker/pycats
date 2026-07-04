@@ -1,0 +1,14 @@
+# ruff configuration for pycats.
+# Decision of record: ADR-0006 (docs/adr/0006-adopt-ruff-lint-format.md).
+# Rule-expansion roadmap: docs/superpowers/plans/2026-07-04-ruff-rule-expansion.md (#505).
+#
+# line-length = 120: chosen 2026-07-04 (#512), relaxed from ruff's default 88 to match
+# the codebase's actual style. Changeable later. Note it only takes effect once an
+# E-rule (E501) is enabled — the enforced set below is F-only for now.
+line-length = 120
+
+[lint]
+# Enforced rule set. Currently F only (pyflakes-equivalent; the #502 pre-commit hook
+# also passes `--select F` explicitly). Widen incrementally per epic #505
+# (I import-sort, E722 bare-except, UP pyupgrade, …), one child at a time.
+select = ["F"]

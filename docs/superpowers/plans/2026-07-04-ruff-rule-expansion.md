@@ -38,7 +38,7 @@ Non-E501 total: **119** (87 auto-fixable). With E501: 509. `ruff format` (black-
 Each child: drive `ruff check --select <F,…>` to 0 for its rule **and** widen the #502 hook's `--select` so the new rule is enforced, not just cleaned once.
 
 ## The two decisions (policy — need a human call; recommend a `decision:` ticket each)
-- **Decision 1 — E501 line-length (390).** ruff default is 88; the codebase writes longer. Options: **(a) relax `line-length` to ~100–120** (matches the real style, drops most/all 390) — *recommended*; (b) exclude E501; (c) reflow 390 lines (big churn, low value — avoid). Decide **before** enabling E-rules broadly or E501 floods every run.
+- **Decision 1 — E501 line-length. ✅ DECIDED 2026-07-04 (#512): `line-length = 120`** (in `ruff.toml`; changeable later). Effect: E501 drops **390 → 67** (67 lines still exceed 120). E501 is **not enforced yet** (`[lint] select = ["F"]`), so those 67 are informational — a future child that enables `E`/E501 either wraps them, raises the limit, or per-file-ignores them. Original options were: relax (chosen), exclude E501, or reflow 390 (avoided).
 - **Decision 2 — adopt `ruff format` (64/78 files).** ADR-0006 left it optional. Adopting = a one-time whole-repo diff (~82% of files): ends style bikeshedding, but churns `git blame` and is a large review. If yes: land as a **single mechanical PR in a quiet fleet window** (merge-conflict risk), verified against the full suite + a golden run. Pairs with Decision 1 (the formatter enforces a line-length).
 
 ## Cross-cutting caveats
@@ -53,10 +53,9 @@ Config home (child 0) + Decision 1 (line-length) + `I` (child 2) + `E722` (child
 ## Status
 | Child | Ticket | State |
 |---|---|---|
-| This plan doc | #509 | in progress |
-| 0. ruff config home | — | not filed |
-| 1. Decision: E501 line-length | — | not filed |
-| 2. `I` import-sort | — | not filed |
+| This plan doc | #509 | ✅ done |
+| 0+1. ruff config home + line-length decision | #512 | ✅ done — `ruff.toml`, `line-length = 120` |
+| 2. `I` import-sort | — | not filed (next) |
 | 3. `E722` bare-except | — | not filed |
 | 4. `E702`/`E402` | — | not filed |
 | 5. `UP` pyupgrade | — | not filed |
