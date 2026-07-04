@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 from ..config import FPS
 from .captions import BOTTOM_CENTER, Caption
@@ -30,22 +29,22 @@ class DemoSegment:
     inclusive last frame); `start`/`end` override it (e.g. an untimed intro caption over
     a segment with no spans)."""
     caption: str
-    spans: Tuple[InputSpan, ...] = ()
-    start: Optional[int] = None
-    end: Optional[int] = None
+    spans: tuple[InputSpan, ...] = ()
+    start: int | None = None
+    end: int | None = None
     anchor: str = BOTTOM_CENTER
     size: int = 32
-    font: Optional[str] = None
+    font: str | None = None
     # #352: frames to FREEZE the display on this caption so a viewer can read it
     # (presenter-level hold, NOT idle timeline frames — the choreography is frame-tuned).
     # None = inherit the demo's `default_dwell`.
-    dwell: Optional[int] = None
+    dwell: int | None = None
     # #412: the frame to freeze on. None = the window start (default). A beat whose action
     # lands late in its window points this at the payoff frame so the frozen frame shows
     # the action, not a pre-action pose. Must lie within window() (validated in demo_captions).
-    dwell_at: Optional[int] = None
+    dwell_at: int | None = None
 
-    def window(self) -> Optional[Tuple[int, int]]:
+    def window(self) -> tuple[int, int] | None:
         if self.start is not None and self.end is not None:
             return (self.start, self.end)
         if self.spans:
@@ -58,13 +57,13 @@ class DemoSegment:
 class Demo:
     """A named, playable choreography: ordered segments + the fighters to build."""
     name: str
-    segments: Tuple[DemoSegment, ...]
-    p1_char: Optional[str] = None
-    p2_char: Optional[str] = None
+    segments: tuple[DemoSegment, ...]
+    p1_char: str | None = None
+    p2_char: str | None = None
     default_dwell: int = 0  # #352: caption freeze applied to segments that don't set `dwell`
 
 
-def demo_captions(demo: Demo) -> List[Caption]:
+def demo_captions(demo: Demo) -> list[Caption]:
     """One timed Caption per segment (list order = draw order).
 
     Each caption's text is prefixed with its 1-based position `i/n — ` (#356) so a
@@ -120,13 +119,13 @@ def _ts_to_seconds(h, m, s, ms) -> float:
 
 
 def captions_from_srt(srt_text: str, fps: int = FPS, anchor: str = BOTTOM_CENTER,
-                      size: int = 32, font: Optional[str] = None) -> List[Caption]:
+                      size: int = 32, font: str | None = None) -> list[Caption]:
     """Parse SRT subtitle text into timed Captions (timestamps -> frame windows).
 
     Each entry's `[start, end)` seconds map to the inclusive frame window
     `(round(start*fps), round(end*fps) - 1)`, so consecutive entries don't overlap.
     Multi-line text is joined with spaces."""
-    captions: List[Caption] = []
+    captions: list[Caption] = []
     blocks = re.split(r"\n\s*\n", srt_text.strip())
     for block in blocks:
         lines = [ln for ln in block.splitlines() if ln.strip() != ""]

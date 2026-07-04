@@ -16,7 +16,6 @@ _get_tail_base_position) and the solid-platform floor clamp (#4/#37,
 _resolve_platform_collisions). Rendering keeps the cached rotated-rect blit.
 """
 import math
-from typing import List, Tuple
 
 from ..config import (
     TAIL_AIR_DRAG,
@@ -63,7 +62,7 @@ class Tail:
 
     def __init__(self, player_ref):
         self.player = player_ref
-        self.segments: List[TailSegment] = [
+        self.segments: list[TailSegment] = [
             TailSegment(0.0, 0.0) for _ in range(TAIL_SEGMENTS)
         ]
         self.reset()
@@ -201,7 +200,7 @@ class Tail:
         seg.x, seg.y = x, y
         seg.prev_x, seg.prev_y = x, y  # pinned points carry no velocity
 
-    def _get_tail_base_position(self) -> Tuple[float, float]:
+    def _get_tail_base_position(self) -> tuple[float, float]:
         """Hip attachment point, with the facing-flip ease from #3."""
         target_offset = (
             TAIL_BASE_OFFSET_X if not self.player.fighter.facing_right else -TAIL_BASE_OFFSET_X

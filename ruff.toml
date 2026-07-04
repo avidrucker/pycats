@@ -7,6 +7,12 @@
 # is enabled (not in the enforced set below yet).
 line-length = 120
 
+# target-version = py310: declares pycats' Python floor (#524). There is no packaging
+# manifest (run via `-m pycats.game`, no requires-python), so this is the machine-
+# enforceable declaration of the 3.10+ minimum — and it gates which pyupgrade (UP)
+# rewrites ruff emits (e.g. pep604 `X | None`). Human-ratified 2026-07-04 (epic #505).
+target-version = "py310"
+
 [lint]
 # Enforced rule set (the #502 pre-commit hook passes the same list explicitly).
 # Widen incrementally per epic #505, one child at a time:
@@ -15,8 +21,9 @@ line-length = 120
 #   E722  = no bare `except:` (#518)
 #   E702  = no multiple-statements-per-line semicolon (#521)
 #   E402  = imports at top of file (#521)
-# Still to come: UP pyupgrade, (E501 pairs with the line-length above), … .
-select = ["F", "I", "E722", "E702", "E402"]
+#   UP    = pyupgrade: pep604/pep585 syntax modernization, gated by target-version (#524)
+# Still to come: (E501 pairs with the line-length above), … .
+select = ["F", "I", "E722", "E702", "E402", "UP"]
 
 [lint.per-file-ignores]
 # These three modules intentionally interleave module-level constants with their

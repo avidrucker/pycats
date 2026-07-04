@@ -1,5 +1,4 @@
 # pycats/systems/movement.py
-from typing import Tuple
 
 import pygame as pg  # type: ignore
 
@@ -15,7 +14,7 @@ def step_horizontal(
     press_right: bool,
     locked: bool = False,
     move_speed: float = MOVE_SPEED,
-) -> Tuple[pg.Vector2, bool]:
+) -> tuple[pg.Vector2, bool]:
     """
     • Applies friction (ground or air) first.
     • If BOTH left & right are pressed → inputs cancel out.

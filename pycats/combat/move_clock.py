@@ -21,7 +21,7 @@ Invariant the golden snapshots rely on: while a move is live,
 """
 from __future__ import annotations
 
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from pycats.combat.data import Hitbox, MoveData
 
@@ -40,7 +40,7 @@ class MoveTick(NamedTuple):
                False on no-spawn ticks.
     """
 
-    spawn: Optional[tuple[Hitbox, ...]]
+    spawn: tuple[Hitbox, ...] | None
     lifetime: int
     in_air: bool = False
 
@@ -49,7 +49,7 @@ class MoveClock:
     """Owns the currently-executing move and its frame counter."""
 
     def __init__(self) -> None:
-        self._move: Optional[MoveData] = None
+        self._move: MoveData | None = None
         self._frame: int = 0
         # Per-hitbox temporal windows (#204): start-frame -> (boxes, lifetime),
         # and the set of window start-frames already fired. A move with no per-box
@@ -105,7 +105,7 @@ class MoveClock:
 
     # -- derived reads (back the Player properties) --------------------------
     @property
-    def move(self) -> Optional[MoveData]:
+    def move(self) -> MoveData | None:
         return self._move
 
     @property
@@ -140,7 +140,7 @@ class MoveClock:
             return MoveTick(None, 0)
         m = self._move
         self._frame += 1
-        spawn: Optional[tuple[Hitbox, ...]] = None
+        spawn: tuple[Hitbox, ...] | None = None
         lifetime = m.active
         window = self._windows.get(self._frame)
         if window is not None and self._frame not in self._spawned_starts:

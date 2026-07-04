@@ -9,8 +9,8 @@ it is a presentation overlay only (golden-safe).
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Optional, Sequence, Tuple
 
 import pygame
 
@@ -37,11 +37,11 @@ class Caption:
     text: str
     anchor: str = BOTTOM_CENTER
     size: int = 36
-    font: Optional[str] = None
-    color: Tuple[int, int, int] = WHITE
-    frames: Optional[Tuple[int, int]] = None
+    font: str | None = None
+    color: tuple[int, int, int] = WHITE
+    frames: tuple[int, int] | None = None
     dwell: int = 0
-    dwell_at: Optional[int] = None
+    dwell_at: int | None = None
 
 
 def is_active(caption: Caption, frame: int) -> bool:

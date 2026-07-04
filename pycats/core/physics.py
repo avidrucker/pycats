@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Protocol, Tuple
+from typing import Protocol
 
 import pygame as pg  # type: ignore
 
@@ -55,8 +55,8 @@ def solve_vertical(
     vel: pg.Vector2,
     platforms,
     press_down: bool,
-    drop_platform: Optional[_DropThrough],
-) -> Tuple[pg.Vector2, bool, Optional[_DropThrough]]:
+    drop_platform: _DropThrough | None,
+) -> tuple[pg.Vector2, bool, _DropThrough | None]:
     """
     Resolve vertical collisions against a list of platforms.
 
@@ -147,7 +147,7 @@ def apply_horizontal_friction(
 
 
 # -------------------------------------------------- player-to-player collision
-def resolve_player_push(players: list["Player"]) -> None:  # noqa: F821  ("Player" is a string forward-ref; not imported so core/ stays decoupled from entities)
+def resolve_player_push(players: list[Player]) -> None:  # noqa: F821  (Player is an unresolved forward-ref, lazy under `from __future__ import annotations`; not imported so core/ stays decoupled from entities)
     for i in range(len(players)):
         for j in range(i + 1, len(players)):
             a, b = players[i], players[j]

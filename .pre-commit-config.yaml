@@ -10,8 +10,8 @@ repos:
   - repo: local
     hooks:
       - id: ruff-lint
-        name: ruff (F,I,E722,E702,E402 — lint + import-sort + no-bare-except/semicolons/late-imports)
-        entry: .venv/bin/ruff check --select F,I,E722,E702,E402 pycats/
+        name: ruff (F,I,E722,E702,E402,UP — lint + import-sort + no-bare-except/semicolons/late-imports + pyupgrade)
+        entry: .venv/bin/ruff check --select F,I,E722,E702,E402,UP pycats/
         language: system
         pass_filenames: false
         always_run: true

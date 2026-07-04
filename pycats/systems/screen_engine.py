@@ -19,22 +19,23 @@ does, the target's on_enter fires; then the (post-hop) current state's on_update
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 from statecharts import Session, state, statechart, transition
 
 ScreenGuard = Callable[[Any], bool]
 ScreenHandler = Callable[[Any], None]
-ScreenTable = Dict[str, List[Tuple[str, ScreenGuard]]]
-ScreenActions = Dict[str, ScreenHandler]
+ScreenTable = dict[str, list[tuple[str, ScreenGuard]]]
+ScreenActions = dict[str, ScreenHandler]
 
 
 class StatechartScreenEngine:
     """Runs the transition spec on a statecharts-py Session."""
 
     def __init__(self, transitions: ScreenTable, initial: str,
-                 on_enter: Optional[ScreenActions] = None,
-                 on_update: Optional[ScreenActions] = None) -> None:
+                 on_enter: ScreenActions | None = None,
+                 on_update: ScreenActions | None = None) -> None:
         self._ctx: Any = None
         self._ids = list(transitions.keys())
         self._on_enter = on_enter or {}
@@ -85,8 +86,8 @@ class StatechartScreenEngine:
 
 
 def make_screen_engine(transitions: ScreenTable, initial: str,
-                       on_enter: Optional[ScreenActions] = None,
-                       on_update: Optional[ScreenActions] = None):
+                       on_enter: ScreenActions | None = None,
+                       on_update: ScreenActions | None = None):
     """Build the screen-flow engine — statecharts-py is the sole screen engine.
 
     The legacy engine was deleted in slice 4b of #100; the backend-selection

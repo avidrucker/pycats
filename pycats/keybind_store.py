@@ -21,7 +21,7 @@ def _store_path():
 def _read():
     """All sets as {name: {action: keyname}}. Missing/corrupt file -> {} (no crash)."""
     try:
-        with open(_store_path(), "r", encoding="utf-8") as fh:
+        with open(_store_path(), encoding="utf-8") as fh:
             data = json.load(fh)
         return data if isinstance(data, dict) else {}
     except (FileNotFoundError, ValueError, OSError):

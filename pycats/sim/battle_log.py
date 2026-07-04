@@ -16,7 +16,6 @@ snapshot() shapes (see runner.snapshot):
 from __future__ import annotations
 
 from collections import Counter, namedtuple
-from typing import List
 
 BattleEvent = namedtuple("BattleEvent", ["frame", "actor", "type", "detail"])
 
@@ -41,13 +40,13 @@ def _active_owner_counts(snap) -> Counter:
     return Counter(a[_ATK_OWNER] for a in snap[1] if a[_ATK_ACTIVE])
 
 
-def events_from_snaps(snaps) -> List[BattleEvent]:
+def events_from_snaps(snaps) -> list[BattleEvent]:
     """Diff consecutive snapshots into a chronological list of BattleEvents.
 
     Per frame the events are emitted in a stable order: ATTACK(s) (by owner), then
     each fighter in index order with sub-order JUMP -> HIT -> KO -> STATE, then
     MATCH_END. That ordering is part of the contract."""
-    events: List[BattleEvent] = []
+    events: list[BattleEvent] = []
     for f in range(1, len(snaps)):
         cur, prev = snaps[f], snaps[f - 1]
 

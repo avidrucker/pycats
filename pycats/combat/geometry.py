@@ -59,7 +59,7 @@ def circle_overlap(ax: float, ay: float, ar: float,
     return dist_sq <= r_sum * r_sum
 
 
-def resolve_circle(circle: "Circle",
+def resolve_circle(circle: Circle,
                    origin_x: float, origin_y: float,
                    facing_right: bool, width: float) -> tuple[float, float, float]:
     """Convert a facing-relative Circle to an absolute (cx, cy, r) triple.

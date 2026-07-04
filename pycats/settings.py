@@ -108,7 +108,7 @@ def load():
     if _persist_disabled():
         return defaults()
     try:
-        with open(config_path(), "r", encoding="utf-8") as f:
+        with open(config_path(), encoding="utf-8") as f:
             raw = json.load(f)
     except (OSError, ValueError):  # missing / unreadable / not valid JSON
         return defaults()

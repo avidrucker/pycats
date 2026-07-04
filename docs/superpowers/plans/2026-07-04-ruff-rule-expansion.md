@@ -58,8 +58,8 @@ Config home (child 0) + Decision 1 (line-length) + `I` (child 2) + `E722` (child
 | 2. `I` import-sort | #516 | ✅ done — 40 sorted; `F,I` enforced (ruff.toml + hook) |
 | 3. `E722` bare-except | #518 | ✅ done — 5 → `except Exception:`; `F,I,E722` enforced |
 | 4. `E702`/`E402` | #521 | ✅ done — 3 semicolons split; E402 per-file-ignored on physics/player/render_battle; `+E702,E402` enforced |
-| 5. `UP` pyupgrade | — | not filed |
-| 6. Decision: `ruff format` | — | not filed |
+| 5. `UP` pyupgrade | #524 | ✅ done — 58 findings cleared (47 auto pep604/pep585 + 11 UP035 dead-import removals via F401); `target-version = "py310"` set; `+UP` enforced (ruff.toml + hook) |
+| 6. Decision: `ruff format` | — | not filed — DECIDED (adopt); file + execute next |
 
 _Update this table as children are filed / closed._
 
