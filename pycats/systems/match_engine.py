@@ -2,6 +2,7 @@
 """Match/stage state. The win-condition rule (by lives) is the single source in
 win_condition.winner_index; this drives match phase. The statechart engine is
 the only backend (ADR-0002: the legacy match engine was removed in #178)."""
+
 from __future__ import annotations
 
 from statecharts import Session, state, statechart, transition
@@ -17,9 +18,9 @@ class StatechartMatchEngine:
             {"initial": "in_play"},
             state(
                 {"id": "in_play"},
-                transition({"event": "tick",
-                            "cond": lambda e, d: winner_index(self._players) != 0,
-                            "target": "match_over"}),
+                transition(
+                    {"event": "tick", "cond": lambda e, d: winner_index(self._players) != 0, "target": "match_over"}
+                ),
             ),
             state({"id": "match_over"}),
         )

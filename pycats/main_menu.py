@@ -26,11 +26,11 @@ from .menu_widgets import PRESS_PULSE_FRAMES, draw_menu_button
 from .text_utils import text_renderer
 
 # Layout literals for the instruction/fullscreen-hint text (#433: named inline).
-INSTRUCTION_FONT_SIZE = 20      # bottom navigation-hint lines
-INSTRUCTION_LINE_SPACING = 30   # vertical stride between hint lines
-FS_HINT_FONT_SIZE = 20          # the "F11: Toggle Fullscreen" hint
-FS_HINT_MARGIN_X = 10           # right margin of the fullscreen hint
-FS_HINT_MARGIN_BOTTOM = 25      # bottom margin of the fullscreen hint
+INSTRUCTION_FONT_SIZE = 20  # bottom navigation-hint lines
+INSTRUCTION_LINE_SPACING = 30  # vertical stride between hint lines
+FS_HINT_FONT_SIZE = 20  # the "F11: Toggle Fullscreen" hint
+FS_HINT_MARGIN_X = 10  # right margin of the fullscreen hint
+FS_HINT_MARGIN_BOTTOM = 25  # bottom margin of the fullscreen hint
 
 
 class MainMenuManager:
@@ -77,27 +77,18 @@ class MainMenuManager:
             return
 
         # Handle navigation input from either player (wraps over N options)
-        if (
-            self.p1_controls["up"] in pressed_keys
-            or self.p2_controls["up"] in pressed_keys
-        ):
+        if self.p1_controls["up"] in pressed_keys or self.p2_controls["up"] in pressed_keys:
             self.selected_option = (self.selected_option - 1) % len(self.options)
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
-            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
+            self.press_pulse = PRESS_PULSE_FRAMES  # flash the newly-focused row
 
-        if (
-            self.p1_controls["down"] in pressed_keys
-            or self.p2_controls["down"] in pressed_keys
-        ):
+        if self.p1_controls["down"] in pressed_keys or self.p2_controls["down"] in pressed_keys:
             self.selected_option = (self.selected_option + 1) % len(self.options)
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
-            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
+            self.press_pulse = PRESS_PULSE_FRAMES  # flash the newly-focused row
 
         # Handle selection input from either player
-        if (
-            self.p1_controls["attack"] in pressed_keys
-            or self.p2_controls["attack"] in pressed_keys
-        ):
+        if self.p1_controls["attack"] in pressed_keys or self.p2_controls["attack"] in pressed_keys:
             self.action_requested = {
                 "Play": "play",
                 "Options": "options",
@@ -105,7 +96,7 @@ class MainMenuManager:
             }.get(self.options[self.selected_option])
 
             self.input_cooldown = MENU_SELECT_COOLDOWN  # Prevent rapid selection
-            self.press_pulse = PRESS_PULSE_FRAMES        # flash the confirmed row
+            self.press_pulse = PRESS_PULSE_FRAMES  # flash the confirmed row
 
     def get_action(self):
         """Get the requested action and clear it."""
@@ -150,8 +141,7 @@ class MainMenuManager:
         # Instructions - use mixed rendering for the arrow symbols
         instructions = ["Use W/S or ↑/↓ to navigate", "Press A (/ or V) to select"]
 
-        instruction_start_y = (SCREEN_HEIGHT - len(instructions) * INSTRUCTION_LINE_SPACING
-                               - MAIN_MENU_PADDING)
+        instruction_start_y = SCREEN_HEIGHT - len(instructions) * INSTRUCTION_LINE_SPACING - MAIN_MENU_PADDING
 
         for i, instruction in enumerate(instructions):
             instruction_y = instruction_start_y + i * INSTRUCTION_LINE_SPACING
@@ -170,6 +160,5 @@ class MainMenuManager:
         fs_surf = fs_font.render(fs_text, True, WHITE)
         surface.blit(
             fs_surf,
-            (SCREEN_WIDTH - fs_surf.get_width() - FS_HINT_MARGIN_X,
-             SCREEN_HEIGHT - FS_HINT_MARGIN_BOTTOM),
+            (SCREEN_WIDTH - fs_surf.get_width() - FS_HINT_MARGIN_X, SCREEN_HEIGHT - FS_HINT_MARGIN_BOTTOM),
         )

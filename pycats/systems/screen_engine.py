@@ -17,6 +17,7 @@ Within a state the transitions are evaluated in list order and the FIRST whose g
 is True fires (break-after-first). Per update(): at most one transition hops; if it
 does, the target's on_enter fires; then the (post-hop) current state's on_update fires.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -33,25 +34,23 @@ ScreenActions = dict[str, ScreenHandler]
 class StatechartScreenEngine:
     """Runs the transition spec on a statecharts-py Session."""
 
-    def __init__(self, transitions: ScreenTable, initial: str,
-                 on_enter: ScreenActions | None = None,
-                 on_update: ScreenActions | None = None) -> None:
+    def __init__(
+        self,
+        transitions: ScreenTable,
+        initial: str,
+        on_enter: ScreenActions | None = None,
+        on_update: ScreenActions | None = None,
+    ) -> None:
         self._ctx: Any = None
         self._ids = list(transitions.keys())
         self._on_enter = on_enter or {}
         self._on_update = on_update or {}
         states = []
         for st, outs in transitions.items():
-            trs = [
-                transition({"event": "step", "cond": self._mk_cond(g), "target": tgt})
-                for tgt, g in outs
-            ]
+            trs = [transition({"event": "step", "cond": self._mk_cond(g), "target": tgt}) for tgt, g in outs]
             # Force-event transitions: a non-guard-driven jump to any other state
             # (force(label) below), mirroring force_ko/force_idle on the fighter chart.
-            trs += [
-                transition({"event": "force_" + tgt, "target": tgt})
-                for tgt in self._ids if tgt != st
-            ]
+            trs += [transition({"event": "force_" + tgt, "target": tgt}) for tgt in self._ids if tgt != st]
             states.append(state({"id": st}, *trs))
         self._session = Session(statechart({"initial": initial}, *states))
 
@@ -70,12 +69,12 @@ class StatechartScreenEngine:
     def update(self, ctx: Any = None) -> None:
         self._ctx = ctx
         prev = self.state
-        self._session.send("step")          # at most one hop (no eventless transitions)
+        self._session.send("step")  # at most one hop (no eventless transitions)
         cur = self.state
         if cur != prev and cur in self._on_enter:
-            self._on_enter[cur](ctx)         # entry action
+            self._on_enter[cur](ctx)  # entry action
         if cur in self._on_update:
-            self._on_update[cur](ctx)        # current (post-hop) state's update
+            self._on_update[cur](ctx)  # current (post-hop) state's update
 
     def force(self, label: str) -> None:
         # Non-guard-driven jump (e.g. ESC-hold return-to-menu); fire the target's
@@ -85,9 +84,12 @@ class StatechartScreenEngine:
             self._on_enter[label](None)
 
 
-def make_screen_engine(transitions: ScreenTable, initial: str,
-                       on_enter: ScreenActions | None = None,
-                       on_update: ScreenActions | None = None):
+def make_screen_engine(
+    transitions: ScreenTable,
+    initial: str,
+    on_enter: ScreenActions | None = None,
+    on_update: ScreenActions | None = None,
+):
     """Build the screen-flow engine — statecharts-py is the sole screen engine.
 
     The legacy engine was deleted in slice 4b of #100; the backend-selection

@@ -10,6 +10,7 @@ ABSOLUTE — ``→`` always means physical right, independent of fighter facing.
 The HUD render (``render_battle.draw_input_history``) and the Options
 ``show_input_history`` toggle consume this; the buffer itself owns no pygame.
 """
+
 from pycats.config import FPS
 
 INPUT_HISTORY_MAX = 10

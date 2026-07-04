@@ -3,6 +3,7 @@
 Kept here next to combat/knockback.py (hitstun_frames) so the frame-duration
 rules live together and stay import-light for headless tests.
 """
+
 from __future__ import annotations
 
 import math

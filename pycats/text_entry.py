@@ -19,7 +19,7 @@ class TextEntry:
         self.maxlen = maxlen
         self.cols = cols
         self.cells = list(_CELLS)
-        self.cursor = 0        # index into cells; starts on the first cell ("A")
+        self.cursor = 0  # index into cells; starts on the first cell ("A")
         self.text = ""
         self.confirmed = False
 
@@ -63,17 +63,23 @@ def draw_text_entry(surface, entry, title="Enter name"):
     from .text_utils import text_renderer
 
     surface.fill(MAIN_MENU_BG_COLOR)
-    text_renderer.render_text_simple(title, MAIN_MENU_TITLE_SIZE, MAIN_MENU_TITLE_COLOR,
-                                     surface, (SCREEN_WIDTH // 2, 40), center=True)
-    text_renderer.render_text_simple(entry.text or "_", MAIN_MENU_OPTION_SIZE, WHITE,
-                                     surface, (SCREEN_WIDTH // 2, 95), center=True)
+    text_renderer.render_text_simple(
+        title, MAIN_MENU_TITLE_SIZE, MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, 40), center=True
+    )
+    text_renderer.render_text_simple(
+        entry.text or "_", MAIN_MENU_OPTION_SIZE, WHITE, surface, (SCREEN_WIDTH // 2, 95), center=True
+    )
 
     cols, cell_w, cell_h, top = entry.cols, 56, 40, 160
     x0 = (SCREEN_WIDTH - cols * cell_w) // 2 + cell_w // 2
     for i, cell in enumerate(entry.cells):
         row, col = divmod(i, cols)
-        focused = (i == entry.cursor)
+        focused = i == entry.cursor
         text_renderer.render_text_simple(
-            _cell_label(cell), MAIN_MENU_OPTION_SIZE,
-            MAIN_MENU_SELECTED_COLOR if focused else WHITE, surface,
-            (x0 + col * cell_w, top + row * cell_h), center=True)
+            _cell_label(cell),
+            MAIN_MENU_OPTION_SIZE,
+            MAIN_MENU_SELECTED_COLOR if focused else WHITE,
+            surface,
+            (x0 + col * cell_w, top + row * cell_h),
+            center=True,
+        )

@@ -10,6 +10,7 @@ At Attack spawn, a smash's hitboxes are rewritten from live smash state:
 Both use dataclasses.replace (Hitbox is frozen) and are golden-safe (the default
 cat has no smash, so neither path is reached on the sim/golden cat).
 """
+
 from dataclasses import replace
 
 from ..config import SMASH_CHARGE_SCALE
@@ -34,10 +35,7 @@ def scale_hitboxes(hitboxes, fraction):
     factor = charge_factor(fraction)
     if factor == 1.0:
         return hitboxes
-    return tuple(
-        replace(hb, damage=hb.damage * factor)
-        for hb in hitboxes
-    )
+    return tuple(replace(hb, damage=hb.damage * factor) for hb in hitboxes)
 
 
 def angle_smash_hitboxes(hitboxes, angle):

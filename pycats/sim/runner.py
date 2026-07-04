@@ -2,6 +2,7 @@
 """Headless deterministic battle runner. Drives the exact real per-frame loop
 (game.py:702-709) from a scripted input timeline through the statechart engine,
 producing per-frame snapshots for golden checks and benchmarking."""
+
 from __future__ import annotations
 
 import os
@@ -39,28 +40,50 @@ from .input_script import default_timeline  # noqa: E402
 # `tuple` subclass, so `golden_util._to_list` serialises it byte-identically (no
 # golden regen) and existing positional readers keep working. The field ORDER here
 # IS the golden layout; `test_snapshot_layout` guards it against drift.
-PlayerSnap = namedtuple("PlayerSnap", (
-    "name state rect_x rect_y vel_x vel_y on_ground percent shield_hp lives is_alive "
-    "jumps_remaining dodge_timer hurt_timer stun_timer attack_timer invulnerable_timer "
-    "facing_right invulnerable defensive_status move_frame"
-))
+PlayerSnap = namedtuple(
+    "PlayerSnap",
+    (
+        "name state rect_x rect_y vel_x vel_y on_ground percent shield_hp lives is_alive "
+        "jumps_remaining dodge_timer hurt_timer stun_timer attack_timer invulnerable_timer "
+        "facing_right invulnerable defensive_status move_frame"
+    ),
+)
 
-P1_KEYS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-               attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-P2_KEYS = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP,
-               down=pygame.K_DOWN, attack=pygame.K_SLASH, special=pygame.K_PERIOD,
-               shield=pygame.K_COMMA)
+P1_KEYS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+P2_KEYS = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_SLASH,
+    special=pygame.K_PERIOD,
+    shield=pygame.K_COMMA,
+)
 KEYMAPS = [P1_KEYS, P2_KEYS]
 
 
 def build_stage():
     return [
-        Platform(pygame.Rect(THICK_PLAT_DICT["x"], THICK_PLAT_DICT["y"],
-                             THICK_PLAT_DICT["w"], THICK_PLAT_DICT["h"]), thin=False),
-        Platform(pygame.Rect(THIN_PLAT_DICT_L["x"], THIN_PLAT_DICT_L["y"],
-                             THIN_PLAT_DICT_L["w"], THIN_PLAT_DICT_L["h"]), thin=True),
-        Platform(pygame.Rect(THIN_PLAT_DICT_R["x"], THIN_PLAT_DICT_R["y"],
-                             THIN_PLAT_DICT_R["w"], THIN_PLAT_DICT_R["h"]), thin=True),
+        Platform(
+            pygame.Rect(THICK_PLAT_DICT["x"], THICK_PLAT_DICT["y"], THICK_PLAT_DICT["w"], THICK_PLAT_DICT["h"]),
+            thin=False,
+        ),
+        Platform(
+            pygame.Rect(THIN_PLAT_DICT_L["x"], THIN_PLAT_DICT_L["y"], THIN_PLAT_DICT_L["w"], THIN_PLAT_DICT_L["h"]),
+            thin=True,
+        ),
+        Platform(
+            pygame.Rect(THIN_PLAT_DICT_R["x"], THIN_PLAT_DICT_R["y"], THIN_PLAT_DICT_R["w"], THIN_PLAT_DICT_R["h"]),
+            thin=True,
+        ),
     ]
 
 
@@ -73,12 +96,26 @@ def build_players(p1_char=None, p2_char=None):
     c2 = CAT_CHARACTERS["tabby"]
     fd1 = load_fighter_data(p1_char) if p1_char else None
     fd2 = load_fighter_data(p2_char) if p2_char else None
-    p1 = Player(PLAYER1_START_X, PLAYER1_START_Y, P1_KEYS, c1["color"],
-                eye_color=c1["eye_color"], char_name="P1", facing_right=True,
-                fighter_data=fd1)
-    p2 = Player(PLAYER2_START_X, PLAYER2_START_Y, P2_KEYS, c2["color"],
-                eye_color=c2["eye_color"], char_name="P2", facing_right=False,
-                fighter_data=fd2)
+    p1 = Player(
+        PLAYER1_START_X,
+        PLAYER1_START_Y,
+        P1_KEYS,
+        c1["color"],
+        eye_color=c1["eye_color"],
+        char_name="P1",
+        facing_right=True,
+        fighter_data=fd1,
+    )
+    p2 = Player(
+        PLAYER2_START_X,
+        PLAYER2_START_Y,
+        P2_KEYS,
+        c2["color"],
+        eye_color=c2["eye_color"],
+        char_name="P2",
+        facing_right=False,
+        fighter_data=fd2,
+    )
     p1.stripe_color = c1["stripe_color"]
     p2.stripe_color = c2["stripe_color"]
     return p1, p2, pygame.sprite.Group(p1, p2)
@@ -89,27 +126,60 @@ def snapshot(players, attacks, match):
     for p in players:
         # #322/B-b: a PlayerSnap namedtuple (field ORDER unchanged) — serialises
         # byte-identically and lets the oracle/tests read by name.
-        parts.append(PlayerSnap(
-            p.char_name, p.state, p.rect.x, p.rect.y,
-            round(p.fighter.vel.x, 6), round(p.fighter.vel.y, 6), p.fighter.on_ground,
-            round(p.fighter.percent, 6), round(p.fighter.shield_hp, 6), p.fighter.lives, p.fighter.is_alive,
-            p.fighter.jumps_remaining, p.fighter.dodge_timer, p.fighter.hurt_timer, p.fighter.stun_timer,
-            p.attack_timer, p.fighter.invulnerable_timer, p.fighter.facing_right, p.fighter.invulnerable,
-            # Task 6: new observable state fields (appended to preserve existing indices)
-            p.defensive_status,
-            p.move_frame,
-        ))
-    atk = tuple(sorted(
-        (a.rect.x, a.rect.y, a.frames_left, a.owner.char_name, a.active,
-         round(a.hit_cx, 6), round(a.hit_cy, 6), round(a.hit_r, 6))
-        for a in attacks
-    ))
+        parts.append(
+            PlayerSnap(
+                p.char_name,
+                p.state,
+                p.rect.x,
+                p.rect.y,
+                round(p.fighter.vel.x, 6),
+                round(p.fighter.vel.y, 6),
+                p.fighter.on_ground,
+                round(p.fighter.percent, 6),
+                round(p.fighter.shield_hp, 6),
+                p.fighter.lives,
+                p.fighter.is_alive,
+                p.fighter.jumps_remaining,
+                p.fighter.dodge_timer,
+                p.fighter.hurt_timer,
+                p.fighter.stun_timer,
+                p.attack_timer,
+                p.fighter.invulnerable_timer,
+                p.fighter.facing_right,
+                p.fighter.invulnerable,
+                # Task 6: new observable state fields (appended to preserve existing indices)
+                p.defensive_status,
+                p.move_frame,
+            )
+        )
+    atk = tuple(
+        sorted(
+            (
+                a.rect.x,
+                a.rect.y,
+                a.frames_left,
+                a.owner.char_name,
+                a.active,
+                round(a.hit_cx, 6),
+                round(a.hit_cy, 6),
+                round(a.hit_r, 6),
+            )
+            for a in attacks
+        )
+    )
     return (tuple(parts), atk, match.phase, match.winner)
 
 
-def run_battle(frames=None, frame_inputs=None, presenter=None,
-               controller=None, stop_on_match_over=False, controllers=None,
-               p1_char=None, p2_char=None):
+def run_battle(
+    frames=None,
+    frame_inputs=None,
+    presenter=None,
+    controller=None,
+    stop_on_match_over=False,
+    controllers=None,
+    p1_char=None,
+    p2_char=None,
+):
     """Run the headless battle.
 
     Inputs come from `controller(p1, p2, frame) -> InputFrame` when given,
@@ -145,10 +215,7 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
             # and apply — so neither sees the other's mutation mid-frame.
             # #254: pass the live `attacks` group (frame-start state — opponent
             # hitboxes/projectiles still alive) so threat-aware policies can react.
-            fi = merge_frames(
-                c(p1, p2, f, attacks) if c is not None else _empty_frame()
-                for c in controllers
-            )
+            fi = merge_frames(c(p1, p2, f, attacks) if c is not None else _empty_frame() for c in controllers)
         elif controller is not None:
             fi = controller(p1, p2, f, attacks, ledges)  # ledges: AI edge-hog (#404)
         else:
@@ -171,4 +238,5 @@ def run_battle(frames=None, frame_inputs=None, presenter=None,
 
 def _empty_frame():
     from ..core.input import InputFrame
+
     return InputFrame(held=set(), pressed=set(), released=set())

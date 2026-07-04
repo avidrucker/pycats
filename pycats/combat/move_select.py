@@ -18,24 +18,20 @@ Direction tokens (computed by the caller from raw input + facing):
   "neutral", "up", "down", "forward" (toward facing), "back" (away from facing).
 On the ground "forward"/"back" both resolve to the f-tilt (Smash has no b-tilt).
 """
+
 from __future__ import annotations
 
 # Canonical key per (direction, on_ground, is_special). Forward/back collapse to
 # ftilt on the ground; in the air they split fair/bair.
-_GROUND_A = {"neutral": "jab", "up": "utilt", "down": "dtilt",
-             "forward": "ftilt", "back": "ftilt"}
-_AIR_A = {"neutral": "nair", "up": "uair", "down": "dair",
-          "forward": "fair", "back": "bair"}
-_SPECIAL = {"neutral": "neutral_b", "up": "up_b", "down": "down_b",
-            "forward": "side_b", "back": "side_b"}
+_GROUND_A = {"neutral": "jab", "up": "utilt", "down": "dtilt", "forward": "ftilt", "back": "ftilt"}
+_AIR_A = {"neutral": "nair", "up": "uair", "down": "dair", "forward": "fair", "back": "bair"}
+_SPECIAL = {"neutral": "neutral_b", "up": "up_b", "down": "down_b", "forward": "side_b", "back": "side_b"}
 # Smash (#331, slice 1 of #327): ground-only. No neutral smash and no back-smash
 # in Smash — neutral collapses to forward, back is a turnaround f-smash.
-_SMASH = {"neutral": "fsmash", "forward": "fsmash", "back": "fsmash",
-          "up": "usmash", "down": "dsmash"}
+_SMASH = {"neutral": "fsmash", "forward": "fsmash", "back": "fsmash", "up": "usmash", "down": "dsmash"}
 
 
-def select_move_key(direction: str, on_ground: bool, is_special: bool,
-                    is_smash: bool = False) -> str:
+def select_move_key(direction: str, on_ground: bool, is_special: bool, is_smash: bool = False) -> str:
     """Canonical move key for an input context (no fallback). `direction` is one
     of neutral/up/down/forward/back. `is_smash` (ground-only) takes precedence
     over the normal A / special maps."""
@@ -46,8 +42,7 @@ def select_move_key(direction: str, on_ground: bool, is_special: bool,
     return (_GROUND_A if on_ground else _AIR_A)[direction]
 
 
-def resolve_move_key(available, direction: str, on_ground: bool,
-                     is_special: bool, is_smash: bool = False):
+def resolve_move_key(available, direction: str, on_ground: bool, is_special: bool, is_smash: bool = False):
     """The move key to actually play, or None if nothing applies.
 
     Prefers the canonical key; if the character doesn't define it, falls back:

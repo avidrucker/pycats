@@ -34,9 +34,9 @@ MAX_FALL_SPEED = 13
 # measured PM values (see docs/research/2026-06-30-nalio-fireball-*.md). Per-move
 # overridable via projectile_gravity/_restitution/_max_bounces; these are the
 # shared fallbacks used by Projectile.__init__ and the Player spawn path.
-PROJECTILE_GRAVITY = 0.5       # px/frame² downward accel
-PROJECTILE_RESTITUTION = 0.6   # vertical energy kept per bounce (<1)
-PROJECTILE_MAX_BOUNCES = 3     # bounces before despawn
+PROJECTILE_GRAVITY = 0.5  # px/frame² downward accel
+PROJECTILE_RESTITUTION = 0.6  # vertical energy kept per bounce (<1)
+PROJECTILE_MAX_BOUNCES = 3  # bounces before despawn
 MOVE_SPEED = 6
 # Walk/dash/run layer (#388, design #374). MOVE_SPEED is the WALK (≈PM Mario walk
 # 1.1u ×5.4 ≈ 5.9px). DASH is the faster tap-burst (≈Mario dash 1.5u ×5.4 ≈ 8.1px).
@@ -71,7 +71,7 @@ HURT_TIME = 12
 # SHORTER stun (inverse of every other stun). See combat.shield and
 # docs/research/brawl-projectm-fighter-states.md.
 SHIELD_BREAK_STUN_MAX = 490  # frames at 0% damage
-SHIELD_BREAK_STUN_MIN = 90   # frames at >= 400% damage
+SHIELD_BREAK_STUN_MIN = 90  # frames at >= 400% damage
 # Shieldstun (#140): a blocked hit locks the defender in shield for
 # floor(damage * SHIELDSTUN_FACTOR) frames. SmashWiki Shieldstun / the project
 # roadmap (pm-mechanics-implementation-analysis.md): Brawl/PM factor 0.345.
@@ -90,8 +90,8 @@ SMASH_CHARGE_SCALE = 1.4
 # Angleable f-smash (#327 slice 4): a forward smash held with up/down aims the swing.
 # The angled variant REPLACES the fsmash hitboxes' launch angle with these literals
 # (facing-right-relative degrees: 0=forward, 90=up, 270=down). ⚠ playtest.
-FSMASH_ANGLE_UP = 50      # up-forward (anti-air / juggle)
-FSMASH_ANGLE_DOWN = 330   # down-forward = -30° (edgeguard poke)
+FSMASH_ANGLE_UP = 50  # up-forward (anti-air / juggle)
+FSMASH_ANGLE_DOWN = 330  # down-forward = -30° (edgeguard poke)
 # Data-authoring scale (#195, operationalizes #120): pycats authors combat data in
 # raw Smash *units* and scales SPATIAL values (hitbox radii/offsets) to pixels by this
 # factor. Named here so the px↔unit boundary is single-sourced + greppable, and so the
@@ -122,18 +122,18 @@ WAVEDASH_LANDING_LAG = 10
 
 # Ledge-hang (#14). ⚠ playtest starting points (no published PM px values; pycats
 # scale). The catch region is a box hanging off a solid-stage corner.
-LEDGE_CATCH_W = 24    # px outward from the edge corner the catch box spans
-LEDGE_CATCH_H = 64    # px downward from the lip the catch box spans
-LEDGE_HANG_FRAMES = 120          # ~2s @60fps before auto-release (timeout)
+LEDGE_CATCH_W = 24  # px outward from the edge corner the catch box spans
+LEDGE_CATCH_H = 64  # px downward from the lip the catch box spans
+LEDGE_HANG_FRAMES = 120  # ~2s @60fps before auto-release (timeout)
 LEDGE_REGRAB_LOCKOUT_FRAMES = 30  # post-release frames grab is suppressed
 # True PM edge-hog (#311, grounded by #297): the ledge-grab intangibility is a
 # short percent-scaled burst (Brawl ~23f baseline, scaling up with the occupant's
 # percent) — replacing #14's flat full-hang intangibility. A hog succeeds once the
 # occupant's burst lapses (percent-gated timing). ⚠ playtest curve (per-char later
 # via #117); registered with #233.
-LEDGE_INVULN_BASE_FRAMES = 23    # intangibility burst at 0% (Brawl baseline)
-LEDGE_INVULN_PER_PERCENT = 0.3   # additional intangibility frames per 1% damage
-LEDGE_INVULN_MAX_FRAMES = 60     # cap on the burst (~1s @60fps)
+LEDGE_INVULN_BASE_FRAMES = 23  # intangibility burst at 0% (Brawl baseline)
+LEDGE_INVULN_PER_PERCENT = 0.3  # additional intangibility frames per 1% damage
+LEDGE_INVULN_MAX_FRAMES = 60  # cap on the burst (~1s @60fps)
 # Neutral ledge-getup climb window (#311): getup is no longer instant — the fighter
 # climbs for this many frames; the edge frees to others at ~half (half-animation
 # regrab), and the climber snaps onto the stage when it closes. ⚠ playtest.
@@ -166,8 +166,8 @@ MIN_SHIELD_RADIUS = 10
 # Authentic Brawl/PM knockback feeds these. The formula lives in
 # pycats/combat/knockback.py; per-hitbox BKB/KBG and fighter weight are the
 # per-move/character inputs.
-HITSTUN_MULTIPLIER = 0.4   # hitstun_frames = floor(KB * this). ⚠🔬 verify (Brawl/PM ~0.4).
-HITSTUN_FLOOR = 1          # minimum hitstun frames for any clean hit. ⚠🔬 tuning, not sourced.
+HITSTUN_MULTIPLIER = 0.4  # hitstun_frames = floor(KB * this). ⚠🔬 verify (Brawl/PM ~0.4).
+HITSTUN_FLOOR = 1  # minimum hitstun frames for any clean hit. ⚠🔬 tuning, not sourced.
 # Hitlag / freeze frames (#138). SmashWiki Hitlag (Brawl onward):
 # floor((d * HITLAG_DAMAGE_FACTOR + HITLAG_BASE) * h * e) * c, capped at HITLAG_CAP.
 # This slice uses h = e = c = 1 (per-move/electric/crouch-cancel multipliers are
@@ -175,7 +175,7 @@ HITSTUN_FLOOR = 1          # minimum hitstun frames for any clean hit. ⚠🔬 t
 # hit, then the knockback slide proceeds.
 HITLAG_DAMAGE_FACTOR = 0.3846154
 HITLAG_BASE = 5
-HITLAG_CAP = 30            # Brawl-onward cap (Melee was 20).
+HITLAG_CAP = 30  # Brawl-onward cap (Melee was 20).
 # Knockback decay model (#44, from #43 research). A hit sets an initial launch
 # velocity of KB * KNOCKBACK_LAUNCH_FACTOR (px/frame), which then bleeds off by
 # KNOCKBACK_DECAY (px/frame) every frame during hitstun — mirroring Smash's
@@ -212,8 +212,8 @@ CROUCH_CANCEL_FACTOR = 0.67
 # the same MAX_FALL_SPEED but with hurt_timer == 0); the velocity threshold filters
 # out gentle pops. Teching (a tech input window that cancels the knockdown) is out
 # of scope — #146 sibling. ⚠🔬 tuning starting points, not sourced — playtest.
-KNOCKDOWN_VY_THRESHOLD = 8.0   # downward impact speed (px/frame); MAX_FALL_SPEED is 13
-KNOCKDOWN_PRONE_FRAMES = 30    # getup window the auto-knockdown sets (~0.5s @ 60 FPS)
+KNOCKDOWN_VY_THRESHOLD = 8.0  # downward impact speed (px/frame); MAX_FALL_SPEED is 13
+KNOCKDOWN_PRONE_FRAMES = 30  # getup window the auto-knockdown sets (~0.5s @ 60 FPS)
 # Getup-roll (#146): a directional getup out of `prone` — holding left/right as the
 # getup window ends rolls that way with intangibility, instead of a neutral stand.
 # The roll lasts GETUP_ROLL_FRAMES (= its intangibility window) and sets an initial
@@ -409,17 +409,17 @@ MENU_SELECT_COOLDOWN = 20
 # scattered as literals across the render/game/text-util modules are gathered here.
 # NOTE: cat_faces._MONO_SIZE is deliberately NOT centralised — it is a monospace
 # FACE-render size (tuned to the ASCII face art), not a UI text size.
-STATUS_BAR_SECONDS_SIZE = 16   # above-head timer-bar seconds / percent readout (#111/#334)
-STATUS_BAR_LABEL_SIZE = 12     # above-head timer-bar word label (#334)
-GAME_HUD_FONT_SIZE = 24        # the shared in-game HUD font (game.py)
-TEXT_PROBE_SIZE = 16           # glyph-support probe / measurement fonts (text_utils)
+STATUS_BAR_SECONDS_SIZE = 16  # above-head timer-bar seconds / percent readout (#111/#334)
+STATUS_BAR_LABEL_SIZE = 12  # above-head timer-bar word label (#334)
+GAME_HUD_FONT_SIZE = 24  # the shared in-game HUD font (game.py)
+TEXT_PROBE_SIZE = 16  # glyph-support probe / measurement fonts (text_utils)
 
 # Font-scale scalar (#345): a global multiplier over every font size above, chosen
 # from the Options menu. Applied at the text_utils font chokepoint (runtime_settings
 # .scaled_font_size); "standard" (1.0) is an exact identity, so the default render is
 # byte-identical. MIN_FONT_PX clamps a scaled-down size so it never rounds to 0.
 FONT_SCALES = {"small": 0.5, "standard": 1.0, "large": 2.0}
-FONT_SCALE_ORDER = ("small", "standard", "large")   # Options-menu cycle order
+FONT_SCALE_ORDER = ("small", "standard", "large")  # Options-menu cycle order
 FONT_SCALE_NAMES = {"small": "Small", "standard": "Standard", "large": "Large"}
 MIN_FONT_PX = 6
 

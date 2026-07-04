@@ -5,6 +5,7 @@ One source of truth shared by the headless `match_engine` (via `winner_index`)
 and the live `game.check_win_condition` (via `winner_loser`). Pure — depends only
 on each player's `.lives`.
 """
+
 from __future__ import annotations
 
 

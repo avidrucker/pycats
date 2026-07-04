@@ -13,7 +13,9 @@ class _DropThrough(Protocol):
     """A drop-through platform token — the physics only reads its `.rect`. Typed
     structurally so the core stays Sprite-free (ADR-0004 / #339): it needs a
     thing-with-a-rect, not pygame's Sprite."""
+
     rect: pg.Rect
+
 
 # Read tuning constants from config once
 from ..config import (
@@ -25,14 +27,13 @@ from ..config import (
 )
 
 # Physics thresholds (#446: named from inline literals).
-VEL_DEADZONE = 0.05         # |vel.x| below this snaps to 0 after friction (dead-zone)
+VEL_DEADZONE = 0.05  # |vel.x| below this snaps to 0 after friction (dead-zone)
 COLLISION_PUSH_SPLIT = 0.5  # a one-sided push shares speed: both move at half the pusher's
 
 # ------------------------------------------------------------------ vertical
 
 
-def apply_gravity(vel: pg.Vector2, gravity: float = GRAVITY,
-                  max_fall_speed: float = MAX_FALL_SPEED) -> pg.Vector2:
+def apply_gravity(vel: pg.Vector2, gravity: float = GRAVITY, max_fall_speed: float = MAX_FALL_SPEED) -> pg.Vector2:
     """
     Add gravity but never let velocity exceed max_fall_speed.
     Returns the *same* Vector2 (mutated) for chaining.
@@ -133,9 +134,7 @@ def solve_horizontal(actor: pg.Rect, vel: pg.Vector2, platforms) -> pg.Vector2:
 # ----------------------------------------------------------------- horizontal
 
 
-def apply_horizontal_friction(
-    vel: pg.Vector2, on_ground: bool, factor_ground: float = GROUND_FRICTION
-) -> pg.Vector2:
+def apply_horizontal_friction(vel: pg.Vector2, on_ground: bool, factor_ground: float = GROUND_FRICTION) -> pg.Vector2:
     """
     Multiply vel.x by ground- or air-friction factor.
     """
@@ -235,9 +234,7 @@ def find_current_platform(actor_rect: pg.Rect, platforms):
     return None
 
 
-def would_dodge_off_platform(
-    actor_rect: pg.Rect, dodge_velocity: float, current_platform
-) -> bool:
+def would_dodge_off_platform(actor_rect: pg.Rect, dodge_velocity: float, current_platform) -> bool:
     """
     Check if a dodge with the given velocity would take the actor off their current platform.
 

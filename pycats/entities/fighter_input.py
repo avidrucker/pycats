@@ -10,6 +10,7 @@ This is the designated home for #67's B/special move routing (the attack branch
 in handle_actions). Behaviour is verbatim the old Player methods, minus three
 shipped DEBUG print() calls.
 """
+
 from __future__ import annotations
 
 from ..combat.move_select import resolve_move_key
@@ -41,12 +42,16 @@ class FighterInput:
             self._pressed(keys, "left"),
             self._pressed(keys, "right"),
             locked=p.state
-            in ("shield", "crouch", "helpless", "smash_charge"),  # no walking while shielding/crouching (#124), helpless (#184), or charging a smash (#327/3a)
+            in (
+                "shield",
+                "crouch",
+                "helpless",
+                "smash_charge",
+            ),  # no walking while shielding/crouching (#124), helpless (#184), or charging a smash (#327/3a)
             # #388 (slice 2a): during the initial-dash burst, held movement is at
             # `dash_speed`, not walk speed. dash_timer is 0 in the default path, so
             # this is walk speed everywhere until slice 2b's double-tap starts a dash.
-            move_speed=(p.fighter.dash_speed if p.fighter.dash_timer > 0
-                        else p.fighter.move_speed),
+            move_speed=(p.fighter.dash_speed if p.fighter.dash_timer > 0 else p.fighter.move_speed),
         )
 
     def _maybe_start_dash(self, held, pressed):
@@ -67,19 +72,23 @@ class FighterInput:
         p, f = self._p, self._p.fighter
         left = self._pressed(pressed, "left")
         right = self._pressed(pressed, "right")
-        if left == right:            # neither pressed, or both: no directional edge
+        if left == right:  # neither pressed, or both: no directional edge
             return
         direction = 1 if right else -1
-        if not (f.on_ground and f.dash_timer == 0
-                and f.hurt_timer == 0 and f.stun_timer == 0
-                and not self._pressed(held, "shield")
-                and p.state in ("idle", "walk")):
+        if not (
+            f.on_ground
+            and f.dash_timer == 0
+            and f.hurt_timer == 0
+            and f.stun_timer == 0
+            and not self._pressed(held, "shield")
+            and p.state in ("idle", "walk")
+        ):
             return
         if f.dash_input_window > 0 and f.dash_input_dir == direction:
-            f._start_dash(direction)          # double-tap → burst
+            f._start_dash(direction)  # double-tap → burst
             f.dash_input_window = 0
             f.dash_input_dir = 0
-        else:                                 # first tap (or a new direction): arm
+        else:  # first tap (or a new direction): arm
             f.dash_input_window = DOUBLE_TAP_WINDOW
             f.dash_input_dir = direction
 
@@ -96,8 +105,7 @@ class FighterInput:
         if horiz:
             toward_facing = right if p.fighter.facing_right else left
             direction = "forward" if toward_facing else "back"
-            angle_dir = ("up" if self._pressed(held, "up")
-                         else "down" if self._pressed(held, "down") else None)
+            angle_dir = "up" if self._pressed(held, "up") else "down" if self._pressed(held, "down") else None
             return direction, angle_dir
         # no horizontal -> pure vertical / neutral -> u/d-smash via the normal token
         return self._move_direction(held), None
@@ -123,9 +131,7 @@ class FighterInput:
     def handle_actions(self, input_frame, attack_group):
         p = self._p
         held = input_frame.held
-        pressed = (
-            input_frame.pressed
-        )  # formerly prev_keys, refers to keys just freshly pressed this frame
+        pressed = input_frame.pressed  # formerly prev_keys, refers to keys just freshly pressed this frame
 
         # ------- Smash charge (#327 slice 3a): hold to charge, release to fire ---
         # While a chargeable smash is being charged (pending_smash_key set, the
@@ -145,7 +151,7 @@ class FighterInput:
                 p._clock.start(p.fighter_data.moves[f.pending_smash_key])
                 f.record_attack_made()
                 f.cancel_smash_charge()
-            return False   # rooted while charging; no other action this frame
+            return False  # rooted while charging; no other action this frame
 
         # ------- Double-tap dash (#388 slice 2b, #403) ------------
         # A fast double-tap of one direction fires the dash burst (_start_dash,
@@ -207,19 +213,18 @@ class FighterInput:
             # Wavedash (#202): in the AIR, shield+down WITH a horizontal direction is
             # not a spot dodge but a diagonal-down air dodge — fall through to the
             # L/R branches (which set dir_y below). The ground spot dodge is unchanged.
-            if (shield_pressed and down_input
-                    and not (airborne
-                             and (self._pressed(pressed, "left")
-                                  or self._pressed(pressed, "right")))):
+            if (
+                shield_pressed
+                and down_input
+                and not (airborne and (self._pressed(pressed, "left") or self._pressed(pressed, "right")))
+            ):
                 dir_x = 0  # spot dodge
             elif shield_pressed and self._pressed(pressed, "left"):
                 dir_x = -1  # left dodge
             elif shield_pressed and self._pressed(pressed, "right"):
                 dir_x = 1  # right dodge
             # Priority 2: Check if shield is *just* pressed for air dodge or momentum dodge
-            elif (
-                shield_pressed and not can_modify_air_dodge
-            ):  # Don't allow shield-only during air dodge modification
+            elif shield_pressed and not can_modify_air_dodge:  # Don't allow shield-only during air dodge modification
                 if not p.fighter.on_ground:
                     dir_x = 0  # air dodge without direction pressed
                 elif abs(p.fighter.vel.x) > 0.1:
@@ -280,8 +285,7 @@ class FighterInput:
         # is a no-op this slice (no air-smash). `_pressed` is binding-tolerant, so
         # control maps without "smash" (the sim keymaps) simply never smash.
         ground_smash = self._pressed(pressed, "smash") and p.fighter.on_ground
-        if ((atk_pressed or sp_pressed or ground_smash)
-                and p.state not in ("shield", "dodge", "helpless")):
+        if (atk_pressed or sp_pressed or ground_smash) and p.state not in ("shield", "dodge", "helpless"):
             # Map (direction × ground/air × A-vs-B-vs-smash) -> a move key, falling
             # back to whatever the character defines (#143). Data-driven (Task 4 /
             # #71): start the move clock; the hitbox spawns later in update() when
@@ -297,8 +301,7 @@ class FighterInput:
                 direction, angle_dir = self._smash_direction_and_angle(held)
             else:
                 direction, angle_dir = self._move_direction(held), None
-            key = resolve_move_key(p.fighter_data.moves, direction,
-                                   p.fighter.on_ground, is_special, is_smash)
+            key = resolve_move_key(p.fighter_data.moves, direction, p.fighter.on_ground, is_special, is_smash)
             if key is not None:
                 move = p.fighter_data.moves[key]
                 # Capture the aimed angle only when the smash resolves to a real

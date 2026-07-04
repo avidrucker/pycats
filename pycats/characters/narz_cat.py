@@ -16,6 +16,7 @@ This slice authors **no moves** — `hurtbox`, `moves`, and crouch/prone geometr
 default cat as ⚠ placeholders, so Narz differs from the default *only* in the three scalars.
 Narz's disjoint/tipper moves arrive one slice at a time under #294.
 """
+
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
 from pycats.combat.data import Circle, FighterData, Hitbox, MoveData
 
@@ -36,11 +37,9 @@ _NARZ_FTILT = MoveData(
     recovery=21,  # 6 + 3 + 21 = 30 (PM3.6 total / IASA)
     hitboxes=(
         # TIP (box 0, highest priority): far + strong — the spacing/KO hit.
-        Hitbox(circle=Circle(dx=72, dy=30, r=12), damage=13.0, angle=361,
-               base_knockback=30.0, knockback_growth=80.0),
+        Hitbox(circle=Circle(dx=72, dy=30, r=12), damage=13.0, angle=361, base_knockback=30.0, knockback_growth=80.0),
         # BASE (box 1): near the body + weak — the punished close hit.
-        Hitbox(circle=Circle(dx=48, dy=30, r=14), damage=10.0, angle=361,
-               base_knockback=18.0, knockback_growth=55.0),
+        Hitbox(circle=Circle(dx=48, dy=30, r=14), damage=10.0, angle=361, base_knockback=18.0, knockback_growth=55.0),
     ),
 )
 
@@ -57,8 +56,7 @@ _NARZ_JAB = MoveData(
     active=2,
     recovery=8,  # 4 + 2 + 8 = 14 (fast poke)
     hitboxes=(
-        Hitbox(circle=Circle(dx=58, dy=28, r=10), damage=4.0, angle=361,
-               base_knockback=15.0, knockback_growth=30.0),
+        Hitbox(circle=Circle(dx=58, dy=28, r=10), damage=4.0, angle=361, base_knockback=15.0, knockback_growth=30.0),
     ),
 )
 
@@ -76,11 +74,9 @@ _NARZ_DTILT = MoveData(
     recovery=13,  # 5 + 2 + 13 = 20
     hitboxes=(
         # TIP (box 0): far + low + strong.
-        Hitbox(circle=Circle(dx=66, dy=46, r=10), damage=9.0, angle=30,
-               base_knockback=20.0, knockback_growth=70.0),
+        Hitbox(circle=Circle(dx=66, dy=46, r=10), damage=9.0, angle=30, base_knockback=20.0, knockback_growth=70.0),
         # BASE (box 1): near + low + weak.
-        Hitbox(circle=Circle(dx=44, dy=48, r=12), damage=7.0, angle=30,
-               base_knockback=12.0, knockback_growth=50.0),
+        Hitbox(circle=Circle(dx=44, dy=48, r=12), damage=7.0, angle=30, base_knockback=12.0, knockback_growth=50.0),
     ),
 )
 
@@ -98,11 +94,9 @@ _NARZ_UTILT = MoveData(
     recovery=14,  # 6 + 3 + 14 = 23
     hitboxes=(
         # TIP (box 0): above the head + strong.
-        Hitbox(circle=Circle(dx=24, dy=-8, r=14), damage=12.0, angle=90,
-               base_knockback=25.0, knockback_growth=80.0),
+        Hitbox(circle=Circle(dx=24, dy=-8, r=14), damage=12.0, angle=90, base_knockback=25.0, knockback_growth=80.0),
         # BASE (box 1): head level + weak.
-        Hitbox(circle=Circle(dx=24, dy=8, r=12), damage=9.0, angle=90,
-               base_knockback=18.0, knockback_growth=60.0),
+        Hitbox(circle=Circle(dx=24, dy=8, r=12), damage=9.0, angle=90, base_knockback=18.0, knockback_growth=60.0),
     ),
 )
 
@@ -119,11 +113,9 @@ _NARZ_NAIR = MoveData(
     recovery=12,  # 4 + 4 + 12 = 20
     hitboxes=(
         # TIP (box 0): far + strong.
-        Hitbox(circle=Circle(dx=60, dy=30, r=12), damage=11.0, angle=45,
-               base_knockback=15.0, knockback_growth=90.0),
+        Hitbox(circle=Circle(dx=60, dy=30, r=12), damage=11.0, angle=45, base_knockback=15.0, knockback_growth=90.0),
         # BASE (box 1): near + weak.
-        Hitbox(circle=Circle(dx=40, dy=30, r=14), damage=8.0, angle=45,
-               base_knockback=10.0, knockback_growth=70.0),
+        Hitbox(circle=Circle(dx=40, dy=30, r=14), damage=8.0, angle=45, base_knockback=10.0, knockback_growth=70.0),
     ),
 )
 
@@ -140,11 +132,9 @@ _NARZ_FAIR = MoveData(
     recovery=16,  # 5 + 3 + 16 = 24
     hitboxes=(
         # TIP (box 0): farthest + strongest — the spacing wall.
-        Hitbox(circle=Circle(dx=70, dy=28, r=12), damage=12.0, angle=45,
-               base_knockback=15.0, knockback_growth=95.0),
+        Hitbox(circle=Circle(dx=70, dy=28, r=12), damage=12.0, angle=45, base_knockback=15.0, knockback_growth=95.0),
         # BASE (box 1): nearer + weaker.
-        Hitbox(circle=Circle(dx=46, dy=30, r=14), damage=9.0, angle=45,
-               base_knockback=10.0, knockback_growth=75.0),
+        Hitbox(circle=Circle(dx=46, dy=30, r=14), damage=9.0, angle=45, base_knockback=10.0, knockback_growth=75.0),
     ),
 )
 
@@ -162,11 +152,9 @@ _NARZ_BAIR = MoveData(
     recovery=15,  # 5 + 3 + 15 = 23
     hitboxes=(
         # TIP (box 0): farthest-behind + strongest (the KO tip).
-        Hitbox(circle=Circle(dx=-64, dy=28, r=12), damage=13.0, angle=45,
-               base_knockback=18.0, knockback_growth=90.0),
+        Hitbox(circle=Circle(dx=-64, dy=28, r=12), damage=13.0, angle=45, base_knockback=18.0, knockback_growth=90.0),
         # BASE (box 1): nearer-behind + weaker.
-        Hitbox(circle=Circle(dx=-42, dy=30, r=14), damage=9.0, angle=45,
-               base_knockback=10.0, knockback_growth=70.0),
+        Hitbox(circle=Circle(dx=-42, dy=30, r=14), damage=9.0, angle=45, base_knockback=10.0, knockback_growth=70.0),
     ),
 )
 
@@ -183,11 +171,9 @@ _NARZ_UAIR = MoveData(
     recovery=14,  # 5 + 3 + 14 = 22
     hitboxes=(
         # TIP (box 0): above + strong.
-        Hitbox(circle=Circle(dx=22, dy=-10, r=14), damage=12.0, angle=90,
-               base_knockback=20.0, knockback_growth=90.0),
+        Hitbox(circle=Circle(dx=22, dy=-10, r=14), damage=12.0, angle=90, base_knockback=20.0, knockback_growth=90.0),
         # BASE (box 1): head level + weak.
-        Hitbox(circle=Circle(dx=22, dy=8, r=12), damage=9.0, angle=90,
-               base_knockback=12.0, knockback_growth=70.0),
+        Hitbox(circle=Circle(dx=22, dy=8, r=12), damage=9.0, angle=90, base_knockback=12.0, knockback_growth=70.0),
     ),
 )
 
@@ -206,11 +192,9 @@ _NARZ_DAIR = MoveData(
     recovery=16,  # 6 + 3 + 16 = 25
     hitboxes=(
         # TIP (box 0): farthest-below + strongest (the spike).
-        Hitbox(circle=Circle(dx=24, dy=76, r=12), damage=12.0, angle=270,
-               base_knockback=15.0, knockback_growth=80.0),
+        Hitbox(circle=Circle(dx=24, dy=76, r=12), damage=12.0, angle=270, base_knockback=15.0, knockback_growth=80.0),
         # BASE (box 1): nearer + weaker.
-        Hitbox(circle=Circle(dx=24, dy=56, r=14), damage=9.0, angle=270,
-               base_knockback=10.0, knockback_growth=60.0),
+        Hitbox(circle=Circle(dx=24, dy=56, r=14), damage=9.0, angle=270, base_knockback=10.0, knockback_growth=60.0),
     ),
 )
 
@@ -231,11 +215,9 @@ _NARZ_FSMASH = MoveData(
     recovery=31,  # 10 + 3 + 31 = 44 (PM3.6 total / IASA ballpark)
     hitboxes=(
         # TIP (box 0): farthest + strongest — the signature KO.
-        Hitbox(circle=Circle(dx=78, dy=30, r=12), damage=18.0, angle=361,
-               base_knockback=35.0, knockback_growth=95.0),
+        Hitbox(circle=Circle(dx=78, dy=30, r=12), damage=18.0, angle=361, base_knockback=35.0, knockback_growth=95.0),
         # BASE (box 1): near the body + weaker.
-        Hitbox(circle=Circle(dx=52, dy=30, r=14), damage=14.0, angle=361,
-               base_knockback=25.0, knockback_growth=72.0),
+        Hitbox(circle=Circle(dx=52, dy=30, r=14), damage=14.0, angle=361, base_knockback=25.0, knockback_growth=72.0),
     ),
 )
 
@@ -250,11 +232,9 @@ _NARZ_USMASH = MoveData(
     recovery=28,  # 9 + 3 + 28 = 40
     hitboxes=(
         # TIP (box 0): highest above the head + strongest.
-        Hitbox(circle=Circle(dx=22, dy=-16, r=12), damage=18.0, angle=90,
-               base_knockback=32.0, knockback_growth=95.0),
+        Hitbox(circle=Circle(dx=22, dy=-16, r=12), damage=18.0, angle=90, base_knockback=32.0, knockback_growth=95.0),
         # BASE (box 1): head level + weaker.
-        Hitbox(circle=Circle(dx=22, dy=6, r=14), damage=13.0, angle=90,
-               base_knockback=22.0, knockback_growth=72.0),
+        Hitbox(circle=Circle(dx=22, dy=6, r=14), damage=13.0, angle=90, base_knockback=22.0, knockback_growth=72.0),
     ),
 )
 
@@ -265,21 +245,49 @@ _NARZ_DSMASH = MoveData(
     in_air=False,
     chargeable=True,
     startup=5,
-    active=9,      # spans the front [6,7] + back [13,14] windows
-    recovery=20,   # 5 + 9 + 20 = 34
+    active=9,  # spans the front [6,7] + back [13,14] windows
+    recovery=20,  # 5 + 9 + 20 = 34
     hitboxes=(
         # FRONT TIP (box 0): far ahead, low + strong.
-        Hitbox(circle=Circle(dx=52, dy=48, r=12), damage=15.0, angle=361,
-               base_knockback=30.0, knockback_growth=80.0, active_start=6, active_end=7),
+        Hitbox(
+            circle=Circle(dx=52, dy=48, r=12),
+            damage=15.0,
+            angle=361,
+            base_knockback=30.0,
+            knockback_growth=80.0,
+            active_start=6,
+            active_end=7,
+        ),
         # FRONT BASE (box 1): nearer + weaker.
-        Hitbox(circle=Circle(dx=34, dy=48, r=14), damage=12.0, angle=361,
-               base_knockback=22.0, knockback_growth=65.0, active_start=6, active_end=7),
+        Hitbox(
+            circle=Circle(dx=34, dy=48, r=14),
+            damage=12.0,
+            angle=361,
+            base_knockback=22.0,
+            knockback_growth=65.0,
+            active_start=6,
+            active_end=7,
+        ),
         # BACK TIP (box 2): far behind, low + strong.
-        Hitbox(circle=Circle(dx=-52, dy=48, r=12), damage=13.0, angle=361,
-               base_knockback=28.0, knockback_growth=78.0, active_start=13, active_end=14),
+        Hitbox(
+            circle=Circle(dx=-52, dy=48, r=12),
+            damage=13.0,
+            angle=361,
+            base_knockback=28.0,
+            knockback_growth=78.0,
+            active_start=13,
+            active_end=14,
+        ),
         # BACK BASE (box 3): nearer-behind + weaker.
-        Hitbox(circle=Circle(dx=-34, dy=48, r=14), damage=10.0, angle=361,
-               base_knockback=20.0, knockback_growth=63.0, active_start=13, active_end=14),
+        Hitbox(
+            circle=Circle(dx=-34, dy=48, r=14),
+            damage=10.0,
+            angle=361,
+            base_knockback=20.0,
+            knockback_growth=63.0,
+            active_start=13,
+            active_end=14,
+        ),
     ),
 )
 
@@ -289,11 +297,21 @@ NARZ_FIGHTER_DATA = FighterData(
     # default "attack" ⚠ placeholder is kept as the neutral-A fallback. Other slots reuse
     # the default cat until their slices land (#294). Body still the default (#290 v1).
     hurtbox=_DEFAULT.hurtbox,
-    moves={**_DEFAULT.moves, "ftilt": _NARZ_FTILT, "jab": _NARZ_JAB,
-           "dtilt": _NARZ_DTILT, "utilt": _NARZ_UTILT, "nair": _NARZ_NAIR,
-           "fair": _NARZ_FAIR, "bair": _NARZ_BAIR, "uair": _NARZ_UAIR,
-           "dair": _NARZ_DAIR, "fsmash": _NARZ_FSMASH, "usmash": _NARZ_USMASH,
-           "dsmash": _NARZ_DSMASH},
+    moves={
+        **_DEFAULT.moves,
+        "ftilt": _NARZ_FTILT,
+        "jab": _NARZ_JAB,
+        "dtilt": _NARZ_DTILT,
+        "utilt": _NARZ_UTILT,
+        "nair": _NARZ_NAIR,
+        "fair": _NARZ_FAIR,
+        "bair": _NARZ_BAIR,
+        "uair": _NARZ_UAIR,
+        "dair": _NARZ_DAIR,
+        "fsmash": _NARZ_FSMASH,
+        "usmash": _NARZ_USMASH,
+        "dsmash": _NARZ_DSMASH,
+    },
     crouch_size=_DEFAULT.crouch_size,
     crouch_hurtbox=_DEFAULT.crouch_hurtbox,
     prone_size=_DEFAULT.prone_size,

@@ -7,6 +7,7 @@ choreography seam and is editable without touching any render code. The presente
 the captions active on each frame **over** the battle; nothing here touches the sim, so
 it is a presentation overlay only (golden-safe).
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -34,6 +35,7 @@ class Caption:
     = the frame to freeze on; None freezes the window start (the default), but a beat whose
     action lands late in its window can point it at the payoff frame so the frozen frame
     shows the action, not a pre-action pose. Must lie within `frames` (validated upstream)."""
+
     text: str
     anchor: str = BOTTOM_CENTER
     size: int = 36
@@ -60,9 +62,11 @@ def caption_hold_frames(captions: Sequence[Caption], frame: int) -> int:
     beat can freeze on the action instead of a pre-action pose. Returns the max dwell
     among captions holding on `frame` (0 = no hold). Untimed captions (no window) never
     hold — there is no frame window to anchor to."""
-    holds = [c.dwell for c in captions
-             if c.dwell and c.frames is not None
-             and (c.frames[0] if c.dwell_at is None else c.dwell_at) == frame]
+    holds = [
+        c.dwell
+        for c in captions
+        if c.dwell and c.frames is not None and (c.frames[0] if c.dwell_at is None else c.dwell_at) == frame
+    ]
     return max(holds) if holds else 0
 
 

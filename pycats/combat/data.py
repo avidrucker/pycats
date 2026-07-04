@@ -34,12 +34,14 @@ from ..config import DASH_SPEED, GRAVITY, JUMP_VEL, MAX_FALL_SPEED, MAX_JUMPS, M
 # Primitives
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class Circle:
     """A 2-D circle, offset (dx, dy) from the fighter origin, radius r.
 
     All values in pixels. Offsets are facing-RIGHT-relative.
     """
+
     dx: int
     dy: int
     r: int
@@ -70,6 +72,7 @@ class Hitbox:
                            (today's behavior). The hit still deals its `damage` %;
                            only the knockback is set.
     """
+
     circle: Circle
     damage: float
     angle: int
@@ -82,17 +85,12 @@ class Hitbox:
     def __post_init__(self) -> None:
         s, e = self.active_start, self.active_end
         if (s is None) != (e is None):
-            raise ValueError(
-                "Hitbox active_start/active_end must be set together "
-                f"(got start={s!r}, end={e!r})"
-            )
+            raise ValueError(f"Hitbox active_start/active_end must be set together (got start={s!r}, end={e!r})")
         if s is not None:
             if s < 1:
                 raise ValueError(f"Hitbox active_start {s} must be >= 1")
             if s > e:
-                raise ValueError(
-                    f"Hitbox window start {s} is after its end {e}"
-                )
+                raise ValueError(f"Hitbox window start {s} is after its end {e}")
 
 
 @dataclass(frozen=True)
@@ -109,6 +107,7 @@ class MoveData:
 
     Total move duration = startup + active + recovery frames.
     """
+
     name: str
     in_air: bool
     startup: int
@@ -145,8 +144,7 @@ class MoveData:
                 continue
             if hb.active_end > total:
                 raise ValueError(
-                    f"Hitbox window [{hb.active_start}, {hb.active_end}] exceeds "
-                    f"move '{self.name}' duration {total}"
+                    f"Hitbox window [{hb.active_start}, {hb.active_end}] exceeds move '{self.name}' duration {total}"
                 )
             prev_end = starts.get(hb.active_start)
             if prev_end is not None and prev_end != hb.active_end:
@@ -162,12 +160,14 @@ class MoveData:
 # Fighter-level data
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class Hurtbox:
     """The fighter's vulnerable body, represented as a tuple of Circles.
 
     Circles are in facing-RIGHT-relative coords; consumers mirror for left.
     """
+
     circles: tuple[Circle, ...]
 
 
@@ -201,6 +201,7 @@ class FighterData:
 
     The dict is not frozen; callers must not mutate it.
     """
+
     hurtbox: Hurtbox
     moves: dict[str, MoveData]
     weight: int = 100
@@ -227,6 +228,7 @@ class FighterData:
 # Loader seam
 # ---------------------------------------------------------------------------
 
+
 def load_fighter_data(character: str) -> FighterData:
     """Return FighterData for the named character.
 
@@ -244,15 +246,19 @@ def load_fighter_data(character: str) -> FighterData:
     """
     if character == "nalio":
         from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
+
         return NALIO_FIGHTER_DATA
     if character == "birky":
         from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA
+
         return BIRKY_FIGHTER_DATA
     if character == "narz":
         from pycats.characters.narz_cat import NARZ_FIGHTER_DATA
+
         return NARZ_FIGHTER_DATA
     # default cat for every other key (incl. the "P1"/"P2" sim path)
     from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+
     return DEFAULT_FIGHTER_DATA
 
 
@@ -270,7 +276,6 @@ GETUP_ATTACK = MoveData(
     active=3,
     recovery=14,
     hitboxes=(
-        Hitbox(circle=Circle(dx=28, dy=42, r=24), damage=8.0, angle=70,
-               base_knockback=40.0, knockback_growth=70.0),
+        Hitbox(circle=Circle(dx=28, dy=42, r=24), damage=8.0, angle=70, base_knockback=40.0, knockback_growth=70.0),
     ),
 )

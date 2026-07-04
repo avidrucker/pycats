@@ -37,8 +37,7 @@ if TYPE_CHECKING:
     from pycats.combat.data import Circle
 
 
-def circle_overlap(ax: float, ay: float, ar: float,
-                   bx: float, by: float, br: float) -> bool:
+def circle_overlap(ax: float, ay: float, ar: float, bx: float, by: float, br: float) -> bool:
     """Return True if two absolute circles overlap (touching counts as overlap).
 
     Uses squared-distance comparison to avoid sqrt.
@@ -59,9 +58,9 @@ def circle_overlap(ax: float, ay: float, ar: float,
     return dist_sq <= r_sum * r_sum
 
 
-def resolve_circle(circle: Circle,
-                   origin_x: float, origin_y: float,
-                   facing_right: bool, width: float) -> tuple[float, float, float]:
+def resolve_circle(
+    circle: Circle, origin_x: float, origin_y: float, facing_right: bool, width: float
+) -> tuple[float, float, float]:
     """Convert a facing-relative Circle to an absolute (cx, cy, r) triple.
 
     `dx`/`dy` are offsets from the fighter's top-left origin in
@@ -95,8 +94,7 @@ def resolve_circle(circle: Circle,
     return (cx, cy, circle.r)
 
 
-def circles_overlap(ax: float, ay: float, ar: float,
-                    circle_list_abs: list[tuple[float, float, float]]) -> bool:
+def circles_overlap(ax: float, ay: float, ar: float, circle_list_abs: list[tuple[float, float, float]]) -> bool:
     """Return True if circle (ax, ay, ar) overlaps ANY circle in circle_list_abs.
 
     This is the primary combat query: one hitbox circle vs a list of

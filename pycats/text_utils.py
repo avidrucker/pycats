@@ -113,13 +113,9 @@ class TextRenderer:
         # print("No good regular Unicode font found, trying emoji fonts...")
         for font_name in emoji_fonts:
             if font_name in available_fonts:
-                result = self._test_font_unicode_support(
-                    font_name, basic_chars + emoji_chars
-                )
+                result = self._test_font_unicode_support(font_name, basic_chars + emoji_chars)
 
-                if result["score"] >= len(
-                    basic_chars
-                ):  # At least the basic chars should work
+                if result["score"] >= len(basic_chars):  # At least the basic chars should work
                     # print(f"Using emoji font: {font_name} (rendered {result['score']}/{len(basic_chars + emoji_chars)} total chars)")
                     # print(f"Supported chars: {result['supported']}")
                     # print("WARNING: Emoji fonts may render very large characters")
@@ -204,9 +200,7 @@ class TextRenderer:
             # Test by comparing against known missing character
             try:
                 # Render a character that definitely doesn't exist
-                missing_char = font.render(
-                    "\ue000", True, (255, 255, 255)
-                )  # Private use area
+                missing_char = font.render("\ue000", True, (255, 255, 255))  # Private use area
                 missing_width = missing_char.get_width()
 
                 # If our character has the same width as the missing char and is very narrow,
@@ -251,18 +245,14 @@ class TextRenderer:
                 else:
                     # Try SysFont first
                     try:
-                        self.font_cache[cache_key] = pygame.font.SysFont(
-                            font_name, size
-                        )
+                        self.font_cache[cache_key] = pygame.font.SysFont(font_name, size)
                         ### print(f"Successfully loaded font: {font_name} at size {size}")
                     except Exception:
                         ### print(f"SysFont failed for {font_name}: {e}")
                         # Try finding font file path
                         font_path = pygame.font.match_font(font_name)
                         if font_path:
-                            self.font_cache[cache_key] = pygame.font.Font(
-                                font_path, size
-                            )
+                            self.font_cache[cache_key] = pygame.font.Font(font_path, size)
                             ### print(f"Successfully loaded font from path: {font_path} at size {size}")
                         else:
                             # Fall back to default font
@@ -294,15 +284,11 @@ class TextRenderer:
         elif self.unicode_font_name == "default":
             # Legacy format - assume all characters work
             unicode_font = regular_font
-            supported_chars = set(
-                ["►", "◄", "↑", "↓", "✓", "→", "←", "🐱", "🐈", "😸"]
-            )  # Assume basic set works
+            supported_chars = set(["►", "◄", "↑", "↓", "✓", "→", "←", "🐱", "🐈", "😸"])  # Assume basic set works
         elif self.unicode_font_name:
             # Legacy named font
             unicode_font = self._get_font(self.unicode_font_name, size)
-            supported_chars = set(
-                ["►", "◄", "↑", "↓", "✓", "→", "←"]
-            )  # Conservative assumption
+            supported_chars = set(["►", "◄", "↑", "↓", "✓", "→", "←"])  # Conservative assumption
         else:
             # No Unicode support available
             unicode_font = None
@@ -329,9 +315,7 @@ class TextRenderer:
 
         if not unicode_font:
             # No unicode font available, use simple fallback
-            return self.render_text_simple(
-                text, size, color, surface, position, center, unicode_fallback=True
-            )
+            return self.render_text_simple(text, size, color, surface, position, center, unicode_fallback=True)
 
         # Convert to string in case we get non-string input
         text = str(text)
@@ -339,9 +323,7 @@ class TextRenderer:
         # Compose once per (text, size, colour) and blit the cached surface — the
         # glyphs are non-overlapping side-by-side blits, so blitting the composed
         # SRCALPHA surface is byte-identical to blitting each glyph directly (#372).
-        composed = self._compose_mixed(
-            text, size, color, regular_font, unicode_font, supported_chars
-        )
+        composed = self._compose_mixed(text, size, color, regular_font, unicode_font, supported_chars)
         if composed is None:  # empty text
             return pygame.Rect(position[0], position[1], 0, 0)
 
@@ -364,19 +346,21 @@ class TextRenderer:
             # No unicode font: render the ASCII-substituted text and center it.
             fallback = (
                 str(text)
-                .replace("►", ">").replace("◄", "<")
-                .replace("↑", "^").replace("↓", "v")
-                .replace("→", ">").replace("←", "<")
-                .replace("✓", "OK").replace("✗", "X")
+                .replace("►", ">")
+                .replace("◄", "<")
+                .replace("↑", "^")
+                .replace("↓", "v")
+                .replace("→", ">")
+                .replace("←", "<")
+                .replace("✓", "OK")
+                .replace("✗", "X")
             )
             surf = regular_font.render(fallback, True, color)
             rect = surf.get_rect(center=center)
             surface.blit(surf, rect)
             return rect
 
-        composed = self._compose_mixed(
-            str(text), size, color, regular_font, unicode_font, supported_chars
-        )
+        composed = self._compose_mixed(str(text), size, color, regular_font, unicode_font, supported_chars)
         if composed is None:  # empty text
             return pygame.Rect(center[0], center[1], 0, 0)
 
@@ -422,16 +406,12 @@ class TextRenderer:
                         else:
                             y_off = regular_metrics - unicode_metrics
                             if char in ["►", "◄", "↑", "↓", "→", "←"]:
-                                y_off += abs(
-                                    regular_font.get_height() - char_surface.get_height()
-                                ) // 4
+                                y_off += abs(regular_font.get_height() - char_surface.get_height()) // 4
                     except Exception:
-                        char_surface = regular_font.render(
-                            self._get_ascii_fallback(char), True, color)
+                        char_surface = regular_font.render(self._get_ascii_fallback(char), True, color)
                         y_off = 0
                 else:
-                    char_surface = regular_font.render(
-                        self._get_ascii_fallback(char), True, color)
+                    char_surface = regular_font.render(self._get_ascii_fallback(char), True, color)
                     y_off = 0
             else:
                 char_surface = regular_font.render(char, True, color)
@@ -454,9 +434,7 @@ class TextRenderer:
         self._mixed_surface_cache[key] = result
         return result
 
-    def _calculate_text_width(
-        self, text, regular_font, unicode_font, supported_chars=None
-    ):
+    def _calculate_text_width(self, text, regular_font, unicode_font, supported_chars=None):
         """Calculate the total width of text with mixed fonts."""
         total_width = 0
         if supported_chars is None:
@@ -470,9 +448,7 @@ class TextRenderer:
             total_width += char_width
         return total_width
 
-    def render_text_simple(
-        self, text, size, color, surface, position, center=False, unicode_fallback=True
-    ):
+    def render_text_simple(self, text, size, color, surface, position, center=False, unicode_fallback=True):
         """
         Render text with simple fallback for Unicode characters.
 
@@ -523,9 +499,7 @@ class TextRenderer:
                 rendered_text.get_height(),
             )
 
-    def render_unicode_char(
-        self, char, size, color, surface, position, center=False, fallback_char=None
-    ):
+    def render_unicode_char(self, char, size, color, surface, position, center=False, fallback_char=None):
         """
         Render a single Unicode character with proper alignment.
 
@@ -573,9 +547,7 @@ class TextRenderer:
                                 char_height = char_surface.get_height()
                                 regular_height = regular_font.get_height()
                                 # Use a smaller fraction for more subtle adjustment
-                                vertical_center_adjustment = (
-                                    abs(regular_height - char_height) // 4
-                                )  ###
+                                vertical_center_adjustment = abs(regular_height - char_height) // 4  ###
                                 baseline_adjustment += vertical_center_adjustment
                         else:
                             baseline_adjustment = 0
@@ -623,9 +595,7 @@ class TextRenderer:
                                 char_height = char_surface.get_height()
                                 regular_height = regular_font.get_height()
                                 # Use a smaller fraction for more subtle adjustment
-                                vertical_center_adjustment = (
-                                    abs(regular_height - char_height) // 4
-                                )  ###
+                                vertical_center_adjustment = abs(regular_height - char_height) // 4  ###
                                 baseline_adjustment += vertical_center_adjustment
                         else:
                             baseline_adjustment = 0
@@ -723,9 +693,7 @@ def render_text(surface, text, position, size, color, center=False, right_align=
         adjusted_position = position
 
     # Always use left-aligned rendering with adjusted position
-    return text_renderer.render_text_simple(
-        text, size, color, surface, adjusted_position, center=False
-    )
+    return text_renderer.render_text_simple(text, size, color, surface, adjusted_position, center=False)
 
 
 def run_font_diagnostics():
@@ -762,9 +730,7 @@ def quick_unicode_test():
         try:
             rendered = font.render(char, True, (255, 255, 255))
             width = rendered.get_width()
-            print(
-                f"  '{char}': width={width} {'✓' if width >= 5 else '✗ (likely tofu)'}"
-            )
+            print(f"  '{char}': width={width} {'✓' if width >= 5 else '✗ (likely tofu)'}")
         except Exception as e:
             print(f"  '{char}': ERROR - {e}")
 

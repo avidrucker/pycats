@@ -12,6 +12,7 @@ Env overrides (PYCATS_* convention):
 
 Use: settings.load() at startup; settings.save({...}) on a display change.
 """
+
 import json
 import os
 
@@ -57,9 +58,7 @@ def _config_dir():
     override = os.environ.get("PYCATS_CONFIG_DIR")
     if override:
         return override
-    base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(
-        os.path.expanduser("~"), ".config"
-    )
+    base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"), ".config")
     return os.path.join(base, "pycats")
 
 
@@ -81,21 +80,11 @@ def _validated(raw):
     if scale in WINDOWED_SCALE_PRESETS:  # snap invalid scales to a valid preset
         out["windowed_scale"] = float(scale)
     out["fullscreen"] = bool(raw.get("fullscreen", out["fullscreen"]))
-    out["show_status_timer_bars"] = bool(
-        raw.get("show_status_timer_bars", out["show_status_timer_bars"])
-    )
-    out["show_hitbox_overlay"] = bool(
-        raw.get("show_hitbox_overlay", out["show_hitbox_overlay"])
-    )
-    out["show_input_history"] = bool(
-        raw.get("show_input_history", out["show_input_history"])
-    )
-    out["show_controls"] = bool(
-        raw.get("show_controls", out["show_controls"])
-    )
-    out["esc_hold_to_navigate"] = bool(
-        raw.get("esc_hold_to_navigate", out["esc_hold_to_navigate"])
-    )
+    out["show_status_timer_bars"] = bool(raw.get("show_status_timer_bars", out["show_status_timer_bars"]))
+    out["show_hitbox_overlay"] = bool(raw.get("show_hitbox_overlay", out["show_hitbox_overlay"]))
+    out["show_input_history"] = bool(raw.get("show_input_history", out["show_input_history"]))
+    out["show_controls"] = bool(raw.get("show_controls", out["show_controls"]))
+    out["esc_hold_to_navigate"] = bool(raw.get("esc_hold_to_navigate", out["esc_hold_to_navigate"]))
     fs = raw.get("font_scale")
     if fs in FONT_SCALES:  # snap an unknown preset back to the default
         out["font_scale"] = fs

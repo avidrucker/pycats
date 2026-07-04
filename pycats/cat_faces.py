@@ -11,6 +11,7 @@ monospace block renderer. They fall back to None (→ caller draws primitives)
 when no monospace font is available. The retired kaomoji/emoji glyph styles
 (`ᓚᘏᗢ` / `(=^･ω･^=)` / `🐱`) are gone (#114, superseding #103/#105).
 """
+
 import pygame  # type: ignore
 
 PRIMITIVES, ASCII_PROFILE, ASCII_34 = 0, 1, 2
@@ -38,8 +39,13 @@ _FACE_W = 46  # target face width in px (scaled to fit the ~40-wide body)
 # legible at the ~40px body size (#110 legibility caveat).
 _MONO_SIZE = 28
 _MONO_FONTS = (
-    "dejavusansmono", "liberationmono", "freemono",
-    "couriernew", "consolas", "menlo", "monospace",
+    "dejavusansmono",
+    "liberationmono",
+    "freemono",
+    "couriernew",
+    "consolas",
+    "menlo",
+    "monospace",
 )
 
 _font_cache: dict = {}
@@ -113,9 +119,7 @@ def render_face(style, facing_right, color):
         return None
     w, h = block.get_size()
     scale = _FACE_W / w
-    surf = pygame.transform.smoothscale(
-        block, (max(1, round(w * scale)), max(1, round(h * scale)))
-    )
+    surf = pygame.transform.smoothscale(block, (max(1, round(w * scale)), max(1, round(h * scale))))
     # The profile head is authored facing RIGHT; mirror it for a left-facing
     # fighter so the two cats face each other.
     if style == ASCII_PROFILE and not facing_right:

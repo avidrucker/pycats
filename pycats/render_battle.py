@@ -2,6 +2,7 @@
 """Shared battle renderer: draws the stage, fighters, and attacks onto a surface.
 Extracted from game.py so the live game, pause screen, and sim presenters all
 use one renderer."""
+
 import math
 from typing import NamedTuple
 
@@ -9,13 +10,13 @@ import pygame
 
 # Dizzy stars drawn above a shield-broken (#12) fighter's head. Cosmetic only
 # (rendering is not golden-snapshotted), so these live here in the renderer.
-DIZZY_STAR_COUNT = 3       # stars orbiting the head
-DIZZY_ORBIT_RADIUS = 16    # horizontal orbit radius (px)
-DIZZY_ORBIT_LIFT = 8       # gap above the ear tips
-DIZZY_STAR_OUTER = 5       # star spike radius
-DIZZY_STAR_INNER = 2       # star inner radius
-DIZZY_SPIN_SPEED = 0.18    # radians of orbit advance per frame (per stun tick)
-DIZZY_STAR_POINTS = 5      # spikes per orbiting star
+DIZZY_STAR_COUNT = 3  # stars orbiting the head
+DIZZY_ORBIT_RADIUS = 16  # horizontal orbit radius (px)
+DIZZY_ORBIT_LIFT = 8  # gap above the ear tips
+DIZZY_STAR_OUTER = 5  # star spike radius
+DIZZY_STAR_INNER = 2  # star inner radius
+DIZZY_SPIN_SPEED = 0.18  # radians of orbit advance per frame (per stun tick)
+DIZZY_STAR_POINTS = 5  # spikes per orbiting star
 DIZZY_ELLIPSE_FLATTEN = 0.4  # vertical-squash of the orbit (circle → head-hugging ellipse)
 
 from . import cat_faces, runtime_settings, text_utils
@@ -84,43 +85,36 @@ PLATFORM_THICK = (164, 113, 73)
 PLATFORM_THIN = (193, 153, 112)
 
 # Attack visual colours (#326/H-b): moved out of Attack with its Surface-building.
-ATTACK_SINGLE_FILL = (255, 60, 60, 180)   # legacy single-hitbox flat red
-ATTACK_FILL = (255, 60, 60, 120)          # per-circle semi-transparent red fill
-ATTACK_OUTLINE = (255, 230, 120, 220)     # per-circle outline
-ATTACK_OUTLINE_WIDTH = 2                  # per-circle outline stroke width (px)
+ATTACK_SINGLE_FILL = (255, 60, 60, 180)  # legacy single-hitbox flat red
+ATTACK_FILL = (255, 60, 60, 120)  # per-circle semi-transparent red fill
+ATTACK_OUTLINE = (255, 230, 120, 220)  # per-circle outline
+ATTACK_OUTLINE_WIDTH = 2  # per-circle outline stroke width (px)
 
-HITBOX_OVERLAY_COLOR = RED            # attack hitbox circles
+HITBOX_OVERLAY_COLOR = RED  # attack hitbox circles
 HURTBOX_OVERLAY_COLOR = (0, 255, 255)  # cyan — fighter hurtbox circles
-OVERLAY_LINE_WIDTH = 2                 # >0 → pygame draws an outline, not a disc
+OVERLAY_LINE_WIDTH = 2  # >0 → pygame draws an outline, not a disc
 
 # Fighter sprite drawing (#415: named from inline literals). Purely-local render
 # geometry/colour — cosmetic, so an identity extraction (values unchanged).
-STRIPE_BACK_OFFSET_X = 10    # stripes sit this far toward the back from center-x
-STRIPE_START_Y_OFFSET = 15   # first stripe starts this far below the head top
-FACE_BLIT_OFFSET_Y = 10      # glyph face centred this far below the head top
-NAME_FONT_SIZE = 20          # player-name label above the cat
-NAME_LABEL_OFFSET_Y = 25     # name sits this far above the head top
+STRIPE_BACK_OFFSET_X = 10  # stripes sit this far toward the back from center-x
+STRIPE_START_Y_OFFSET = 15  # first stripe starts this far below the head top
+FACE_BLIT_OFFSET_Y = 10  # glyph face centred this far below the head top
+NAME_FONT_SIZE = 20  # player-name label above the cat
+NAME_LABEL_OFFSET_Y = 25  # name sits this far above the head top
 # Name-label colours are the shared player accents (#450: config.P1_UI_COLOR/P2_UI_COLOR).
-SHIELD_FILL_ALPHA = 100      # alpha of the translucent shield-bubble fill
+SHIELD_FILL_ALPHA = 100  # alpha of the translucent shield-bubble fill
 
 
 # --- draw helpers moved verbatim from game.py ---
 
+
 def draw_eye(surface, p: Player, eye=True):
     if eye:
-        x = (
-            p.rect.right - EYE_OFFSET_X
-            if p.facing_right
-            else p.rect.left + EYE_OFFSET_X
-        )
+        x = p.rect.right - EYE_OFFSET_X if p.facing_right else p.rect.left + EYE_OFFSET_X
         y = p.rect.top + EYE_OFFSET_Y
         pygame.draw.circle(surface, p.eye_color, (x, y), EYE_RADIUS)
     else:  # we will draw a glint instead of an eye
-        x = (
-            p.rect.right - GLINT_OFFSET_X
-            if p.facing_right
-            else p.rect.left + GLINT_OFFSET_X
-        )
+        x = p.rect.right - GLINT_OFFSET_X if p.facing_right else p.rect.left + GLINT_OFFSET_X
         y = p.rect.top + GLINT_OFFSET_Y
         pygame.draw.circle(surface, WHITE, (x, y), GLINT_RADIUS)
 
@@ -168,11 +162,7 @@ def draw_cat_features(surface, p: Player):
     pygame.draw.polygon(surface, ear_color, right_ear_points)
 
     # Draw whiskers (lines)
-    whisker_start_x = (
-        p.rect.right - WHISKER_OFFSET_X
-        if p.facing_right
-        else p.rect.left + WHISKER_OFFSET_X
-    )
+    whisker_start_x = p.rect.right - WHISKER_OFFSET_X if p.facing_right else p.rect.left + WHISKER_OFFSET_X
     whisker_start_y = p.rect.top + WHISKER_OFFSET_Y + EYE_RADIUS // 2
 
     # Direction of whiskers depends on facing direction
@@ -204,8 +194,7 @@ def draw_cat_features(surface, p: Player):
 def draw_stripes(surface, p: Player):
     """Draws triangular stripes on the player's back for pattern."""
     # Calculate stripe positions on the back of the player
-    back_center_x = p.rect.centerx + (-STRIPE_BACK_OFFSET_X if p.facing_right
-                                      else STRIPE_BACK_OFFSET_X)
+    back_center_x = p.rect.centerx + (-STRIPE_BACK_OFFSET_X if p.facing_right else STRIPE_BACK_OFFSET_X)
     back_start_y = p.rect.top + STRIPE_START_Y_OFFSET  # a bit down from the top
 
     for i in range(STRIPE_COUNT):
@@ -245,8 +234,7 @@ def draw_stripes(surface, p: Player):
             ]
 
         # Draw the triangular stripe — tinted with the body flash (#109)
-        pygame.draw.polygon(surface, _blend(p.stripe_color, getattr(p, "tint", None)),
-                            stripe_points)
+        pygame.draw.polygon(surface, _blend(p.stripe_color, getattr(p, "tint", None)), stripe_points)
 
 
 def draw_player_name(surface, p: Player):
@@ -262,9 +250,7 @@ def draw_player_name(surface, p: Player):
     label = getattr(p, "nickname", None) or p.char_name
 
     text_utils.render_text(
-        surface, label,
-        (p.rect.centerx, p.rect.top - NAME_LABEL_OFFSET_Y), NAME_FONT_SIZE,
-        color, center=True
+        surface, label, (p.rect.centerx, p.rect.top - NAME_LABEL_OFFSET_Y), NAME_FONT_SIZE, color, center=True
     )
 
 
@@ -289,18 +275,17 @@ _body_cache: dict = {}
 class _CatShim:
     """Minimal stand-in exposing the attributes the draw_* helpers read, with a
     virtual rect positioned inside the composite surface."""
-    __slots__ = ("rect", "facing_right", "char_color", "eye_color",
-                 "stripe_color", "char_name", "nickname", "tint")
 
-    def __init__(self, rect, facing_right, char_color, eye_color, stripe_color,
-                 char_name, nickname=None, tint=None):
+    __slots__ = ("rect", "facing_right", "char_color", "eye_color", "stripe_color", "char_name", "nickname", "tint")
+
+    def __init__(self, rect, facing_right, char_color, eye_color, stripe_color, char_name, nickname=None, tint=None):
         self.rect = rect
         self.facing_right = facing_right
         self.char_color = char_color
         self.eye_color = eye_color
         self.stripe_color = stripe_color
         self.char_name = char_name
-        self.nickname = nickname   # #478: the name label draws this if set, else char_name
+        self.nickname = nickname  # #478: the name label draws this if set, else char_name
         # #109: the active flash overlay (RED/YELLOW/WHITE) or None. The draw_*
         # helpers blend it 50% over each part's base colour via `_blend`, so the
         # whole sprite flashes from one source instead of per-part char_color.
@@ -373,9 +358,17 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
     tint = tuple(body_tint(p))
     # nickname (#478) is in the key so a nickname change re-renders the label instead of
     # serving a stale composite; None (the default) leaves the key byte-identical.
-    key = (tuple(p.char_color), tuple(p.stripe_color), tuple(p.eye_color),
-           p.char_name, getattr(p, "nickname", None), p.fighter.facing_right, tint,
-           face_style, (w, h))
+    key = (
+        tuple(p.char_color),
+        tuple(p.stripe_color),
+        tuple(p.eye_color),
+        p.char_name,
+        getattr(p, "nickname", None),
+        p.fighter.facing_right,
+        tint,
+        face_style,
+        (w, h),
+    )
     surf = _body_cache.get(key)
     if surf is None:
         cw = w + 2 * _BODY_PAD_X
@@ -383,21 +376,25 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
         surf = pygame.Surface((cw, ch), pygame.SRCALPHA)
         vrect = pygame.Rect(_BODY_PAD_X, _BODY_PAD_TOP, w, h)
         overlay = active_tint(p)
-        shim = _CatShim(vrect, p.fighter.facing_right, p.char_color, p.eye_color,
-                        p.stripe_color, p.char_name,
-                        nickname=getattr(p, "nickname", None), tint=overlay)
+        shim = _CatShim(
+            vrect,
+            p.fighter.facing_right,
+            p.char_color,
+            p.eye_color,
+            p.stripe_color,
+            p.char_name,
+            nickname=getattr(p, "nickname", None),
+            tint=overlay,
+        )
         body = pygame.Surface((w, h))
         body.fill(_blend(p.char_color, overlay))
         surf.blit(body, vrect)
         draw_stripes(surf, shim)
         # Face: a glyph style replaces the primitive eyes + ears + whiskers;
         # falls back to primitives when the glyph can't render (font missing).
-        face = cat_faces.render_face(
-            face_style, p.fighter.facing_right, cat_faces.ink_for(p.char_color)
-        )
+        face = cat_faces.render_face(face_style, p.fighter.facing_right, cat_faces.ink_for(p.char_color))
         if face is not None:
-            surf.blit(face, face.get_rect(
-                center=(vrect.centerx, vrect.top + FACE_BLIT_OFFSET_Y)))
+            surf.blit(face, face.get_rect(center=(vrect.centerx, vrect.top + FACE_BLIT_OFFSET_Y)))
         else:
             draw_eye(surf, shim)
             draw_eye(surf, shim, eye=False)
@@ -435,9 +432,9 @@ def draw_dizzy_stars(surface, p: Player):
         sx = cx + math.cos(ang) * DIZZY_ORBIT_RADIUS
         sy = cy + math.sin(ang) * DIZZY_ORBIT_RADIUS * DIZZY_ELLIPSE_FLATTEN  # ellipse
         pygame.draw.polygon(
-            surface, YELLOW,
-            _star_points(sx, sy, DIZZY_STAR_OUTER, DIZZY_STAR_INNER,
-                         DIZZY_STAR_POINTS, ang),
+            surface,
+            YELLOW,
+            _star_points(sx, sy, DIZZY_STAR_OUTER, DIZZY_STAR_INNER, DIZZY_STAR_POINTS, ang),
         )
 
 
@@ -451,10 +448,10 @@ def draw_dizzy_stars(surface, p: Player):
 # later spec one row higher (newest-on-top ordering is the caller's).
 STATUS_BAR_WIDTH = int(1.5 * PLAYER_SIZE[0])  # ~1.5x the cat body width (tail excluded)
 STATUS_BAR_HEIGHT = 6
-STATUS_BAR_BG = (30, 30, 30)            # background (drained) rect colour
+STATUS_BAR_BG = (30, 30, 30)  # background (drained) rect colour
 # STATUS_BAR_SECONDS_SIZE / STATUS_BAR_LABEL_SIZE now live in config.py (the single
 # font-size source, #344) and are imported above.
-STATUS_BAR_LABEL_GAP = 4               # gap between the label and the bar's left edge
+STATUS_BAR_LABEL_GAP = 4  # gap between the label and the bar's left edge
 # Vertical stride between stacked bars: one bar row + its readout text + a gap,
 # so a bar and its "Ns" never overlap the bar above it.
 STATUS_BAR_STACK_STRIDE = STATUS_BAR_HEIGHT + STATUS_BAR_SECONDS_SIZE + 4
@@ -467,13 +464,13 @@ STATUS_BAR_GAP_ABOVE_STARS = 6
 # Per-timer bar colours (#334 spec). These are the BAR hues only — distinct from
 # the shared SHIELD_COLOR (shield bubble) / YELLOW (dizzy stars + body flash),
 # which are left untouched so only the above-head bars recolour.
-SHIELD_BAR_COLOR = (70, 130, 255)       # blue — shield resource (#364)
-DIZZY_BAR_COLOR = (210, 90, 220)        # magenta — shield-break stun (#364)
-HANG_BAR_COLOR = (0, 210, 200)          # teal — ledge-hang timeout (#348)
-DOWN_BAR_COLOR = (255, 140, 45)         # orange — knockdown/getup window (#350)
-LOCKOUT_BAR_COLOR = (230, 70, 70)       # red — post-drop regrab lockout (#357)
-INVULN_BAR_COLOR = (95, 225, 120)       # green — intangibility window (#358)
-CHARGE_BAR_COLOR = (255, 205, 40)       # gold — smash charge, the one FILL bar (#380)
+SHIELD_BAR_COLOR = (70, 130, 255)  # blue — shield resource (#364)
+DIZZY_BAR_COLOR = (210, 90, 220)  # magenta — shield-break stun (#364)
+HANG_BAR_COLOR = (0, 210, 200)  # teal — ledge-hang timeout (#348)
+DOWN_BAR_COLOR = (255, 140, 45)  # orange — knockdown/getup window (#350)
+LOCKOUT_BAR_COLOR = (230, 70, 70)  # red — post-drop regrab lockout (#357)
+INVULN_BAR_COLOR = (95, 225, 120)  # green — intangibility window (#358)
+CHARGE_BAR_COLOR = (255, 205, 40)  # gold — smash charge, the one FILL bar (#380)
 
 # The getup-attack (#225) intangibility window = the whole swing, so its bar's
 # max is the move's total frames (kept in sync with the move data, not hardcoded).
@@ -489,9 +486,10 @@ _SHIELD_RECENCY_KEY = float("inf")
 class TimerBar(NamedTuple):
     """One above-head bar: a coloured 0..1 fill, a text readout, and an optional
     label. `label=None` renders no label (byte-identical to the #111 bar)."""
-    ratio: float           # 0..1 fill fraction (drawer clamps)
-    readout: str           # e.g. "3s" (count-down) or "60% · 1.2s" (fill)
-    color: tuple           # bar fill + label colour
+
+    ratio: float  # 0..1 fill fraction (drawer clamps)
+    readout: str  # e.g. "3s" (count-down) or "60% · 1.2s" (fill)
+    color: tuple  # bar fill + label colour
     label: str | None = None
 
 
@@ -551,38 +549,43 @@ def timer_bar_specs(p):
     if p.state == "shield":
         ratio = f.shield_hp / SHIELD_MAX_HP
         seconds = math.ceil(f.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))
-        bars.append((_SHIELD_RECENCY_KEY,
-                     TimerBar(ratio, f"{seconds}s", SHIELD_BAR_COLOR, label="SHIELD")))
+        bars.append((_SHIELD_RECENCY_KEY, TimerBar(ratio, f"{seconds}s", SHIELD_BAR_COLOR, label="SHIELD")))
     elif f.stun_timer > 0:
         ratio = f.stun_timer / SHIELD_BREAK_STUN_MAX
         seconds = math.ceil(f.stun_timer / FPS)
-        bars.append((SHIELD_BREAK_STUN_MAX - f.stun_timer,
-                     TimerBar(ratio, f"{seconds}s", DIZZY_BAR_COLOR, label="DIZZY")))
+        bars.append(
+            (SHIELD_BREAK_STUN_MAX - f.stun_timer, TimerBar(ratio, f"{seconds}s", DIZZY_BAR_COLOR, label="DIZZY"))
+        )
     elif p.state == "ledge_hang" and f.ledge_hang_timer > 0:
         ratio = f.ledge_hang_timer / LEDGE_HANG_FRAMES
         seconds = math.ceil(f.ledge_hang_timer / FPS)
-        bars.append((LEDGE_HANG_FRAMES - f.ledge_hang_timer,
-                     TimerBar(ratio, f"{seconds}s", HANG_BAR_COLOR, label="HANG")))
+        bars.append(
+            (LEDGE_HANG_FRAMES - f.ledge_hang_timer, TimerBar(ratio, f"{seconds}s", HANG_BAR_COLOR, label="HANG"))
+        )
     elif p.state == "prone" and f.prone_timer > 0:
         ratio = f.prone_timer / KNOCKDOWN_PRONE_FRAMES
         seconds = math.ceil(f.prone_timer / FPS)
-        bars.append((KNOCKDOWN_PRONE_FRAMES - f.prone_timer,
-                     TimerBar(ratio, f"{seconds}s", DOWN_BAR_COLOR, label="DOWN")))
+        bars.append(
+            (KNOCKDOWN_PRONE_FRAMES - f.prone_timer, TimerBar(ratio, f"{seconds}s", DOWN_BAR_COLOR, label="DOWN"))
+        )
 
     # --- overlay timers (state-independent; co-activate with the above) ---
     if f.ledge_regrab_lockout_timer > 0:
         ratio = f.ledge_regrab_lockout_timer / LEDGE_REGRAB_LOCKOUT_FRAMES
         seconds = math.ceil(f.ledge_regrab_lockout_timer / FPS)
-        bars.append((LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer,
-                     TimerBar(ratio, f"{seconds}s", LOCKOUT_BAR_COLOR, label="LOCKOUT")))
+        bars.append(
+            (
+                LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer,
+                TimerBar(ratio, f"{seconds}s", LOCKOUT_BAR_COLOR, label="LOCKOUT"),
+            )
+        )
 
     invuln = _invuln_remaining_max(p)
     if invuln is not None:
         remaining, max_frames = invuln
         ratio = remaining / max_frames
         seconds = math.ceil(remaining / FPS)
-        bars.append((max_frames - remaining,
-                     TimerBar(ratio, f"{seconds}s", INVULN_BAR_COLOR, label="INVULN")))
+        bars.append((max_frames - remaining, TimerBar(ratio, f"{seconds}s", INVULN_BAR_COLOR, label="INVULN")))
 
     # CHARGE (#380) — the one FILL bar: it grows 0->100% as smash_charge_timer
     # accumulates (#371), rather than draining. Readout shows the % and the
@@ -592,11 +595,14 @@ def timer_bar_specs(p):
     if f.smash_charge_timer > 0:
         ratio = min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES)
         seconds_to_full = math.ceil((SMASH_CHARGE_FRAMES - f.smash_charge_timer) / FPS)
-        bars.append((f.smash_charge_timer,
-                     TimerBar(ratio, f"{round(ratio * 100)}%·{seconds_to_full}s",
-                              CHARGE_BAR_COLOR, label="CHARGE")))
+        bars.append(
+            (
+                f.smash_charge_timer,
+                TimerBar(ratio, f"{round(ratio * 100)}%·{seconds_to_full}s", CHARGE_BAR_COLOR, label="CHARGE"),
+            )
+        )
 
-    bars.sort(key=lambda kb: kb[0])   # newest-on-top (least elapsed first)
+    bars.sort(key=lambda kb: kb[0])  # newest-on-top (least elapsed first)
     return [bar for _, bar in bars]
 
 
@@ -618,27 +624,32 @@ def draw_timer_bars(surface, p, specs):
         bar_top = bar_bottom - STATUS_BAR_HEIGHT
 
         # Background rect (full width) then the foreground rect on top.
-        pygame.draw.rect(surface, STATUS_BAR_BG,
-                         (bar_left, bar_top, STATUS_BAR_WIDTH, STATUS_BAR_HEIGHT))
+        pygame.draw.rect(surface, STATUS_BAR_BG, (bar_left, bar_top, STATUS_BAR_WIDTH, STATUS_BAR_HEIGHT))
         fg_w = int(STATUS_BAR_WIDTH * ratio)
         if fg_w > 0:
-            pygame.draw.rect(surface, spec.color,
-                             (bar_left, bar_top, fg_w, STATUS_BAR_HEIGHT))
+            pygame.draw.rect(surface, spec.color, (bar_left, bar_top, fg_w, STATUS_BAR_HEIGHT))
 
         # Readout sits just above the bar (and thus above the stars).
         text_utils.render_text(
-            surface, spec.readout,
+            surface,
+            spec.readout,
             (cx, bar_top - STATUS_BAR_SECONDS_SIZE // 2 - 2),
-            STATUS_BAR_SECONDS_SIZE, WHITE, center=True,
+            STATUS_BAR_SECONDS_SIZE,
+            WHITE,
+            center=True,
         )
 
         # Optional label, right-aligned just left of the bar in the bar's colour.
         # A None label draws nothing (the drawer stays label-agnostic).
         if spec.label:
             text_utils.render_text(
-                surface, spec.label,
+                surface,
+                spec.label,
                 (bar_left - STATUS_BAR_LABEL_GAP, bar_top + STATUS_BAR_HEIGHT // 2),
-                STATUS_BAR_LABEL_SIZE, spec.color, center=True, right_align=True,
+                STATUS_BAR_LABEL_SIZE,
+                spec.color,
+                center=True,
+                right_align=True,
             )
 
 
@@ -702,13 +713,11 @@ def render_battle(surface, players, platforms):
             low_h = stand_h
         target = 1.0 if low_h != stand_h else 0.0
         anim = getattr(p, "_crouch_anim", 0.0)
-        anim = (min(target, anim + _CROUCH_ANIM_RATE) if anim < target
-                else max(target, anim - _CROUCH_ANIM_RATE))
+        anim = min(target, anim + _CROUCH_ANIM_RATE) if anim < target else max(target, anim - _CROUCH_ANIM_RATE)
         p._crouch_anim = anim
         if anim > 0.0 and low_h != stand_h:
             s = (stand_h + (low_h - stand_h) * anim) / stand_h
-            body = pygame.transform.scale(
-                body, (body.get_width(), max(1, round(body.get_height() * s))))
+            body = pygame.transform.scale(body, (body.get_width(), max(1, round(body.get_height() * s))))
             blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s)
         else:
             blit_y = p.rect.y - _BODY_PAD_TOP
@@ -777,25 +786,22 @@ def render_hitbox_overlay(surface, players, attacks):
         return
     for a in attacks:
         for cx, cy, r, _box in getattr(a, "resolved", ()):
-            pygame.draw.circle(surface, HITBOX_OVERLAY_COLOR,
-                               (int(cx), int(cy)), int(r), OVERLAY_LINE_WIDTH)
+            pygame.draw.circle(surface, HITBOX_OVERLAY_COLOR, (int(cx), int(cy)), int(r), OVERLAY_LINE_WIDTH)
     for p in players:
         if not p.fighter.is_alive:
             continue
         for c in _active_hurtbox(p).circles:
-            cx, cy, r = resolve_circle(c, p.rect.x, p.rect.y,
-                                       p.fighter.facing_right, p.rect.width)
-            pygame.draw.circle(surface, HURTBOX_OVERLAY_COLOR,
-                               (int(cx), int(cy)), int(r), OVERLAY_LINE_WIDTH)
+            cx, cy, r = resolve_circle(c, p.rect.x, p.rect.y, p.fighter.facing_right, p.rect.width)
+            pygame.draw.circle(surface, HURTBOX_OVERLAY_COLOR, (int(cx), int(cy)), int(r), OVERLAY_LINE_WIDTH)
 
 
 # HUD / text-overlay layout (#415: named from inline literals). The overlay font
 # size was repeated at ~10 call sites; the line counts + block gap couple the
 # controls / input-history blocks' start-y to the HUD's row count.
-HUD_FONT_SIZE = 24        # shared size for HUD / controls / input-history / chrome text
-HUD_LINE_COUNT = 7        # rows drawn by draw_hud (label + 6 stats)
-CONTROLS_LINE_COUNT = 7   # rows drawn by draw_controls (header + 6 controls)
-HUD_BLOCK_GAP = 20        # vertical gap between stacked text blocks
+HUD_FONT_SIZE = 24  # shared size for HUD / controls / input-history / chrome text
+HUD_LINE_COUNT = 7  # rows drawn by draw_hud (label + 6 stats)
+CONTROLS_LINE_COUNT = 7  # rows drawn by draw_controls (header + 6 controls)
+HUD_BLOCK_GAP = 20  # vertical gap between stacked text blocks
 
 
 def draw_hud(surface, p: Player, label, topright=False):
@@ -806,15 +812,11 @@ def draw_hud(surface, p: Player, label, topright=False):
     shield_attempting = f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}"
     stocks = f"Lives: {p.fighter.lives}"
     percent = f"Damage: {int(p.fighter.percent)}%"
-    for i, txt in enumerate(
-        (label, fsm, jumps, shield, shield_attempting, stocks, percent)
-    ):
+    for i, txt in enumerate((label, fsm, jumps, shield, shield_attempting, stocks, percent)):
         x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
         y_pos = HUD_PADDING + i * HUD_SPACING
 
-        text_utils.render_text(
-            surface, txt, (x_pos, y_pos), HUD_FONT_SIZE, WHITE, right_align=topright
-        )
+        text_utils.render_text(surface, txt, (x_pos, y_pos), HUD_FONT_SIZE, WHITE, right_align=topright)
 
 
 def draw_controls(surface, p: Player, label, topright=False):
@@ -835,8 +837,8 @@ def draw_controls(surface, p: Player, label, topright=False):
         pygame.K_SLASH: "/",
         pygame.K_PERIOD: ".",
         pygame.K_COMMA: ",",
-        pygame.K_b: "B",        # P1 default smash (#462)
-        pygame.K_QUOTE: "'",    # P2 default smash — apostrophe glyph, not a typo (#462)
+        pygame.K_b: "B",  # P1 default smash (#462)
+        pygame.K_QUOTE: "'",  # P2 default smash — apostrophe glyph, not a typo (#462)
     }
 
     controls = [
@@ -862,13 +864,9 @@ def draw_controls(surface, p: Player, label, topright=False):
             # For right-aligned text, we need to calculate positioning differently
             text_width = text_utils.text_renderer._get_font(None, HUD_FONT_SIZE).size(txt)[0]
             adjusted_x = x_pos - text_width
-            text_utils.text_renderer.render_text_mixed(
-                txt, HUD_FONT_SIZE, WHITE, surface, (adjusted_x, y_pos)
-            )
+            text_utils.text_renderer.render_text_mixed(txt, HUD_FONT_SIZE, WHITE, surface, (adjusted_x, y_pos))
         else:
-            text_utils.text_renderer.render_text_mixed(
-                txt, HUD_FONT_SIZE, WHITE, surface, (x_pos, y_pos)
-            )
+            text_utils.text_renderer.render_text_mixed(txt, HUD_FONT_SIZE, WHITE, surface, (x_pos, y_pos))
 
 
 def draw_input_history(surface, history, label, topright=False):
@@ -881,19 +879,14 @@ def draw_input_history(surface, history, label, topright=False):
     line = format_line(label, history.entries())
 
     # Below the HUD (7 lines) and the controls block (header + 6 rows).
-    y_pos = (HUD_PADDING + (HUD_LINE_COUNT + CONTROLS_LINE_COUNT) * HUD_SPACING
-             + 2 * HUD_BLOCK_GAP)
+    y_pos = HUD_PADDING + (HUD_LINE_COUNT + CONTROLS_LINE_COUNT) * HUD_SPACING + 2 * HUD_BLOCK_GAP
     x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
 
     if topright:
         text_width = text_utils.text_renderer._get_font(None, HUD_FONT_SIZE).size(line)[0]
-        text_utils.text_renderer.render_text_mixed(
-            line, HUD_FONT_SIZE, WHITE, surface, (x_pos - text_width, y_pos)
-        )
+        text_utils.text_renderer.render_text_mixed(line, HUD_FONT_SIZE, WHITE, surface, (x_pos - text_width, y_pos))
     else:
-        text_utils.text_renderer.render_text_mixed(
-            line, HUD_FONT_SIZE, WHITE, surface, (x_pos, y_pos)
-        )
+        text_utils.text_renderer.render_text_mixed(line, HUD_FONT_SIZE, WHITE, surface, (x_pos, y_pos))
 
 
 def draw_pause_hint(surface):
@@ -902,8 +895,11 @@ def draw_pause_hint(surface):
     It reads no shell state (a constant string), so it is battle HUD, not shell
     chrome — BattleScreen.render owns it (#279), beside draw_hud/draw_controls."""
     text_utils.render_text(
-        surface, "P: Pause Game",
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3), HUD_FONT_SIZE, WHITE,
+        surface,
+        "P: Pause Game",
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3),
+        HUD_FONT_SIZE,
+        WHITE,
         right_align=True,
     )
 
@@ -917,12 +913,18 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
     state (cf. #100 Risks, #246). Byte-identical to the old inline block."""
     if frame_input:
         text_utils.render_text(
-            surface, frame_input.__str__(),
-            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), HUD_FONT_SIZE, WHITE,
+            surface,
+            frame_input.__str__(),
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+            HUD_FONT_SIZE,
+            WHITE,
         )
     text_utils.render_text(
-        surface, f"FPS: {fps:.2f}",
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), HUD_FONT_SIZE, WHITE,
+        surface,
+        f"FPS: {fps:.2f}",
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+        HUD_FONT_SIZE,
+        WHITE,
         right_align=True,
     )
     fs_text = (
@@ -931,7 +933,10 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
         + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
     )
     text_utils.render_text(
-        surface, fs_text,
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2), HUD_FONT_SIZE, WHITE,
+        surface,
+        fs_text,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+        HUD_FONT_SIZE,
+        WHITE,
         right_align=True,
     )

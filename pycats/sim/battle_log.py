@@ -13,6 +13,7 @@ snapshot() shapes (see runner.snapshot):
     attack = (x, y, frames_left, owner_name, active, hit_cx, hit_cy, hit_r)
     snap   = (parts, attacks, phase, winner)
 """
+
 from __future__ import annotations
 
 from collections import Counter, namedtuple
@@ -66,17 +67,34 @@ def events_from_snaps(snaps) -> list[BattleEvent]:
                 events.append(BattleEvent(f, name, JUMP, {"remaining": a[_JUMPS]}))
             if a[_PERCENT] > b[_PERCENT] + 1e-9:
                 by = next((o for o in active_owners if o != name), None)
-                events.append(BattleEvent(f, name, HIT, {
-                    "damage": round(a[_PERCENT] - b[_PERCENT], 6),
-                    "from": b[_PERCENT], "to": a[_PERCENT], "by": by,
-                }))
+                events.append(
+                    BattleEvent(
+                        f,
+                        name,
+                        HIT,
+                        {
+                            "damage": round(a[_PERCENT] - b[_PERCENT], 6),
+                            "from": b[_PERCENT],
+                            "to": a[_PERCENT],
+                            "by": by,
+                        },
+                    )
+                )
             if a[_LIVES] < b[_LIVES]:
-                events.append(BattleEvent(f, name, KO, {
-                    "stock_from": b[_LIVES], "stock_to": a[_LIVES], "percent": b[_PERCENT],
-                }))
+                events.append(
+                    BattleEvent(
+                        f,
+                        name,
+                        KO,
+                        {
+                            "stock_from": b[_LIVES],
+                            "stock_to": a[_LIVES],
+                            "percent": b[_PERCENT],
+                        },
+                    )
+                )
             if a[_STATE] != b[_STATE] and a[_STATE] in NOTABLE_STATES:
-                events.append(BattleEvent(f, name, STATE,
-                                          {"from": b[_STATE], "to": a[_STATE]}))
+                events.append(BattleEvent(f, name, STATE, {"from": b[_STATE], "to": a[_STATE]}))
 
         # MATCH_END: the winner resolved this frame.
         if cur[3] is not None and prev[3] is None:

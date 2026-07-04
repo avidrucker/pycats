@@ -18,11 +18,7 @@ class InputFrame:
 
     # to string method
     def __str__(self) -> str:
-        return (
-            f"InputFrame(held={self.held}, "
-            f"pressed={self.pressed}, "
-            f"released={self.released})"
-        )
+        return f"InputFrame(held={self.held}, pressed={self.pressed}, released={self.released})"
 
 
 def merge_frames(frames) -> InputFrame:

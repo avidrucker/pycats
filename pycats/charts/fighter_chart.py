@@ -51,6 +51,7 @@ force_ko / force_idle transitions — which fire on distinct events and therefor
 never conflict with the per-leaf tick ordering — are hoisted to the `action`
 compound parent so every action leaf inherits them in one place.
 """
+
 from __future__ import annotations
 
 from statecharts import on, parallel, state, statechart, transition
@@ -174,8 +175,7 @@ def build_fighter_chart(p):
     # Each guard reading current_move first checks for None to avoid
     # AttributeError when no move is live.
     def _mf_gt(thresh):
-        return lambda e, d: (p.current_move is not None
-                             and p.move_frame > thresh(p.current_move))
+        return lambda e, d: p.current_move is not None and p.move_frame > thresh(p.current_move)
 
     attacking = state(
         {"id": "attacking", "initial": "startup"},
@@ -205,19 +205,34 @@ def build_fighter_chart(p):
             # Waveland (#202): a diagonal-down air dodge that lands cancels into a
             # grounded slide + landing lag (landing_lag_timer set in _handle_landing).
             # Highest priority so it wins over the shield/idle ground exits.
-            _tick(lambda e, d: p.fighter.dodge_timer <= 0 and p.fighter.on_ground
-                  and p.fighter.landing_lag_timer > 0, "landing_lag"),
-            _tick(lambda e, d: p.fighter.shield_attempting and p.fighter.dodge_timer <= 0
-                  and p.fighter.on_ground, "shield"),
-            _tick(lambda e, d: not p.fighter.shield_attempting and p.fighter.dodge_timer <= 0
-                  and p.fighter.on_ground and not p.fighter.spot_dodge_shield_held, "idle"),
+            _tick(
+                lambda e, d: p.fighter.dodge_timer <= 0 and p.fighter.on_ground and p.fighter.landing_lag_timer > 0,
+                "landing_lag",
+            ),
+            _tick(
+                lambda e, d: p.fighter.shield_attempting and p.fighter.dodge_timer <= 0 and p.fighter.on_ground,
+                "shield",
+            ),
+            _tick(
+                lambda e, d: (
+                    not p.fighter.shield_attempting
+                    and p.fighter.dodge_timer <= 0
+                    and p.fighter.on_ground
+                    and not p.fighter.spot_dodge_shield_held
+                ),
+                "idle",
+            ),
             # PM air dodge (#184): an air dodge exits into `helpless` (special-fall),
             # not straight to `fall` — locked out of actions until landing. A
             # non-air (ground) dodge that somehow ends airborne still falls.
-            _tick(lambda e, d: p.fighter.dodge_timer <= 0 and not p.fighter.on_ground
-                  and p.fighter.air_dodge_active, "helpless"),
-            _tick(lambda e, d: p.fighter.dodge_timer <= 0 and not p.fighter.on_ground
-                  and not p.fighter.air_dodge_active, "fall"),
+            _tick(
+                lambda e, d: p.fighter.dodge_timer <= 0 and not p.fighter.on_ground and p.fighter.air_dodge_active,
+                "helpless",
+            ),
+            _tick(
+                lambda e, d: p.fighter.dodge_timer <= 0 and not p.fighter.on_ground and not p.fighter.air_dodge_active,
+                "fall",
+            ),
         ),
     )
 
@@ -250,12 +265,10 @@ def build_fighter_chart(p):
         # player.update has started the roll (getup_roll_timer > 0) before this tick
         # — route to the roll instead of the neutral stand. Highest priority so it
         # wins over the plain idle/fall getup exits below.
-        _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.getup_roll_timer > 0,
-              "getup_roll"),
+        _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.getup_roll_timer > 0, "getup_roll"),
         # Getup-attack (#225): if attack was held at getup, player.update started the
         # wake-up move on the clock (getup_attack_active) — swing instead of standing.
-        _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.getup_attack_timer > 0,
-              "getup_attack"),
+        _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.getup_attack_timer > 0, "getup_attack"),
         _tick(lambda e, d: p.fighter.prone_timer <= 0 and p.fighter.on_ground, "idle"),
         _tick(lambda e, d: p.fighter.prone_timer <= 0 and not p.fighter.on_ground, "fall"),
     )
@@ -290,8 +303,7 @@ def build_fighter_chart(p):
         # Waveland from special-fall (#202): if the air dodge's helpless fall ends on
         # the ground while a landing-lag window is armed, route through landing_lag;
         # otherwise a plain helpless landing recovers straight to idle (#184).
-        _tick(lambda e, d: p.fighter.on_ground and p.fighter.landing_lag_timer > 0,
-              "landing_lag"),
+        _tick(lambda e, d: p.fighter.on_ground and p.fighter.landing_lag_timer > 0, "landing_lag"),
         _tick(lambda e, d: p.fighter.on_ground, "idle"),
     )
 
@@ -314,8 +326,7 @@ def build_fighter_chart(p):
         {"id": "ledge_hang"},
         # Neutral getup started (#311): a climb window (ledge_getup_timer) opens; the
         # edge frees to others at half and the fighter finishes onto the stage.
-        _tick(lambda e, d: p.fighter.grabbed_ledge is not None
-              and p.fighter.ledge_getup_timer > 0, "ledge_getup"),
+        _tick(lambda e, d: p.fighter.grabbed_ledge is not None and p.fighter.ledge_getup_timer > 0, "ledge_getup"),
         _tick(lambda e, d: p.fighter.grabbed_ledge is None and p.fighter.on_ground, "idle"),
         _tick(lambda e, d: p.fighter.grabbed_ledge is None and not p.fighter.on_ground, "fall"),
     )
@@ -338,15 +349,15 @@ def build_fighter_chart(p):
     # move-clock invariant (#71) is untouched.
     smash_charge = state(
         {"id": "smash_charge"},
-        _tick(lambda e, d: p.attack_timer > 0, "attacking"),   # released/maxed -> swing
+        _tick(lambda e, d: p.attack_timer > 0, "attacking"),  # released/maxed -> swing
         _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),  # hit mid-charge
         _tick(lambda e, d: p.fighter.stun_timer > 0, "stun"),
         _tick(lambda e, d: not p.fighter.is_alive, "ko"),
         # Charge abandoned without firing (pending cleared, no swing started).
-        _tick(lambda e, d: p.fighter.pending_smash_key is None and p.attack_timer == 0
-              and p.fighter.on_ground, "idle"),
-        _tick(lambda e, d: p.fighter.pending_smash_key is None and p.attack_timer == 0
-              and not p.fighter.on_ground, "fall"),
+        _tick(lambda e, d: p.fighter.pending_smash_key is None and p.attack_timer == 0 and p.fighter.on_ground, "idle"),
+        _tick(
+            lambda e, d: p.fighter.pending_smash_key is None and p.attack_timer == 0 and not p.fighter.on_ground, "fall"
+        ),
     )
 
     action = state(

@@ -16,6 +16,7 @@ prefs here, per-player config stays on char-select). Each change persists throug
 Nav convention (research #115 §10.4): up/down move, A (attack) confirms/toggles,
 B (special) backs out.
 """
+
 import pygame  # type: ignore
 
 from . import runtime_settings, settings
@@ -50,8 +51,8 @@ NCOLS = 2
 # at bottom-centre in a reserved band above the hint lines (never overlaps a button).
 CAPTION_SIZE = 18
 CAPTION_COLOR = MAIN_MENU_SELECTED_COLOR  # ties the caption to the focused row
-INSTRUCTION_FONT_SIZE = 20   # bottom nav-hint lines (also drives the instr-band height)
-MORE_CUE_FONT_SIZE = 18      # the "↑ more" / "↓ more" scroll affordances
+INSTRUCTION_FONT_SIZE = 20  # bottom nav-hint lines (also drives the instr-band height)
+MORE_CUE_FONT_SIZE = 18  # the "↑ more" / "↓ more" scroll affordances
 ROW_DESCRIPTIONS = {
     "status_bars": "Show the HUD stun / shield timer bars above each fighter.",
     "hitbox_overlay": "Draw debug hit / hurtbox outlines during battle.",
@@ -77,9 +78,18 @@ class OptionsMenu:
         self.display_hooks = display_hooks or {}
 
         # Row keys in display order. "back" is the explicit exit row.
-        self.rows = ["status_bars", "hitbox_overlay", "input_history", "controls",
-                     "font_scale", "window_scale", "fullscreen", "esc_quit",
-                     "keybindings", "back"]
+        self.rows = [
+            "status_bars",
+            "hitbox_overlay",
+            "input_history",
+            "controls",
+            "font_scale",
+            "window_scale",
+            "fullscreen",
+            "esc_quit",
+            "keybindings",
+            "back",
+        ]
         self.selected_option = 0
         # Keybinding sub-mode (#455): activating the "keybindings" row hands input +
         # rendering to this KeybindMenu (#447) over the shared control maps until back.
@@ -90,7 +100,7 @@ class OptionsMenu:
         # shared control maps (so it saves/loads exactly what the rebind screen edits).
         self.sets = KeybindSetsMenu([p1_controls, p2_controls])
         self.sets_mode = False
-        self.keybind_on_schemes = False   # focus is on the trailing Schemes row, not an action
+        self.keybind_on_schemes = False  # focus is on the trailing Schemes row, not an action
         # Top visible grid-row when the grid is taller than the viewport (large
         # font_scale); kept in range by render via scroll_to_visible (#402).
         self.scroll_top = 0
@@ -117,9 +127,7 @@ class OptionsMenu:
         partial control dict (e.g. no left/right bound) is inert, not a KeyError."""
         a = self.p1_controls.get(action)
         b = self.p2_controls.get(action)
-        return (a is not None and a in pressed_keys) or (
-            b is not None and b in pressed_keys
-        )
+        return (a is not None and a in pressed_keys) or (b is not None and b in pressed_keys)
 
     def update(self, pressed_keys):
         # Decay the press-flash every frame, before the cooldown early-return (#332).
@@ -169,12 +177,12 @@ class OptionsMenu:
                 new = n - 1
             self.selected_option = new
             self.input_cooldown = MENU_NAV_COOLDOWN
-            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
+            self.press_pulse = PRESS_PULSE_FRAMES  # flash the newly-focused row
 
         if self._pressed("attack", pressed_keys):
             self._activate(self.rows[self.selected_option])
             self.input_cooldown = MENU_SELECT_COOLDOWN
-            self.press_pulse = PRESS_PULSE_FRAMES     # flash the activated row
+            self.press_pulse = PRESS_PULSE_FRAMES  # flash the activated row
 
     def _update_keybind(self, pressed_keys):
         """Drive the KeybindMenu (#447/#455) while the sub-mode is active. Reads the same
@@ -188,11 +196,11 @@ class OptionsMenu:
         if kb.capturing:
             fresh = [k for k in pressed_keys]
             if fresh:
-                kb.capture_key(min(fresh))     # deterministic pick if several coincide
+                kb.capture_key(min(fresh))  # deterministic pick if several coincide
                 self.input_cooldown = MENU_SELECT_COOLDOWN
             return
         if self._pressed("special", pressed_keys):
-            self.keybind_mode = False           # back to the options grid
+            self.keybind_mode = False  # back to the options grid
             self.input_cooldown = MENU_SELECT_COOLDOWN
             return
         # Nav spans the action list plus a trailing "Schemes…" row (#463). The schemes
@@ -219,14 +227,14 @@ class OptionsMenu:
                 kb.nav(1)
             moved = True
         if self._pressed("left", pressed_keys) or self._pressed("right", pressed_keys):
-            kb.switch_player()   # also re-targets which player save/load uses
+            kb.switch_player()  # also re-targets which player save/load uses
             moved = True
         if moved:
             self.input_cooldown = MENU_NAV_COOLDOWN
             return
         if self._pressed("attack", pressed_keys):
             if self.keybind_on_schemes:
-                self.sets_mode = True           # hand input + render to the sets menu
+                self.sets_mode = True  # hand input + render to the sets menu
                 self.sets.open(kb.player)
             else:
                 kb.activate()
@@ -251,15 +259,13 @@ class OptionsMenu:
             sm.select()
             self.input_cooldown = MENU_SELECT_COOLDOWN
         else:
-            dx = (1 if self._pressed("right", pressed_keys) else 0) - \
-                 (1 if self._pressed("left", pressed_keys) else 0)
-            dy = (1 if self._pressed("down", pressed_keys) else 0) - \
-                 (1 if self._pressed("up", pressed_keys) else 0)
+            dx = (1 if self._pressed("right", pressed_keys) else 0) - (1 if self._pressed("left", pressed_keys) else 0)
+            dy = (1 if self._pressed("down", pressed_keys) else 0) - (1 if self._pressed("up", pressed_keys) else 0)
             if dx or dy:
                 sm.move(dx, dy)
                 self.input_cooldown = MENU_NAV_COOLDOWN
         if sm.done:
-            self.sets_mode = False          # back to the keybind screen (Schemes row)
+            self.sets_mode = False  # back to the keybind screen (Schemes row)
             self.input_cooldown = MENU_SELECT_COOLDOWN
 
     def _activate(self, row):
@@ -297,11 +303,9 @@ class OptionsMenu:
                 hook()
         elif row == "esc_quit":
             prefs = settings.load()
-            settings.save(
-                {"esc_hold_to_navigate": not prefs.get("esc_hold_to_navigate", True)}
-            )
+            settings.save({"esc_hold_to_navigate": not prefs.get("esc_hold_to_navigate", True)})
         elif row == "keybindings":
-            self.keybind_mode = True          # hand input + render to the KeybindMenu
+            self.keybind_mode = True  # hand input + render to the KeybindMenu
             self.keybind.player = 0
             self.keybind.action_index = 0
             self.keybind_on_schemes = False
@@ -321,8 +325,7 @@ class OptionsMenu:
         if row == "controls":
             return "Controls: " + ("ON" if runtime_settings.show_controls() else "OFF")
         if row == "font_scale":
-            return "Font Size: " + FONT_SCALE_NAMES.get(
-                runtime_settings.get("font_scale"), "Standard")
+            return "Font Size: " + FONT_SCALE_NAMES.get(runtime_settings.get("font_scale"), "Standard")
         if row == "window_scale":
             getter = self.display_hooks.get("get_windowed_scale")
             return "Window Size: " + (f"{getter():g}x" if getter else "F10")
@@ -330,9 +333,7 @@ class OptionsMenu:
             getter = self.display_hooks.get("is_fullscreen")
             return "Fullscreen: " + (("ON" if getter() else "OFF") if getter else "F11")
         if row == "esc_quit":
-            return "Hold-ESC Back: " + (
-                "ON" if settings.load().get("esc_hold_to_navigate", True) else "OFF"
-            )
+            return "Hold-ESC Back: " + ("ON" if settings.load().get("esc_hold_to_navigate", True) else "OFF")
         if row == "keybindings":
             return "Keybindings"
         if row == "back":
@@ -345,8 +346,7 @@ class OptionsMenu:
         label sets the width so the grid columns line up."""
         w, h = BUTTON_MIN_WIDTH, 0
         for row in self.rows:
-            bw, bh = menu_button_size(self._row_label(row), MAIN_MENU_OPTION_SIZE,
-                                      focused=True)
+            bw, bh = menu_button_size(self._row_label(row), MAIN_MENU_OPTION_SIZE, focused=True)
             w, h = max(w, bw), max(h, bh)
         return w, h
 
@@ -373,8 +373,7 @@ class OptionsMenu:
         """(text, rect) for the focused caption, ellipsized to fit and centred in the
         reserved caption band. Shared by render and the no-overlap test (#390)."""
         scale = runtime_settings.font_scale()
-        text = self._fit_caption(self._focused_caption(), CAPTION_SIZE,
-                                 SCREEN_WIDTH - round(40 * scale))
+        text = self._fit_caption(self._focused_caption(), CAPTION_SIZE, SCREEN_WIDTH - round(40 * scale))
         w, h = text_renderer._get_font(None, CAPTION_SIZE).size(text)
         rect = pygame.Rect(0, 0, w, h)
         rect.center = meta["caption_center"]
@@ -415,8 +414,7 @@ class OptionsMenu:
         sel_row = self.selected_option // ncols
         self.scroll_top = scroll_to_visible(self.scroll_top, sel_row, visible_rows, nrows)
 
-        col_x = (SCREEN_WIDTH // 2,) if ncols == 1 else (SCREEN_WIDTH // 4,
-                                                         SCREEN_WIDTH * 3 // 4)
+        col_x = (SCREEN_WIDTH // 2,) if ncols == 1 else (SCREEN_WIDTH // 4, SCREEN_WIDTH * 3 // 4)
         last = min(nrows, self.scroll_top + visible_rows)
         placements = []
         for gr in range(self.scroll_top, last):
@@ -427,12 +425,20 @@ class OptionsMenu:
                     placements.append((i, (col_x[c], cy)))
 
         more_below_y = grid_top + visible_rows * row_spacing + more_strip // 2
-        meta = dict(ncols=ncols, nrows=nrows, visible_rows=visible_rows,
-                    title_center=(SCREEN_WIDTH // 2, title_center_y),
-                    grid_top=grid_top, instr_top=instr_top, instr_line=instr_line,
-                    caption_center=(SCREEN_WIDTH // 2, caption_center_y),
-                    more_above=self.scroll_top > 0, more_below=last < nrows,
-                    more_below_y=more_below_y, button_width=bw)
+        meta = dict(
+            ncols=ncols,
+            nrows=nrows,
+            visible_rows=visible_rows,
+            title_center=(SCREEN_WIDTH // 2, title_center_y),
+            grid_top=grid_top,
+            instr_top=instr_top,
+            instr_line=instr_line,
+            caption_center=(SCREEN_WIDTH // 2, caption_center_y),
+            more_above=self.scroll_top > 0,
+            more_below=last < nrows,
+            more_below_y=more_below_y,
+            button_width=bw,
+        )
         return placements, meta
 
     # ---- render ----
@@ -448,8 +454,12 @@ class OptionsMenu:
         placements, meta = self._layout()
 
         text_renderer.render_text_simple(
-            "Options", MAIN_MENU_TITLE_SIZE, MAIN_MENU_TITLE_COLOR, surface,
-            meta["title_center"], center=True,
+            "Options",
+            MAIN_MENU_TITLE_SIZE,
+            MAIN_MENU_TITLE_COLOR,
+            surface,
+            meta["title_center"],
+            center=True,
         )
 
         for i, center in placements:
@@ -457,8 +467,12 @@ class OptionsMenu:
             # focused, with a redundant ► marker (focus not colour-only, #346). A
             # uniform width keeps the columns aligned (#402).
             draw_menu_button(
-                surface, self._row_label(self.rows[i]), center, MAIN_MENU_OPTION_SIZE,
-                focused=(i == self.selected_option), min_width=meta["button_width"],
+                surface,
+                self._row_label(self.rows[i]),
+                center,
+                MAIN_MENU_OPTION_SIZE,
+                focused=(i == self.selected_option),
+                min_width=meta["button_width"],
                 pressed=(i == self.selected_option and self.press_pulse > 0),
             )
 
@@ -467,27 +481,31 @@ class OptionsMenu:
         # bottom strip, above the caption band (#390).
         if meta["more_above"]:
             text_renderer.render_mixed_centered(
-                "↑ more", MORE_CUE_FONT_SIZE, WHITE, surface,
-                (SCREEN_WIDTH // 2, meta["grid_top"] - round(12 * scale)))
+                "↑ more", MORE_CUE_FONT_SIZE, WHITE, surface, (SCREEN_WIDTH // 2, meta["grid_top"] - round(12 * scale))
+            )
         if meta["more_below"]:
             text_renderer.render_mixed_centered(
-                "↓ more", MORE_CUE_FONT_SIZE, WHITE, surface,
-                (SCREEN_WIDTH // 2, meta["more_below_y"]))
+                "↓ more", MORE_CUE_FONT_SIZE, WHITE, surface, (SCREEN_WIDTH // 2, meta["more_below_y"])
+            )
 
         # Focused-option caption (#390): describes what the highlighted row does, in a
         # reserved band above the hints so it never overlaps a button.
         caption_text, _caption_rect = self._caption_layout(meta)
         if caption_text:
             text_renderer.render_text_mixed(
-                caption_text, CAPTION_SIZE, CAPTION_COLOR, surface,
-                meta["caption_center"], center=True)
+                caption_text, CAPTION_SIZE, CAPTION_COLOR, surface, meta["caption_center"], center=True
+            )
 
         instructions = ["Use WASD or arrows to navigate", "A to toggle, B to go back"]
         for i, instruction in enumerate(instructions):
             cy = meta["instr_top"] + i * meta["instr_line"] + meta["instr_line"] // 2
             text_renderer.render_text_mixed(
-                instruction, INSTRUCTION_FONT_SIZE, WHITE, surface,
-                (SCREEN_WIDTH // 2, cy), center=True,
+                instruction,
+                INSTRUCTION_FONT_SIZE,
+                WHITE,
+                surface,
+                (SCREEN_WIDTH // 2, cy),
+                center=True,
             )
 
     def _render_keybind(self, surface):
@@ -497,52 +515,67 @@ class OptionsMenu:
         kb = self.keybind
         scale = runtime_settings.font_scale()
         text_renderer.render_text_simple(
-            f"Keybindings — Player {kb.player + 1}", MAIN_MENU_TITLE_SIZE,
-            MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, round(30 * scale)),
-            center=True)
+            f"Keybindings — Player {kb.player + 1}",
+            MAIN_MENU_TITLE_SIZE,
+            MAIN_MENU_TITLE_COLOR,
+            surface,
+            (SCREEN_WIDTH // 2, round(30 * scale)),
+            center=True,
+        )
 
         row_h = round(30 * scale)
         top = round(80 * scale)
         for i, action in enumerate(kb.actions):
-            focused = (i == kb.action_index)
+            focused = i == kb.action_index
             if focused and kb.capturing:
                 label = f"{action}:  < press a key >"
             else:
                 label = f"{action}:  {pygame.key.name(kb.keymaps[kb.player][action]).upper()}"
             text_renderer.render_text_mixed(
-                ("► " if focused else "   ") + label, MAIN_MENU_OPTION_SIZE,
-                MAIN_MENU_SELECTED_COLOR if focused else WHITE, surface,
-                (SCREEN_WIDTH // 2, top + i * row_h), center=True)
+                ("► " if focused else "   ") + label,
+                MAIN_MENU_OPTION_SIZE,
+                MAIN_MENU_SELECTED_COLOR if focused else WHITE,
+                surface,
+                (SCREEN_WIDTH // 2, top + i * row_h),
+                center=True,
+            )
 
         # Trailing "Schemes…" row (#463): opens the save / load / rename / delete menu.
         schemes_focused = self.keybind_on_schemes
         text_renderer.render_text_mixed(
-            ("► " if schemes_focused else "   ") + "Schemes...", MAIN_MENU_OPTION_SIZE,
-            MAIN_MENU_SELECTED_COLOR if schemes_focused else WHITE, surface,
-            (SCREEN_WIDTH // 2, top + len(kb.actions) * row_h), center=True)
+            ("► " if schemes_focused else "   ") + "Schemes...",
+            MAIN_MENU_OPTION_SIZE,
+            MAIN_MENU_SELECTED_COLOR if schemes_focused else WHITE,
+            surface,
+            (SCREEN_WIDTH // 2, top + len(kb.actions) * row_h),
+            center=True,
+        )
 
         if kb.message:
             text_renderer.render_text_mixed(
-                kb.message, CAPTION_SIZE, CAPTION_COLOR, surface,
+                kb.message,
+                CAPTION_SIZE,
+                CAPTION_COLOR,
+                surface,
                 (SCREEN_WIDTH // 2, top + (len(kb.actions) + 1) * row_h + round(12 * scale)),
-                center=True)
+                center=True,
+            )
 
-        hints = ["Up/Down: row    Left/Right: player    A: rebind / open",
-                 "Shield: reset player    B: back"]
+        hints = ["Up/Down: row    Left/Right: player    A: rebind / open", "Shield: reset player    B: back"]
         instr_h = text_renderer._get_font(None, INSTRUCTION_FONT_SIZE).get_height()
         step = instr_h + round(4 * scale)
         base = SCREEN_HEIGHT - 2 * step
         for i, hint in enumerate(hints):
             text_renderer.render_text_mixed(
-                hint, INSTRUCTION_FONT_SIZE, WHITE, surface,
-                (SCREEN_WIDTH // 2, base + i * step), center=True)
+                hint, INSTRUCTION_FONT_SIZE, WHITE, surface, (SCREEN_WIDTH // 2, base + i * step), center=True
+            )
 
     def _render_sets(self, surface):
         """The saved-scheme sub-mode (#463): the top menu, a set list (load/rename/
         delete), the text-entry name grid, or the delete-confirm prompt — plus the last
         status message + nav hints. The name grid reuses draw_text_entry (#471)."""
         sm = self.sets
-        if sm.view == "text":                       # the shared on-screen keyboard
+        if sm.view == "text":  # the shared on-screen keyboard
             title = "Rename scheme" if sm.entry_action == "rename" else "Name this scheme"
             draw_text_entry(surface, sm.entry, title=title)
             return
@@ -554,38 +587,70 @@ class OptionsMenu:
 
         if sm.view == "confirm":
             text_renderer.render_text_simple(
-                "Delete scheme?", MAIN_MENU_TITLE_SIZE, MAIN_MENU_TITLE_COLOR, surface,
-                (SCREEN_WIDTH // 2, round(30 * scale)), center=True)
+                "Delete scheme?",
+                MAIN_MENU_TITLE_SIZE,
+                MAIN_MENU_TITLE_COLOR,
+                surface,
+                (SCREEN_WIDTH // 2, round(30 * scale)),
+                center=True,
+            )
             text_renderer.render_text_mixed(
-                f"Delete '{sm.confirm_name}'?", MAIN_MENU_OPTION_SIZE, WHITE, surface,
-                (SCREEN_WIDTH // 2, top), center=True)
+                f"Delete '{sm.confirm_name}'?",
+                MAIN_MENU_OPTION_SIZE,
+                WHITE,
+                surface,
+                (SCREEN_WIDTH // 2, top),
+                center=True,
+            )
             rows, focus_i, hint = [], -1, "A: delete    B: cancel"
         elif sm.view == "list":
             titles = {"load": "Load scheme", "rename": "Rename scheme", "delete": "Delete scheme"}
             text_renderer.render_text_simple(
-                titles.get(sm.list_action, "Schemes"), MAIN_MENU_TITLE_SIZE,
-                MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, round(30 * scale)),
-                center=True)
+                titles.get(sm.list_action, "Schemes"),
+                MAIN_MENU_TITLE_SIZE,
+                MAIN_MENU_TITLE_COLOR,
+                surface,
+                (SCREEN_WIDTH // 2, round(30 * scale)),
+                center=True,
+            )
             rows, focus_i, hint = sm.sets, sm.list_index, "Up/Down: choose    A: select    B: back"
-        else:                                        # the top menu
+        else:  # the top menu
             text_renderer.render_text_simple(
-                f"Keybind Schemes — Player {sm.player + 1}", MAIN_MENU_TITLE_SIZE,
-                MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, round(30 * scale)),
-                center=True)
+                f"Keybind Schemes — Player {sm.player + 1}",
+                MAIN_MENU_TITLE_SIZE,
+                MAIN_MENU_TITLE_COLOR,
+                surface,
+                (SCREEN_WIDTH // 2, round(30 * scale)),
+                center=True,
+            )
             rows, focus_i, hint = sm.MENU, sm.menu_index, "Up/Down: choose    A: select    B: back"
 
         for i, label in enumerate(rows):
-            focused = (i == focus_i)
+            focused = i == focus_i
             text_renderer.render_text_mixed(
-                ("► " if focused else "   ") + label, MAIN_MENU_OPTION_SIZE,
-                MAIN_MENU_SELECTED_COLOR if focused else WHITE, surface,
-                (SCREEN_WIDTH // 2, top + i * row_h), center=True)
+                ("► " if focused else "   ") + label,
+                MAIN_MENU_OPTION_SIZE,
+                MAIN_MENU_SELECTED_COLOR if focused else WHITE,
+                surface,
+                (SCREEN_WIDTH // 2, top + i * row_h),
+                center=True,
+            )
 
         if sm.message:
             text_renderer.render_text_mixed(
-                sm.message, CAPTION_SIZE, CAPTION_COLOR, surface,
-                (SCREEN_WIDTH // 2, top + (max(len(rows), 1) + 1) * row_h), center=True)
+                sm.message,
+                CAPTION_SIZE,
+                CAPTION_COLOR,
+                surface,
+                (SCREEN_WIDTH // 2, top + (max(len(rows), 1) + 1) * row_h),
+                center=True,
+            )
 
         text_renderer.render_text_mixed(
-            hint, INSTRUCTION_FONT_SIZE, WHITE, surface,
-            (SCREEN_WIDTH // 2, SCREEN_HEIGHT - round(30 * scale)), center=True)
+            hint,
+            INSTRUCTION_FONT_SIZE,
+            WHITE,
+            surface,
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT - round(30 * scale)),
+            center=True,
+        )

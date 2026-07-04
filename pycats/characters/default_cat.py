@@ -59,8 +59,8 @@ from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 # Origin = top-left of player rect; dx=20 centres circles horizontally.
 _HURTBOX = Hurtbox(
     circles=(
-        Circle(dx=20, dy=15, r=14),   # upper body (head/torso region)
-        Circle(dx=20, dy=45, r=14),   # lower body (legs region)
+        Circle(dx=20, dy=15, r=14),  # upper body (head/torso region)
+        Circle(dx=20, dy=45, r=14),  # lower body (legs region)
     )
 )
 
@@ -76,7 +76,7 @@ _ATTACK_HITBOX = Hitbox(
     circle=Circle(dx=46, dy=30, r=12),
     damage=10.0,
     angle=0,
-    base_knockback=30.0,    # ⚠ initial tuning — a light jab; playtest with KNOCKBACK_LAUNCH_FACTOR/DECAY
+    base_knockback=30.0,  # ⚠ initial tuning — a light jab; playtest with KNOCKBACK_LAUNCH_FACTOR/DECAY
     knockback_growth=100.0,
 )
 

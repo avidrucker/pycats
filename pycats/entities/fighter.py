@@ -26,6 +26,7 @@ Invariants (S3 — enforced once, at the setter, instead of re-derived per site)
 - ``0 <= shield_hp <= SHIELD_MAX_HP`` (clamps were scattered across player.py)
 - ``lives >= 0``                   (was only clamped at the `_ko` site, #54)
 """
+
 from __future__ import annotations
 
 import math
@@ -244,9 +245,14 @@ class Fighter:
         tick (was inline in `Player.update()`, N2). `ledge_hang`/`respawn` (other
         regions) and `hitlag` (bound to the freeze early-return) stay in
         `Player.update()` until later slices (#264 S4b/S5)."""
-        for name in ("hurt_timer", "stun_timer", "landing_lag_timer",
-                     "ledge_regrab_lockout_timer", "shieldstun_timer",
-                     "dash_input_window"):  # #403: double-tap window (stateless)
+        for name in (
+            "hurt_timer",
+            "stun_timer",
+            "landing_lag_timer",
+            "ledge_regrab_lockout_timer",
+            "shieldstun_timer",
+            "dash_input_window",
+        ):  # #403: double-tap window (stateless)
             v = getattr(self, name)
             if v > 0:
                 setattr(self, name, v - 1)
@@ -326,11 +332,9 @@ class Fighter:
             # The hit still dealt its damage % above; only the knockback is set.
             wdsk = getattr(atk, "set_knockback", None)
             if wdsk is not None:
-                kb = set_knockback(wdsk, self.weight,
-                                   atk.base_knockback, atk.knockback_growth)
+                kb = set_knockback(wdsk, self.weight, atk.base_knockback, atk.knockback_growth)
             else:
-                kb = knockback(self.percent, atk.damage, self.weight,
-                               atk.base_knockback, atk.knockback_growth)
+                kb = knockback(self.percent, atk.damage, self.weight, atk.base_knockback, atk.knockback_growth)
             # Crouch-cancel (#135): a hit taken while in the `crouch` state (#124)
             # has its knockback scaled down by CROUCH_CANCEL_FACTOR (0.67x, PM)
             # before launch + hitstun are derived — crouch as a defensive tool.
@@ -338,12 +342,10 @@ class Fighter:
             if is_crouching:
                 kb *= CROUCH_CANCEL_FACTOR
             self.hurt_timer = hitstun_frames(kb)
-            self.cancel_smash_charge()   # a hit mid-charge abandons the smash (#327/3a)
+            self.cancel_smash_charge()  # a hit mid-charge abandons the smash (#327/3a)
             self.smash_angle_dir = None  # ...and its aimed angle (#327/4)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
-            direction = (
-                1 if atk.owner.fighter.facing_right else -1
-            )  # the direction of the attack
+            direction = 1 if atk.owner.fighter.facing_right else -1  # the direction of the attack
             # Sakurai-angle sentinel (#203): 361 is a code, not literal degrees —
             # resolve it from this hit's knockback + whether we're grounded.
             angle_deg = atk.angle
@@ -395,8 +397,7 @@ class Fighter:
             # gate is what separates this from a normal jump landing (same impact
             # speed, but hurt_timer == 0). Clear hurt_timer so the getup exit
             # (prone -> idle when prone_timer hits 0) doesn't pop back into hurt.
-            if (self.hurt_timer > 0
-                    and self.land_impact_vy >= KNOCKDOWN_VY_THRESHOLD):
+            if self.hurt_timer > 0 and self.land_impact_vy >= KNOCKDOWN_VY_THRESHOLD:
                 self.hurt_timer = 0
                 return True  # caller applies force_prone (#298/S5)
         return False
@@ -595,8 +596,7 @@ class Fighter:
                 # drives into the ground. Landing then cancels into a grounded slide
                 # (the waveland) via wavedash_armed. +y is down.
                 ang = math.radians(WAVEDASH_ANGLE_DEG)
-                self.vel.update(dir_x * DODGE_AIR_SPEED * math.cos(ang),
-                                DODGE_AIR_SPEED * math.sin(ang))
+                self.vel.update(dir_x * DODGE_AIR_SPEED * math.cos(ang), DODGE_AIR_SPEED * math.sin(ang))
                 self.air_dodge_active = True
                 self.wavedash_armed = True
             else:

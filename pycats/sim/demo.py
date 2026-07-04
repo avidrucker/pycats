@@ -11,6 +11,7 @@ Playback: `demo_timeline(demo, keymaps)` compiles the segments into one `InputFr
 timeline (feed to `run_battle(frame_inputs=…)`); `demo_captions(demo)` builds the timed
 `Caption` list (hand to the presenter). Both are pure and deterministic (#166).
 """
+
 from __future__ import annotations
 
 import re
@@ -28,6 +29,7 @@ class DemoSegment:
     The caption's frame window defaults to the spans' extent (`[min start, max end)`,
     inclusive last frame); `start`/`end` override it (e.g. an untimed intro caption over
     a segment with no spans)."""
+
     caption: str
     spans: tuple[InputSpan, ...] = ()
     start: int | None = None
@@ -48,14 +50,14 @@ class DemoSegment:
         if self.start is not None and self.end is not None:
             return (self.start, self.end)
         if self.spans:
-            return (min(s.start for s in self.spans),
-                    max(s.end for s in self.spans) - 1)
+            return (min(s.start for s in self.spans), max(s.end for s in self.spans) - 1)
         return None  # always-on
 
 
 @dataclass(frozen=True)
 class Demo:
     """A named, playable choreography: ordered segments + the fighters to build."""
+
     name: str
     segments: tuple[DemoSegment, ...]
     p1_char: str | None = None
@@ -81,16 +83,21 @@ def demo_captions(demo: Demo) -> list[Caption]:
         if seg.dwell_at is not None:
             if win is None:
                 raise ValueError(
-                    f"segment {i} ({seg.caption!r}) sets dwell_at={seg.dwell_at} but has no "
-                    f"frame window to anchor to")
+                    f"segment {i} ({seg.caption!r}) sets dwell_at={seg.dwell_at} but has no frame window to anchor to"
+                )
             if not (win[0] <= seg.dwell_at <= win[1]):
-                raise ValueError(
-                    f"segment {i} ({seg.caption!r}) dwell_at={seg.dwell_at} is outside its "
-                    f"window {win}")
-        caps.append(Caption(
-            f"{i}/{n} — {seg.caption}", anchor=seg.anchor, size=seg.size, font=seg.font,
-            frames=win, dwell=(seg.dwell if seg.dwell is not None else demo.default_dwell),
-            dwell_at=seg.dwell_at))
+                raise ValueError(f"segment {i} ({seg.caption!r}) dwell_at={seg.dwell_at} is outside its window {win}")
+        caps.append(
+            Caption(
+                f"{i}/{n} — {seg.caption}",
+                anchor=seg.anchor,
+                size=seg.size,
+                font=seg.font,
+                frames=win,
+                dwell=(seg.dwell if seg.dwell is not None else demo.default_dwell),
+                dwell_at=seg.dwell_at,
+            )
+        )
     return caps
 
 
@@ -118,8 +125,9 @@ def _ts_to_seconds(h, m, s, ms) -> float:
     return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000.0
 
 
-def captions_from_srt(srt_text: str, fps: int = FPS, anchor: str = BOTTOM_CENTER,
-                      size: int = 32, font: str | None = None) -> list[Caption]:
+def captions_from_srt(
+    srt_text: str, fps: int = FPS, anchor: str = BOTTOM_CENTER, size: int = 32, font: str | None = None
+) -> list[Caption]:
     """Parse SRT subtitle text into timed Captions (timestamps -> frame windows).
 
     Each entry's `[start, end)` seconds map to the inclusive frame window
@@ -137,13 +145,12 @@ def captions_from_srt(srt_text: str, fps: int = FPS, anchor: str = BOTTOM_CENTER
         m = _TIME_LINE.search(lines[time_idx])
         start_s = _ts_to_seconds(*m.group(1, 2, 3, 4))
         end_s = _ts_to_seconds(*m.group(5, 6, 7, 8))
-        text = " ".join(lines[time_idx + 1:]).strip()
+        text = " ".join(lines[time_idx + 1 :]).strip()
         if not text:
             continue
         start_f = round(start_s * fps)
         end_f = max(start_f, round(end_s * fps) - 1)
-        captions.append(Caption(text, anchor=anchor, size=size, font=font,
-                                frames=(start_f, end_f)))
+        captions.append(Caption(text, anchor=anchor, size=size, font=font, frames=(start_f, end_f)))
     return captions
 
 
@@ -153,7 +160,8 @@ def captions_from_srt(srt_text: str, fps: int = FPS, anchor: str = BOTTOM_CENTER
 
 _EXAMPLE = Demo(
     name="example",
-    p1_char="nalio", p2_char="birky",
+    p1_char="nalio",
+    p2_char="birky",
     segments=(
         DemoSegment("Nalio walks in", spans=(InputSpan(10, 40, 1, "right"),)),
         DemoSegment("Nalio jumps", spans=(InputSpan(50, 51, 1, "up"),)),

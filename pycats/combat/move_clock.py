@@ -19,6 +19,7 @@ Invariant the golden snapshots rely on: while a move is live,
 ``remaining == total - frame`` (i.e. the legacy ``attack_timer`` equals
 ``total - move_frame``).
 """
+
 from __future__ import annotations
 
 from typing import NamedTuple
@@ -98,10 +99,7 @@ class MoveClock:
                 grouped[window] = []
                 order.append(window)
             grouped[window].append(hb)
-        return {
-            start: (tuple(grouped[(start, end)]), end - start + 1)
-            for (start, end) in order
-        }
+        return {start: (tuple(grouped[(start, end)]), end - start + 1) for (start, end) in order}
 
     # -- derived reads (back the Player properties) --------------------------
     @property

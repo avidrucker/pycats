@@ -17,6 +17,7 @@ re-source of `og_skins.OG_SKINS` / `config.CAT_CHARACTERS` (the character/skin
 *separation* and the CSS picker are Part 3). Stdlib-only, no `config` import, to
 stay dependency-free.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,12 +30,48 @@ _COLOR_FIELDS = ("color", "stripe_color", "eye_color")
 # Built-in fallback == the original six OG skins (#131). Kept in sync with
 # palettes.json; the loader falls back to this when the file is missing/corrupt.
 _DEFAULT_PALETTES = {
-    "ghost":  {"name": "Ghost",  "color": (255, 255, 255), "stripe_color": (220, 220, 220), "eye_color": (100, 100, 255), "description": "White ghost cat"},
-    "calico": {"name": "Calico", "color": (255, 160, 64),  "stripe_color": (204, 102, 0),   "eye_color": (34, 139, 34),   "description": "Orange calico cat"},
-    "tabby":  {"name": "Tabby",  "color": (128, 128, 128), "stripe_color": (64, 64, 64),     "eye_color": (255, 215, 0),   "description": "Gray tabby cat"},
-    "void":   {"name": "Void",   "color": (20, 20, 20),    "stripe_color": (0, 0, 0),        "eye_color": (0, 255, 0),     "description": "Black void cat"},
-    "tiger":  {"name": "Tiger",  "color": (255, 140, 0),   "stripe_color": (0, 0, 0),        "eye_color": (255, 215, 0),   "description": "Orange tiger cat"},
-    "bengal": {"name": "Bengal", "color": (245, 245, 220), "stripe_color": (139, 69, 19),    "eye_color": (0, 191, 255),   "description": "Bengal spotted cat"},
+    "ghost": {
+        "name": "Ghost",
+        "color": (255, 255, 255),
+        "stripe_color": (220, 220, 220),
+        "eye_color": (100, 100, 255),
+        "description": "White ghost cat",
+    },
+    "calico": {
+        "name": "Calico",
+        "color": (255, 160, 64),
+        "stripe_color": (204, 102, 0),
+        "eye_color": (34, 139, 34),
+        "description": "Orange calico cat",
+    },
+    "tabby": {
+        "name": "Tabby",
+        "color": (128, 128, 128),
+        "stripe_color": (64, 64, 64),
+        "eye_color": (255, 215, 0),
+        "description": "Gray tabby cat",
+    },
+    "void": {
+        "name": "Void",
+        "color": (20, 20, 20),
+        "stripe_color": (0, 0, 0),
+        "eye_color": (0, 255, 0),
+        "description": "Black void cat",
+    },
+    "tiger": {
+        "name": "Tiger",
+        "color": (255, 140, 0),
+        "stripe_color": (0, 0, 0),
+        "eye_color": (255, 215, 0),
+        "description": "Orange tiger cat",
+    },
+    "bengal": {
+        "name": "Bengal",
+        "color": (245, 245, 220),
+        "stripe_color": (139, 69, 19),
+        "eye_color": (0, 191, 255),
+        "description": "Bengal spotted cat",
+    },
 }
 
 

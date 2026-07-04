@@ -10,6 +10,7 @@ landing. Mutates the passed Player; behaviour is verbatim the old update() block
 Platforms is passed in (not stashed on the entity), so the old
 `self.platforms` / `hasattr(self, "platforms")` dance is gone.
 """
+
 from ..core.physics import (
     apply_gravity,
     find_current_platform,
@@ -29,9 +30,7 @@ def step_physics(p, platforms, held):
 
     # Apply gravity - but not for ground-based spot dodges to prevent falling
     # through thin platforms. Air dodges should still have normal gravity.
-    is_ground_spot_dodge = (
-        p.state == "dodge" and p.fighter.spot_dodge_shield_held and p.fighter.on_ground
-    )
+    is_ground_spot_dodge = p.state == "dodge" and p.fighter.spot_dodge_shield_held and p.fighter.on_ground
     if not is_ground_spot_dodge:
         apply_gravity(p.fighter.vel, p.fighter.gravity, p.fighter.max_fall_speed)
     else:
@@ -44,9 +43,7 @@ def step_physics(p, platforms, held):
         current_platform = find_current_platform(p.rect, platforms)
         if current_platform is not None:
             # First, check if velocity would take us off edge.
-            if p.fighter.vel.x != 0 and would_dodge_off_platform(
-                p.rect, p.fighter.vel.x, current_platform
-            ):
+            if p.fighter.vel.x != 0 and would_dodge_off_platform(p.rect, p.fighter.vel.x, current_platform):
                 p.fighter.vel.x = 0
                 p.fighter.dodge_blocked_by_edge = True
 
@@ -78,9 +75,8 @@ def step_physics(p, platforms, held):
     # Prevent drop-through of thin platforms when shield is held with down (both
     # during a ground spot dodge and in shield state).
     is_shield_down_held = p._pressed(held, "shield") and p._pressed(held, "down")
-    should_prevent_drop_through = (
-        (p.state == "dodge" and p.fighter.spot_dodge_shield_held)
-        or (p.state == "shield" and is_shield_down_held)
+    should_prevent_drop_through = (p.state == "dodge" and p.fighter.spot_dodge_shield_held) or (
+        p.state == "shield" and is_shield_down_held
     )
 
     # Record the downward impact speed before solve_vertical zeroes vel.y on a

@@ -6,6 +6,7 @@ ADR-0004 / decision #9 it cannot live in the rules core. It stays here and is
 called once per tick by `game.py`. The pygame-free port (`InputFrame` +
 `merge_frames`) remains in `core/input.py`.
 """
+
 import pygame as pg  # type: ignore
 
 from .core.input import InputFrame

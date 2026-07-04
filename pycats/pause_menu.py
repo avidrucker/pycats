@@ -29,8 +29,8 @@ from .text_utils import text_renderer
 
 # Pause-screen layout literals (#433: named inline). Offsets are from the vertical
 # centre; the dim overlay reuses config.BLACK at config.OVERLAY_DIM_ALPHA (#450).
-PAUSE_TITLE_OFFSET_Y = 120       # "GAME PAUSED" above centre
-PAUSE_OPTIONS_OFFSET_Y = 60      # first option row above centre
+PAUSE_TITLE_OFFSET_Y = 120  # "GAME PAUSED" above centre
+PAUSE_OPTIONS_OFFSET_Y = 60  # first option row above centre
 PAUSE_INSTRUCTIONS_OFFSET_Y = 120  # instruction block below centre
 PAUSE_INSTRUCTION_LINE_SPACING = 25
 PAUSE_INSTRUCTION_FONT_SIZE = 18
@@ -79,26 +79,20 @@ class PauseMenuManager:
             return
 
         # Handle navigation input from either player (up/down)
-        if (
-            self.p1_controls["up"] in pressed_keys
-            or self.p2_controls["up"] in pressed_keys
-        ):
+        if self.p1_controls["up"] in pressed_keys or self.p2_controls["up"] in pressed_keys:
             self.selected_option = (self.selected_option - 1) % len(self.options)
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
-            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
+            self.press_pulse = PRESS_PULSE_FRAMES  # flash the newly-focused row
 
-        if (
-            self.p1_controls["down"] in pressed_keys
-            or self.p2_controls["down"] in pressed_keys
-        ):
+        if self.p1_controls["down"] in pressed_keys or self.p2_controls["down"] in pressed_keys:
             self.selected_option = (self.selected_option + 1) % len(self.options)
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
-            self.press_pulse = PRESS_PULSE_FRAMES     # flash the newly-focused row
+            self.press_pulse = PRESS_PULSE_FRAMES  # flash the newly-focused row
 
         # Handle selection input from either player (/ or V keys only)
         if (
             pygame.K_SLASH in pressed_keys  # P2's attack key
-            or pygame.K_v in pressed_keys     # P1's attack key
+            or pygame.K_v in pressed_keys  # P1's attack key
         ):
             if self.selected_option == 0:  # Resume
                 self.action_requested = "resume"
@@ -108,7 +102,7 @@ class PauseMenuManager:
                 self.action_requested = "return_to_char_select"
 
             self.input_cooldown = MENU_SELECT_COOLDOWN  # Prevent rapid selection
-            self.press_pulse = PRESS_PULSE_FRAMES        # flash the confirmed row
+            self.press_pulse = PRESS_PULSE_FRAMES  # flash the confirmed row
 
     def get_action(self):
         """Get the requested action and clear it."""
@@ -157,10 +151,7 @@ class PauseMenuManager:
             )
 
         # Instructions
-        instructions = [
-            "Use W/S or ↑/↓ to navigate",
-            "Press V or / to select"
-        ]
+        instructions = ["Use W/S or ↑/↓ to navigate", "Press V or / to select"]
 
         instruction_start_y = SCREEN_HEIGHT // 2 + PAUSE_INSTRUCTIONS_OFFSET_Y
 

@@ -35,9 +35,7 @@ class ScreenStateManager:
         self.pause_menu = PauseMenuManager(p1_controls, p2_controls)
         # Options sub-menu (#121). display_hooks wires its display rows to game.py
         # (None in headless/tests → those rows are inert; the HUD toggle still works).
-        self.options_menu = OptionsMenu(
-            p1_controls, p2_controls, display_hooks=display_hooks
-        )
+        self.options_menu = OptionsMenu(p1_controls, p2_controls, display_hooks=display_hooks)
 
         # Back to menu timer for character select
         self.back_timer = 0
@@ -97,8 +95,10 @@ class ScreenStateManager:
             "win_screen": self._update_win_screen,
         }
         self.engine = make_screen_engine(
-            transitions, "main_menu",
-            on_enter=on_enter, on_update=on_update,
+            transitions,
+            "main_menu",
+            on_enter=on_enter,
+            on_update=on_update,
         )
 
         # Game state data
@@ -123,8 +123,9 @@ class ScreenStateManager:
         # (#453). on_enter of a target state resets the timer, so popping one level
         # never cascades into a second pop (or an app-quit) on the same hold.
         self._tick_esc_hold(frame_input)
-        self.engine.update({"frame_input": frame_input, "screen_manager": self,
-                            "battle": battle, "platforms": platforms})
+        self.engine.update(
+            {"frame_input": frame_input, "screen_manager": self, "battle": battle, "platforms": platforms}
+        )
         # main_menu is the top of the ladder: a completed hold there quits the app
         # (there is no parent state to pop to).
         if self.engine.state == "main_menu" and self.esc_hold_complete():
@@ -178,11 +179,7 @@ class ScreenStateManager:
     def should_reset_game(self):
         """Check if the game should be reset (when returning from win screen)."""
         # Check if we just transitioned from win screen to char select
-        return (
-            self.engine.state == "char_select"
-            and self.winner is None
-            and self.loser is None
-        )
+        return self.engine.state == "char_select" and self.winner is None and self.loser is None
 
     # FSM State Enter Handlers
     def _on_enter_main_menu(self, ctx):
@@ -226,8 +223,7 @@ class ScreenStateManager:
             # previous_state hack). No battle (or no players) => nothing to show.
             battle = ctx.get("battle")
             if battle is not None and battle.player1 and battle.player2:
-                self.win_screen_manager.set_match_data(
-                    battle.player1, battle.player2, from_pause=True)
+                self.win_screen_manager.set_match_data(battle.player1, battle.player2, from_pause=True)
 
     # FSM State Update Handlers
     def _update_main_menu(self, ctx):
@@ -255,10 +251,7 @@ class ScreenStateManager:
         self.char_selector.update(frame_input.held, frame_input.pressed)
 
         # Handle back to menu timer
-        if (
-            self.p1_controls["special"] in frame_input.held
-            or self.p2_controls["special"] in frame_input.held
-        ):
+        if self.p1_controls["special"] in frame_input.held or self.p2_controls["special"] in frame_input.held:
             self.back_timer += 1
         else:
             self.back_timer = 0
@@ -337,6 +330,7 @@ class ScreenStateManager:
         ``update()`` turns a completed hold at ``main_menu`` into an app quit.
         """
         from .settings import load
+
         if not load().get("esc_hold_to_navigate", True):
             self.esc_quit_timer = 0
             return
@@ -352,16 +346,10 @@ class ScreenStateManager:
     # FSM Guard Functions
     def _guard_menu_to_char_select(self, ctx):
         """Check if should transition from main menu to character select."""
-        if (
-            hasattr(self.main_menu, "action_requested")
-            and self.main_menu.action_requested == "play"
-        ):
+        if hasattr(self.main_menu, "action_requested") and self.main_menu.action_requested == "play":
             self.main_menu.action_requested = None
             return True
-        elif (
-            hasattr(self.main_menu, "action_requested")
-            and self.main_menu.action_requested == "quit"
-        ):
+        elif hasattr(self.main_menu, "action_requested") and self.main_menu.action_requested == "quit":
             self.main_menu.action_requested = None
             self.should_quit = True
             return False
@@ -369,10 +357,7 @@ class ScreenStateManager:
 
     def _guard_menu_to_options(self, ctx):
         """Enter the Options sub-menu when the main menu requests it."""
-        if (
-            hasattr(self.main_menu, "action_requested")
-            and self.main_menu.action_requested == "options"
-        ):
+        if hasattr(self.main_menu, "action_requested") and self.main_menu.action_requested == "options":
             self.main_menu.action_requested = None
             return True
         return False
@@ -380,10 +365,7 @@ class ScreenStateManager:
     def _guard_options_to_main_menu(self, ctx):
         """Return to the main menu when the Options sub-menu backs out (B / the
         ``back`` row) or ESC is held for 2s (#453)."""
-        if (
-            hasattr(self.options_menu, "action_requested")
-            and self.options_menu.action_requested == "back"
-        ):
+        if hasattr(self.options_menu, "action_requested") and self.options_menu.action_requested == "back":
             self.options_menu.action_requested = None
             return True
         return self.esc_hold_complete()
@@ -391,10 +373,7 @@ class ScreenStateManager:
     def _guard_char_select_to_playing(self, ctx):
         """Check if should transition from character select to playing."""
         frame_input = ctx["frame_input"]
-        return (
-            self.char_selector.show_start_screen
-            and self.char_selector.ready_to_start(frame_input.pressed)
-        )
+        return self.char_selector.show_start_screen and self.char_selector.ready_to_start(frame_input.pressed)
 
     def _guard_char_select_to_main_menu(self, ctx):
         """Back to main menu from character select: hold-B for 1s (the existing
@@ -410,10 +389,7 @@ class ScreenStateManager:
     def _guard_pause_to_playing(self, ctx):
         """Check if should transition from pause to playing."""
         # Check if pause menu has a resume action (only through menu selection now)
-        if (
-            hasattr(self.pause_menu, "action_requested")
-            and self.pause_menu.action_requested == "resume"
-        ):
+        if hasattr(self.pause_menu, "action_requested") and self.pause_menu.action_requested == "resume":
             # Clear the action so it doesn't get processed again
             self.pause_menu.action_requested = None
             return True
@@ -421,10 +397,7 @@ class ScreenStateManager:
 
     def _guard_pause_to_stats(self, ctx):
         """Check if should transition from pause to stats (win screen for stats)."""
-        if (
-            hasattr(self.pause_menu, "action_requested")
-            and self.pause_menu.action_requested == "end_match"
-        ):
+        if hasattr(self.pause_menu, "action_requested") and self.pause_menu.action_requested == "end_match":
             # Clear the action and trigger stats display
             self.pause_menu.action_requested = None
             # Set up win screen to show current stats without declaring a winner
@@ -446,10 +419,8 @@ class ScreenStateManager:
         ``return_to_char_select`` button (#453 #4) or a 2s ESC-hold. Abandons the
         match (winner/loser cleared; char_select resets the battle)."""
         if (
-            (hasattr(self.pause_menu, "action_requested")
-             and self.pause_menu.action_requested == "return_to_char_select")
-            or self.esc_hold_complete()
-        ):
+            hasattr(self.pause_menu, "action_requested") and self.pause_menu.action_requested == "return_to_char_select"
+        ) or self.esc_hold_complete():
             self.pause_menu.action_requested = None
             self.winner = None
             self.loser = None

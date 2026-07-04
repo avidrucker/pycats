@@ -9,6 +9,7 @@ The sim step performs the SAME primitives in the SAME order as the old inline bl
 (and as sim/runner.py's golden-covered loop): per-player update -> push resolution ->
 attack update -> hit resolution.
 """
+
 from __future__ import annotations
 
 import pygame
@@ -68,15 +69,23 @@ class BattleScreen:
         p2_pal = palette_for(p2_char)
 
         self.player1 = Player(
-            PLAYER1_START_X, PLAYER1_START_Y, self.p1_keys,
-            p1_pal["color"], eye_color=p1_pal["eye_color"],
-            char_name="P1", facing_right=True,
+            PLAYER1_START_X,
+            PLAYER1_START_Y,
+            self.p1_keys,
+            p1_pal["color"],
+            eye_color=p1_pal["eye_color"],
+            char_name="P1",
+            facing_right=True,
             fighter_data=load_fighter_data(p1_char),
         )
         self.player2 = Player(
-            PLAYER2_START_X, PLAYER2_START_Y, self.p2_keys,
-            p2_pal["color"], eye_color=p2_pal["eye_color"],
-            char_name="P2", facing_right=False,
+            PLAYER2_START_X,
+            PLAYER2_START_Y,
+            self.p2_keys,
+            p2_pal["color"],
+            eye_color=p2_pal["eye_color"],
+            char_name="P2",
+            facing_right=False,
             fighter_data=load_fighter_data(p2_char),
         )
         self.player1.stripe_color = p1_pal["stripe_color"]

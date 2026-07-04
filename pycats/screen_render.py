@@ -12,13 +12,13 @@ screen->draw mapping testable in isolation (see tests/test_game_render_dispatch.
 The loop calls `render_active_screen(...)` once per frame with the frame-local
 collaborators it used to close over as module globals.
 """
+
 from . import text_utils
 from .config import HUD_PADDING, HUD_SPACING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 from .render_battle import draw_shell_chrome
 
 
-def render_active_screen(current_state, screen_manager, surface, *,
-                         battle, platforms, is_fullscreen, frame_input, fps):
+def render_active_screen(current_state, screen_manager, surface, *, battle, platforms, is_fullscreen, frame_input, fps):
     """Draw the screen for ``current_state`` onto ``surface``.
 
     Menu-like states (main_menu, options, char_select, win_screen) delegate to

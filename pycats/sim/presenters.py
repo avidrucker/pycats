@@ -1,5 +1,6 @@
 # pycats/sim/presenters.py
 """Presenters let the deterministic runner replay headless, live, or to video."""
+
 from __future__ import annotations
 
 import pygame
@@ -10,21 +11,22 @@ from ..render_battle import render_attacks, render_battle
 from .captions import caption_hold_frames, draw_captions
 
 # Live-replay overlay text sizes (#444: named from inline literals).
-OVERLAY_FPS_FONT_SIZE = 24    # the FPS readout (top-right)
-OVERLAY_STAT_FONT_SIZE = 22   # each fighter's stocks/damage line
+OVERLAY_FPS_FONT_SIZE = 24  # the FPS readout (top-right)
+OVERLAY_STAT_FONT_SIZE = 22  # each fighter's stocks/damage line
 OVERLAY_STAT_LINE_SPACING = 22  # vertical stride between fighter stat lines
 
 # Manual-advance mode (#393): at a caption's dwell frame the presenter freezes and
 # waits for one of these keys instead of the timed #352 dwell. Esc / window-close quit.
 ADVANCE_KEYS = (pygame.K_SPACE, pygame.K_RIGHT)
 MANUAL_HINT_TEXT = "space / right = advance    esc = quit"
-OVERLAY_HINT_FONT_SIZE = 20   # the small manual-advance hint (top-centre, ASCII-safe)
+OVERLAY_HINT_FONT_SIZE = 20  # the small manual-advance hint (top-centre, ASCII-safe)
 
 
 # --- Playback-speed scalar (#351) --------------------------------------------
 # Slow-motion is presentation-only: the sim is fixed-timestep (#166/#80), so we pace
 # the DISPLAY of frames, never the sim. `speed` < 1 is slow-mo, > 1 is fast-forward;
 # 1.0 is real time (the default, byte-identical to before).
+
 
 def frames_per_output(speed: float) -> int:
     """Video frames to emit per sim frame at `speed`. 0.5 -> 2 (each sim frame is
@@ -54,9 +56,9 @@ class LivePresenter:
     readout shows the true achievable rate. `overlay=True` draws an FPS counter
     plus each fighter's stocks/damage."""
 
-    def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True, captions=(),
-                 speed=1.0, interactive=None):
+    def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True, captions=(), speed=1.0, interactive=None):
         import os
+
         os.environ.pop("SDL_VIDEODRIVER", None)
         pygame.display.quit()
         pygame.display.init()
@@ -66,7 +68,7 @@ class LivePresenter:
         self.cap_fps = cap_fps
         self.overlay = overlay
         self.captions = list(captions)  # demo captions (#306); presentation overlay
-        self.speed = speed              # <1 slow-mo (#351); paces the tick, not the sim
+        self.speed = speed  # <1 slow-mo (#351); paces the tick, not the sim
         # Interactivity (#393): "manual" makes each caption's dwell frame wait for an
         # advance key (self-paced reading) instead of the timed #352 dwell. None = off.
         self.interactive = interactive
@@ -74,15 +76,21 @@ class LivePresenter:
     def _draw_overlay(self, players):
         cap = "capped@60" if self.cap_fps else "uncapped"
         text_utils.render_text(
-            self.screen, f"FPS: {self.clock.get_fps():.1f} ({cap})",
-            (SCREEN_WIDTH - HUD_PADDING, HUD_PADDING), OVERLAY_FPS_FONT_SIZE,
-            WHITE, right_align=True)
+            self.screen,
+            f"FPS: {self.clock.get_fps():.1f} ({cap})",
+            (SCREEN_WIDTH - HUD_PADDING, HUD_PADDING),
+            OVERLAY_FPS_FONT_SIZE,
+            WHITE,
+            right_align=True,
+        )
         for i, p in enumerate(players):
             text_utils.render_text(
                 self.screen,
                 f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
                 (HUD_PADDING, HUD_PADDING + i * OVERLAY_STAT_LINE_SPACING),
-                OVERLAY_STAT_FONT_SIZE, WHITE)
+                OVERLAY_STAT_FONT_SIZE,
+                WHITE,
+            )
 
     def _tick(self):
         """Advance the display clock one frame at the current speed (#351)."""
@@ -107,8 +115,8 @@ class LivePresenter:
         """Small ASCII hint (top-centre, clear of bottom captions + the corner
         overlays) shown while a manual pause is held (#393)."""
         text_utils.render_text(
-            self.screen, MANUAL_HINT_TEXT, (SCREEN_WIDTH // 2, HUD_PADDING),
-            OVERLAY_HINT_FONT_SIZE, WHITE, center=True)
+            self.screen, MANUAL_HINT_TEXT, (SCREEN_WIDTH // 2, HUD_PADDING), OVERLAY_HINT_FONT_SIZE, WHITE, center=True
+        )
 
     def _wait_for_advance(self):
         """Freeze on the current frame until the viewer presses an advance key
@@ -169,9 +177,7 @@ class VideoPresenter:
         try:
             import imageio.v2 as imageio
         except Exception as exc:  # pragma: no cover - optional dep
-            raise RuntimeError(
-                "video mode needs imageio: pip install imageio imageio-ffmpeg"
-            ) from exc
+            raise RuntimeError("video mode needs imageio: pip install imageio imageio-ffmpeg") from exc
         self._imageio = imageio
         self._writer = imageio.get_writer(path, fps=fps)
         self._surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -213,14 +219,15 @@ class ScreenshotPresenter:
 
     def __init__(self, out_dir, captions=(), frames=None, overlay=True):
         import os
+
         os.makedirs(out_dir, exist_ok=True)
         self.out_dir = out_dir
         self.captions = list(captions)
         self.overlay = overlay
         self._surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         self._frames = frames if frames is not None else self._default_frames(self.captions)
-        self.saved = []            # (frame, path) in save order — inspection manifest
-        self._manifest = []        # (label, caption text) lines
+        self.saved = []  # (frame, path) in save order — inspection manifest
+        self._manifest = []  # (label, caption text) lines
 
     @staticmethod
     def _default_frames(captions):
@@ -243,7 +250,10 @@ class ScreenshotPresenter:
             text_utils.render_text(
                 self._surface,
                 f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
-                (HUD_PADDING, HUD_PADDING + i * 22), 22, WHITE)
+                (HUD_PADDING, HUD_PADDING + i * 22),
+                22,
+                WHITE,
+            )
 
     def show(self, platforms, players, attacks, frame):
         if frame not in self._frames:

@@ -85,7 +85,14 @@ class Player(pygame.sprite.Sprite):
     SIZE = PLAYER_SIZE
 
     def __init__(
-        self, x, y, controls: dict, color, eye_color, char_name, facing_right=True,
+        self,
+        x,
+        y,
+        controls: dict,
+        color,
+        eye_color,
+        char_name,
+        facing_right=True,
         fighter_data=None,
     ):
         super().__init__()
@@ -193,8 +200,8 @@ class Player(pygame.sprite.Sprite):
         clock and the Verlet tail. Used by the per-life respawn (update) and the
         new-match reset (battle_screen)."""
         self.fighter.reset_to_spawn()
-        self._clock.reset()   # attack_timer/current_move/move_frame derive from this
-        self.tail.reset()     # re-lay the tail at the spawn point (#41)
+        self._clock.reset()  # attack_timer/current_move/move_frame derive from this
+        self.tail.reset()  # re-lay the tail at the spawn point (#41)
 
     # ---- move-progress, delegated to MoveClock (#71) ----
     # These three are read by the statechart (fighter_chart) and the runner
@@ -320,9 +327,12 @@ class Player(pygame.sprite.Sprite):
         in_hitstun = self.fighter.hurt_timer > 0 or self.fighter.stun_timer > 0
         in_landing_lag = self.fighter.landing_lag_timer > 0  # waveland lock (#202)
         dodge_initiated = False
-        if (not in_hitstun and not in_shieldstun and not in_landing_lag
-                and self.state not in ("dodge", "hurt", "stun", "prone",
-                                       "getup_roll", "getup_attack", "ledge_hang")):
+        if (
+            not in_hitstun
+            and not in_shieldstun
+            and not in_landing_lag
+            and self.state not in ("dodge", "hurt", "stun", "prone", "getup_roll", "getup_attack", "ledge_hang")
+        ):
             dodge_initiated = self.handle_actions(input_frame, attack_group)
             # Don't apply movement if a dodge was just initiated to prevent friction from reducing dodge velocity
             if not dodge_initiated:
@@ -338,8 +348,7 @@ class Player(pygame.sprite.Sprite):
             # Waveland (#202): actions are locked, but the grounded slide keeps
             # bleeding off under ground friction (handle_move is skipped here, so
             # apply it directly — same job step_horizontal would do, minus walking).
-            self.fighter.vel = apply_horizontal_friction(
-                self.fighter.vel, self.fighter.on_ground)
+            self.fighter.vel = apply_horizontal_friction(self.fighter.vel, self.fighter.on_ground)
 
         # ---------- ledge-hang driving (#14 + #311 edge-hog) ----------
         # While on the edge (hang or getup climb): pin position (skip gravity).
@@ -356,20 +365,19 @@ class Player(pygame.sprite.Sprite):
             if self.fighter.ledge_getup_timer > 0:
                 self.fighter.ledge_getup_timer -= 1
                 if self.fighter.ledge_getup_timer <= LEDGE_GETUP_FRAMES // 2:
-                    ledge.occupied_by = None         # edge re-grabbable mid-getup
+                    ledge.occupied_by = None  # edge re-grabbable mid-getup
                 if self.fighter.ledge_getup_timer == 0:  # climb done -> on the stage
                     ledge.occupied_by = None
                     self.fighter.grabbed_ledge = None
             else:
-                self.fighter.tick_ledge_hang()       # hang auto-release timeout
+                self.fighter.tick_ledge_hang()  # hang auto-release timeout
                 if self.fighter.ledge_invuln_timer > 0:
                     self.fighter.ledge_invuln_timer -= 1
                 self.fighter.invulnerable = self.fighter.ledge_invuln_timer > 0
                 up = self._pressed(held, "up")
                 down = self._pressed(held, "down")
-                away = ledge.away_held(self._pressed(held, "left"),
-                                       self._pressed(held, "right"))
-                if up:                               # neutral getup -> climb window
+                away = ledge.away_held(self._pressed(held, "left"), self._pressed(held, "right"))
+                if up:  # neutral getup -> climb window
                     self.rect.topleft = ledge.getup_topleft(self.rect.size)
                     self.fighter.invulnerable = False
                     self.fighter.ledge_invuln_timer = 0
@@ -380,7 +388,7 @@ class Player(pygame.sprite.Sprite):
                     self.fighter.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
                     ledge.occupied_by = None
                     self.fighter.grabbed_ledge = None
-                    self.fighter.vel.y = 1           # nudge so next frame is airborne
+                    self.fighter.vel.y = 1  # nudge so next frame is airborne
 
         # physics: gravity, edge-aware dodge clamping, movement, drop-through,
         # vertical/horizontal collision, and landing — see fighter_physics (#77).
@@ -398,17 +406,19 @@ class Player(pygame.sprite.Sprite):
         # intangibility burst has lapsed (ledge_invuln_timer == 0) — grab too early
         # and the hog holds. A grab that lands on an occupied edge EVICTS the
         # occupant (mistimed hog loses the ledge; the incoming fighter takes it).
-        if (self.fighter.grabbed_ledge is None
-                and self.fighter.ledge_regrab_lockout_timer == 0
-                and not self.fighter.on_ground
-                and self.fighter.vel.y >= 0):
+        if (
+            self.fighter.grabbed_ledge is None
+            and self.fighter.ledge_regrab_lockout_timer == 0
+            and not self.fighter.on_ground
+            and self.fighter.vel.y >= 0
+        ):
             for ledge in ledges:
                 occupant = ledge.occupied_by
                 if occupant is not None and occupant.fighter.ledge_invuln_timer > 0:
-                    continue                       # hog denied: occupant still intangible
+                    continue  # hog denied: occupant still intangible
                 if self.rect.colliderect(ledge.catch_rect()):
                     if occupant is not None and occupant is not self:
-                        self._evict_from_ledge(occupant)   # mistimed hog -> evicted
+                        self._evict_from_ledge(occupant)  # mistimed hog -> evicted
                     self.rect.topleft = ledge.hang_topleft(self.rect.size)
                     self.fighter.vel.x = 0
                     self.fighter.vel.y = 0
@@ -445,9 +455,7 @@ class Player(pygame.sprite.Sprite):
                 # getup_attack_timer mirrors the move duration and drives the
                 # state exit + intangibility (decremented below like getup_roll).
                 self._clock.start(GETUP_ATTACK)
-                self.fighter.getup_attack_timer = (
-                    GETUP_ATTACK.startup + GETUP_ATTACK.active + GETUP_ATTACK.recovery
-                )
+                self.fighter.getup_attack_timer = GETUP_ATTACK.startup + GETUP_ATTACK.active + GETUP_ATTACK.recovery
                 self.fighter.invulnerable = True  # getup intangibility (⚠ playtest:
                 # held for the whole swing for v1; tighten to startup+active later)
         if self.fighter.getup_roll_timer > 0:
@@ -500,14 +508,18 @@ class Player(pygame.sprite.Sprite):
                 # knobs are per-move overridable (getattr), else the Projectile defaults.
                 facing = 1 if self.fighter.facing_right else -1
                 attack_group.add(
-                    Projectile(self, hitboxes=tick.spawn, in_air=tick.in_air,
-                               disappear_on_hit=True,
-                               lifetime=mv.projectile_lifetime or tick.lifetime,
-                               rehit_rate=mv.rehit_rate,
-                               velocity=(facing * mv.projectile_speed, 0),
-                               gravity=getattr(mv, "projectile_gravity", PROJECTILE_GRAVITY),
-                               restitution=getattr(mv, "projectile_restitution", PROJECTILE_RESTITUTION),
-                               max_bounces=getattr(mv, "projectile_max_bounces", PROJECTILE_MAX_BOUNCES))
+                    Projectile(
+                        self,
+                        hitboxes=tick.spawn,
+                        in_air=tick.in_air,
+                        disappear_on_hit=True,
+                        lifetime=mv.projectile_lifetime or tick.lifetime,
+                        rehit_rate=mv.rehit_rate,
+                        velocity=(facing * mv.projectile_speed, 0),
+                        gravity=getattr(mv, "projectile_gravity", PROJECTILE_GRAVITY),
+                        restitution=getattr(mv, "projectile_restitution", PROJECTILE_RESTITUTION),
+                        max_bounces=getattr(mv, "projectile_max_bounces", PROJECTILE_MAX_BOUNCES),
+                    )
                 )
             else:
                 # Smash charge (#327/3b): a chargeable move's hitboxes scale by the
@@ -520,13 +532,17 @@ class Player(pygame.sprite.Sprite):
                 # launch angle. Only set for an fsmash press, consumed here so it
                 # never leaks onto a later move.
                 if self.fighter.smash_angle_dir is not None:
-                    boxes = angle_smash_hitboxes(
-                        boxes, _FSMASH_ANGLE[self.fighter.smash_angle_dir])
+                    boxes = angle_smash_hitboxes(boxes, _FSMASH_ANGLE[self.fighter.smash_angle_dir])
                     self.fighter.smash_angle_dir = None
                 attack_group.add(
-                    Attack(self, hitboxes=boxes, in_air=tick.in_air,
-                           disappear_on_hit=False, lifetime=tick.lifetime,
-                           rehit_rate=mv.rehit_rate)  # #213 looping; static hit-box
+                    Attack(
+                        self,
+                        hitboxes=boxes,
+                        in_air=tick.in_air,
+                        disappear_on_hit=False,
+                        lifetime=tick.lifetime,
+                        rehit_rate=mv.rehit_rate,
+                    )  # #213 looping; static hit-box
                 )
         # (#321/F3: done_attacking is now a derived Player property — no latch.)
 
@@ -586,8 +602,5 @@ class Player(pygame.sprite.Sprite):
     # `fighter.reset_to_spawn` + resets the Player-owned clock/tail), and
     # fighter_input uses `_start_dodge`.
 
-
     # Stat counters live on the Fighter aggregate (#81); Player delegates so
     # callers (fighter_input, combat, the test stand-ins) are unchanged.
-
-

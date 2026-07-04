@@ -26,8 +26,8 @@ from .config import (
 )
 
 # Win-screen input timing (frames) — #446: named from inline literals.
-WIN_INPUT_COOLDOWN = 15   # ignore repeat confirm/cancel presses for this long
-WIN_RETURN_DELAY = 30     # after both players confirm, wait this long, then return
+WIN_INPUT_COOLDOWN = 15  # ignore repeat confirm/cancel presses for this long
+WIN_RETURN_DELAY = 30  # after both players confirm, wait this long, then return
 
 
 class WinScreenManager:
@@ -171,9 +171,7 @@ class WinScreenManager:
 
         # Render the stats table with pixel-perfect positioning
         stats_table_start_y = y_offset
-        y_offset = self._render_stats_table(
-            screen, match_summary["stats_table"], y_offset
-        )
+        y_offset = self._render_stats_table(screen, match_summary["stats_table"], y_offset)
 
         # Draw confirmation boxes around player columns
         self._draw_confirmation_boxes(screen, stats_table_start_y, y_offset)

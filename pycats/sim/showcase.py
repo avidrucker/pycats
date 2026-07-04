@@ -33,6 +33,7 @@ Play / record it:
     watch.py --demo showcase              # live
     watch.py --demo showcase --video showcase.mp4
 """
+
 from __future__ import annotations
 
 from ..config import FPS
@@ -45,15 +46,22 @@ from .input_script import InputSpan
 _SEGMENTS = (
     DemoSegment(
         "Nalio (P1) vs Birky (P2) — approach",
-        anchor=TOP_CENTER, start=10, end=70,
-        spans=(InputSpan(10, 40, 1, "right"),   # P1 walks in off the left platform
-               InputSpan(30, 60, 2, "left")),   # Birky closes, staying to P1's right
+        anchor=TOP_CENTER,
+        start=10,
+        end=70,
+        spans=(
+            InputSpan(10, 40, 1, "right"),  # P1 walks in off the left platform
+            InputSpan(30, 60, 2, "left"),
+        ),  # Birky closes, staying to P1's right
     ),
     DemoSegment(
         # Vertical jump + air jump — no direction held, so P1 lands back in jab range.
         # dwell_at (#412): freeze at f107 while P1 is airborne mid-flight, not the pre-jump f75.
         "Jump & double-jump",
-        anchor=BOTTOM_CENTER, start=75, end=140, dwell_at=107,
+        anchor=BOTTOM_CENTER,
+        start=75,
+        end=140,
+        dwell_at=107,
         spans=(InputSpan(80, 81, 1, "up"), InputSpan(92, 93, 1, "up")),
     ),
     DemoSegment(
@@ -62,24 +70,34 @@ _SEGMENTS = (
         # end=184, not 185 (#419): windows are inclusive, so ending at the shield beat's
         # start (185) would double-render both captions on that frame (frozen ~2.5s).
         "Jab — a fast disjoint poke",
-        anchor=BOTTOM_CENTER, start=145, end=184, dwell_at=165,
+        anchor=BOTTOM_CENTER,
+        start=145,
+        end=184,
+        dwell_at=165,
         spans=(InputSpan(160, 161, 1, "attack"),),
     ),
     DemoSegment(
         # P1 raises the shield; Birky jabs it, so the shield takes (and absorbs) hits.
         "Shield blocks Birky's jab",
-        anchor=BOTTOM_CENTER, start=185, end=245,
-        spans=(InputSpan(190, 235, 1, "shield"),
-               InputSpan(200, 201, 2, "attack"), InputSpan(214, 215, 2, "attack")),
+        anchor=BOTTOM_CENTER,
+        start=185,
+        end=245,
+        spans=(InputSpan(190, 235, 1, "shield"), InputSpan(200, 201, 2, "attack"), InputSpan(214, 215, 2, "attack")),
     ),
     DemoSegment(
         # A short jab combo — racks damage + knockback but leaves Birky mid-stage,
         # with room for the roll-through beat to follow.
         "Jab combo racks up damage & knockback",
-        anchor=BOTTOM_CENTER, start=250, end=340,
-        spans=(InputSpan(255, 256, 1, "attack"), InputSpan(256, 275, 1, "right"),
-               InputSpan(275, 276, 1, "attack"), InputSpan(276, 295, 1, "right"),
-               InputSpan(295, 296, 1, "attack")),
+        anchor=BOTTOM_CENTER,
+        start=250,
+        end=340,
+        spans=(
+            InputSpan(255, 256, 1, "attack"),
+            InputSpan(256, 275, 1, "right"),
+            InputSpan(275, 276, 1, "attack"),
+            InputSpan(276, 295, 1, "right"),
+            InputSpan(295, 296, 1, "attack"),
+        ),
     ),
     DemoSegment(
         # P1 fires Nalio's neutral-B fireball at the knocked-back Birky (#432). The jab
@@ -90,14 +108,19 @@ _SEGMENTS = (
         # position. dwell_at (#412): freeze at f366 while the fireball is airborne
         # mid-flight between the fighters (the projectile is live f364-368), not f345.
         "Fireball — Nalio's neutral-B projectile",
-        anchor=BOTTOM_CENTER, start=345, end=420, dwell_at=366,
+        anchor=BOTTOM_CENTER,
+        start=345,
+        end=420,
+        dwell_at=366,
         spans=(InputSpan(350, 351, 1, "special"),),
     ),
     DemoSegment(
         # P1 rolls RIGHT clean through Birky (intangible — passes through the body).
         # Frames shifted +80 by the inserted fireball beat (#432).
         "Shield roll-dodge — intangible, right through Birky",
-        anchor=BOTTOM_CENTER, start=425, end=480,
+        anchor=BOTTOM_CENTER,
+        start=425,
+        end=480,
         spans=(InputSpan(430, 465, 1, "shield"), InputSpan(445, 446, 1, "right")),
     ),
     DemoSegment(
@@ -107,7 +130,10 @@ _SEGMENTS = (
         # dwell_at (#412): freeze at f542 while P1 hangs on the ledge, not the walking f485.
         # Frames shifted +80 by the inserted fireball beat (#432).
         "Ledge grab — hang on the edge",
-        anchor=BOTTOM_CENTER, start=485, end=600, dwell_at=542,
+        anchor=BOTTOM_CENTER,
+        start=485,
+        end=600,
+        dwell_at=542,
         spans=(InputSpan(485, 500, 1, "right"), InputSpan(502, 585, 1, "left")),
     ),
 )
@@ -116,5 +142,4 @@ _SEGMENTS = (
 # readable. 2.5s * 60fps = 150 frames. Presenter-level hold — the choreography is
 # unchanged (its jab/KO beats are frame-tuned; idle timeline frames would desync them).
 _DWELL = round(2.5 * FPS)  # 150
-SHOWCASE = Demo(name="showcase", segments=_SEGMENTS, p1_char="nalio", p2_char="birky",
-                default_dwell=_DWELL)
+SHOWCASE = Demo(name="showcase", segments=_SEGMENTS, p1_char="nalio", p2_char="birky", default_dwell=_DWELL)

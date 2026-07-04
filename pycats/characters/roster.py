@@ -8,6 +8,7 @@ skin-cycle lets players change it. The roster grows as #117 archetypes are imple
 Presentation-only data (palettes from `palettes.load_palettes()`); no sim/golden
 dependency.
 """
+
 from .palettes import load_palettes
 
 _PAL = load_palettes()
@@ -18,8 +19,8 @@ ARCHETYPE_ROSTER = ("nalio", "birky", "narz")
 # Default cosmetic palette per archetype (an OG skin; cosmetic only, ⚠ playtest-TBD).
 ARCHETYPE_PALETTE = {
     "nalio": _PAL["calico"],  # balanced all-rounder → warm orange
-    "birky": _PAL["ghost"],   # floaty featherweight → light/round
-    "narz": _PAL["void"],     # disjointed swordfighter → sleek/dark
+    "birky": _PAL["ghost"],  # floaty featherweight → light/round
+    "narz": _PAL["void"],  # disjointed swordfighter → sleek/dark
 }
 
 # Display name shown on the char-select tile (the archetype, not the palette).
@@ -30,8 +31,7 @@ ARCHETYPE_NAME = {
 }
 
 # Neutral fallback cosmetic for any key with no archetype/OG palette.
-_NEUTRAL = {"name": "?", "color": (200, 200, 200),
-            "stripe_color": (150, 150, 150), "eye_color": (0, 0, 0)}
+_NEUTRAL = {"name": "?", "color": (200, 200, 200), "stripe_color": (150, 150, 150), "eye_color": (0, 0, 0)}
 
 
 def palette_for(key):

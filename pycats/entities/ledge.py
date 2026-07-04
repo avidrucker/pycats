@@ -1,6 +1,7 @@
 """Grabbable stage edges (#14). A Ledge is a solid platform's top corner plus a
 catch region and the hang/getup geometry. occupied_by enforces the one-occupant
 lockout (PM edge-hog without trump; trump is a deferred follow-up)."""
+
 from __future__ import annotations
 
 import pygame  # type: ignore

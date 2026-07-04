@@ -11,6 +11,7 @@ The SIM stays integer-pixel (a determinism asset, #80): `u` rounds to an int, so
 `u(3.5) == 19` exactly. Existing baked literals are kept byte-identical (ADR-0003 C1)
 and their derivation comments now cite `PX_PER_UNIT` by name rather than the magic 5.4.
 """
+
 from __future__ import annotations
 
 from ..config import PX_PER_UNIT

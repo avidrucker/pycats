@@ -20,7 +20,7 @@ class KeyBindingConflict(ValueError):
 class Keymap(dict):
     def __init__(self, defaults):
         super().__init__(defaults)
-        self._factory = dict(defaults)   # immutable snapshot to reset to (per instance)
+        self._factory = dict(defaults)  # immutable snapshot to reset to (per instance)
 
     def reset(self):
         """Restore this player's factory defaults (leaves other keymaps untouched)."""

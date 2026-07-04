@@ -69,7 +69,7 @@ def load_set(name, into_keymap):
     KeyBindingConflict). An action missing from the set, or whose saved name won't
     parse, falls back to that action's factory default. Returns `into_keymap`."""
     saved = _read().get(name, {})
-    into_keymap.reset()                       # factory baseline for the fallbacks
+    into_keymap.reset()  # factory baseline for the fallbacks
     resolved = {}
     for action in list(into_keymap.keys()):
         code = _name_to_code(saved.get(action))

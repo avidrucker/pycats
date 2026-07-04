@@ -32,25 +32,25 @@ from .config import (
 
 # --- char-select layout + behaviour constants (#420: named from inline literals) ---
 # Input debounce windows (frames): movement repeats faster than a committing action.
-MOVE_COOLDOWN_FRAMES = 10       # cursor-move debounce
-ACTION_COOLDOWN_FRAMES = 15     # confirm / cancel / start-back debounce
-START_SCREEN_INPUT_DELAY = 5    # frames to ignore input after the start overlay opens
+MOVE_COOLDOWN_FRAMES = 10  # cursor-move debounce
+ACTION_COOLDOWN_FRAMES = 15  # confirm / cancel / start-back debounce
+START_SCREEN_INPUT_DELAY = 5  # frames to ignore input after the start overlay opens
 
 # Player UI accent colours (P1_UI_COLOR/P2_UI_COLOR) now come from config (#450),
 # shared with render_battle name labels + win_screen confirmation borders.
 
 # Grid + tiles
-GRID_START_Y = 170              # grid top edge, below the title
-TILE_BG_COLOR = (50, 50, 60)    # per-tile background fill
-TILE_NAME_FONT_SIZE = 18        # archetype name under each tile
-CURSOR_LABEL_FONT_SIZE = 16     # "P1"/"P2" tag above a cursor
-CONFIRM_FONT_SIZE = 20          # "P1 ✓" confirmation label
-CONTROLS_FONT_SIZE = 16         # bottom control-scheme strip
+GRID_START_Y = 170  # grid top edge, below the title
+TILE_BG_COLOR = (50, 50, 60)  # per-tile background fill
+TILE_NAME_FONT_SIZE = 18  # archetype name under each tile
+CURSOR_LABEL_FONT_SIZE = 16  # "P1"/"P2" tag above a cursor
+CONFIRM_FONT_SIZE = 20  # "P1 ✓" confirmation label
+CONTROLS_FONT_SIZE = 16  # bottom control-scheme strip
 
 # Preview cat drawn inside each tile
-PREVIEW_SCALE_X = 0.6           # preview width as a fraction of the tile
-PREVIEW_SCALE_Y = 0.8           # preview height as a fraction of the tile
-PREVIEW_STRIPE_COUNT = 3        # simplified stripes on the preview body
+PREVIEW_SCALE_X = 0.6  # preview width as a fraction of the tile
+PREVIEW_SCALE_Y = 0.8  # preview height as a fraction of the tile
+PREVIEW_STRIPE_COUNT = 3  # simplified stripes on the preview body
 
 # Start overlay (dim uses the shared config.OVERLAY_DIM_ALPHA + config.BLACK, #450)
 START_BOX_WIDTH = 400
@@ -96,10 +96,7 @@ class CharacterSelector:
         # Grid layout
         self.grid_start_x = (
             SCREEN_WIDTH
-            - (
-                CHAR_SELECT_GRID_COLS * CHAR_SELECT_TILE_SIZE
-                + (CHAR_SELECT_GRID_COLS - 1) * CHAR_SELECT_TILE_SPACING
-            )
+            - (CHAR_SELECT_GRID_COLS * CHAR_SELECT_TILE_SIZE + (CHAR_SELECT_GRID_COLS - 1) * CHAR_SELECT_TILE_SPACING)
         ) // 2
         self.grid_start_y = GRID_START_Y  # Below title
 
@@ -292,9 +289,7 @@ class CharacterSelector:
             stripe_height = preview_size[1] // 6
             for i in range(PREVIEW_STRIPE_COUNT):
                 stripe_y = cat_rect.y + i * stripe_height * 2
-                stripe_rect = pygame.Rect(
-                    cat_rect.x, stripe_y, preview_size[0], stripe_height
-                )
+                stripe_rect = pygame.Rect(cat_rect.x, stripe_y, preview_size[0], stripe_height)
                 pygame.draw.rect(screen, char_data["stripe_color"], stripe_rect)
 
         # Draw ears
@@ -331,12 +326,8 @@ class CharacterSelector:
 
         # Draw eye glints
         glint_size = max(1, eye_size // 2)
-        pygame.draw.circle(
-            screen, WHITE, (left_eye_pos[0] + 1, left_eye_pos[1] - 1), glint_size
-        )
-        pygame.draw.circle(
-            screen, WHITE, (right_eye_pos[0] + 1, right_eye_pos[1] - 1), glint_size
-        )
+        pygame.draw.circle(screen, WHITE, (left_eye_pos[0] + 1, left_eye_pos[1] - 1), glint_size)
+        pygame.draw.circle(screen, WHITE, (right_eye_pos[0] + 1, right_eye_pos[1] - 1), glint_size)
 
     def render(self, screen):
         """Render the character selection screen."""
@@ -394,13 +385,9 @@ class CharacterSelector:
 
         # Draw cursors (only if not confirmed)
         if not self.p1_confirmed:
-            self._draw_cursor(
-                screen, self.p1_cursor, P1_UI_COLOR, "P1", large=True
-            )  # Red, large
+            self._draw_cursor(screen, self.p1_cursor, P1_UI_COLOR, "P1", large=True)  # Red, large
         if not self.p2_confirmed:
-            self._draw_cursor(
-                screen, self.p2_cursor, P2_UI_COLOR, "P2", large=False
-            )  # Blue, small
+            self._draw_cursor(screen, self.p2_cursor, P2_UI_COLOR, "P2", large=False)  # Blue, small
 
         # Draw selection confirmations
         if self.p1_confirmed and self.p1_selected:
@@ -423,9 +410,7 @@ class CharacterSelector:
         x, y = self._grid_pos_to_screen_pos(cursor_pos)
 
         # Different cursor widths based on player
-        cursor_width = (
-            CHAR_SELECT_CURSOR_WIDTH if large else CHAR_SELECT_CURSOR_WIDTH - 1
-        )
+        cursor_width = CHAR_SELECT_CURSOR_WIDTH if large else CHAR_SELECT_CURSOR_WIDTH - 1
 
         # Draw cursor border
         cursor_rect = pygame.Rect(
@@ -446,16 +431,12 @@ class CharacterSelector:
             center=True,
         )
 
-    def _draw_confirmation(
-        self, screen, char_pos, color, player_name, use_unicode=True
-    ):
+    def _draw_confirmation(self, screen, char_pos, color, player_name, use_unicode=True):
         """Draw a confirmation checkmark on a selected character."""
         x, y = self._grid_pos_to_screen_pos(char_pos)
 
         # Draw thick border to show selection
-        confirm_rect = pygame.Rect(
-            x - 2, y - 2, CHAR_SELECT_TILE_SIZE + 4, CHAR_SELECT_TILE_SIZE + 4
-        )
+        confirm_rect = pygame.Rect(x - 2, y - 2, CHAR_SELECT_TILE_SIZE + 4, CHAR_SELECT_TILE_SIZE + 4)
         pygame.draw.rect(screen, color, confirm_rect, 4)
 
         # Draw confirmation label with checkmark/OK using mixed text rendering

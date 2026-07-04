@@ -5,6 +5,7 @@ StatechartEngine wraps a statecharts-py Session and is the sole fighter-FSM
 engine (ADR-0002: the legacy hand-rolled FSM backend was removed in #178). The
 StateEngine Protocol is the tiny surface Player uses.
 """
+
 from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable

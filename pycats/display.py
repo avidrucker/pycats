@@ -8,6 +8,7 @@ intentionally free of pygame side effects so the sizing/mode/cycle logic is unit
 
 Use: window_size_for / blit_mode_for / cycle_preset from game.py's present path.
 """
+
 import pygame  # type: ignore
 
 from .config import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
@@ -18,6 +19,7 @@ TOAST_DURATION_FRAMES = 3 * FPS
 # Selectable windowed-scale presets (multiples of the 960x540 base). Integer
 # steps (1x, 2x) are pixel-crisp; fractional steps (1.5x, 2.5x) are smooth-scaled.
 WINDOWED_SCALE_PRESETS = (1.0, 1.5, 2.0, 2.5)
+
 
 def fit_scale(display_size, base=(SCREEN_WIDTH, SCREEN_HEIGHT)):
     """Largest scale that fits `base` inside `display_size`, preferring a crisp

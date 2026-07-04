@@ -59,7 +59,9 @@ Config home (child 0) + Decision 1 (line-length) + `I` (child 2) + `E722` (child
 | 3. `E722` bare-except | #518 | ✅ done — 5 → `except Exception:`; `F,I,E722` enforced |
 | 4. `E702`/`E402` | #521 | ✅ done — 3 semicolons split; E402 per-file-ignored on physics/player/render_battle; `+E702,E402` enforced |
 | 5. `UP` pyupgrade | #524 | ✅ done — 58 findings cleared (47 auto pep604/pep585 + 11 UP035 dead-import removals via F401); `target-version = "py310"` set; `+UP` enforced (ruff.toml + hook) |
-| 6. Decision: `ruff format` | — | not filed — DECIDED (adopt); file + execute next |
+| 6. Decision: `ruff format` | #525 | ✅ done — adopted; 64/78 files reformatted; `ruff format --check` hook added; suite + goldens unaffected |
+
+**Epic #505 complete** — all children closed. Enforced set: `F,I,E722,E702,E402,UP` + `ruff format --check`, `line-length = 120`, `target-version = "py310"` (ruff.toml + #502 pre-commit hook). #492 (adopt ruff) fully done.
 
 _Update this table as children are filed / closed._
 

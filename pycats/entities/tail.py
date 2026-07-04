@@ -15,6 +15,7 @@ Preserved from earlier work: the eased hip anchor across a facing flip (#3,
 _get_tail_base_position) and the solid-platform floor clamp (#4/#37,
 _resolve_platform_collisions). Rendering keeps the cached rotated-rect blit.
 """
+
 import math
 
 from ..config import (
@@ -52,9 +53,9 @@ class TailSegment:
     def __init__(self, x: float, y: float, angle: float = 0.0):
         self.x = x
         self.y = y
-        self.prev_x = x          # Verlet: velocity is (pos - prev_pos)
+        self.prev_x = x  # Verlet: velocity is (pos - prev_pos)
         self.prev_y = y
-        self.angle = angle       # rendering only — direction from the parent point
+        self.angle = angle  # rendering only — direction from the parent point
 
 
 class Tail:
@@ -62,9 +63,7 @@ class Tail:
 
     def __init__(self, player_ref):
         self.player = player_ref
-        self.segments: list[TailSegment] = [
-            TailSegment(0.0, 0.0) for _ in range(TAIL_SEGMENTS)
-        ]
+        self.segments: list[TailSegment] = [TailSegment(0.0, 0.0) for _ in range(TAIL_SEGMENTS)]
         self.reset()
 
     def reset(self):
@@ -73,9 +72,7 @@ class Tail:
         respawn appears exactly like a first load instead of whipping the live
         Verlet chain in from wherever it froze at KO."""
         # Eased horizontal anchor offset (#3): set straight to the facing target.
-        self._anchor_offset_x = (
-            -TAIL_BASE_OFFSET_X if self.player.fighter.facing_right else TAIL_BASE_OFFSET_X
-        )
+        self._anchor_offset_x = -TAIL_BASE_OFFSET_X if self.player.fighter.facing_right else TAIL_BASE_OFFSET_X
         # Eased backward direction (-1 tail points left / +1 right); eases across
         # a facing flip so the pinned base stub swings over smoothly (no snap).
         self._base_back = -1.0 if self.player.fighter.facing_right else 1.0
@@ -144,16 +141,18 @@ class Tail:
             rx, ry = base_x, base_y
             k = TAIL_CURL_STRENGTH
             for i in range(1, n):
-                ang0 -= self._base_back * TAIL_CURL   # accumulate the per-link curl
+                ang0 -= self._base_back * TAIL_CURL  # accumulate the per-link curl
                 rx += math.cos(ang0) * L
                 ry += math.sin(ang0) * L
                 tx, ty = rx, ry
                 if TAIL_UNDULATE_AMP:
                     # lateral wave, perpendicular to the current arc direction,
                     # growing toward the tip and travelling down the length.
-                    wave = (TAIL_UNDULATE_AMP * (i / n)
-                            * math.sin(self._t * TAIL_UNDULATE_SPEED
-                                       - i * TAIL_UNDULATE_WAVELENGTH))
+                    wave = (
+                        TAIL_UNDULATE_AMP
+                        * (i / n)
+                        * math.sin(self._t * TAIL_UNDULATE_SPEED - i * TAIL_UNDULATE_WAVELENGTH)
+                    )
                     tx += -math.sin(ang0) * wave
                     ty += math.cos(ang0) * wave
                 if i >= _PINNED:
@@ -192,8 +191,7 @@ class Tail:
         # 5) Draw angles: each segment points from its parent.
         segs[0].angle = math.pi if self._base_back < 0 else 0.0
         for i in range(1, n):
-            segs[i].angle = math.atan2(segs[i].y - segs[i - 1].y,
-                                       segs[i].x - segs[i - 1].x)
+            segs[i].angle = math.atan2(segs[i].y - segs[i - 1].y, segs[i].x - segs[i - 1].x)
 
     @staticmethod
     def _pin(seg: "TailSegment", x: float, y: float):
@@ -202,9 +200,7 @@ class Tail:
 
     def _get_tail_base_position(self) -> tuple[float, float]:
         """Hip attachment point, with the facing-flip ease from #3."""
-        target_offset = (
-            TAIL_BASE_OFFSET_X if not self.player.fighter.facing_right else -TAIL_BASE_OFFSET_X
-        )
+        target_offset = TAIL_BASE_OFFSET_X if not self.player.fighter.facing_right else -TAIL_BASE_OFFSET_X
         delta = target_offset - self._anchor_offset_x
         if delta > TAIL_ANCHOR_FLIP_STEP:
             delta = TAIL_ANCHOR_FLIP_STEP

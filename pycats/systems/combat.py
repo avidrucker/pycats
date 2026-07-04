@@ -10,6 +10,7 @@ Task 5: hit detection uses circle geometry.
   - circles_overlap() tests the hitbox circle against all resolved hurtbox
     circles.  All other guards (invulnerable, is_alive, self-hit) are unchanged.
 """
+
 from pycats.combat.geometry import circle_overlap, circles_overlap, resolve_circle
 from pycats.config import CLANK_PRIORITY_RANGE
 
@@ -59,7 +60,7 @@ def _resolve_clanks(attacks):
     for i, a in enumerate(live):
         if not a.active:
             continue
-        for b in live[i + 1:]:
+        for b in live[i + 1 :]:
             if not b.active or b.owner is a.owner:
                 continue
             if not _attacks_overlap(a, b):
@@ -109,9 +110,7 @@ def process_hits(players, attacks):
 
         for defender in players:
             # Skip if defender is invulnerable, is dead, or is the owner of the attack
-            if (
-                defender.fighter.invulnerable or not defender.fighter.is_alive or defender is atk.owner
-            ):  # no self-hit
+            if defender.fighter.invulnerable or not defender.fighter.is_alive or defender is atk.owner:  # no self-hit
                 continue
 
             # Resolve defender hurtbox circles to absolute coordinates.
@@ -124,25 +123,21 @@ def process_hits(players, attacks):
             # fallback above.
             hurtbox = defender.fighter_data.hurtbox
             d_state = getattr(defender, "state", None)
-            if (d_state == "crouch"
-                    and getattr(defender.fighter, "crouch_hurtbox", None) is not None):
+            if d_state == "crouch" and getattr(defender.fighter, "crouch_hurtbox", None) is not None:
                 hurtbox = defender.fighter.crouch_hurtbox
-            elif (d_state == "prone"
-                    and getattr(defender.fighter, "prone_hurtbox", None) is not None):
+            elif d_state == "prone" and getattr(defender.fighter, "prone_hurtbox", None) is not None:
                 # Prone lowers the hurtbox further (#173) so high attacks whiff
                 # over a downed fighter, exactly as crouch does.
                 hurtbox = defender.fighter.prone_hurtbox
             resolved_hurtbox = [
-                resolve_circle(c, defender.rect.x, defender.rect.y,
-                               defender.fighter.facing_right, defender.rect.width)
+                resolve_circle(c, defender.rect.x, defender.rect.y, defender.fighter.facing_right, defender.rect.width)
                 for c in hurtbox.circles
             ]
 
             # First box (priority order) that overlaps this defender wins — a
             # single move-instance hits a given target at most once.
             hit_box = next(
-                (box for (cx, cy, r, box) in boxes
-                 if circles_overlap(cx, cy, r, resolved_hurtbox)),
+                (box for (cx, cy, r, box) in boxes if circles_overlap(cx, cy, r, resolved_hurtbox)),
                 None,
             )
             if hit_box is not None:

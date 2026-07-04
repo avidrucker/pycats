@@ -8,6 +8,7 @@ Piloted in ``OptionsMenu.render``; rolled out to the other menus in #360. Pure
 ``focus_label`` keeps the marker logic unit-testable; ``draw_menu_button`` owns
 the pixels. Headless-safe (plain pygame Surface ops; no display hooks needed).
 """
+
 import pygame
 
 from . import runtime_settings
@@ -18,14 +19,14 @@ from .text_utils import text_renderer
 FOCUS_MARKER = "►"
 
 # Button chrome
-BUTTON_PAD_X = 24            # horizontal padding around the label
-BUTTON_PAD_Y = 8            # vertical padding
-BUTTON_MIN_WIDTH = 300       # keep rows a consistent width regardless of label
+BUTTON_PAD_X = 24  # horizontal padding around the label
+BUTTON_PAD_Y = 8  # vertical padding
+BUTTON_MIN_WIDTH = 300  # keep rows a consistent width regardless of label
 BUTTON_RADIUS = 6
-BUTTON_FILL_FOCUSED = (60, 60, 20)          # warm glow fill behind the focused label
-BUTTON_FILL_PRESSED = (120, 120, 40)        # brighter flash on press (#332), decays to the glow
+BUTTON_FILL_FOCUSED = (60, 60, 20)  # warm glow fill behind the focused label
+BUTTON_FILL_PRESSED = (120, 120, 40)  # brighter flash on press (#332), decays to the glow
 BUTTON_BORDER_FOCUSED = MAIN_MENU_SELECTED_COLOR  # bright border = the "glow" edge
-BUTTON_BORDER_UNFOCUSED = (70, 70, 80)      # dim outline when not focused
+BUTTON_BORDER_UNFOCUSED = (70, 70, 80)  # dim outline when not focused
 
 # How many frames the press-flash lingers after a confirm/navigation input (#332).
 # Screens own a ``press_pulse`` counter set to this on input and decremented each
@@ -55,8 +56,7 @@ def menu_button_size(label, size, focused=False, *, min_width=BUTTON_MIN_WIDTH):
     return max(min_width, tw + 2 * pad_x), th + 2 * pad_y
 
 
-def draw_menu_button(surface, label, center, size, focused, *, min_width=BUTTON_MIN_WIDTH,
-                     pressed=False):
+def draw_menu_button(surface, label, center, size, focused, *, min_width=BUTTON_MIN_WIDTH, pressed=False):
     """Draw one menu row as a coloured rect that glows when focused, with a marker.
 
     ``center`` is the (x, y) the button is centred on; ``size`` the label font size.

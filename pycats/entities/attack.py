@@ -55,13 +55,13 @@ class Attack(pygame.sprite.Sprite):
     def __init__(
         self,
         owner,
-        hitbox=None,        # single Hitbox shorthand (circle, damage, angle, kb)
+        hitbox=None,  # single Hitbox shorthand (circle, damage, angle, kb)
         lifetime: int = 0,  # frames the hit-box persists (a move's active window)
         disappear_on_hit=False,
-        hitboxes=None,      # #130: tuple[Hitbox, ...] for a multi-hitbox move
-        in_air=False,       # #133: is this an aerial move's hitbox? (aerials don't clank)
-        rehit_rate=None,    # #213: frames between re-hits (None = single hit)
-        velocity=None,      # #223: (vx, vy) px/frame for a MOVING projectile (None = static)
+        hitboxes=None,  # #130: tuple[Hitbox, ...] for a multi-hitbox move
+        in_air=False,  # #133: is this an aerial move's hitbox? (aerials don't clank)
+        rehit_rate=None,  # #213: frames between re-hits (None = single hit)
+        velocity=None,  # #223: (vx, vy) px/frame for a MOVING projectile (None = static)
     ):
         super().__init__()
         self.owner = owner
@@ -141,8 +141,7 @@ class Attack(pygame.sprite.Sprite):
     def update(self, platforms=None):
         if self.velocity is not None:  # #223: advance the moving projectile
             vx, vy = self.velocity
-            self.resolved = [(cx + vx, cy + vy, r, hb)
-                             for (cx, cy, r, hb) in self.resolved]
+            self.resolved = [(cx + vx, cy + vy, r, hb) for (cx, cy, r, hb) in self.resolved]
             self.hit_cx += vx
             self.hit_cy += vy
             self.rect.center = (int(self.hit_cx), int(self.hit_cy))
@@ -168,20 +167,25 @@ class Projectile(Attack):
     (no measured PM values exist — see docs/research/2026-06-30-nalio-fireball-…md).
     """
 
-    def __init__(self, *args, gravity=PROJECTILE_GRAVITY,
-                 restitution=PROJECTILE_RESTITUTION,
-                 max_bounces=PROJECTILE_MAX_BOUNCES, **kwargs):
+    def __init__(
+        self,
+        *args,
+        gravity=PROJECTILE_GRAVITY,
+        restitution=PROJECTILE_RESTITUTION,
+        max_bounces=PROJECTILE_MAX_BOUNCES,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
-        self.gravity = gravity          # ⚠ GUESS px/frame² downward accel
+        self.gravity = gravity  # ⚠ GUESS px/frame² downward accel
         self.restitution = restitution  # ⚠ GUESS vertical energy kept per bounce (<1)
         self.max_bounces = max_bounces  # ⚠ GUESS bounces before despawn
         self._bounces = 0
-        if self.velocity is None:       # a Projectile is always moving
+        if self.velocity is None:  # a Projectile is always moving
             self.velocity = (0, 0)
 
     def update(self, platforms=None):
         vx, vy = self.velocity
-        vy += self.gravity              # gravity acts this frame
+        vy += self.gravity  # gravity acts this frame
         dx, dy = vx, vy
         # Ground-bounce: a falling projectile whose BOTTOM would cross a platform top
         # this frame (while horizontally over it) lands on the surface and reflects up,
@@ -193,7 +197,7 @@ class Projectile(Attack):
                 pr = plat.rect
                 if pr.left <= x_after <= pr.right and bottom_before <= pr.top <= bottom_before + dy:
                     dy = (pr.top - self.hit_r) - self.hit_cy  # land exactly on the surface
-                    vy = -vy * self.restitution               # reflect, losing momentum
+                    vy = -vy * self.restitution  # reflect, losing momentum
                     self._bounces += 1
                     break
         # Integrate: move the anchor AND every resolved circle by the same delta
@@ -204,12 +208,14 @@ class Projectile(Attack):
         self.rect.center = (int(self.hit_cx), int(self.hit_cy))
         self.velocity = (vx, vy)
         # Despawn: too many bounces, or off the stage (either side / below the floor).
-        if (self._bounces > self.max_bounces
-                or not (-self.rect.width <= self.hit_cx <= SCREEN_WIDTH + self.rect.width)
-                or self.hit_cy > SCREEN_HEIGHT + self.rect.height):
+        if (
+            self._bounces > self.max_bounces
+            or not (-self.rect.width <= self.hit_cx <= SCREEN_WIDTH + self.rect.width)
+            or self.hit_cy > SCREEN_HEIGHT + self.rect.height
+        ):
             self.kill()
             return
-        if self._rehit_timer > 0:       # #213: drain the looping-rehit cooldown
+        if self._rehit_timer > 0:  # #213: drain the looping-rehit cooldown
             self._rehit_timer -= 1
         self.frames_left -= 1
         if self.frames_left <= 0:

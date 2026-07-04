@@ -25,17 +25,17 @@ class KeybindSetsMenu:
         # KeybindMenu so an in-memory remap is what gets saved).
         self.keymaps = keymaps
         self.player = 0
-        self.view = "menu"          # "menu" | "list" | "text" | "confirm"
+        self.view = "menu"  # "menu" | "list" | "text" | "confirm"
         self.menu_index = 0
         self.sets = []
         self.list_index = 0
-        self.list_action = None     # "load" | "rename" | "delete" — what the list picks for
-        self.entry = None           # a TextEntry while view == "text"
-        self.entry_action = None    # "save" | "rename"
-        self.rename_from = None     # the old name while renaming
-        self.confirm_name = None    # the name pending delete-confirmation
+        self.list_action = None  # "load" | "rename" | "delete" — what the list picks for
+        self.entry = None  # a TextEntry while view == "text"
+        self.entry_action = None  # "save" | "rename"
+        self.rename_from = None  # the old name while renaming
+        self.confirm_name = None  # the name pending delete-confirmation
         self.message = ""
-        self.done = False           # set when the sub-mode should hand back to the keybind screen
+        self.done = False  # set when the sub-mode should hand back to the keybind screen
 
     # ---- entry / exit ----
     def open(self, player):
@@ -118,7 +118,7 @@ class KeybindSetsMenu:
         if not self.entry.confirmed:
             return
         name = self.entry.text.strip()
-        if not name:                      # DONE on an empty buffer — stay and prompt
+        if not name:  # DONE on an empty buffer — stay and prompt
             self.entry.confirmed = False
             self.message = "name required"
             return

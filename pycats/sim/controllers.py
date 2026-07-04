@@ -5,6 +5,7 @@ demo/benchmark battles and to *generate* fixed input timelines. Capture a
 controller's `emitted` frames and replay that list to keep golden tests a clean
 byte-identical comparison on identical inputs.
 """
+
 from __future__ import annotations
 
 import random
@@ -77,12 +78,13 @@ NEVER_ATTACKED = -10_000
 @dataclass(frozen=True)
 class LevelParams:
     """Deterministic AI knobs for one difficulty level."""
-    reaction_delay: int   # frames in-range before the first attack fires
-    attack_period: int    # frames between attacks (cadence)
-    standoff: int         # desired horizontal gap (px)
+
+    reaction_delay: int  # frames in-range before the first attack fires
+    attack_period: int  # frames between attacks (cadence)
+    standoff: int  # desired horizontal gap (px)
     # Seeded-RNG knobs (#238 / #148 step 2), rolled against self.rng (#166):
-    follow_through_p: float = 1.0   # P(commit a chosen attack); 1.0 = always
-    shield_chance: float = 0.0      # P(raise shield this frame); 0.0 = never
+    follow_through_p: float = 1.0  # P(commit a chosen attack); 1.0 = always
+    shield_chance: float = 0.0  # P(raise shield this frame); 0.0 = never
     # #254/#251 Q2: shield REACTIVELY (only when a threat is detected incoming) vs
     # randomly. High levels shield reactively (SmashWiki: "almost always defend from
     # attacks"); low levels shield "at random times" (the #238 unconditional roll).
@@ -134,11 +136,72 @@ class LevelParams:
 # Anchor rows for Lv 1/3/5/7/9 (#148 Q5). ⚠ The *axes* are sourced; the *numbers*
 # are pycats interpolations — tuning starting points, not measured PM data.
 LEVEL_PARAMS: dict[int, LevelParams] = {
-    1: LevelParams(reaction_delay=30, attack_period=48, standoff=45, follow_through_p=0.15, shield_chance=0.00, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab"})),
-    3: LevelParams(reaction_delay=20, attack_period=36, standoff=40, follow_through_p=0.35, shield_chance=0.05, reactive_shield=False, whiff_punish=False, enabled_moves=frozenset({"jab", "tilts"})),
-    5: LevelParams(reaction_delay=12, attack_period=24, standoff=35, follow_through_p=0.55, shield_chance=0.15, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, recover=True, edge_guard=True),
-    7: LevelParams(reaction_delay=6,  attack_period=16, standoff=32, follow_through_p=0.80, shield_chance=0.40, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.15, edge_hog=True, recover=True, edge_guard=True),
-    9: LevelParams(reaction_delay=1,  attack_period=10, standoff=30, follow_through_p=1.00, shield_chance=0.85, reactive_shield=True,  whiff_punish=True,  enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}), reach_aware=True, reactive_spacing=True, evade_chance=0.30, edge_hog=True, recover=True, edge_guard=True),
+    1: LevelParams(
+        reaction_delay=30,
+        attack_period=48,
+        standoff=45,
+        follow_through_p=0.15,
+        shield_chance=0.00,
+        reactive_shield=False,
+        whiff_punish=False,
+        enabled_moves=frozenset({"jab"}),
+    ),
+    3: LevelParams(
+        reaction_delay=20,
+        attack_period=36,
+        standoff=40,
+        follow_through_p=0.35,
+        shield_chance=0.05,
+        reactive_shield=False,
+        whiff_punish=False,
+        enabled_moves=frozenset({"jab", "tilts"}),
+    ),
+    5: LevelParams(
+        reaction_delay=12,
+        attack_period=24,
+        standoff=35,
+        follow_through_p=0.55,
+        shield_chance=0.15,
+        reactive_shield=True,
+        whiff_punish=True,
+        enabled_moves=frozenset({"jab", "tilts", "aerials"}),
+        reach_aware=True,
+        reactive_spacing=True,
+        recover=True,
+        edge_guard=True,
+    ),
+    7: LevelParams(
+        reaction_delay=6,
+        attack_period=16,
+        standoff=32,
+        follow_through_p=0.80,
+        shield_chance=0.40,
+        reactive_shield=True,
+        whiff_punish=True,
+        enabled_moves=frozenset({"jab", "tilts", "aerials"}),
+        reach_aware=True,
+        reactive_spacing=True,
+        evade_chance=0.15,
+        edge_hog=True,
+        recover=True,
+        edge_guard=True,
+    ),
+    9: LevelParams(
+        reaction_delay=1,
+        attack_period=10,
+        standoff=30,
+        follow_through_p=1.00,
+        shield_chance=0.85,
+        reactive_shield=True,
+        whiff_punish=True,
+        enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}),
+        reach_aware=True,
+        reactive_spacing=True,
+        evade_chance=0.30,
+        edge_hog=True,
+        recover=True,
+        edge_guard=True,
+    ),
 }
 
 
@@ -213,15 +276,32 @@ class AttackerController(BaseController):
     jump/attack are pulsed (one frame) so the game sees fresh key presses.
     """
 
-    def __init__(self, attacker_num=1, attack_period=12, standoff=30,
-                 attack_range=45, safe_x=(110, 850), drop_threshold=20, rng=None,
-                 reaction_delay=0, level=None,
-                 follow_through_p=1.0, shield_chance=0.0,
-                 reactive_shield=False, whiff_punish=False,
-                 shield_threat_range=160, shield_threat_dy=80,
-                 enabled_moves=frozenset({"jab", "tilts", "aerials"}),
-                 fireball_range=450, reach_aware=False, reactive_spacing=False,
-                 evade_chance=0.0, edge_hog=False, recover=False, edge_guard=False):
+    def __init__(
+        self,
+        attacker_num=1,
+        attack_period=12,
+        standoff=30,
+        attack_range=45,
+        safe_x=(110, 850),
+        drop_threshold=20,
+        rng=None,
+        reaction_delay=0,
+        level=None,
+        follow_through_p=1.0,
+        shield_chance=0.0,
+        reactive_shield=False,
+        whiff_punish=False,
+        shield_threat_range=160,
+        shield_threat_dy=80,
+        enabled_moves=frozenset({"jab", "tilts", "aerials"}),
+        fireball_range=450,
+        reach_aware=False,
+        reactive_spacing=False,
+        evade_chance=0.0,
+        edge_hog=False,
+        recover=False,
+        edge_guard=False,
+    ):
         super().__init__(attacker_num, rng=rng)
         # #232/#238/#248: a difficulty `level` (1-9) overrides the knobs from the
         # #148 table; level=None keeps the explicit defaults (golden-safe).
@@ -258,7 +338,7 @@ class AttackerController(BaseController):
         # #274: punish a committed/whiffed move during its recovery (off = cadence-only).
         self.whiff_punish = whiff_punish
         self.shield_threat_range = shield_threat_range  # ⚠ GUESS px (~2 char-lengths, #251)
-        self.shield_threat_dy = shield_threat_dy        # ⚠ GUESS px (vertical threat band)
+        self.shield_threat_dy = shield_threat_dy  # ⚠ GUESS px (vertical threat band)
         self._threat_since = None  # frame a threat first appeared (reaction-window tracker)
         self.level = level
         # reaction_delay (#232): frames the target must stay in range before the
@@ -271,7 +351,7 @@ class AttackerController(BaseController):
         # off-stage in one hit, so it can linger near the platform edges; the bot
         # must be able to follow it there to keep racking up damage to a KO.
         self.attack_period = attack_period
-        self.standoff = standoff          # desired horizontal gap (stand beside, not on top of)
+        self.standoff = standoff  # desired horizontal gap (stand beside, not on top of)
         self.attack_range = attack_range
         # #335 (DEV-A of #285): when on, the melee-range gates derive from the reach
         # of the move the bot actually commits, per character, instead of this flat
@@ -280,7 +360,7 @@ class AttackerController(BaseController):
         # #277 (model A): suppress the standoff back-off when the opponent is vulnerable.
         self.reactive_spacing = reactive_spacing
         self.edge_hog = edge_hog  # #404: contest the ledge vs a recovering opponent
-        self.recover = recover    # #409: aim for the ledge when the bot is off-stage
+        self.recover = recover  # #409: aim for the ledge when the bot is off-stage
         self.edge_guard = edge_guard  # #413: poke/projectile a recovering foe from on-stage
         # #338: seeded reactive roll-away (evade). Default 0.0 → never rolls (golden-safe).
         self.evade_chance = evade_chance
@@ -305,8 +385,9 @@ class AttackerController(BaseController):
 
     def _in_threat_band(self, a, ox, oy) -> bool:
         """Is point (ox, oy) within the shield threat band around the bot `a`?"""
-        return (abs(ox - a.rect.centerx) <= self.shield_threat_range
-                and abs(oy - a.rect.centery) <= self.shield_threat_dy)
+        return (
+            abs(ox - a.rect.centerx) <= self.shield_threat_range and abs(oy - a.rect.centery) <= self.shield_threat_dy
+        )
 
     def _threat_incoming(self, a, t, attacks) -> bool:
         """#254: is `t` threatening `a` right now? Two signals (#251 decision model):
@@ -326,7 +407,7 @@ class AttackerController(BaseController):
             if self._in_threat_band(a, t.rect.centerx, t.rect.centery):
                 return True
         # (2) opponent-owned hitbox/projectile in flight.
-        for atk in (attacks or ()):
+        for atk in attacks or ():
             if getattr(atk, "owner", None) is not t or not getattr(atk, "active", True):
                 continue
             if not self._in_threat_band(a, atk.rect.centerx, atk.rect.centery):
@@ -464,15 +545,20 @@ class AttackerController(BaseController):
             # ledges=None → never runs (golden-safe); rng consumed only when it fires.
             if self.edge_guard and a.fighter.on_ground and self._edge_hog_target(a, t, ledges):
                 cadence = (self._f - self._last_attack) >= self.attack_period
-                if ("specials" in self.enabled_moves
-                        and self.attack_range < adx <= self.fireball_range and cadence
-                        and (self.follow_through_p >= 1.0
-                             or self.rng.random() < self.follow_through_p)):
+                if (
+                    "specials" in self.enabled_moves
+                    and self.attack_range < adx <= self.fireball_range
+                    and cadence
+                    and (self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p)
+                ):
                     self._last_attack = self._f
                     return {keys["special"]}
-                if (adx <= self._melee_range(a) and abs(dy) < EDGE_GUARD_DY and cadence
-                        and (self.follow_through_p >= 1.0
-                             or self.rng.random() < self.follow_through_p)):
+                if (
+                    adx <= self._melee_range(a)
+                    and abs(dy) < EDGE_GUARD_DY
+                    and cadence
+                    and (self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p)
+                ):
                     self._last_attack = self._f
                     return {keys["attack"]}
             # #404 edge-hog: the opponent is recovering off-stage — go to the near
@@ -489,11 +575,13 @@ class AttackerController(BaseController):
             # shielding it away; it still falls through to movement on non-poke frames,
             # so it also closes in. Cadence + follow-through gated. Default enabled_moves
             # has no "specials" → never fires (golden-safe).
-            if ("specials" in self.enabled_moves and abs(dy) < POKE_DY_BAND
-                    and self.attack_range < adx <= self.fireball_range
-                    and (self._f - self._last_attack) >= self.attack_period
-                    and (self.follow_through_p >= 1.0
-                         or self.rng.random() < self.follow_through_p)):
+            if (
+                "specials" in self.enabled_moves
+                and abs(dy) < POKE_DY_BAND
+                and self.attack_range < adx <= self.fireball_range
+                and (self._f - self._last_attack) >= self.attack_period
+                and (self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p)
+            ):
                 self._last_attack = self._f
                 return {keys["special"]}
             # Shield (defensive frame — no move/attack). Two regimes (#254/#251 Q2):
@@ -524,15 +612,15 @@ class AttackerController(BaseController):
                         # rolls that Player.update drops (100% wasted while juggled). Mirror
                         # Player.update's `in_hitstun = hurt_timer > 0 or stun_timer > 0`.
                         # getattr keeps minimal combat stubs working (#137/#291).
-                        dodge_able = (getattr(a, "state", None) in _DODGEABLE_STATES
-                                      and getattr(a.fighter, "hurt_timer", 0) == 0
-                                      and getattr(a.fighter, "stun_timer", 0) == 0)
-                        if (dodge_able and self.evade_chance > 0.0
-                                and self.rng.random() < self.evade_chance):
+                        dodge_able = (
+                            getattr(a, "state", None) in _DODGEABLE_STATES
+                            and getattr(a.fighter, "hurt_timer", 0) == 0
+                            and getattr(a.fighter, "stun_timer", 0) == 0
+                        )
+                        if dodge_able and self.evade_chance > 0.0 and self.rng.random() < self.evade_chance:
                             away = keys["left"] if dx > 0 else keys["right"]
                             return {keys["shield"], away}
-                        if (self.shield_chance > 0.0
-                                and self.rng.random() < self.shield_chance):
+                        if self.shield_chance > 0.0 and self.rng.random() < self.shield_chance:
                             return {keys["shield"]}
                 else:
                     self._threat_since = None
@@ -545,8 +633,7 @@ class AttackerController(BaseController):
             # the attack_period cadence gate, gated by follow-through reliability.
             # Default whiff_punish=False → never runs (golden-safe; rng untouched).
             if self.whiff_punish and self._whiff_open(a, t):
-                if (self.follow_through_p >= 1.0
-                        or self.rng.random() < self.follow_through_p):
+                if self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p:
                     self._last_attack = self._f
                     return {keys["attack"]}
             lo, hi = self.safe_x
@@ -561,8 +648,7 @@ class AttackerController(BaseController):
             # `standoff` is never widened (Smash CPUs approach committally, #343).
             # Gated on `reactive_spacing`, so the level-less default never evaluates the
             # helpers and is byte-identical (golden-safe); deterministic (no rng).
-            press_in = (self.reactive_spacing and self._whiff_open(a, t)
-                        and not self._threat_incoming(a, t, attacks))
+            press_in = self.reactive_spacing and self._whiff_open(a, t) and not self._threat_incoming(a, t, attacks)
             move = None
             if adx > self.standoff + 8:
                 move = toward
@@ -610,8 +696,7 @@ class AttackerController(BaseController):
             # vertical tolerance is wide enough to keep engaging after knockback
             # nudges the target a platform up/down, avoiding a positional
             # deadlock under the post-startup hitbox timing.
-            in_range = ((self.standoff - IN_RANGE_NEAR_MARGIN) <= adx <= self._melee_range(a)
-                        and abs(dy) < POKE_DY_BAND)
+            in_range = (self.standoff - IN_RANGE_NEAR_MARGIN) <= adx <= self._melee_range(a) and abs(dy) < POKE_DY_BAND
             # #232: reaction_delay — wait this many frames after entering range
             # before the first attack (a higher level reacts faster). With the
             # default reaction_delay=0 this is always satisfied → unchanged.
@@ -626,8 +711,7 @@ class AttackerController(BaseController):
                 # #238: follow-through — commit the attack only with probability
                 # follow_through_p (seeded). p >= 1.0 skips the roll (always commit,
                 # golden-safe default); a failed roll hesitates and retries later.
-                commit = (self.follow_through_p >= 1.0
-                          or self.rng.random() < self.follow_through_p)
+                commit = self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p
                 if commit:
                     held.add(keys["attack"])
                     self._last_attack = self._f
@@ -644,10 +728,13 @@ class AttackerController(BaseController):
                     # jab-only Lv1 are byte-identical. Skipped when up/down already
                     # steer an intended u-tilt/d-tilt (both also scaling moves), so
                     # no sideways drift is injected into a jump/drop.
-                    if (self.level is not None and "tilts" in self.enabled_moves
-                            and a.fighter.on_ground
-                            and keys["up"] not in held
-                            and keys["down"] not in held):
+                    if (
+                        self.level is not None
+                        and "tilts" in self.enabled_moves
+                        and a.fighter.on_ground
+                        and keys["up"] not in held
+                        and keys["down"] not in held
+                    ):
                         held.add(toward)
 
         # --- #368 anti-stall backstop (leveled-only, deterministic, no rng) --------
@@ -656,14 +743,16 @@ class AttackerController(BaseController):
         # moves) within 1.5s, resetting the reference, so this never fires then.
         if self.level is not None:
             # getattr defaults keep minimal combat stubs (no .percent) working (#137/#291).
-            cur = (a.rect.centerx, a.rect.centery,
-                   getattr(a.fighter, "percent", 0), getattr(t.fighter, "percent", 0))
+            cur = (a.rect.centerx, a.rect.centery, getattr(a.fighter, "percent", 0), getattr(t.fighter, "percent", 0))
             ref = self._noprog_ref
             reachable = getattr(t.fighter, "is_alive", True)
-            progressed = (ref is None
-                          or abs(cur[0] - ref[0]) > ANTI_STALL_MOVE_PX
-                          or abs(cur[1] - ref[1]) > ANTI_STALL_MOVE_PX
-                          or cur[2] != ref[2] or cur[3] != ref[3])
+            progressed = (
+                ref is None
+                or abs(cur[0] - ref[0]) > ANTI_STALL_MOVE_PX
+                or abs(cur[1] - ref[1]) > ANTI_STALL_MOVE_PX
+                or cur[2] != ref[2]
+                or cur[3] != ref[3]
+            )
             if progressed or not reachable:
                 self._noprog = 0
                 self._noprog_ref = cur
@@ -700,8 +789,7 @@ class IdlerController(BaseController):
     seam, so a seed change visibly changes shield timing. Position-independent.
     """
 
-    def __init__(self, attacker_num=1, shield_period=0, shield_hold=0,
-                 shield_chance=0.0, rng=None):
+    def __init__(self, attacker_num=1, shield_period=0, shield_hold=0, shield_chance=0.0, rng=None):
         super().__init__(attacker_num, rng=rng)
         self.shield_period = shield_period
         self.shield_hold = shield_hold

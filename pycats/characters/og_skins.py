@@ -14,6 +14,7 @@ tuple colours and the same values — a non-breaking re-source.
 
 The character/skin *separation* and the CSS palette picker are Part 3 of #127.
 """
+
 from .palettes import load_palettes
 
 OG_SKINS = load_palettes()

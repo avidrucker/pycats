@@ -14,6 +14,7 @@ still `⚠ playtest starting point`s (per ADR-0003); the zone fractions just mak
 placement body-relative instead of pinned to one body. Faithful OG-derived positions
 are the separate #310 research spike.
 """
+
 from __future__ import annotations
 
 # Vertical zones as a fraction of the fighter's standing body height, measured from
@@ -22,9 +23,9 @@ from __future__ import annotations
 # critically, on any body a "feet" move stays ON the body while "below_feet" is a
 # bounded spike just past the feet.
 BODY_ZONES: dict[str, float] = {
-    "head": 0.15,        # up at/over the head — juggle & anti-air (u-tilt, u-air)
-    "center": 0.50,      # mid-body — jabs and most normals/aerials
-    "feet": 0.85,        # low on the body near the feet — low pokes (d-tilt)
+    "head": 0.15,  # up at/over the head — juggle & anti-air (u-tilt, u-air)
+    "center": 0.50,  # mid-body — jabs and most normals/aerials
+    "feet": 0.85,  # low on the body near the feet — low pokes (d-tilt)
     "below_feet": 1.10,  # just past the feet — bounded downward spikes (d-air)
 }
 

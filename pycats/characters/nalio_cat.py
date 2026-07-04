@@ -73,8 +73,8 @@ from pycats.combat.units import u  # units->px authoring scale (#195)
 # approximation (spec §3: Mario's datamined capsules are a later refinement).
 _HURTBOX = Hurtbox(
     circles=(
-        Circle(dx=20, dy=15, r=14),   # upper body
-        Circle(dx=20, dy=45, r=14),   # lower body
+        Circle(dx=20, dy=15, r=14),  # upper body
+        Circle(dx=20, dy=45, r=14),  # lower body
     )
 )
 
@@ -89,14 +89,33 @@ _JAB = MoveData(
     active=2,
     recovery=13,
     hitboxes=(
-        Hitbox(circle=Circle(dx=54, dy=27, r=19), damage=3.0, angle=83,
-               base_knockback=0.0, knockback_growth=100.0, set_knockback=20),
-        Hitbox(circle=Circle(dx=44, dy=28, r=13), damage=3.0, angle=83,
-               base_knockback=0.0, knockback_growth=100.0, set_knockback=20),
-        Hitbox(circle=Circle(dx=34, dy=29, r=15), damage=3.0, angle=85,
-               base_knockback=0.0, knockback_growth=100.0, set_knockback=20),
+        Hitbox(
+            circle=Circle(dx=54, dy=27, r=19),
+            damage=3.0,
+            angle=83,
+            base_knockback=0.0,
+            knockback_growth=100.0,
+            set_knockback=20,
+        ),
+        Hitbox(
+            circle=Circle(dx=44, dy=28, r=13),
+            damage=3.0,
+            angle=83,
+            base_knockback=0.0,
+            knockback_growth=100.0,
+            set_knockback=20,
+        ),
+        Hitbox(
+            circle=Circle(dx=34, dy=29, r=15),
+            damage=3.0,
+            angle=85,
+            base_knockback=0.0,
+            knockback_growth=100.0,
+            set_knockback=20,
+        ),
     ),
 )
+
 
 # --- Down-tilt, mapped to the "attack" slot (PM3.6 Mario AttackLw3) ------------
 # Real 3-hitbox form (#132). All active 5-8, angle 80 / BKB 30 / KBG 80; raw
@@ -105,8 +124,8 @@ _JAB = MoveData(
 # NB (#212): verified against rukaidata AttackLw3 — d-tilt uses NORMAL knockback
 # (WDSK 0, BKB 30), so it is already faithful; no set_knockback (#211) applies.
 def _dtilt_box(dx, r, damage):
-    return Hitbox(circle=Circle(dx=dx, dy=30, r=r), damage=damage,
-                  angle=80, base_knockback=30.0, knockback_growth=80.0)
+    return Hitbox(circle=Circle(dx=dx, dy=30, r=r), damage=damage, angle=80, base_knockback=30.0, knockback_growth=80.0)
+
 
 _DOWN_TILT = MoveData(
     name="down tilt",
@@ -115,11 +134,12 @@ _DOWN_TILT = MoveData(
     active=4,
     recovery=21,
     hitboxes=(
-        _dtilt_box(dx=37, r=13, damage=9.0),   # id0 (bone 10) — inner, priority
-        _dtilt_box(dx=46, r=17, damage=9.0),   # id1 (bone 16) — mid (#64 reach)
-        _dtilt_box(dx=57, r=21, damage=8.0),   # id2 (bone 17) — tip, furthest
+        _dtilt_box(dx=37, r=13, damage=9.0),  # id0 (bone 10) — inner, priority
+        _dtilt_box(dx=46, r=17, damage=9.0),  # id1 (bone 16) — mid (#64 reach)
+        _dtilt_box(dx=57, r=21, damage=8.0),  # id2 (bone 17) — tip, furthest
     ),
 )
+
 
 # --- Forward-tilt, mapped to the canonical "ftilt" key (PM3.6 Mario AttackS3) --
 # Forward/mid angle variant (move_select has one ground forward key, so the
@@ -132,8 +152,8 @@ _DOWN_TILT = MoveData(
 # modelled): along the forward arm at mid-body height (dy 28), mid box at the
 # #64-validated reach dx=46, fist (id0, r21) outermost.
 def _ftilt_box(dx, r):
-    return Hitbox(circle=Circle(dx=dx, dy=28, r=r), damage=9.0,
-                  angle=361, base_knockback=6.0, knockback_growth=100.0)
+    return Hitbox(circle=Circle(dx=dx, dy=28, r=r), damage=9.0, angle=361, base_knockback=6.0, knockback_growth=100.0)
+
 
 _FORWARD_TILT = MoveData(
     name="forward tilt",
@@ -142,11 +162,12 @@ _FORWARD_TILT = MoveData(
     active=3,
     recovery=23,
     hitboxes=(
-        _ftilt_box(dx=57, r=21),   # id0 (fist) — outermost, priority
-        _ftilt_box(dx=46, r=17),   # id1 — mid (#64 reach)
-        _ftilt_box(dx=37, r=15),   # id2 — inner
+        _ftilt_box(dx=57, r=21),  # id0 (fist) — outermost, priority
+        _ftilt_box(dx=46, r=17),  # id1 — mid (#64 reach)
+        _ftilt_box(dx=37, r=15),  # id2 — inner
     ),
 )
+
 
 # --- Up-tilt, mapped to the canonical "utilt" key (PM3.6 Mario AttackHi3) -------
 # rukaidata AttackHi3: active 5-11 -> startup 4 / active 7; IASA 30 -> recovery 19.
@@ -157,8 +178,8 @@ _FORWARD_TILT = MoveData(
 # clustered above the head (small dy), id2 (r25) the big sweep behind. Same
 # approximation convention as jab/d-tilt/f-tilt.
 def _utilt_box(dx, dy, r, kbg):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=8.0,
-                  angle=96, base_knockback=26.0, knockback_growth=kbg)
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=8.0, angle=96, base_knockback=26.0, knockback_growth=kbg)
+
 
 _UP_TILT = MoveData(
     name="up tilt",
@@ -173,6 +194,7 @@ _UP_TILT = MoveData(
     ),
 )
 
+
 # --- Forward-air, mapped to the canonical "fair" key (PM3.6 Mario AttackAirF) ---
 # The FIRST move to use the #204 per-hitbox temporal windows: a two-stage f-air,
 # the classic Mario forward air. rukaidata AttackAirF: active 16-22 -> startup 15
@@ -186,14 +208,28 @@ _UP_TILT = MoveData(
 # meteor boxes swung lower. Landing-lag / auto-cancel / L-cancel deferred (no
 # landing-lag system — same as n-air).
 def _fair_early(dx, dy, r, damage, bkb):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=60,
-                  base_knockback=bkb, knockback_growth=100.0,
-                  active_start=16, active_end=17)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=damage,
+        angle=60,
+        base_knockback=bkb,
+        knockback_growth=100.0,
+        active_start=16,
+        active_end=17,
+    )
+
 
 def _fair_late(dx, dy, r):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=15.0, angle=280,
-                  base_knockback=30.0, knockback_growth=70.0,
-                  active_start=18, active_end=22)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=15.0,
+        angle=280,
+        base_knockback=30.0,
+        knockback_growth=70.0,
+        active_start=18,
+        active_end=22,
+    )
+
 
 _FORWARD_AIR = MoveData(
     name="forward air",
@@ -204,10 +240,11 @@ _FORWARD_AIR = MoveData(
     hitboxes=(
         _fair_early(dx=42, dy=18, r=17, damage=17.0, bkb=50.0),  # early id0
         _fair_early(dx=48, dy=26, r=24, damage=16.0, bkb=40.0),  # early id1 (big arc)
-        _fair_late(dx=46, dy=36, r=17),                          # late id0 (meteor)
-        _fair_late(dx=50, dy=44, r=21),                          # late id1 (spike tip)
+        _fair_late(dx=46, dy=36, r=17),  # late id0 (meteor)
+        _fair_late(dx=50, dy=44, r=21),  # late id1 (spike tip)
     ),
 )
+
 
 # --- Back-air, mapped to the canonical "bair" key (PM3.6 Mario AttackAirB) ------
 # A clean->late "sex kick" that consumes BOTH gates: the late hit uses the Sakurai
@@ -220,14 +257,28 @@ _FORWARD_AIR = MoveData(
 # backward), same x/y for clean and late (same bones 16/17). Landing-lag/L-cancel
 # deferred (no landing-lag system — as n-air/f-air).
 def _bair_clean(dx, dy, r):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=11.0, angle=28,
-                  base_knockback=43.0, knockback_growth=65.0,
-                  active_start=6, active_end=8)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=11.0,
+        angle=28,
+        base_knockback=43.0,
+        knockback_growth=65.0,
+        active_start=6,
+        active_end=8,
+    )
+
 
 def _bair_late(dx, dy, r):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=9.0, angle=361,
-                  base_knockback=20.0, knockback_growth=100.0,
-                  active_start=9, active_end=17)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=9.0,
+        angle=361,
+        base_knockback=20.0,
+        knockback_growth=100.0,
+        active_start=9,
+        active_end=17,
+    )
+
 
 _BACK_AIR = MoveData(
     name="back air",
@@ -236,12 +287,13 @@ _BACK_AIR = MoveData(
     active=12,
     recovery=12,
     hitboxes=(
-        _bair_clean(dx=-12, dy=30, r=25),   # clean id0 (bone 16)
-        _bair_clean(dx=-2, dy=34, r=19),    # clean id1 (bone 17)
-        _bair_late(dx=-12, dy=30, r=25),    # late id0 (bone 16) — Sakurai
-        _bair_late(dx=-2, dy=34, r=19),     # late id1 (bone 17) — Sakurai
+        _bair_clean(dx=-12, dy=30, r=25),  # clean id0 (bone 16)
+        _bair_clean(dx=-2, dy=34, r=19),  # clean id1 (bone 17)
+        _bair_late(dx=-12, dy=30, r=25),  # late id0 (bone 16) — Sakurai
+        _bair_late(dx=-2, dy=34, r=19),  # late id1 (bone 17) — Sakurai
     ),
 )
+
 
 # --- Up-air, mapped to the canonical "uair" key (PM3.6 Mario AttackAirHi) -------
 # A two-window upward juggle (#204). rukaidata AttackAirHi: active 4-9 -> startup 3
@@ -252,9 +304,16 @@ _BACK_AIR = MoveData(
 # approximated above the head (small dy), same x/y for clean and late (bones
 # 16/17). Landing-lag/L-cancel deferred (no system — as the other aerials).
 def _uair_box(dx, dy, r, damage, start, end):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=55,
-                  base_knockback=0.0, knockback_growth=100.0,
-                  active_start=start, active_end=end)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=damage,
+        angle=55,
+        base_knockback=0.0,
+        knockback_growth=100.0,
+        active_start=start,
+        active_end=end,
+    )
+
 
 _UP_AIR = MoveData(
     name="up air",
@@ -263,12 +322,13 @@ _UP_AIR = MoveData(
     active=6,
     recovery=19,
     hitboxes=(
-        _uair_box(dx=22, dy=4, r=19, damage=11.0, start=4, end=5),   # clean id0
-        _uair_box(dx=14, dy=8, r=25, damage=11.0, start=4, end=5),   # clean id1 (big)
-        _uair_box(dx=22, dy=4, r=19, damage=10.0, start=6, end=9),   # late id0
-        _uair_box(dx=14, dy=8, r=25, damage=10.0, start=6, end=9),   # late id1 (big)
+        _uair_box(dx=22, dy=4, r=19, damage=11.0, start=4, end=5),  # clean id0
+        _uair_box(dx=14, dy=8, r=25, damage=11.0, start=4, end=5),  # clean id1 (big)
+        _uair_box(dx=22, dy=4, r=19, damage=10.0, start=6, end=9),  # late id0
+        _uair_box(dx=14, dy=8, r=25, damage=10.0, start=6, end=9),  # late id1 (big)
     ),
 )
+
 
 # --- Down-air, mapped to the canonical "dair" key (PM3.6 Mario AttackAirLw) -----
 # The looping DRILL — the final move of Nalio's kit, and the one that composes ALL
@@ -285,9 +345,17 @@ _UP_AIR = MoveData(
 # is a ⚠ playtest starting point (the per-hitbox rehit parameter isn't in the basic
 # table). Landing-lag/L-cancel deferred (no system — as the other aerials).
 def _dair_box(damage, sk, kbg, start, end, dy):
-    return Hitbox(circle=Circle(dx=20, dy=dy, r=27), damage=damage, angle=85,
-                  base_knockback=0.0, knockback_growth=kbg,
-                  set_knockback=sk, active_start=start, active_end=end)
+    return Hitbox(
+        circle=Circle(dx=20, dy=dy, r=27),
+        damage=damage,
+        angle=85,
+        base_knockback=0.0,
+        knockback_growth=kbg,
+        set_knockback=sk,
+        active_start=start,
+        active_end=end,
+    )
+
 
 _DOWN_AIR = MoveData(
     name="down air",
@@ -295,12 +363,13 @@ _DOWN_AIR = MoveData(
     startup=6,
     active=21,
     recovery=8,
-    rehit_rate=4,   # looping drill cadence (⚠ playtest start)
+    rehit_rate=4,  # looping drill cadence (⚠ playtest start)
     hitboxes=(
-        _dair_box(damage=3.0, sk=55, kbg=160.0, start=7, end=15, dy=56),   # phase 1
+        _dair_box(damage=3.0, sk=55, kbg=160.0, start=7, end=15, dy=56),  # phase 1
         _dair_box(damage=2.0, sk=30, kbg=100.0, start=16, end=27, dy=58),  # phase 2
     ),
 )
+
 
 # --- Neutral-air, mapped to the "nair" slot (PM3.6 Mario AttackAirN) -----------
 # Nalio's first aerial (#136), authored as the CLEAN-HIT form on the #130 engine.
@@ -316,8 +385,8 @@ _DOWN_AIR = MoveData(
 #   - positions are bone-relative → approximated around Nalio's body.
 #   - landing lag / auto-cancel / L-cancel are deferred (no landing-lag system).
 def _nair_box(dx, dy):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=15), damage=12.0,
-                  angle=45, base_knockback=20.0, knockback_growth=100.0)
+    return Hitbox(circle=Circle(dx=dx, dy=dy, r=15), damage=12.0, angle=45, base_knockback=20.0, knockback_growth=100.0)
+
 
 _NEUTRAL_AIR = MoveData(
     name="neutral air",
@@ -326,8 +395,8 @@ _NEUTRAL_AIR = MoveData(
     active=4,
     recovery=40,
     hitboxes=(
-        _nair_box(dx=30, dy=24),   # id0 (bone 17) — front/upper
-        _nair_box(dx=10, dy=38),   # id1 (bone 12) — back/lower
+        _nair_box(dx=30, dy=24),  # id0 (bone 17) — front/upper
+        _nair_box(dx=10, dy=38),  # id1 (bone 12) — back/lower
     ),
 )
 
@@ -346,10 +415,15 @@ _FIREBALL = MoveData(
     active=1,
     recovery=33,
     hitboxes=(
-        Hitbox(circle=Circle(dx=50, dy=30, r=u(3.5)), damage=7.0, angle=361,  # 3.5u -> 19px
-               base_knockback=22.0, knockback_growth=20.0),
+        Hitbox(
+            circle=Circle(dx=50, dy=30, r=u(3.5)),
+            damage=7.0,
+            angle=361,  # 3.5u -> 19px
+            base_knockback=22.0,
+            knockback_growth=20.0,
+        ),
     ),
-    projectile_speed=10,     # ⚠🔬 GUESS px/frame (#192/#195 derivation pending)
+    projectile_speed=10,  # ⚠🔬 GUESS px/frame (#192/#195 derivation pending)
     projectile_lifetime=73,
 )
 
@@ -370,19 +444,23 @@ _FIREBALL = MoveData(
 _FSMASH = MoveData(
     name="forward smash",
     in_air=False,
-    chargeable=True,   # hold-to-charge (#327/3a)
+    chargeable=True,  # hold-to-charge (#327/3a)
     startup=7,
     active=5,
     recovery=26,
     hitboxes=(
-        Hitbox(circle=Circle(dx=57, dy=28, r=u(3.52)), damage=14.0, angle=361,
-               base_knockback=25.0, knockback_growth=96.0),   # id0 fist (priority)
-        Hitbox(circle=Circle(dx=47, dy=28, r=u(3.94)), damage=19.0, angle=361,
-               base_knockback=30.0, knockback_growth=97.0),   # id1 sweetspot
-        Hitbox(circle=Circle(dx=36, dy=28, r=u(1.95)), damage=10.0, angle=361,
-               base_knockback=25.0, knockback_growth=96.0),   # id2 inner
+        Hitbox(
+            circle=Circle(dx=57, dy=28, r=u(3.52)), damage=14.0, angle=361, base_knockback=25.0, knockback_growth=96.0
+        ),  # id0 fist (priority)
+        Hitbox(
+            circle=Circle(dx=47, dy=28, r=u(3.94)), damage=19.0, angle=361, base_knockback=30.0, knockback_growth=97.0
+        ),  # id1 sweetspot
+        Hitbox(
+            circle=Circle(dx=36, dy=28, r=u(1.95)), damage=10.0, angle=361, base_knockback=25.0, knockback_growth=96.0
+        ),  # id2 inner
     ),
 )
+
 
 # Up smash — PM3.6 Mario AttackHi4 (rukaidata). Active 3-6 -> startup 2 / active 4.
 # rukaidata's subaction page doesn't surface IASA/FAF; PM Mario u-smash is
@@ -396,29 +474,44 @@ _FSMASH = MoveData(
 # convention.) Positions approximated overhead (like u-tilt): up boxes above the
 # head, late boxes slightly lower/forward.
 def _usmash_up(dx, dy):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=u(3.52)), damage=15.0, angle=83,
-                  base_knockback=32.0, knockback_growth=97.0,
-                  active_start=3, active_end=4)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=u(3.52)),
+        damage=15.0,
+        angle=83,
+        base_knockback=32.0,
+        knockback_growth=97.0,
+        active_start=3,
+        active_end=4,
+    )
+
 
 def _usmash_late(dx, dy):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=u(3.52)), damage=16.0, angle=259,
-                  base_knockback=35.0, knockback_growth=95.0,
-                  active_start=5, active_end=6)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=u(3.52)),
+        damage=16.0,
+        angle=259,
+        base_knockback=35.0,
+        knockback_growth=95.0,
+        active_start=5,
+        active_end=6,
+    )
+
 
 _USMASH = MoveData(
     name="up smash",
     in_air=False,
-    chargeable=True,   # hold-to-charge (#327/3a)
+    chargeable=True,  # hold-to-charge (#327/3a)
     startup=2,
     active=4,
     recovery=33,
     hitboxes=(
-        _usmash_up(dx=2, dy=2),      # id0 over the head
-        _usmash_up(dx=12, dy=4),     # id1 front of the head
+        _usmash_up(dx=2, dy=2),  # id0 over the head
+        _usmash_up(dx=12, dy=4),  # id1 front of the head
         _usmash_late(dx=10, dy=12),  # id2 late, lower-forward
-        _usmash_late(dx=0, dy=12),   # id3 late, lower
+        _usmash_late(dx=0, dy=12),  # id3 late, lower
     ),
 )
+
 
 # Down smash — PM3.6 Mario AttackLw4 (rukaidata). A two-hit sweep, front then back;
 # active 3-4 (front) + 12-13 (back) -> startup 2 / active 11 (spanning both
@@ -428,27 +521,41 @@ _USMASH = MoveData(
 # approximated at ground level (low dy): front boxes ahead (+dx), back behind (-dx,
 # facing-right-relative).
 def _dsmash_front(dx, r, dmg):
-    return Hitbox(circle=Circle(dx=dx, dy=48, r=r), damage=dmg, angle=361,
-                  base_knockback=45.0, knockback_growth=75.0,
-                  active_start=3, active_end=4)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=48, r=r),
+        damage=dmg,
+        angle=361,
+        base_knockback=45.0,
+        knockback_growth=75.0,
+        active_start=3,
+        active_end=4,
+    )
+
 
 def _dsmash_back(dx, r, dmg):
-    return Hitbox(circle=Circle(dx=dx, dy=48, r=r), damage=dmg, angle=361,
-                  base_knockback=40.0, knockback_growth=75.0,
-                  active_start=12, active_end=13)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=48, r=r),
+        damage=dmg,
+        angle=361,
+        base_knockback=40.0,
+        knockback_growth=75.0,
+        active_start=12,
+        active_end=13,
+    )
+
 
 _DSMASH = MoveData(
     name="down smash",
     in_air=False,
-    chargeable=True,   # hold-to-charge (#327/3a)
+    chargeable=True,  # hold-to-charge (#327/3a)
     startup=2,
     active=11,
     recovery=23,
     hitboxes=(
-        _dsmash_front(dx=40, r=u(3.91), dmg=16.0),   # front id0 (outer)
-        _dsmash_front(dx=24, r=u(3.13), dmg=16.0),   # front id1 (inner)
-        _dsmash_back(dx=-40, r=u(3.91), dmg=12.0),   # back id0 (outer)
-        _dsmash_back(dx=-24, r=u(3.13), dmg=10.0),   # back id1 (inner)
+        _dsmash_front(dx=40, r=u(3.91), dmg=16.0),  # front id0 (outer)
+        _dsmash_front(dx=24, r=u(3.13), dmg=16.0),  # front id1 (inner)
+        _dsmash_back(dx=-40, r=u(3.91), dmg=12.0),  # back id0 (outer)
+        _dsmash_back(dx=-24, r=u(3.13), dmg=10.0),  # back id1 (inner)
     ),
 )
 
@@ -461,8 +568,8 @@ _DSMASH = MoveData(
 _CROUCH_SIZE = (40, 40)
 _CROUCH_HURTBOX = Hurtbox(
     circles=(
-        Circle(dx=20, dy=20, r=14),   # lowered torso
-        Circle(dx=20, dy=32, r=12),   # legs (near the planted feet)
+        Circle(dx=20, dy=20, r=14),  # lowered torso
+        Circle(dx=20, dy=32, r=12),  # legs (near the planted feet)
     )
 )
 
@@ -473,20 +580,30 @@ _CROUCH_HURTBOX = Hurtbox(
 _PRONE_SIZE = (40, 22)
 _PRONE_HURTBOX = Hurtbox(
     circles=(
-        Circle(dx=18, dy=12, r=11),   # torso, lying low
-        Circle(dx=26, dy=14, r=9),    # legs along the ground
+        Circle(dx=18, dy=12, r=11),  # torso, lying low
+        Circle(dx=26, dy=14, r=9),  # legs along the ground
     )
 )
 
 # --- Assembled FighterData ----------------------------------------------------
 NALIO_FIGHTER_DATA = FighterData(
-    weight=100,            # PM3.6 Mario (== pycats default → no KB change)
+    weight=100,  # PM3.6 Mario (== pycats default → no KB change)
     hurtbox=_HURTBOX,
-    moves={"attack": _DOWN_TILT, "jab": _JAB, "ftilt": _FORWARD_TILT,
-           "utilt": _UP_TILT, "fair": _FORWARD_AIR, "bair": _BACK_AIR,
-           "uair": _UP_AIR, "dair": _DOWN_AIR, "nair": _NEUTRAL_AIR,
-           "neutral_b": _FIREBALL,
-           "fsmash": _FSMASH, "usmash": _USMASH, "dsmash": _DSMASH},
+    moves={
+        "attack": _DOWN_TILT,
+        "jab": _JAB,
+        "ftilt": _FORWARD_TILT,
+        "utilt": _UP_TILT,
+        "fair": _FORWARD_AIR,
+        "bair": _BACK_AIR,
+        "uair": _UP_AIR,
+        "dair": _DOWN_AIR,
+        "nair": _NEUTRAL_AIR,
+        "neutral_b": _FIREBALL,
+        "fsmash": _FSMASH,
+        "usmash": _USMASH,
+        "dsmash": _DSMASH,
+    },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

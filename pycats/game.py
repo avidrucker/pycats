@@ -86,26 +86,30 @@ platforms = [
 # by the battle and the Options screen, so a rebind there takes effect live. A
 # `Keymap` is a `dict` subclass, so every downstream `controls[...]`/`.get()` read is
 # unchanged; the factory defaults below are what "reset to defaults" restores.
-P1_KEYS = Keymap(dict(
-    left=pygame.K_a,
-    right=pygame.K_d,
-    up=pygame.K_w,
-    down=pygame.K_s,
-    attack=pygame.K_v,
-    special=pygame.K_c,
-    shield=pygame.K_x,
-    smash=pygame.K_b,  # dedicated smash input (#331, slice 1 of #327)
-))
-P2_KEYS = Keymap(dict(
-    left=pygame.K_LEFT,
-    right=pygame.K_RIGHT,
-    up=pygame.K_UP,
-    down=pygame.K_DOWN,
-    attack=pygame.K_SLASH,
-    special=pygame.K_PERIOD,
-    shield=pygame.K_COMMA,
-    smash=pygame.K_QUOTE,  # dedicated smash input (#331, slice 1 of #327)
-))
+P1_KEYS = Keymap(
+    dict(
+        left=pygame.K_a,
+        right=pygame.K_d,
+        up=pygame.K_w,
+        down=pygame.K_s,
+        attack=pygame.K_v,
+        special=pygame.K_c,
+        shield=pygame.K_x,
+        smash=pygame.K_b,  # dedicated smash input (#331, slice 1 of #327)
+    )
+)
+P2_KEYS = Keymap(
+    dict(
+        left=pygame.K_LEFT,
+        right=pygame.K_RIGHT,
+        up=pygame.K_UP,
+        down=pygame.K_DOWN,
+        attack=pygame.K_SLASH,
+        special=pygame.K_PERIOD,
+        shield=pygame.K_COMMA,
+        smash=pygame.K_QUOTE,  # dedicated smash input (#331, slice 1 of #327)
+    )
+)
 
 # Players will be created after character selection
 # Battle state + per-frame sim are owned by BattleScreen (#193); game.py reads
@@ -150,9 +154,7 @@ else:
     # Open the window at the saved scale (offscreen surface + upscale when >1x).
     screen = pygame.display.set_mode(display.window_size_for(windowed_scale))
     display_surface = screen
-    game_surface = screen if windowed_scale == 1.0 else pygame.Surface(
-        (SCREEN_WIDTH, SCREEN_HEIGHT)
-    )
+    game_surface = screen if windowed_scale == 1.0 else pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     scale_factor = windowed_scale
     offset_x = 0
     offset_y = 0
@@ -235,9 +237,7 @@ def set_windowed_scale(scale):
     windowed_scale = scale
     screen = pygame.display.set_mode(display.window_size_for(scale))
     display_surface = screen
-    game_surface = screen if scale == 1.0 else pygame.Surface(
-        (SCREEN_WIDTH, SCREEN_HEIGHT)
-    )
+    game_surface = screen if scale == 1.0 else pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     scale_factor = scale
     offset_x = 0
     offset_y = 0
@@ -286,9 +286,7 @@ def present_frame():
         # zoom (scale_factor) is set by set_fullscreen_zoom_index; crisp at whole
         # multiples, smoothscale at fractional zooms (see display.scale_surface).
         display_surface.fill((0, 0, 0))
-        display_surface.blit(
-            display.scale_surface(game_surface, scale_factor), (offset_x, offset_y)
-        )
+        display_surface.blit(display.scale_surface(game_surface, scale_factor), (offset_x, offset_y))
 
     elif game_surface is not screen:
         # Windowed at >1x: scale the offscreen 960x540 surface up to fill the
@@ -313,6 +311,7 @@ def present_frame():
 
 # ------------------------------------------------ main loop
 running = True
+
 
 # Display hooks for the Options sub-menu (#121): reuse the F10/F11 machinery so a
 # menu change applies live AND persists (save_prefs), just like the hotkeys. Read
@@ -352,13 +351,9 @@ while running:
                 if is_fullscreen:
                     # Advance to the next *distinct* achievable zoom (wraps), so
                     # every press visibly changes the rendered size (#92).
-                    set_fullscreen_zoom_index(
-                        (fullscreen_zoom_index + 1) % len(fullscreen_scales)
-                    )
+                    set_fullscreen_zoom_index((fullscreen_zoom_index + 1) % len(fullscreen_scales))
                     scale = fullscreen_scales[fullscreen_zoom_index]
-                    zoom_toast.show(
-                        display.fullscreen_zoom_label(scale, fullscreen_scales)
-                    )
+                    zoom_toast.show(display.fullscreen_zoom_label(scale, fullscreen_scales))
                 else:
                     # Windowed: cycle the window-size presets (resizes the window).
                     set_windowed_scale(display.cycle_preset(windowed_scale))
