@@ -3,8 +3,8 @@
 # Rule-expansion roadmap: docs/superpowers/plans/2026-07-04-ruff-rule-expansion.md (#505).
 #
 # line-length = 120: chosen 2026-07-04 (#512), relaxed from ruff's default 88 to match
-# the codebase's actual style. Changeable later. Note it only takes effect once an
-# E-rule (E501) is enabled — the enforced set below is F-only for now.
+# the codebase's actual style. Changeable later. Note it only takes effect once E501
+# is enabled (not in the enforced set below yet).
 line-length = 120
 
 [lint]
@@ -13,5 +13,17 @@ line-length = 120
 #   F     = pyflakes-equivalent (undefined-name / unused-import)
 #   I     = import-sort (#516)
 #   E722  = no bare `except:` (#518)
-# Still to come: UP pyupgrade, E702/E402, … .
-select = ["F", "I", "E722"]
+#   E702  = no multiple-statements-per-line semicolon (#521)
+#   E402  = imports at top of file (#521)
+# Still to come: UP pyupgrade, (E501 pairs with the line-length above), … .
+select = ["F", "I", "E722", "E702", "E402"]
+
+[lint.per-file-ignores]
+# These three modules intentionally interleave module-level constants with their
+# imports (a constants-then-imports style, e.g. physics.py's tuning-constant group
+# after the Protocol, player.py's imports after _FSMASH_ANGLE, render_battle's
+# per-section constants). E402 there is by design, not a misplaced import — ignore it
+# per-file rather than scatter inline noqas, while E402 still guards every other file.
+"pycats/core/physics.py" = ["E402"]
+"pycats/entities/player.py" = ["E402"]
+"pycats/render_battle.py" = ["E402"]

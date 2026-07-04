@@ -202,7 +202,8 @@ class OptionsMenu:
         moved = False
         if self._pressed("up", pressed_keys):
             if self.keybind_on_schemes:
-                self.keybind_on_schemes = False; kb.action_index = last
+                self.keybind_on_schemes = False
+                kb.action_index = last
             elif kb.action_index == 0:
                 self.keybind_on_schemes = True
             else:
@@ -210,14 +211,16 @@ class OptionsMenu:
             moved = True
         if self._pressed("down", pressed_keys):
             if self.keybind_on_schemes:
-                self.keybind_on_schemes = False; kb.action_index = 0
+                self.keybind_on_schemes = False
+                kb.action_index = 0
             elif kb.action_index == last:
                 self.keybind_on_schemes = True
             else:
                 kb.nav(1)
             moved = True
         if self._pressed("left", pressed_keys) or self._pressed("right", pressed_keys):
-            kb.switch_player(); moved = True   # also re-targets which player save/load uses
+            kb.switch_player()   # also re-targets which player save/load uses
+            moved = True
         if moved:
             self.input_cooldown = MENU_NAV_COOLDOWN
             return
