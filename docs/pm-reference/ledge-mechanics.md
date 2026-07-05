@@ -101,9 +101,10 @@ grace window).
 - **Edge-hog (PM's occupied-edge rule)** — occupy the ledge so the opponent **can't
   grab it** (one fighter per ledge); a grab on an occupied ledge is **denied**. PM
   specifics (#297): **ledge invincibility scales with the occupant's percent**
-  (higher % → longer), so a hog's success is gated by the **occupant's invincibility
-  timer** — hog **timing is percent-dependent** (too early and the recoverer takes the
-  ledge). A fighter can **act out of the grab sooner** than Brawl, and during **any**
+  (higher % → longer) — **⚠ but the *magnitude* scaling is a DIVERGENCE, not PM-sourced;
+  see "Validation (#538)" below** — so (in pycats) a hog's success is gated by the
+  **occupant's invincibility timer** — hog **timing is percent-dependent** (too early and
+  the recoverer takes the ledge). A fighter can **act out of the grab sooner** than Brawl, and during **any**
   getup the ledge is re-grabbable by others **only after ~half the animation**; tether
   recoveries **ignore** hoggers.
 - **Ledge-trump** — grabbing a ledge an opponent holds **auto-removes** them. ⚠ **This
@@ -178,5 +179,42 @@ is ⚠ playtest (`LEDGE_HANG_FRAMES` et al.).
   correctly** — keep the deny-lockout. **Ledge-trump is NOT a PM mechanic** (Smash-4+);
   #267's trump slice was **removed** (#297). The PM fidelity gap to chase later is
   **percent-scaled ledge invincibility** + hog timing, not trump.
+
+## Validation (#538) — is ledge intangibility percent-scaled? Likely **NO** (DIVERGENCE)
+
+Spike #538 validated the "ledge invincibility scales with the occupant's percent" claim above
+(introduced by #311) against PM/Brawl sources, to put #531's timer-bar on a sourced footing.
+
+- **The intangibility *magnitude* is a FIXED burst, not a continuous function of percent.**
+  Confidence: **inferred-strong**. The documented percent-dependence in Brawl/PM ledge play is
+  (a) getup/climb **speed** slowing at the **≥100% threshold** (SmashWiki *Edge recovery*: "when
+  the character has 100% damage or more, the action of climbing back to the stage is
+  significantly slower") and (b) hang **duration** (~6 s <100% / ~5 s ≥100%). **No source** scales
+  the intangibility *duration* continuously with percent. PM's actual contribution was to
+  **reduce** ledge intangibility (~1 f under Melee) and **decay it with repeated grabs**
+  (anti-plank) — neither is percent-based, and both make high-% recovery *harder*, the opposite
+  of "higher % → longer intangibility".
+- **`LEDGE_INVULN_BASE_FRAMES = 23` → FOUND.** Brawl grab-intangibility baseline; PM is
+  Brawl-derived (per-character) — #297 (`docs/research/2026-06-30-ledge-recovery-mechanics.md`) +
+  SmashWiki *Ledge*.
+- **`LEDGE_INVULN_PER_PERCENT = 0.3` + `LEDGE_INVULN_MAX_FRAMES = 60` → DIVERGENCE.** The
+  continuous "higher % → longer" scaling (#311) has no PM source and inverts PM's real high-%
+  effect. Believed FOUND at #311; reclassified DIVERGENCE here.
+
+**Consequences**
+- **#531 bar model:** the true window is a **fixed-per-grab burst that drains to 0**, so divide the
+  bar fill by the **value granted at that grab** — store `ledge_invuln_granted` at grab and use
+  `ratio = ledge_invuln_timer / ledge_invuln_granted` (a truthful 100%→0 drain). Robust whether
+  pycats keeps its divergent scaling *or* later aligns to a fixed burst; a cap-denominator would
+  misrender a short low-% burst.
+- **Decision needed (separate ticket, per RULES "Changing values"):** keep the percent-scaled
+  invincibility as an intentional pycats edge-hog game-feel divergence, or align to PM's fixed
+  burst? Changing `23 / 0.3 / 60` needs that ruling. A rukaidata PM 3.6 dump or playtest would
+  lift the "fixed" finding from inferred-strong to explicit.
+
+Sources: [SmashWiki — Edge recovery](https://www.ssbwiki.com/Edge_recovery),
+[SmashWiki — Ledgestall](https://www.ssbwiki.com/Ledgestall) (CliffCatch 7 f + ~30 f intangibility,
+Melee), [Smashboards — Invincibility & armor list](https://smashboards.com/threads/invincibility-and-armor-list.371822/);
+in-repo #297. PM canon = **Project M 3.6**.
 
 Divergences: [#99](https://github.com/avidrucker/pycats/issues/99). Open questions: [#24](https://github.com/avidrucker/pycats/issues/24).
