@@ -182,18 +182,32 @@ def build_fighter_chart(p):
         state(
             {"id": "startup"},
             _tick(lambda e, d: p.done_attacking and p.fighter.on_ground, "idle"),
+            # Special-recovery / up-B (#578): a recovery move's airborne exit routes to
+            # `helpless` (#184), not `fall` — higher priority than the fall exit below.
+            _tick(
+                lambda e, d: p.done_attacking and not p.fighter.on_ground and p.fighter.recovery_active,
+                "helpless",
+            ),
             _tick(lambda e, d: p.done_attacking and not p.fighter.on_ground, "fall"),
             _tick(_mf_gt(lambda m: m.startup), "active"),
         ),
         state(
             {"id": "active"},
             _tick(lambda e, d: p.done_attacking and p.fighter.on_ground, "idle"),
+            _tick(
+                lambda e, d: p.done_attacking and not p.fighter.on_ground and p.fighter.recovery_active,
+                "helpless",
+            ),  # up-B recovery → helpless (#578)
             _tick(lambda e, d: p.done_attacking and not p.fighter.on_ground, "fall"),
             _tick(_mf_gt(lambda m: m.startup + m.active), "recovery"),
         ),
         state(
             {"id": "recovery"},
             _tick(lambda e, d: p.done_attacking and p.fighter.on_ground, "idle"),
+            _tick(
+                lambda e, d: p.done_attacking and not p.fighter.on_ground and p.fighter.recovery_active,
+                "helpless",
+            ),  # up-B recovery → helpless (#578)
             _tick(lambda e, d: p.done_attacking and not p.fighter.on_ground, "fall"),
         ),
     )

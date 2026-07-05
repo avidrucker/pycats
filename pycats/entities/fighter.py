@@ -183,6 +183,10 @@ class Fighter:
         # PM-faithful air dodge (#184): True while an air dodge is in progress, so the
         # statechart routes the dodge's exit to `helpless` (not `fall`); cleared on land.
         self.air_dodge_active = False
+        # Special-recovery / up-B (#578): True from a recovery move's start until it
+        # lands, so the move's airborne exit routes to `helpless` (#184) like an air
+        # dodge. Armed in fighter_input on a `grants_recovery` move; cleared on land.
+        self.recovery_active = False
         # Wavedash (#202): True while a *diagonal-down* air dodge is in progress, so
         # landing cancels into a waveland (slide + landing lag) rather than a plain
         # land. Set in _start_dodge, consumed/cleared in _handle_landing.
@@ -379,6 +383,7 @@ class Fighter:
             self.jumps_remaining = self.max_jumps  # reset jumps when landing
             self.air_dodge_ok = True  # reset air dodge availability
             self.air_dodge_active = False  # landing ends helpless/special-fall (#184)
+            self.recovery_active = False  # landing ends up-B recovery/helpless (#578)
 
             # Waveland (#202): a diagonal-down air dodge that touches the ground
             # cancels into a grounded slide + landing lag. End the dodge cleanly
@@ -467,6 +472,7 @@ class Fighter:
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True
         self.air_dodge_active = False  # clear helpless/special-fall on respawn (#184)
+        self.recovery_active = False  # nor a pending up-B recovery (#578)
         self.wavedash_armed = False  # nor a pending waveland (#202)
         self.percent = 0
         self.shield_hp = SHIELD_MAX_HP

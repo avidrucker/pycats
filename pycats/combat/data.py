@@ -130,6 +130,16 @@ class MoveData:
     # released to fire (the smash_charge state). Defaults False, so every existing
     # move is byte-identical (golden-safe); slice 3b scales a charged hit's output.
     chargeable: bool = False
+    # Special-recovery / up-B (#578, B1 of #566): a recovery move applies an upward
+    # velocity burst on start (SET, not add) and routes the fighter into `helpless`
+    # (#184) when it ends airborne. `grants_recovery` gates the behavior;
+    # `recovery_vy` is the vertical burst (negative = up, like jump_vel);
+    # `recovery_vx` is an optional facing-relative horizontal component (arc).
+    # Defaults off / zero → every existing move is byte-identical (golden-safe).
+    # NOTE: distinct from `recovery` above, which is this move's END-LAG frame count.
+    grants_recovery: bool = False
+    recovery_vy: float = 0.0
+    recovery_vx: float = 0.0
 
     def __post_init__(self) -> None:
         # Per-hitbox temporal-window cross-checks (#204). Per-box shape (paired,

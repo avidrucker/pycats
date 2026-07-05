@@ -166,8 +166,16 @@ class FighterInput:
         # the symmetric takeoff clamp in fighter_physics (Fighter._handle_takeoff),
         # not here (resolved #466 → #473). This branch only spends a jump on a press.
         jump_pressed = self._pressed(pressed, "up")
+        # up + special + a real `up_b` move = an up-special / recovery, not a jump —
+        # divert the up press to the special block below (#578, B1 of #566). Fighters
+        # without an `up_b` defined (e.g. the default cat) still jump on up+special, so
+        # existing behavior / goldens are unchanged.
+        wants_up_special = (
+            self._pressed(pressed, "special") and self._move_direction(held) == "up" and "up_b" in p.fighter_data.moves
+        )
         if (
             jump_pressed
+            and not wants_up_special
             and p.fighter.jumps_remaining
             and p.state not in ("dodge", "hurt", "stun", "helpless")  # helpless locks jump (#184)
         ):
@@ -321,6 +329,15 @@ class FighterInput:
                     p.fighter.record_attack_made()  # Track attack statistics
                     # (#321/F3: done_attacking is derived (attack_timer == 0); starting
                     #  the clock above makes it False — no flag to set.)
+                    # Special-recovery / up-B (#578, B1 of #566): a recovery move SETS
+                    # an upward burst on start and arms `recovery_active`, so the move's
+                    # airborne exit routes to `helpless` (#184). Set the flag on EVERY
+                    # start (False for a normal move) so it never goes stale.
+                    p.fighter.recovery_active = move.grants_recovery
+                    if move.grants_recovery:
+                        facing = 1 if p.fighter.facing_right else -1
+                        p.fighter.vel.y = move.recovery_vy
+                        p.fighter.vel.x = move.recovery_vx * facing
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/walk state
 
         # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs
