@@ -29,19 +29,17 @@ Requires Python 3.10+. These steps use a project virtualenv (`.venv`), which wor
 everywhere — including Debian/Ubuntu/Mint, where a bare `pip install` is refused with
 `externally-managed-environment` (PEP 668).
 
-pycats has two runtime dependencies: **pygame-ce**, and **statecharts-py** — the
-statechart engine that drives every fighter and screen, kept in a sibling repo and not
-published to PyPI, so clone the two side by side:
-
 ```bash
 git clone https://github.com/avidrucker/pycats.git
-git clone https://github.com/avidrucker/statecharts-py.git   # the statechart engine
 cd pycats
 python3 -m venv .venv
-.venv/bin/python -m pip install pygame-ce            # rendering + value types
-.venv/bin/python -m pip install -e ../statecharts-py  # the sibling engine, editable
-.venv/bin/python -m pycats.game                      # play
+.venv/bin/python -m pip install -r requirements.txt   # pygame-ce + the statechart engine
+.venv/bin/python -m pycats.game                       # play
 ```
+
+`requirements.txt` pulls both runtime dependencies: **pygame-ce**, and **statecharts**
+— the statechart engine that drives every fighter and screen (ADR-0002). The engine
+isn't on PyPI, so it's pinned there to a git release tag; nothing else to clone.
 
 (If your `python` already points at a writable environment, you can skip the `.venv`
 and drop the `.venv/bin/` prefixes.)
@@ -111,13 +109,21 @@ tests. Golden snapshots live in `tests/golden/`; regenerate them intentionally w
 
 ### Development setup
 
-Beyond the two runtime dependencies from the [Quickstart](#quickstart), the tests,
-linter, and benchmark need a few dev packages (the statechart engine is already
-installed editable from the Quickstart — see [ADR-0002](./docs/adr/) for why it is the
-sole state engine, and [ADR-0006](./docs/adr/) for the lint setup):
+The tests, linter, benchmark, and video recording need a few more packages, in
+`requirements-dev.txt` (pytest, ruff, pre-commit, imageio) — install alongside the
+runtime deps (see [ADR-0006](./docs/adr/) for the lint setup):
 
 ```bash
-.venv/bin/python -m pip install pytest ruff pre-commit   # test runner, linter, lint hook
+.venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
+```
+
+**Hacking on the engine?** To develop `statecharts-py` alongside pycats, clone it as a
+sibling and install it editable *instead of* the pinned line in `requirements.txt`
+(see [ADR-0002](./docs/adr/) for why it is the sole state engine):
+
+```bash
+git clone https://github.com/avidrucker/statecharts-py.git   # ../statecharts-py
+.venv/bin/python -m pip install -e ../statecharts-py          # overrides the pinned tag
 ```
 
 Lint + format (ruff; config in `ruff.toml` and `.pre-commit-config.yaml`):

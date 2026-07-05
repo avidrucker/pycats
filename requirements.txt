@@ -1,0 +1,13 @@
+# Runtime dependencies for pycats. Install into a virtualenv:
+#     python3 -m venv .venv
+#     .venv/bin/python -m pip install -r requirements.txt
+#     .venv/bin/python -m pycats.game
+#
+# statecharts is the statechart engine that drives every fighter and screen
+# (ADR-0002). It is not on PyPI, so it is pinned to a git release tag for
+# reproducible builds. To move the pin on a new statecharts-py release: bump the
+# tag here (see statecharts-py's release process). For hacking on the engine
+# alongside pycats, swap the pinned line for an editable local checkout instead:
+#     pip install -e ../statecharts-py
+pygame-ce
+statecharts @ git+https://github.com/avidrucker/statecharts-py.git@v0.0.1
