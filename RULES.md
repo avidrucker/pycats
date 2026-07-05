@@ -95,6 +95,21 @@
   ONE umbrella `research` tracker issue listing the threads; file each child
   thread **one at a time**, finishing it before filing the next sibling. This
   avoids premature decomposition (yegor: only decompose when about to start work).
+- **Verify a ticket's identity before stating it; mint IDs/refs one at a time.** Two
+  clauses from the #535/#536 misnumbering (errors db 51), ratified in **#541**:
+  **(A) Verify before you state.** Never tell the human — or write into any doc,
+  commit, or comment — a ticket's **number or title** until it's confirmed from a
+  real lookup: the `gh issue create` return URL *for that specific create*, or
+  `gh issue view <N>`. Never infer a number from filing order or from a batched
+  command's stdout ordering.
+  **(B) Mint IDs/refs sequentially, never concurrently.** Never run **ID/ref-minting
+  mutations** in parallel — `gh issue create` **and** `pmtools claim` (which mints a
+  claim ref + worktree, same race class): file/claim one, confirm the returned
+  identifier, then do the next. No `&`, `wait`, `xargs -P`, or concurrent tool calls
+  that each mint an ID/ref. Read-only `gh`/`pmtools` calls **may** still run in
+  parallel — the ban is only on concurrent ID/ref-minting mutations. (The failure was
+  filing two issues concurrently → GitHub assigned their numbers in race order → they
+  landed swapped, then propagated into a committed doc + comments before verification.)
 
 ## Dependencies
 

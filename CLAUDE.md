@@ -29,6 +29,10 @@ Critical rules:
   `FOUND`/`TUNED`, not as sourced-when-guessed. See [RULES.md](./RULES.md) → "Changing values".
 - **Research epics:** one umbrella `research` tracker; file child threads one at a
   time, finishing each before filing the next.
+- **Verify ticket numbers before stating them; mint IDs/refs sequentially** — don't
+  tell the human or write a ticket's #/title until confirmed via a `gh` lookup; never
+  run `gh issue create` / `pmtools claim` concurrently (numbers/refs race + swap).
+  See [RULES.md](./RULES.md) → "Filing work".
 - pycats runs **fleet** mode (`.claude/orchestrate.json`); claim work via
   `pmtools claim <issue> --as <fruit>`.
 - **Closing work:** commit with **`Closes #N` in the body**, then close from the
