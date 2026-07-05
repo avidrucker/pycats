@@ -11,7 +11,7 @@ not needed this slice).
 
 Birky owns its full normals + aerials (#240-#260), a Kirby-proportioned `stand_size`
 + body-matched `hurtbox` (#275, a shorter rect — circle shape is a later change), and
-the featherweight movement scalars. Crouch/prone geometry still reuse the default cat.
+the featherweight movement scalars, plus its own Kirby-low crouch/prone geometry (#589).
 
 Caveat (#229): pycats has a single `move_speed` knob (ground == air), so Kirby's
 slow-walk / fast-air split can't be captured — `move_speed` leans to the
@@ -20,7 +20,6 @@ engine ticket; selectability (making Birky human-pickable) is gated on #117/#127
 """
 
 from pycats.characters.body_zones import zone_dy
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 
 # Kirby-proportioned body (#275): shorter than the default 40x60 (Kirby is short/round).
@@ -38,6 +37,29 @@ _HURTBOX = Hurtbox(
     circles=(
         Circle(dx=20, dy=13, r=13),  # upper body
         Circle(dx=20, dy=30, r=13),  # lower body
+    )
+)
+
+# --- Posture geometry (#589, ratified in #565) -------------------------------
+# Birky owns its crouch/prone (was inherited from the default cat, authored for the
+# 60-tall default body — on Birky's 44 stand the default 40-tall crouch dropped
+# only 4px and read as "not really crouching"). The owner ratified "Kirby-low":
+# crouch 24 (a 45% drop) / prone 14, leaning into Kirby's low-profile duck.
+# The hurtboxes are re-authored to fit the shorter boxes (every circle inside the
+# box): combat tests these circles, not just the rect, so the inherited default
+# ones — reaching y≈44/23 — would leave a crouching Birky hittable below its body.
+_CROUCH_SIZE = (40, 24)
+_CROUCH_HURTBOX = Hurtbox(
+    circles=(
+        Circle(dx=20, dy=10, r=10),  # upper dome, y 0..20
+        Circle(dx=20, dy=16, r=8),   # lower body, y 8..24
+    )
+)
+_PRONE_SIZE = (40, 14)
+_PRONE_HURTBOX = Hurtbox(
+    circles=(
+        Circle(dx=16, dy=7, r=7),   # front, lying flat, y 0..14
+        Circle(dx=25, dy=7, r=7),   # back, spread along x
     )
 )
 
@@ -479,7 +501,7 @@ _BIRKY_DSMASH = MoveData(
 )
 
 BIRKY_FIGHTER_DATA = FighterData(
-    # own Kirby-sized body (#275) + body-matched hurtbox; crouch/prone reuse default;
+    # own Kirby-sized body (#275) + body-matched hurtbox; own Kirby-low crouch/prone (#589);
     # ground normals (#240/#245/#247/#249) + aerials nair #255 / fair #256 / bair #258
     # / uair #259 / dair #260 — Birky's full normals + aerials.
     hurtbox=_HURTBOX,
@@ -498,10 +520,10 @@ BIRKY_FIGHTER_DATA = FighterData(
         "usmash": _BIRKY_USMASH,
         "dsmash": _BIRKY_DSMASH,
     },
-    crouch_size=_DEFAULT.crouch_size,
-    crouch_hurtbox=_DEFAULT.crouch_hurtbox,
-    prone_size=_DEFAULT.prone_size,
-    prone_hurtbox=_DEFAULT.prone_hurtbox,
+    crouch_size=_CROUCH_SIZE,
+    crouch_hurtbox=_CROUCH_HURTBOX,
+    prone_size=_PRONE_SIZE,
+    prone_hurtbox=_PRONE_HURTBOX,
     # the featherweight movement scalars (#229)
     weight=70,
     gravity=0.42,
