@@ -21,20 +21,36 @@ pytestmark = pytest.mark.usefixtures("render_isolation")
 
 
 def _direct(surface, p):
-    """Replicate the per-frame body draw sequence (pre-cache)."""
+    """Rebuild the body composite from scratch (pre-cache) and blit it — proving
+    the cached composite is pixel-identical to a fresh build.
+
+    Since #564 the outline is a silhouette drawn *behind* the sprite, which only
+    works on an isolated alpha surface — so this mirrors _cat_body_surface's build
+    (padded SRCALPHA composite -> parts -> silhouette halo -> name on top) rather
+    than drawing parts straight onto the destination. Assumes the primitive face,
+    as the build_players fixtures use it (and as this helper always has)."""
+    w, h = p.fighter.stand_size
     overlay = rb.active_tint(p)
-    body = pygame.Surface(p.rect.size)
+    cw = w + 2 * rb._BODY_PAD_X
+    ch = rb._BODY_PAD_TOP + h + rb._BODY_PAD_BOT
+    comp = pygame.Surface((cw, ch), pygame.SRCALPHA)
+    vrect = pygame.Rect(rb._BODY_PAD_X, rb._BODY_PAD_TOP, w, h)
+    shim = rb._CatShim(vrect, p.fighter.facing_right, p.char_color, p.eye_color,
+                       p.stripe_color, p.char_name, nickname=getattr(p, "nickname", None),
+                       tint=overlay)
+    body = pygame.Surface((w, h))
     body.fill(rb._blend(p.char_color, overlay))  # softened flash, render-time (#75/#109)
-    surface.blit(body, p.rect)
-    shim = rb._CatShim(p.rect, p.fighter.facing_right, p.char_color, p.eye_color,
-                       p.stripe_color, p.char_name, tint=overlay)
-    rb.draw_stripes(surface, shim)
-    rb.draw_eye(surface, shim)
-    rb.draw_eye(surface, shim, eye=False)
-    rb.draw_cat_features(surface, shim)
-    rb.draw_player_name(surface, shim)
-    # Body outline drawn last, mirroring _cat_body_surface (#546).
-    pygame.draw.rect(surface, FIGHTER_OUTLINE_COLOR, p.rect, FIGHTER_OUTLINE_WIDTH)
+    comp.blit(body, vrect)
+    rb.draw_stripes(comp, shim)
+    rb.draw_eye(comp, shim)
+    rb.draw_eye(comp, shim, eye=False)
+    rb.draw_cat_features(comp, shim)
+    # #564 silhouette outline behind the sprite, then name on top — before the blit.
+    halo = rb._dilated_silhouette(comp, FIGHTER_OUTLINE_COLOR, FIGHTER_OUTLINE_WIDTH)
+    halo.blit(comp, (0, 0))
+    comp = halo
+    rb.draw_player_name(comp, shim)
+    surface.blit(comp, (p.rect.x - rb._BODY_PAD_X, p.rect.y - rb._BODY_PAD_TOP))
 
 
 def _cached(surface, p):

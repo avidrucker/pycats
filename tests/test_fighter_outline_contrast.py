@@ -61,15 +61,18 @@ def test_low_contrast_skins_are_the_ones_that_needed_it():
         assert _wcag_ratio(skin, BG_COLOR) < 3.0
 
 
-def test_outline_is_painted_on_the_body_edge():
-    """The outline is actually drawn on the body-rect border (able-to-fail: drop
-    the outline draw and these edge pixels revert to body fill)."""
+def test_outline_is_painted_just_outside_the_body_silhouette():
+    """The outline is actually drawn — now *outside* the silhouette, behind the
+    sprite (#564 moved it off the body edge). The body edge itself is the sprite's
+    own fill; the ring sits one px beyond it. Able-to-fail: drop the outline and
+    the just-outside pixel reverts to transparent. (Where the outline lives is
+    covered in depth by test_fighter_silhouette_outline.py.)"""
     player, surf = _dark_body()
     w, h = player.fighter.stand_size
-    left_mid = surf.get_at((_BODY_PAD_X, _BODY_PAD_TOP + h // 2))
-    bottom_mid = surf.get_at((_BODY_PAD_X + w // 2, _BODY_PAD_TOP + h - 1))
-    assert tuple(left_mid)[:3] == FIGHTER_OUTLINE_COLOR
-    assert tuple(bottom_mid)[:3] == FIGHTER_OUTLINE_COLOR
+    edge = surf.get_at((_BODY_PAD_X, _BODY_PAD_TOP + h // 2))
+    just_outside = surf.get_at((_BODY_PAD_X - 1, _BODY_PAD_TOP + h // 2))
+    assert tuple(edge)[:3] != FIGHTER_OUTLINE_COLOR  # body edge is the sprite, not the ring
+    assert tuple(just_outside)[:3] == FIGHTER_OUTLINE_COLOR  # ring hugs the silhouette
 
 
 def test_outline_width_is_thin():

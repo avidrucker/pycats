@@ -30,6 +30,7 @@ def render_isolation():
     text_utils.text_renderer.font_cache.clear()
     rb._body_cache.clear()
     rb._tail_seg_cache.clear()  # #330: rotated tail surfaces go stale after a quit
+    rb._tail_outline_cache.clear()  # #564: tail outline halos, same staleness
     yield
 
 

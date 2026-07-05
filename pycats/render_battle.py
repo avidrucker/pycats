@@ -275,6 +275,31 @@ _CROUCH_ANIM_RATE = 0.34
 _body_cache: dict = {}
 
 
+def _dilated_silhouette(src, color, width, pad=0):
+    """`src`'s own alpha silhouette, dilated by `width` px and filled with `color`,
+    on a surface grown by `pad` px per side (#564).
+
+    Blit the real sprite on top of the returned surface to get an outline that
+    hugs the true silhouette and sits *behind* the sprite — the ring shows only
+    outside the silhouette, so interior pixels are never overpainted and no border
+    segment cuts across the sprite (the #546 torso-box rect did both).
+
+    `pad` >= `width` prevents the ring clipping when `src` has no transparent
+    margin of its own (e.g. a rotated tail-segment rect). The body composite
+    already carries ample _BODY_PAD_* margin, so it passes pad=0 and keeps the
+    same surface size (blit offsets in render_battle are unchanged)."""
+    mask = pygame.mask.from_surface(src)
+    stamp = mask.to_surface(setcolor=color, unsetcolor=(0, 0, 0, 0))
+    w, h = src.get_size()
+    out = pygame.Surface((w + 2 * pad, h + 2 * pad), pygame.SRCALPHA)
+    blit = out.blit
+    for dx in range(-width, width + 1):
+        for dy in range(-width, width + 1):
+            if (dx or dy) and dx * dx + dy * dy <= width * width:  # round dilation
+                blit(stamp, (pad + dx, pad + dy))
+    return out
+
+
 class _CatShim:
     """Minimal stand-in exposing the attributes the draw_* helpers read, with a
     virtual rect positioned inside the composite surface."""
@@ -399,14 +424,16 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
             draw_eye(surf, shim)
             draw_eye(surf, shim, eye=False)
             draw_cat_features(surf, shim)
-        draw_player_name(surf, shim)
-        # Body outline (#546): a thin light ring on the body rect keeps a
-        # low-luminance skin separable from the dark stage bg (tabby/void/legacy-P2
-        # bodies sit below WCAG 3:1 vs BG_COLOR; the outline measures 8.7:1). Drawn
-        # last so stripes/face/name never overpaint the ring. Skin-independent, so
-        # every fighter gains it — light skins are already visible, so it's a
-        # harmless no-op there.
-        pygame.draw.rect(surf, FIGHTER_OUTLINE_COLOR, vrect, FIGHTER_OUTLINE_WIDTH)
+        # Silhouette outline (#564, was a torso-box rect in #546): trace the cat's
+        # actual alpha silhouette — body + ears — and lay it BEHIND the sprite so
+        # the ring hugs the real outline and never overpaints interior pixels. It
+        # keeps a low-luminance skin separable from the dark stage (tabby/void/
+        # legacy-P2 bodies sit below WCAG 3:1 vs BG_COLOR; the ring measures 8.7:1)
+        # and is skin-independent. Built BEFORE the name so the label isn't haloed.
+        halo = _dilated_silhouette(surf, FIGHTER_OUTLINE_COLOR, FIGHTER_OUTLINE_WIDTH)
+        halo.blit(surf, (0, 0))  # sprite over its own halo -> ring shows only outside it
+        surf = halo
+        draw_player_name(surf, shim)  # on top of the ring, un-haloed
         _body_cache[key] = surf
     return surf
 
@@ -716,17 +743,27 @@ def draw_timer_bars(surface, p, specs):
 # tails; cleared by the render_isolation fixture (surfaces go stale after a
 # pygame.quit(), #63) like _body_cache.
 _tail_seg_cache: dict = {}
+# (seg_width, deg°) -> the segment's dilated outline halo (#564). Colour-independent
+# (the halo is FIGHTER_OUTLINE_COLOR and a segment's silhouette is the same shape
+# for any tint), so it keys on shape alone. Cleared with _tail_seg_cache (#63).
+_tail_outline_cache: dict = {}
 
 
 def render_tail(surface, tail, color):
     """Draw a fighter's Verlet `tail` as cached, rotated, tapering rects in `color`
     (#330/H-b — was Tail.draw; the entity holds only sim data now). `color` is the
-    already-resolved tint the caller computes (#265)."""
+    already-resolved tint the caller computes (#265).
+
+    The tail's outline (#564) is drawn as a first pass BEHIND every segment body,
+    so the bodies cover the interior stamps and only the tail's outer silhouette
+    ring remains — matching the body outline and keeping a low-luminance tail
+    separable from the stage."""
     cache = _tail_seg_cache
     color = tuple(color)
     length = TAIL_SEGMENT_LENGTH
     n = len(tail.segments)
     blit = surface.blit
+    placed = []  # (segment body surf, rect, width, deg) — bodies drawn after the halo pass
     for i, segment in enumerate(tail.segments):
         width = int(TAIL_SEGMENT_WIDTH * (1.0 - (i / n) * TAPER_MODIFER))
         deg = int(round(-math.degrees(segment.angle))) % 360
@@ -741,6 +778,18 @@ def render_tail(surface, tail, color):
             cache[key] = surf
         rect = surf.get_rect()
         rect.center = (int(segment.x), int(segment.y))
+        placed.append((surf, rect, width, deg))
+    # Pass 1: outline halos, behind everything.
+    ow = FIGHTER_OUTLINE_WIDTH
+    for surf, rect, width, deg in placed:
+        okey = (width, deg)
+        halo = _tail_outline_cache.get(okey)
+        if halo is None:
+            halo = _dilated_silhouette(surf, FIGHTER_OUTLINE_COLOR, ow, pad=ow)
+            _tail_outline_cache[okey] = halo
+        blit(halo, (rect.x - ow, rect.y - ow))
+    # Pass 2: segment bodies on top, covering the interior stamps.
+    for surf, rect, width, deg in placed:
         blit(surf, rect)
 
 
