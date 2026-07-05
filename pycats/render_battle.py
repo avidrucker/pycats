@@ -299,19 +299,16 @@ TINT_STRENGTH = 0.5  # #109: blend the flash 50% over each part's base colour
 def active_tint(p):
     """The flash *overlay* colour for a fighter this frame, or None when calm.
 
-    Pure function of observable state: RED while hurt, YELLOW while stunned,
-    WHITE while dodging (#75), else None. The single source of truth for *which*
-    flash (if any) is live; `tinted()` blends it over a part's base colour and
-    `body_tint()` resolves it for the body fill. Timer-driven (not
-    state-label-driven) to match the old fill exactly: the flash is present
-    while the timer is live and clears the frame it hits 0.
+    Derived from `STATUS_SOURCES` (#522): the first source (by precedence) that is
+    live and declares a `tint` wins — RED while hurt, YELLOW while stunned, WHITE
+    while dodging (#75), else None. `tinted()` blends it over a part's base colour
+    and `body_tint()` resolves it for the body fill. Timer-driven (a flash is present
+    while its timer is live and clears the frame it hits 0). Table defined below.
     """
-    if p.fighter.hurt_timer > 0:
-        return RED
-    if p.fighter.stun_timer > 0:
-        return YELLOW
-    if p.fighter.dodge_timer > 0:
-        return WHITE
+    f = p.fighter
+    for s in sorted(STATUS_SOURCES, key=lambda src: src.precedence):
+        if s.tint is not None and s.active(f, p):
+            return s.tint
     return None
 
 
@@ -517,6 +514,102 @@ def _invuln_remaining_max(p):
     return None
 
 
+def _secs(frames):
+    """The `"Ns"` count-down readout shared by every COUNTDOWN bar (#111)."""
+    return f"{math.ceil(frames / FPS)}s"
+
+
+class StatusSource(NamedTuple):
+    """One declarative status feedback source (#522) — the single description that
+    both `active_tint` and `timer_bar_specs` derive from, so a status is defined in
+    ONE place and adding one (e.g. #531 ledge-invuln, #506 respawn) is a single record
+    with no new branches. Callables take `(f, p)` (fighter, player).
+
+    `kind` documents the value-shape (COUNTDOWN / RESOURCE / FILL); the per-source
+    `ratio`/`readout`/`recency` callables encode it (kept explicit so the migration is
+    byte-identical to the pre-#522 inline logic)."""
+
+    name: str
+    precedence: int                # tint order + exclusive-bar selection order (low first)
+    active: object                 # (f, p) -> bool: is this source live?
+    kind: object = None            # "COUNTDOWN" | "RESOURCE" | "FILL" (documentation)
+    tint: object = None            # body-flash overlay colour, or None
+    bar_color: object = None       # timer-bar colour, or None
+    bar_label: object = None
+    bar_class: object = None       # "exclusive" | "overlay"
+    ratio: object = None           # (f, p) -> float  (0..1 fill; drawer clamps)
+    readout: object = None         # (f, p) -> str
+    recency: object = None         # (f, p) -> float  (sort key; lower = nearer head)
+
+
+# The single source of truth for status tints + above-head bars (#522). Order here is
+# precedence order; `active_tint` returns the first live source with a `tint`, and
+# `timer_bar_specs` takes the first live EXCLUSIVE bar + all live OVERLAY bars. Byte-
+# identical to the pre-#522 `active_tint` if-chain and `timer_bar_specs` branches.
+# The dizzy star-halo (draw_dizzy_stars) is a separate render path, not modelled here.
+STATUS_SOURCES = [
+    StatusSource("hurt", 0, kind="COUNTDOWN", tint=RED,
+                 active=lambda f, p: f.hurt_timer > 0),
+    StatusSource("shield", 1, kind="RESOURCE",
+                 active=lambda f, p: p.state == "shield",
+                 bar_color=SHIELD_BAR_COLOR, bar_label="SHIELD", bar_class="exclusive",
+                 ratio=lambda f, p: f.shield_hp / SHIELD_MAX_HP,
+                 readout=lambda f, p: f"{math.ceil(f.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))}s",
+                 recency=lambda f, p: _SHIELD_RECENCY_KEY),
+    StatusSource("stun", 2, kind="COUNTDOWN", tint=YELLOW,
+                 active=lambda f, p: f.stun_timer > 0,
+                 bar_color=DIZZY_BAR_COLOR, bar_label="DIZZY", bar_class="exclusive",
+                 ratio=lambda f, p: f.stun_timer / SHIELD_BREAK_STUN_MAX,
+                 readout=lambda f, p: _secs(f.stun_timer),
+                 recency=lambda f, p: SHIELD_BREAK_STUN_MAX - f.stun_timer),
+    StatusSource("dodge", 3, kind="COUNTDOWN", tint=WHITE,
+                 active=lambda f, p: f.dodge_timer > 0),
+    StatusSource("ledge_hang", 4, kind="COUNTDOWN",
+                 active=lambda f, p: p.state == "ledge_hang" and f.ledge_hang_timer > 0,
+                 bar_color=HANG_BAR_COLOR, bar_label="HANG", bar_class="exclusive",
+                 ratio=lambda f, p: f.ledge_hang_timer / LEDGE_HANG_FRAMES,
+                 readout=lambda f, p: _secs(f.ledge_hang_timer),
+                 recency=lambda f, p: LEDGE_HANG_FRAMES - f.ledge_hang_timer),
+    StatusSource("prone", 5, kind="COUNTDOWN",
+                 active=lambda f, p: p.state == "prone" and f.prone_timer > 0,
+                 bar_color=DOWN_BAR_COLOR, bar_label="DOWN", bar_class="exclusive",
+                 ratio=lambda f, p: f.prone_timer / KNOCKDOWN_PRONE_FRAMES,
+                 readout=lambda f, p: _secs(f.prone_timer),
+                 recency=lambda f, p: KNOCKDOWN_PRONE_FRAMES - f.prone_timer),
+    StatusSource("lockout", 6, kind="COUNTDOWN",
+                 active=lambda f, p: f.ledge_regrab_lockout_timer > 0,
+                 bar_color=LOCKOUT_BAR_COLOR, bar_label="LOCKOUT", bar_class="overlay",
+                 ratio=lambda f, p: f.ledge_regrab_lockout_timer / LEDGE_REGRAB_LOCKOUT_FRAMES,
+                 readout=lambda f, p: _secs(f.ledge_regrab_lockout_timer),
+                 recency=lambda f, p: LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer),
+    # INVULN — the dodge / getup-roll / getup-attack intangibility window, resolved
+    # (with its `invulnerable`-bool gate + ledge-hang suppression) by
+    # _invuln_remaining_max. One overlay bar; #531 (ledge-invuln) and #506 (respawn)
+    # each add their OWN separate source rather than extend this resolver.
+    StatusSource("invuln", 7, kind="COUNTDOWN",
+                 active=lambda f, p: _invuln_remaining_max(p) is not None,
+                 bar_color=INVULN_BAR_COLOR, bar_label="INVULN", bar_class="overlay",
+                 ratio=lambda f, p: _invuln_remaining_max(p)[0] / _invuln_remaining_max(p)[1],
+                 readout=lambda f, p: _secs(_invuln_remaining_max(p)[0]),
+                 recency=lambda f, p: _invuln_remaining_max(p)[1] - _invuln_remaining_max(p)[0]),
+    # CHARGE (#380) — the one FILL bar: grows 0->100% as smash_charge_timer accumulates
+    # rather than draining; recency = the up-count (frames elapsed since charge began).
+    StatusSource("charge", 8, kind="FILL",
+                 active=lambda f, p: f.smash_charge_timer > 0,
+                 bar_color=CHARGE_BAR_COLOR, bar_label="CHARGE", bar_class="overlay",
+                 ratio=lambda f, p: min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES),
+                 readout=lambda f, p: (
+                     f"{round(min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES) * 100)}%·"
+                     f"{math.ceil((SMASH_CHARGE_FRAMES - f.smash_charge_timer) / FPS)}s"),
+                 recency=lambda f, p: f.smash_charge_timer),
+]
+
+
+def _bar_for(s, f, p):
+    """Build the `(recency, TimerBar)` pair for a live bar source `s`."""
+    return (s.recency(f, p), TimerBar(s.ratio(f, p), s.readout(f, p), s.bar_color, s.bar_label))
+
+
 def timer_bar_specs(p):
     """The active above-head timer bars for fighter `p`, ordered newest-on-top.
 
@@ -544,64 +637,19 @@ def timer_bar_specs(p):
     if not runtime_settings.show_status_timer_bars():
         return []
     f = p.fighter
+    ordered = sorted(STATUS_SOURCES, key=lambda s: s.precedence)
     bars = []  # (recency_key, TimerBar); lower key = more recent = nearer head
 
-    # --- exclusive-state bar (at most one) ---
-    if p.state == "shield":
-        ratio = f.shield_hp / SHIELD_MAX_HP
-        seconds = math.ceil(f.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))
-        bars.append((_SHIELD_RECENCY_KEY, TimerBar(ratio, f"{seconds}s", SHIELD_BAR_COLOR, label="SHIELD")))
-    elif f.stun_timer > 0:
-        ratio = f.stun_timer / SHIELD_BREAK_STUN_MAX
-        seconds = math.ceil(f.stun_timer / FPS)
-        bars.append(
-            (SHIELD_BREAK_STUN_MAX - f.stun_timer, TimerBar(ratio, f"{seconds}s", DIZZY_BAR_COLOR, label="DIZZY"))
-        )
-    elif p.state == "ledge_hang" and f.ledge_hang_timer > 0:
-        ratio = f.ledge_hang_timer / LEDGE_HANG_FRAMES
-        seconds = math.ceil(f.ledge_hang_timer / FPS)
-        bars.append(
-            (LEDGE_HANG_FRAMES - f.ledge_hang_timer, TimerBar(ratio, f"{seconds}s", HANG_BAR_COLOR, label="HANG"))
-        )
-    elif p.state == "prone" and f.prone_timer > 0:
-        ratio = f.prone_timer / KNOCKDOWN_PRONE_FRAMES
-        seconds = math.ceil(f.prone_timer / FPS)
-        bars.append(
-            (KNOCKDOWN_PRONE_FRAMES - f.prone_timer, TimerBar(ratio, f"{seconds}s", DOWN_BAR_COLOR, label="DOWN"))
-        )
+    # --- exclusive-state bar (at most one): first live one, by precedence ---
+    for s in ordered:
+        if s.bar_class == "exclusive" and s.bar_color is not None and s.active(f, p):
+            bars.append(_bar_for(s, f, p))
+            break
 
-    # --- overlay timers (state-independent; co-activate with the above) ---
-    if f.ledge_regrab_lockout_timer > 0:
-        ratio = f.ledge_regrab_lockout_timer / LEDGE_REGRAB_LOCKOUT_FRAMES
-        seconds = math.ceil(f.ledge_regrab_lockout_timer / FPS)
-        bars.append(
-            (
-                LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer,
-                TimerBar(ratio, f"{seconds}s", LOCKOUT_BAR_COLOR, label="LOCKOUT"),
-            )
-        )
-
-    invuln = _invuln_remaining_max(p)
-    if invuln is not None:
-        remaining, max_frames = invuln
-        ratio = remaining / max_frames
-        seconds = math.ceil(remaining / FPS)
-        bars.append((max_frames - remaining, TimerBar(ratio, f"{seconds}s", INVULN_BAR_COLOR, label="INVULN")))
-
-    # CHARGE (#380) — the one FILL bar: it grows 0->100% as smash_charge_timer
-    # accumulates (#371), rather than draining. Readout shows the % and the
-    # seconds-to-full (0s once maxed, i.e. it holds at 100%). Recency key = the
-    # up-count itself (frames elapsed since the charge began), consistent with the
-    # count-down bars' `max - remaining`.
-    if f.smash_charge_timer > 0:
-        ratio = min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES)
-        seconds_to_full = math.ceil((SMASH_CHARGE_FRAMES - f.smash_charge_timer) / FPS)
-        bars.append(
-            (
-                f.smash_charge_timer,
-                TimerBar(ratio, f"{round(ratio * 100)}%·{seconds_to_full}s", CHARGE_BAR_COLOR, label="CHARGE"),
-            )
-        )
+    # --- overlay bars (state-independent; co-activate with the exclusive) ---
+    for s in ordered:
+        if s.bar_class == "overlay" and s.bar_color is not None and s.active(f, p):
+            bars.append(_bar_for(s, f, p))
 
     bars.sort(key=lambda kb: kb[0])  # newest-on-top (least elapsed first)
     return [bar for _, bar in bars]
