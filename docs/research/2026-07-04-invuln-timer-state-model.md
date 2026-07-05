@@ -191,6 +191,14 @@ state-machine work is a separate call.
 
 ## Q4 — How Project M handles it (the claim, tested)
 
+> ⚠️ **SUPERSEDED — see [`## Correction (2026-07-05)`](#correction-2026-07-05) at the end.**
+> This section'’s "**Refuted / single body-state / nothing composes**" verdict was **over-stated**.
+> A PM-specific research pass with primary sources (`brawllib_rs`, OpenSA, PMDT changelog) found a
+> **two-layer** model: action intangibility *is* a single mutually-exclusive body-state (this part
+> was right), **but** timed invincibility (respawn, Star) is a **separate overlay that composes**
+> with it. The compose hypothesis is therefore **partly correct**, not refuted. Read the
+> Correction for the adjudicated evidence; the text below is kept as the original reasoning.
+
 **The claim under test** (from another agent, treated as hypothesis):
 > "invulnerable composes with dodge/ledge/getup" … "a hit during the window while also
 > mid-dodge stays nullified".
@@ -271,3 +279,87 @@ claim.
 - 60-minute spike box respected: PM internals sourced to the corroborated
   single-action-state model; the un-sourceable collision line is recorded as a gap rather than
   guessed ([[rukaidata-engine-hardcoded-limit]]).
+
+---
+
+## Correction (2026-07-05)
+
+> Corrects **Q4** above (filed as #537). A PM-specific research pass — driven by reporter
+> pushback on the strength of the original citations — pulled **primary sources** that were not
+> consulted in the 60-minute spike. The Q4 verdict "**refuted / single body-state / nothing
+> composes**" was **over-stated**. The corrected model is **two layers**. Two *interim*
+> over-corrections were also made and are themselves withdrawn here (Metal / Loupe — see below).
+> Consumers: **#527** (design reframed to the two-layer model); **#536** (canonical PM register
+> will hold these citations). This is the load-bearing version; Q4 is kept only as history.
+
+### The corrected model — PM intangibility is TWO layers
+
+- **Layer 1 — action-driven intangibility (dodge / roll / spot-dodge / air-dodge / ledge-grab /
+  getup) is a single, mutually-exclusive body-state, set by the current move's script (overwrite,
+  not additive).** *This half of the original Q4 was right* — pycats' single `invulnerable` bool
+  is genuinely PM-shaped for these sources; they never co-occur.
+- **Layer 2 — timed invincibility (respawn ~120f; Starman) is a separate frame-counted overlay
+  that COMPOSES with Layer 1.** Respawn's window is keyed to *when the fighter dismounts the
+  revival platform*, runs on its own timer, and the fighter acts freely (dodge / jump / attack)
+  while it stays live. This is real composition — but it happens **between the two layers**,
+  **never** among multiple action-states.
+- **Net PM hit-nullification ≈ `body_state != Normal` OR `any timed-invuln window active`.**
+  So the original "**nothing composes**" was wrong for the timed-overlay layer, and the compose
+  hypothesis is **partly correct** — precisely for the case pycats' #506 respawn-invuln needs.
+
+### Per-claim verdict table (adjudicated 2026-07-05)
+
+| # | Claim | Verdict | Key citation (tier) |
+|---|---|---|---|
+| A | Action intangibility (dodge/ledge/getup) = single mutually-exclusive body-state, not ORed flags | ✅ **Confirmed** (high) | `brawllib_rs` `HurtBoxState` enum + `hurtbox_state_all = state` overwrite (**T1 verbatim**); OpenSA `06050100` "Body Collision" (T1, summary); SmashWiki one-colour debug (T2) |
+| B | "Metal" (`Flag_Metal`) is invincibility | ❌ **Refuted** — withdrawn interim claim | SmashWiki *Metal Box*: *"does not make fighters invincible"*, *"can still be hit and damaged"*; it's −30 knockback + weight + fall speed (T2) |
+| C | "Loupe" (`Flag_Loupe_Damage`) is damage immunity | ❌ **Refuted (it's the opposite)** — withdrawn | SmashWiki *Magnifying glass*: *"damage applied … at a rate of 1% per second"* (off-screen chip damage) (T2) |
+| D | "Star" = invincibility composing with acting | ✅ Confirmed but **irrelevant** (item pycats lacks) | SmashWiki: *"invulnerable to all attacks"*, *"you can still attack without fear"* (T2) |
+| E | Respawn invincibility composes with actions (overlaps a dodge, not tied to a respawn action-state) | ✅ **Confirmed** (medium-high) | SmashWiki *Revival platform*: on-platform *"intangible … disappears as soon as the player moves or attacks"* vs post-drop *"a further period of invincibility (2 seconds, or 120 frames)"* keyed to dismount (T2). Gap: no verbatim "attacking doesn't truncate the 120f" |
+| F | PM ledge intangibility is percent-scaled (as pycats' `ledge_invuln_frames` + #297 claim) | ❌ **Refuted for PM** → audit #535 | PMDT *"3.5 Blogpost #6: Ledge Invincibility"* (**T1 primary**, Wayback): PM uses a flat **5-regrab COUNT** cutoff; per-grab/percent decay is Smash 4/Ultimate, not PM |
+
+### Verbatim anchors (Layer 1, primary)
+
+`brawllib_rs` (rukai's datamined Brawl subaction-script interpreter — powers rukaidata):
+```rust
+// script_ast/mod.rs — one field holds ONE of these, selected by a single integer
+pub enum HurtBoxState { Normal, Invincible, IntangibleFlashing,
+                        IntangibleNoFlashing, IntangibleQuickFlashing, Unknown(i32) }
+// script_runner.rs — the event OVERWRITES (=), does not accumulate
+EventAst::ChangeHurtBoxStateAll { state } => { self.hurtbox_state_all = state.clone(); }
+```
+Opcode `06 05` = whole-body "Body Collision"; `06 08` = per-bone (each bone still one state).
+(`https://raw.githubusercontent.com/rukai/brawllib_rs/master/src/script_ast/mod.rs`,
+`.../src/script_runner.rs`.)
+
+### What this changes downstream
+
+- **Q3 recommendation stands and is strengthened:** derive intangibility, retire the vestigial
+  `invulnerable_timer`, converge with #513 — unchanged. But the derivation is now explicitly
+  **two-layer**: `is_intangible = (action body-state intangible) OR any(live timed overlays like
+  respawn)`. The earlier "**don't add an `any(sources)` stack**" line in Q3/Q4 is **withdrawn** —
+  the `OR` over timed overlays is exactly PM-faithful and is what #506 respawn needs. #527 is
+  reframed accordingly.
+- **New ticket #535** — the ledge percent-scaling mis-attribution (claim F) is a separate audit
+  against `ledge_invuln_frames` / #297.
+
+### Confidence + remaining gaps (not hidden)
+
+- Layer 1 rests on `brawllib_rs`, a faithful **reimplementation**, not the retail Brawl DOL; no
+  `doldecomp/brawl` line confirms the shipped binary's field. OpenSA is held as a fetch **summary**,
+  not a byte-exact quote (site HTTP-only / unreachable). → high confidence on "single state value",
+  medium-high that retail matches.
+- Layer 2 respawn act-persistence (E) is **inferred** from the dismount-keyed timer + universal
+  practice; no single verbatim sentence states "attacking does not truncate the 120f".
+- Sources tiered: **T1** = PMDT changelog, `brawllib_rs`/rukaidata, OpenSA/dantarion, doldecomp;
+  **T2** = SmashWiki/Liquipedia/Smashboards.
+
+### Sources added by this correction
+
+| Source | Tier | Gives |
+|---|---|---|
+| [`brawllib_rs` `script_ast/mod.rs`](https://raw.githubusercontent.com/rukai/brawllib_rs/master/src/script_ast/mod.rs) + [`script_runner.rs`](https://raw.githubusercontent.com/rukai/brawllib_rs/master/src/script_runner.rs) | T1 primary (reimpl.) | `HurtBoxState` enum, `ChangeHurtBoxStateAll` overwrite, opcodes 06 05 / 06 08 |
+| OpenSA `Events (Brawl)` — "Body Collision" `06050100` | T1 primary (summary only) | the script event that sets the single body-state |
+| [SmashWiki — Revival platform](https://www.ssbwiki.com/Revival_platform) | T2 | on-platform intangibility vs post-drop 120f invincibility |
+| [SmashWiki — Metal Box](https://www.ssbwiki.com/Metal_Box) / [Magnifying glass](https://www.ssbwiki.com/Magnifying_glass) / [Starman](https://www.ssbwiki.com/Starman_(item)) | T2 | refute Metal/Loupe as invuln; Star = item invincibility |
+| PMDT — "3.5 Blogpost #6: Ledge Invincibility" ([Wayback](https://web.archive.org/web/20150809045045/https://projectmgame.com/en/news/dev-blogpost-6-ledge-invincibility)) | T1 primary | PM ledge anti-stall = 5-regrab count cutoff (feeds #535) |
