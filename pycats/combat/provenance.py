@@ -283,6 +283,79 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
         "TUNED",
         311,
     ),
+    # ---- Pass B: guessed/tuned scalars (#582, from the #580 audit) — candid GUESS/TUNED, no fabricated sourcing ----
+    # projectile physics (#266/#425) — flagged ⚠ GUESS tuning starting points in config
+    "PROJECTILE_GRAVITY": Provenance(
+        0.5,
+        "px/frame^2",
+        "pycats projectile fall accel; GUESS tuning start (config ⚠, #266/#425), no PM source",
+        "GUESS",
+        266,
+    ),
+    "PROJECTILE_RESTITUTION": Provenance(
+        0.6,
+        "factor",
+        "pycats projectile bounce energy kept (<1); GUESS tuning start (config ⚠, #266/#425)",
+        "GUESS",
+        266,
+    ),
+    "PROJECTILE_MAX_BOUNCES": Provenance(
+        3, "bounces", "pycats projectile bounces before despawn; GUESS (config ⚠, #266/#425)", "GUESS", 266
+    ),
+    # walk/dash burst (#388) — DASH_SPEED is FOUND (#581); the burst window is a guess
+    "DASH_DURATION": Provenance(
+        12,
+        "frames",
+        "pycats initial-dash burst window; GUESS tuning start (config ⚠, #388), no canon single value",
+        "GUESS",
+        388,
+    ),
+    # angled f-smash literals (#327 slice 4) — flagged ⚠ playtest in config
+    "FSMASH_ANGLE_UP": Provenance(
+        50,
+        "deg",
+        "pycats angled-fsmash up-forward launch angle; GUESS (config ⚠ playtest, #327), no canon value",
+        "GUESS",
+        327,
+    ),
+    "FSMASH_ANGLE_DOWN": Provenance(
+        330,
+        "deg",
+        "pycats angled-fsmash down-forward launch angle (-30deg); GUESS (config ⚠ playtest, #327)",
+        "GUESS",
+        327,
+    ),
+    # friction model — pycats-specific design knobs, no PM canon number
+    "GROUND_FRICTION": Provenance(
+        0.5,
+        "factor",
+        "pycats ground friction (1.0=ice, 0.0=instant stop); deliberate design knob, no PM equivalent",
+        "TUNED",
+        None,
+    ),
+    "AIR_FRICTION": Provenance(
+        0.85, "factor", "pycats air friction; deliberate design knob, no PM equivalent", "TUNED", None
+    ),
+    # misc timers / match rules — pycats design, no canon
+    "HURT_TIME": Provenance(
+        12, "frames", "pycats hurt/flinch timer; deliberate design value, no PM canon equivalent", "TUNED", None
+    ),
+    "LEDGE_REGRAB_LOCKOUT_FRAMES": Provenance(
+        30,
+        "frames",
+        "pycats post-release regrab-suppression window; pycats ledge rule (#14), no canon single value",
+        "TUNED",
+        14,
+    ),
+    "PLAYER_ATTACK_DURATION": Provenance(
+        12, "frames", "pycats default attack duration; deliberate design value, no PM canon", "TUNED", None
+    ),
+    "INITIAL_LIVES": Provenance(
+        3, "stocks", "pycats default stock count; a match ruleset setting, not a PM physics value", "TUNED", None
+    ),
+    "RESPAWN_DELAY_FRAMES": Provenance(
+        120, "frames", "pycats respawn freeze ~2s (config computes int(2*FPS)); ruleset value, no canon", "TUNED", None
+    ),
 }
 
 # The curated combat/physics set (excludes render/UI/tail/platform/menu constants).
@@ -335,5 +408,19 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "LEDGE_INVULN_PER_PERCENT",
         "LEDGE_INVULN_MAX_FRAMES",
         "LEDGE_GETUP_FRAMES",
+        # Pass B guessed/tuned scalars (#582)
+        "PROJECTILE_GRAVITY",
+        "PROJECTILE_RESTITUTION",
+        "PROJECTILE_MAX_BOUNCES",
+        "DASH_DURATION",
+        "FSMASH_ANGLE_UP",
+        "FSMASH_ANGLE_DOWN",
+        "GROUND_FRICTION",
+        "AIR_FRICTION",
+        "HURT_TIME",
+        "LEDGE_REGRAB_LOCKOUT_FRAMES",
+        "PLAYER_ATTACK_DURATION",
+        "INITIAL_LIVES",
+        "RESPAWN_DELAY_FRAMES",
     }
 )
