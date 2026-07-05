@@ -1,122 +1,168 @@
 # PyCats
 
-A game inspired by Super Smash Bros, written in Python using Pygame.
+A local 2-player cat fighter for the keyboard, written in Python with Pygame and
+inspired by **Project M** (the *Super Smash Bros. Brawl* mod). Two cats knock each
+other off a stage; damage builds knockback, and a launched fighter that flies past
+the blast line loses a stock.
 
-# How to Run
+## What it is (and isn't)
 
-1. Clone the repository:
-   ```bash
-   git clone
-   ```
+pycats is a **personal learning project**, so its goals are shaped by that:
 
-2. Navigate to the project root directory:
-   ```bash
-   cd pycats
-   ```
+- **Project-M-at-heart, not a clone.** The *feel* — movement, knockback, shield,
+  dodges, ledges — follows Project M; where pycats deliberately diverges is written
+  down in [docs/project-m-parity.md](./docs/project-m-parity.md).
+- **Deterministic and headless-first.** The simulation is frame-counted, RNG-free at
+  its core, and runs without a display, so recorded "golden" snapshots reproduce a
+  fight exactly and act as the regression oracle. This constraint is load-bearing —
+  see the determinism/headless contract in [CONTEXT.md](./CONTEXT.md).
+- **Local, keyboard, two players.** Two humans on one keyboard, or a human against a
+  computer-controlled cat (see [Play against the computer](#play-against-the-computer)).
 
-3. Install the required dependencies:
-   ```bash
-   pip install pygame-ce
-   ```
+**Not** goals of this project: online / netplay, and a large character roster.
+Play is keyboard-first; a game-controller backend is only exploratory, not part of
+the current game.
 
-4. Run the game:
-   ```bash
-   python -m pycats.game
-   ```
+## Quickstart
 
-# Project docs
+Requires Python 3.10+. These steps use a project virtualenv (`.venv`), which works
+everywhere — including Debian/Ubuntu/Mint, where a bare `pip install` is refused with
+`externally-managed-environment` (PEP 668).
+
+pycats has two runtime dependencies: **pygame-ce**, and **statecharts-py** — the
+statechart engine that drives every fighter and screen, kept in a sibling repo and not
+published to PyPI, so clone the two side by side:
+
+```bash
+git clone https://github.com/avidrucker/pycats.git
+git clone https://github.com/avidrucker/statecharts-py.git   # the statechart engine
+cd pycats
+python3 -m venv .venv
+.venv/bin/python -m pip install pygame-ce            # rendering + value types
+.venv/bin/python -m pip install -e ../statecharts-py  # the sibling engine, editable
+.venv/bin/python -m pycats.game                      # play
+```
+
+(If your `python` already points at a writable environment, you can skip the `.venv`
+and drop the `.venv/bin/` prefixes.)
+
+## Controls
+
+Two players share the keyboard. Every key below is **rebindable in the in-game Options
+screen** (the defaults are what "reset to defaults" restores).
+
+| Action  | Player 1 | Player 2 |
+| ------- | -------- | -------- |
+| Move    | `W` `A` `S` `D` | Arrow keys |
+| Attack  | `V` | `/` |
+| Special | `C` | `.` |
+| Shield  | `X` | `,` |
+| Smash   | `B` | `'` |
+
+Jump is *up* (`W` / `Up`); hold *down* to crouch and to drop through / off ledges.
+Attack is the standard A-button; **Special** is the B-button (e.g. Nalio's fireball);
+**Smash** is a dedicated strong-attack input.
+
+## Play against the computer
+
+A cat can be driven by the computer along **two independent axes** — don't confuse them:
+
+**CPU difficulty — `--p1-level` / `--p2-level`, a level from 1 to 9.** This is the
+Smash-style **CPU** opponent: higher levels react faster, attack and shield more, and
+at the top levels throw specials (fireballs). Turning on a level makes that player a
+CPU.
+
+```bash
+# Two Nalios: a level-5 CPU (P1) versus a level-9 CPU (P2), reproducible with a seed.
+.venv/bin/python watch.py --p1-char nalio --p1-level 5 --p2-char nalio --p2-level 9 --seed 42
+```
+
+**Behavior variants — `--vs {idle,chase,idler,follower}`.** A *separate* axis: these
+are scripted-controller personalities for P2 (idle = no controller, chase = pursue,
+idler = baseline, follower = shadow P1), used for demos and testing. They are **not**
+CPU difficulty levels — a "follower" is not "harder" than an "idler", just different.
+
+```bash
+.venv/bin/python watch.py --vs chase --seed 42   # P1 attacker vs a P2 that chases
+```
+
+Other `watch.py` modes: `--match` plays a full match to a KO, `--demo showcase` plays
+the captioned feature demo, and `--video out.mp4` records instead of showing a live
+window (recording needs `imageio` + `imageio-ffmpeg`). Run `watch.py --help` for the
+full flag list. Omit `--seed` for a clocktime seed so a computer match varies
+run-to-run; pass an int for a reproducible one.
+
+---
+
+## For contributors
+
+### Running the tests
+
+The suite runs headless (no display) and is the regression oracle. One canonical
+command, run from the repo root:
+
+```bash
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. .venv/bin/python -m pytest -q
+```
+
+A green run with some skips is expected. Add `-m "not slow"` to skip the benchmark
+tests. Golden snapshots live in `tests/golden/`; regenerate them intentionally with
+`PYCATS_UPDATE_GOLDENS=1`.
+
+### Development setup
+
+Beyond the two runtime dependencies from the [Quickstart](#quickstart), the tests,
+linter, and benchmark need a few dev packages (the statechart engine is already
+installed editable from the Quickstart — see [ADR-0002](./docs/adr/) for why it is the
+sole state engine, and [ADR-0006](./docs/adr/) for the lint setup):
+
+```bash
+.venv/bin/python -m pip install pytest ruff pre-commit   # test runner, linter, lint hook
+```
+
+Lint + format (ruff; config in `ruff.toml` and `.pre-commit-config.yaml`):
+
+```bash
+.venv/bin/ruff check --select F,I,E722,E702,E402,UP pycats/   # lint (some findings: add --fix)
+.venv/bin/ruff format --check pycats/                         # formatting
+.venv/bin/pre-commit install                                  # one-time: run both on each commit
+```
+
+The lint hook is ruff-only so it stays fast; `pytest` remains the on-demand source of
+truth (there is no CI gate). Legacy debug scripts that once masqueraded as tests now
+live in `scripts/`, so a bare `pytest` collects only real assert-based tests.
+
+### Benchmark
+
+```bash
+SDL_VIDEODRIVER=dummy .venv/bin/python bench.py                                   # quick run
+SDL_VIDEODRIVER=dummy .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
+```
+
+### Project layout
+
+The `pycats/` package is split into a **display-free rules core** and a separate
+**present layer** (rendering, input polling, `game.py`). The core sub-packages:
+
+| Package | Holds |
+| ------- | ----- |
+| `pycats/core/` | input frames, rebindable keymaps, low-level physics |
+| `pycats/entities/` | `Fighter` (pure state/rules), the `Player` sprite adapter, platforms, ledges |
+| `pycats/combat/` | the data-driven attack system — hitboxes, knockback, shield, move selection |
+| `pycats/characters/` | per-archetype fighter data + skins (Nalio, Birky, Narz, the default cat) |
+| `pycats/charts/` + `pycats/systems/` | the statechart definitions and state engines |
+| `pycats/sim/` | the headless battle runner, AI controllers, demos, and the captioned showcase |
+
+Entry points are modules, **not** a `main.py`: `python -m pycats.game` (the game),
+`watch.py` (replays / demos / CPU battles), and `bench.py` (benchmark). The
+architecture layer map lives in [CONTEXT.md](./CONTEXT.md).
+
+## Project docs
 
 New here (human or agent)? Start with these:
 
 - [CONTEXT.md](./CONTEXT.md) — domain vocabulary + the determinism/headless contract.
-- [docs/glossary.md](./docs/glossary.md) — one-line definitions of every PM/Smash mechanics + project term, linked to the authoritative doc.
+- [docs/glossary.md](./docs/glossary.md) — one-line definitions of every PM/Smash mechanic + project term, linked to the authoritative doc.
 - [docs/adr/](./docs/adr/) — architecture decision records (the *why* behind design calls).
 - [docs/project-m-parity.md](./docs/project-m-parity.md) — where pycats deliberately diverges from Project M.
 - [RULES.md](./RULES.md) — project conventions (labels, filing, closing work).
-
-## Development / benchmarking
-
-Headless tests and the battle benchmark need pytest, pygame-ce, and the sibling
-`statecharts-py` repo. On Debian/Mint (PEP 668 "externally-managed-environment")
-use a project virtualenv:
-
-    python3 -m venv .venv
-    .venv/bin/python -m pip install pytest pygame-ce ruff pre-commit   # ruff = linter, pre-commit = lint hook (ADR-0006)
-    .venv/bin/python -m pip install -e ../statecharts-py   # sibling repo
-
-**The statechart engine is the sole state engine** for the live game, `watch.py`,
-and the benchmarks (ADR-0002: the legacy backend and its `--backend` /
-`PYCATS_STATE_BACKEND` selection were removed in #178/#183).
-
-Phase-0 introduced a **data-driven attack system** with circle hitboxes (see
-`pycats/combat/` and `pycats/characters/`). Golden snapshots in `tests/golden/`
-are the regression oracle — regenerate them with `PYCATS_UPDATE_GOLDENS=1`.
-
-Run tests:        SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. .venv/bin/python -m pytest -q
-                      # bare pytest is the source of truth — collects & runs the whole suite
-                      # green (skips OK). Add -m "not slow" to skip the benchmark tests.
-Lint (ruff):      .venv/bin/ruff check --select F pycats/
-                      # ruff's F rules ≡ pyflakes (ADR-0006 / #492); scope is --select F for now.
-                      # Some findings are auto-fixable with --fix. Tested with ruff 0.15.20.
-Lint hook:        .venv/bin/pre-commit install     # one-time per clone — runs the ruff check above on each commit
-                      # config: .pre-commit-config.yaml. Manual run: .venv/bin/pre-commit run --all-files
-                      # ruff-only (fast); pytest stays the on-demand source of truth. No CI gate (#492 slice 4).
-
-Copy-paste one-liner (absolute paths, runs from anywhere):
-
-    cd /home/avi/Documents/Study/Python/pycats && SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. /home/avi/Documents/Study/Python/pycats/.venv/bin/python -m pytest -q
-
-The `cd <repo> && <test cmd>` form keeps `cd` a separate command from the test run
-(the `&&` is the separator), so the whole thing still pastes as one line — without
-it, `cd` plus the env vars on one line trips `bash: cd: too many arguments`, and a
-line-break after `-m` makes Python report `Argument expected for the -m option`.
-Run benchmark:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py
-Store results:    SDL_VIDEODRIVER=dummy .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
-Watch a replay:   .venv/bin/python watch.py                    # scripted replay
-Watch full match: .venv/bin/python watch.py --match            # P1 defeats P2 (3 stocks)
-  ...uncapped:    .venv/bin/python watch.py --match --uncapped  # FPS readout = true rate
-Record a video:   .venv/bin/python watch.py --match --video media/full_battle.mp4
-NPC battle (--vs): .venv/bin/python watch.py --vs chase            # P1 vs NPC: idle|chase|idler|follower (#61)
-  ...reproducible:  .venv/bin/python watch.py --vs chase --seed 42 # same seed + backend → same outcome (#166)
-                      # omit --seed for a clocktime seed → the NPC battle varies run-to-run
-CPU Lv5 vs Lv9:   .venv/bin/python watch.py --p1-char nalio --p1-level 5 --p2-char nalio --p2-level 9 --seed 42
-                      # two Nalios, CPU difficulty 1-9 per player (#231/#148): higher level
-                      # reacts faster, attacks more, shields & commits more, and at Lv9 throws
-                      # fireballs (specials, #248); tilts/aerials emerge from movement.
-                      # video needs: .venv/bin/python -m pip install imageio imageio-ffmpeg
-
-The live window shows an FPS counter + each fighter's stocks/damage (hide with
---no-overlay). It paces to 60 FPS by default; --uncapped shows the true rate.
-
-(Legacy debug/diagnostic scripts that once masqueraded as tests now live in
-`scripts/`, so bare `pytest` is clean. `tests/` holds only real assert-based tests.)
-
-(If your `python` already resolves to a writable environment, drop the
-`.venv/bin/` prefix.)
-
-# Controls
-
-- **Player 1**:
-  - Move: WASD keys
-  - A Attack: v
-  - B Attack: c
-  - Shield: x
-
-- **Player 2**:
-  - Move: Arrow keys
-  - A Attack: /
-  - B Attack: .
-  - Shield: ,
-
-# File Structure
-```
-pycats/                 ← top-level package  (must contain __init__.py)
-├── __init__.py
-├── config.py
-├── entities/
-│   ├── __init__.py
-│   ├── platform.py
-│   ├── attack.py
-│   └── player.py
-└── game.py             ← tiny entry-point / game loop
-```
