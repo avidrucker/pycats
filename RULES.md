@@ -54,6 +54,16 @@
   ticket", "go ahead"). Filing-and-claiming is outward-facing and costly to
   unwind — when unsure whether you've been authorized, ask. (Front-end mirror of
   "surface the contradiction before an outward-facing close" under *Fixing bugs*.)
+- **No unprompted research.** When asked for a specific action (file/log/label/claim/
+  edit a named thing), do **exactly that** — do not first run greps, file reads, or
+  issue listings that weren't requested. Resolving the minimal input the asked action
+  strictly requires (e.g. looking up a command's required argument, or reading the one
+  file you're about to edit) is fine; open-ended investigation — "let me check how X
+  works", "let me see what else exists" — is not: ask "want me to look into X first?"
+  and wait for a yes. Burned tokens and the "I didn't ask you to research" correction
+  are the tell (errors db 23/24). (Execution-time complement of "a question is not
+  authorization" above: that rule bars acting when only *asked* a question; this one
+  bars over-acting when *given* an action.)
 - Shape every ticket as a complaint: **have X / should have Y / repro**
   (yegor-bdd).
 - **Repro/spec-first for unclear bugs.** If a bug's symptom isn't specific enough to

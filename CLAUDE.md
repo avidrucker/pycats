@@ -10,6 +10,10 @@ Critical rules:
   feature priority — assign features directly instead.
 - **A question/suggestion is not authorization to create work** — answer first;
   file/claim/code only on an explicit go-ahead. See [RULES.md](./RULES.md) → "Filing work".
+- **No unprompted research** — when asked for a narrow action (file/log/label/claim/edit),
+  do exactly that; ask before any unrequested grep/read/issue-list. Resolving the action's
+  minimal required input (incl. reading the file you're about to edit) is fine. See
+  [RULES.md](./RULES.md) → "Filing work".
 - **Installing a new dependency needs explicit human approval** — `pip install` (even
   into a dev `.venv`), manifests/lockfiles, `npm`, system packages. Using a declared
   dep is fine; *adding* one (incl. a "harmless" dev tool) is gated — propose, don't
