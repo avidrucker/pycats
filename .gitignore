@@ -9,4 +9,5 @@ scratch.py
 media/
 *.mp4
 repros/
+logs/
 .claude/worktrees/

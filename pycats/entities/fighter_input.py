@@ -13,7 +13,8 @@ shipped DEBUG print() calls.
 
 from __future__ import annotations
 
-from ..combat.move_select import resolve_move_key
+from .. import dev_log
+from ..combat.move_select import resolve_move_key, select_move_key
 from ..config import DODGE_SPEED, DOUBLE_TAP_WINDOW, SMASH_CHARGE_FRAMES
 from ..systems.movement import step_horizontal
 
@@ -338,6 +339,22 @@ class FighterInput:
                         facing = 1 if p.fighter.facing_right else -1
                         p.fighter.vel.y = move.recovery_vy
                         p.fighter.vel.x = move.recovery_vx * facing
+            elif is_special:
+                # Not-yet-implemented: an input mapped to a move the fighter does not
+                # define (an undefined special resolves to None — specials have no
+                # fallback). Silent no-op in play; leave a dev breadcrumb (#587). The
+                # logger is OFF unless PYCATS_DEV_LOG is set, so the sim/golden path
+                # does zero file I/O and stays byte-identical.
+                dev_log.log_unimplemented(
+                    p.char_name,
+                    select_move_key(direction, p.fighter.on_ground, is_special=True),
+                    f"{direction}+special",
+                    [
+                        "combat/move_select.py",
+                        "entities/fighter_input.py",
+                        f"characters/{p.char_name.lower()}_cat.py",
+                    ],
+                )
         #### TODO: implement grab from shield state or combo press of attack + shield from idle/walk state
 
         # e.g. disappearing ranged attack (vanish immediately on hit) like fireballs
