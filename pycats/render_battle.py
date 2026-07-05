@@ -278,7 +278,8 @@ _BODY_PAD_BOT = 12
 # Crouch squash easing (#124): fraction of the stand→crouch transition covered
 # per rendered frame (~3 frames to settle). Render-only; not part of the sim.
 _CROUCH_ANIM_RATE = 0.34
-_body_cache: dict = {}
+_body_cache: dict = {}  # key -> merged composite (ring + body + name), one surface
+_body_layers_cache: dict = {}  # key -> (ring_layer, body_layer) for the split #585 draw
 
 
 def _dilated_silhouette(src, color, width, pad=0):
@@ -375,75 +376,106 @@ def body_tint(p):
     return active_tint(p) or p.char_color
 
 
-def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
-    """Return the cached body composite for player `p` (built on first use).
+def _body_cache_key(p, face_style):
+    """The cache key shared by the body layers and the merged composite.
 
-    `face_style` (#108) selects how the face is drawn: PRIMITIVES (default —
-    eyes + ears + whiskers) or a glyph style (kaomoji/emoji) blitted over the
-    head. It is part of the cache key so toggling re-renders."""
-    # Per-fighter body size (#282 fix for the #275 regression): the composite must
-    # match the fighter's collision box (stand_size), not the global PLAYER_SIZE —
-    # else a small archetype renders full-height and clips below its feet. (w, h) is
-    # in the cache key so different-sized fighters don't share one cached body.
+    `face_style` (#108) is keyed so toggling the face re-renders. nickname (#478)
+    is keyed so a label change re-renders instead of serving a stale composite
+    (None — the default — keeps the key byte-identical). `outline` (#572) is a
+    function of char_name (already keyed) but keying the resolved colour is
+    explicit so the two slots never share a cached ring. (w, h) is keyed (#282 fix
+    for #275) so different-sized archetypes don't share one cached body."""
     w, h = p.fighter.stand_size
-    tint = tuple(body_tint(p))
-    outline = tuple(slot_accent_color(p))  # #572: P1 red / P2 blue silhouette ring
-    # nickname (#478) is in the key so a nickname change re-renders the label instead of
-    # serving a stale composite; None (the default) leaves the key byte-identical.
-    # `outline` (#572) is keyed too so the two slots never share a cached ring — it's a
-    # function of char_name (already keyed), but keying the resolved colour is explicit.
-    key = (
+    return (
         tuple(p.char_color),
         tuple(p.stripe_color),
         tuple(p.eye_color),
         p.char_name,
         getattr(p, "nickname", None),
         p.fighter.facing_right,
-        tint,
+        tuple(body_tint(p)),
         face_style,
         (w, h),
-        outline,
+        tuple(slot_accent_color(p)),  # #572: P1 red / P2 blue silhouette ring
     )
+
+
+def _draw_body_features(p, face_style):
+    """Draw a fighter's body fill + stripes + face/features (NO ring, NO name) onto
+    a fresh padded SRCALPHA surface. Return (feat, shim) — the raw silhouette from
+    which both the ring and the merged composite are built."""
+    # The composite matches the fighter's collision box (stand_size), not the global
+    # PLAYER_SIZE, so a small archetype doesn't render full-height and clip its feet.
+    w, h = p.fighter.stand_size
+    cw = w + 2 * _BODY_PAD_X
+    ch = _BODY_PAD_TOP + h + _BODY_PAD_BOT
+    feat = pygame.Surface((cw, ch), pygame.SRCALPHA)
+    vrect = pygame.Rect(_BODY_PAD_X, _BODY_PAD_TOP, w, h)
+    overlay = active_tint(p)
+    shim = _CatShim(
+        vrect,
+        p.fighter.facing_right,
+        p.char_color,
+        p.eye_color,
+        p.stripe_color,
+        p.char_name,
+        nickname=getattr(p, "nickname", None),
+        tint=overlay,
+    )
+    body = pygame.Surface((w, h))
+    body.fill(_blend(p.char_color, overlay))
+    feat.blit(body, vrect)
+    draw_stripes(feat, shim)
+    # Face: a glyph style replaces the primitive eyes + ears + whiskers; falls back
+    # to primitives when the glyph can't render (font missing).
+    face = cat_faces.render_face(face_style, p.fighter.facing_right, cat_faces.ink_for(p.char_color))
+    if face is not None:
+        feat.blit(face, face.get_rect(center=(vrect.centerx, vrect.top + FACE_BLIT_OFFSET_Y)))
+    else:
+        draw_eye(feat, shim)
+        draw_eye(feat, shim, eye=False)
+        draw_cat_features(feat, shim)
+    return feat, shim
+
+
+def _cat_body_layers(p, face_style=cat_faces.PRIMITIVES):
+    """Return the cached ``(ring_layer, body_layer)`` for player `p`, both padded
+    SRCALPHA surfaces of the same size.
+
+    - ``ring_layer`` — the slot-accent silhouette ring only (#564/#572), nothing else.
+    - ``body_layer`` — body fill + stripes + face/features + name label, no ring.
+
+    render_battle draws them at different depths — ring BEHIND the tail, body in
+    FRONT — so the outline is one continuous edge behind body + ears + tail and
+    never seams at the body↔tail junction (#585). ``_cat_body_surface`` recomposes
+    the two for callers that want the fighter as a single surface."""
+    key = _body_cache_key(p, face_style)
+    layers = _body_layers_cache.get(key)
+    if layers is None:
+        feat, shim = _draw_body_features(p, face_style)
+        # Silhouette ring (#564, was a torso-box rect in #546): the cat's actual
+        # alpha silhouette (body + ears) dilated and filled per slot (#572) — P1 red
+        # / P2 blue, matching the name label. Built from `feat` (before the name) so
+        # the label isn't ringed.
+        ring = _dilated_silhouette(feat, tuple(slot_accent_color(p)), FIGHTER_OUTLINE_WIDTH)
+        body_layer = feat.copy()
+        draw_player_name(body_layer, shim)  # name on top of the body, un-ringed
+        layers = (ring, body_layer)
+        _body_layers_cache[key] = layers
+    return layers
+
+
+def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
+    """Return the cached merged body composite (ring behind + body + name) as one
+    surface. Byte-identical to the pre-#585 single-surface build — the render-cache
+    parity oracle and the silhouette tests read this. render_battle itself draws the
+    split ``_cat_body_layers`` so the ring can sit behind the tail (#585)."""
+    key = _body_cache_key(p, face_style)
     surf = _body_cache.get(key)
     if surf is None:
-        cw = w + 2 * _BODY_PAD_X
-        ch = _BODY_PAD_TOP + h + _BODY_PAD_BOT
-        surf = pygame.Surface((cw, ch), pygame.SRCALPHA)
-        vrect = pygame.Rect(_BODY_PAD_X, _BODY_PAD_TOP, w, h)
-        overlay = active_tint(p)
-        shim = _CatShim(
-            vrect,
-            p.fighter.facing_right,
-            p.char_color,
-            p.eye_color,
-            p.stripe_color,
-            p.char_name,
-            nickname=getattr(p, "nickname", None),
-            tint=overlay,
-        )
-        body = pygame.Surface((w, h))
-        body.fill(_blend(p.char_color, overlay))
-        surf.blit(body, vrect)
-        draw_stripes(surf, shim)
-        # Face: a glyph style replaces the primitive eyes + ears + whiskers;
-        # falls back to primitives when the glyph can't render (font missing).
-        face = cat_faces.render_face(face_style, p.fighter.facing_right, cat_faces.ink_for(p.char_color))
-        if face is not None:
-            surf.blit(face, face.get_rect(center=(vrect.centerx, vrect.top + FACE_BLIT_OFFSET_Y)))
-        else:
-            draw_eye(surf, shim)
-            draw_eye(surf, shim, eye=False)
-            draw_cat_features(surf, shim)
-        # Silhouette outline (#564, was a torso-box rect in #546): trace the cat's
-        # actual alpha silhouette — body + ears — and lay it BEHIND the sprite so
-        # the ring hugs the real outline and never overpaints interior pixels.
-        # Coloured per slot (#572) — P1 red / P2 blue, matching the name label — so
-        # the ring doubles as an identity cue. Built BEFORE the name so the label
-        # isn't haloed. (P2's blue is 2.50:1 vs BG_COLOR, below the #546 3:1 target
-        # — a deliberate owner call for identity over strict contrast, see #572.)
-        halo = _dilated_silhouette(surf, outline, FIGHTER_OUTLINE_WIDTH)
-        halo.blit(surf, (0, 0))  # sprite over its own halo -> ring shows only outside it
-        surf = halo
+        feat, shim = _draw_body_features(p, face_style)
+        surf = _dilated_silhouette(feat, tuple(slot_accent_color(p)), FIGHTER_OUTLINE_WIDTH)
+        surf.blit(feat, (0, 0))  # sprite over its own halo -> ring shows only outside it
         draw_player_name(surf, shim)  # on top of the ring, un-haloed
         _body_cache[key] = surf
     return surf
@@ -813,15 +845,18 @@ def render_battle(surface, players, platforms):
     for p in players:
         if not p.fighter.is_alive:
             continue
-        # #330: adapter draws the tail; #572: its outline ring takes the slot accent
-        render_tail(surface, p.tail, tinted(p.char_color, p), slot_accent_color(p))
-        # Body composite (rect + stripes + eyes + ears + whiskers + name).
-        body = _cat_body_surface(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
+        # Body is drawn in two depth layers (#585) so the silhouette ring is one
+        # continuous edge behind body + ears + tail and never seams at the body↔tail
+        # junction: ring BEHIND -> tail (its own ring + bodies) -> body pixels + name
+        # in FRONT. The tail bodies cover the body ring where the two overlap, so no
+        # ring segment is left cutting across the join.
+        ring_layer, body_layer = _cat_body_layers(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
         # Posture squash (#124 crouch / #173 prone): vertically scale the body
         # toward the active lowered height, feet planted, eased over a few frames.
         # Purely visual — driven by a render-only progress var, so the
         # deterministic sim is untouched (the collision Rect itself snaps in
-        # Player._apply_posture_geometry).
+        # Player._apply_posture_geometry). Both layers scale identically so they stay
+        # aligned.
         stand_h = p.fighter.stand_size[1]
         if p.state == "crouch" and p.fighter.crouch_size:
             low_h = p.fighter.crouch_size[1]
@@ -835,11 +870,19 @@ def render_battle(surface, players, platforms):
         p._crouch_anim = anim
         if anim > 0.0 and low_h != stand_h:
             s = (stand_h + (low_h - stand_h) * anim) / stand_h
-            body = pygame.transform.scale(body, (body.get_width(), max(1, round(body.get_height() * s))))
+            size = (ring_layer.get_width(), max(1, round(ring_layer.get_height() * s)))
+            ring_layer = pygame.transform.scale(ring_layer, size)
+            body_layer = pygame.transform.scale(body_layer, size)
             blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s)
         else:
             blit_y = p.rect.y - _BODY_PAD_TOP
-        surface.blit(body, (p.rect.x - _BODY_PAD_X, blit_y))
+        pos = (p.rect.x - _BODY_PAD_X, blit_y)
+        surface.blit(ring_layer, pos)  # silhouette ring, behind everything
+        # #330: adapter draws the tail; #572: its outline ring takes the slot accent.
+        # Drawn between the ring and the body so the tail sits over the body's ring
+        # (killing the junction seam) but still behind the body pixels themselves.
+        render_tail(surface, p.tail, tinted(p.char_color, p), slot_accent_color(p))
+        surface.blit(body_layer, pos)  # body fill + features + name, in front
         if p.fighter.stun_timer > 0:
             draw_dizzy_stars(surface, p)
         if p.state == "shield":
