@@ -106,12 +106,5 @@ def test_tick_respawn_decrements_unfloored():
     f.tick_respawn()
     assert f.respawn_timer == -1
 
-
-def test_tick_ledge_hang_decrements_and_floors():
-    f = _fighter()
-    f.ledge_hang_timer = 2
-    f.tick_ledge_hang()
-    assert f.ledge_hang_timer == 1
-    f.ledge_hang_timer = 0
-    f.tick_ledge_hang()
-    assert f.ledge_hang_timer == 0  # floored, never negative
+# (test_tick_ledge_hang_decrements_and_floors removed — the ledge-hang timeout and
+#  its tick_ledge_hang() are gone in #475: PM has no hang timer.)

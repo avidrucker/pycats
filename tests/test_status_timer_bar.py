@@ -27,7 +27,6 @@ from pycats.config import (  # noqa: E402
     FPS,
     GETUP_ROLL_FRAMES,
     KNOCKDOWN_PRONE_FRAMES,
-    LEDGE_HANG_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
     SHIELD_BREAK_STUN_MAX,
     SHIELD_DRAIN_PER_FRAME,
@@ -38,14 +37,14 @@ from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402
 
 
 def _fake(state="idle", shield_hp=SHIELD_MAX_HP, stun_timer=0,
-          ledge_hang_timer=0, prone_timer=0, ledge_regrab_lockout_timer=0,
+          prone_timer=0, ledge_regrab_lockout_timer=0,
           invulnerable=False, dodge_timer=0, getup_roll_timer=0,
           getup_attack_timer=0, smash_charge_timer=0, cx=120, top=200):
     # timer_bar_specs reads the timers through `.fighter` (#90); `state` stays a
     # direct Player attr. Self-ref so the flat stand-in satisfies both.
     ns = types.SimpleNamespace(
         state=state, shield_hp=shield_hp, stun_timer=stun_timer,
-        ledge_hang_timer=ledge_hang_timer, prone_timer=prone_timer,
+        prone_timer=prone_timer,
         ledge_regrab_lockout_timer=ledge_regrab_lockout_timer,
         invulnerable=invulnerable, dodge_timer=dodge_timer,
         getup_roll_timer=getup_roll_timer, getup_attack_timer=getup_attack_timer,
@@ -93,33 +92,16 @@ def test_toggle_off_suppresses_bar(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
     assert rb.timer_bar_specs(_fake(stun_timer=200)) == []
     assert rb.timer_bar_specs(_fake(state="shield", shield_hp=40)) == []
-    assert rb.timer_bar_specs(
-        _fake(state="ledge_hang", ledge_hang_timer=90)) == []
 
 
-# --- HANG bar (#348, slice 2 of #334) ----------------------------------------
-# A teal count-down bar labelled HANG while a fighter clings to a ledge, draining
-# as the ~2s ledge_hang_timer (#14) runs out.
+# --- HANG bar removed (#475) --------------------------------------------------
+# The teal HANG count-down bar tracked the ledge-hang timeout; #475 removed that
+# timeout (PM has no hang timer), so the bar and its HANG_BAR_COLOR are gone. A
+# ledge-hang state now shows no HANG bar; the ledge intangibility burst gets its
+# own bar in the follow-up #531.
 
-def test_hang_bar_ratio_seconds_label_colour():
-    p = _fake(state="ledge_hang", ledge_hang_timer=90)
-    (bar,) = rb.timer_bar_specs(p)
-    assert bar.label == "HANG"
-    assert bar.color == rb.HANG_BAR_COLOR
-    assert bar.ratio == 90 / LEDGE_HANG_FRAMES
-    assert bar.readout == f"{math.ceil(90 / FPS)}s"
-
-
-def test_no_hang_bar_when_not_hanging():
-    # ledge_hang_timer 0 (or a non-hang state) shows no HANG bar.
-    assert rb.timer_bar_specs(_fake(state="ledge_hang", ledge_hang_timer=0)) == []
-    assert rb.timer_bar_specs(_fake(state="idle", ledge_hang_timer=90)) == []
-
-
-def test_hang_bar_suppressed_by_toggle(monkeypatch):
-    monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
-    assert rb.timer_bar_specs(
-        _fake(state="ledge_hang", ledge_hang_timer=90)) == []
+def test_no_hang_bar_while_ledge_hanging():
+    assert rb.timer_bar_specs(_fake(state="ledge_hang")) == []
 
 
 # --- DOWN bar (#350, slice 3 of #334) ----------------------------------------
@@ -193,8 +175,6 @@ def test_single_bar_cases_each_return_one_labelled_bar():
     assert shield.color == rb.SHIELD_BAR_COLOR and shield.label == "SHIELD"
     (stun,) = rb.timer_bar_specs(_fake(stun_timer=240))
     assert stun.color == rb.DIZZY_BAR_COLOR and stun.label == "DIZZY"
-    (hang,) = rb.timer_bar_specs(_fake(state="ledge_hang", ledge_hang_timer=90))
-    assert hang.label == "HANG"
     (down,) = rb.timer_bar_specs(_fake(state="prone", prone_timer=20))
     assert down.label == "DOWN"
 
@@ -210,7 +190,7 @@ def test_shield_sorts_last_under_a_lockout_overlay():
 # --- INVULN bar (#358, slice 5 of #334; option 1 = per-source resolve) --------
 # `invulnerable` is a bool driven by several actions, each with its own timer/max.
 # The bar resolves the current source to (remaining, max); it is suppressed while
-# ledge-hanging (HANG already shows that clock).
+# ledge-hanging (the dedicated ledge-invuln bar is #531; #475 removed the old HANG).
 
 def test_invuln_bar_dodge_source():
     p = _fake(state="dodge", invulnerable=True, dodge_timer=10)
@@ -243,11 +223,12 @@ def test_no_invuln_bar_when_not_invulnerable():
 
 
 def test_invuln_suppressed_while_ledge_hanging():
-    # Ledge-grab sets invulnerable=True, but HANG already shows that clock — only
-    # the HANG bar renders, no redundant INVULN.
-    p = _fake(state="ledge_hang", invulnerable=True, ledge_hang_timer=90)
+    # Ledge-grab sets invulnerable=True, but the INVULN bar stays suppressed during
+    # ledge_hang: no bar renders while hanging (#475 removed HANG; the dedicated
+    # ledge-invuln bar is the follow-up #531). Able-to-fail if the suppression drops.
+    p = _fake(state="ledge_hang", invulnerable=True)
     labels = [b.label for b in rb.timer_bar_specs(p)]
-    assert labels == ["HANG"]
+    assert labels == []
 
 
 def test_invuln_bar_suppressed_by_toggle(monkeypatch):

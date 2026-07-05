@@ -32,7 +32,7 @@ def st(**kw):
     fields = dict(
         state="idle", hurt_timer=0, stun_timer=0, dodge_timer=0,
         getup_roll_timer=0, getup_attack_timer=0, ledge_invuln_timer=0,
-        shield_hp=rb.SHIELD_MAX_HP, ledge_hang_timer=0, prone_timer=0,
+        shield_hp=rb.SHIELD_MAX_HP, prone_timer=0,
         ledge_regrab_lockout_timer=0, invulnerable=False, smash_charge_timer=0,
     )
     fields.update(kw)
@@ -52,14 +52,14 @@ def _matrix():
         "shield": st(state="shield", shield_hp=25),
         "dizzy": st(stun_timer=240),
         "shield+stun": st(state="shield", shield_hp=30, stun_timer=100),
-        "hang": st(state="ledge_hang", ledge_hang_timer=80),
+        "hang": st(state="ledge_hang"),
         "prone": st(state="prone", prone_timer=40),
         "lockout": st(ledge_regrab_lockout_timer=20),
         "invuln_dodge": st(invulnerable=True, dodge_timer=15),
         "invuln_getuproll": st(invulnerable=True, getup_roll_timer=10),
         "invuln_getupatk": st(invulnerable=True, getup_attack_timer=12),
         "invuln_suppressed_hang": st(
-            state="ledge_hang", ledge_hang_timer=50, invulnerable=True, dodge_timer=15),
+            state="ledge_hang", invulnerable=True, dodge_timer=15),
         "charge": st(smash_charge_timer=30),
         "overlay_combo": st(
             ledge_regrab_lockout_timer=20, invulnerable=True, dodge_timer=15, smash_charge_timer=30),
@@ -86,13 +86,13 @@ EXPECTED_BARS = {
     "shield": [(0.5, "3s", (70, 130, 255), "SHIELD")],
     "dizzy": [(0.4897959183673469, "4s", (210, 90, 220), "DIZZY")],
     "shield+stun": [(0.6, "3s", (70, 130, 255), "SHIELD")],
-    "hang": [(0.6666666666666666, "2s", (0, 210, 200), "HANG")],
+    "hang": [],  # #475: HANG bar removed (no hang timeout); ledge-invuln bar is #531
     "prone": [(1.3333333333333333, "1s", (255, 140, 45), "DOWN")],
     "lockout": [(0.6666666666666666, "1s", (230, 70, 70), "LOCKOUT")],
     "invuln_dodge": [(1.0714285714285714, "1s", (95, 225, 120), "INVULN")],
     "invuln_getuproll": [(0.625, "1s", (95, 225, 120), "INVULN")],
     "invuln_getupatk": [(0.5714285714285714, "1s", (95, 225, 120), "INVULN")],
-    "invuln_suppressed_hang": [(0.4166666666666667, "1s", (0, 210, 200), "HANG")],
+    "invuln_suppressed_hang": [],  # #475: HANG gone; INVULN still suppressed in ledge_hang
     "charge": [(0.5, "50%·1s", (255, 205, 40), "CHARGE")],
     "overlay_combo": [
         (1.0714285714285714, "1s", (95, 225, 120), "INVULN"),

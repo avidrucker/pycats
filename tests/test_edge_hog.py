@@ -79,11 +79,10 @@ def test_grab_sets_invuln_burst_not_full_hang():
     p.fighter.percent = 0
     _grab_left(p, plats, ledges)
     assert p.fighter.invulnerable is True
-    # the intangibility burst is the short percent-scaled window, NOT the full hang
+    # the intangibility burst is the short percent-scaled window (#475: there is no
+    # full-hang timeout to compare against — the hang itself is untimed).
     assert p.fighter.ledge_invuln_timer == ledge_invuln_frames(0)
-    assert p.fighter.ledge_invuln_timer < config.LEDGE_HANG_FRAMES
-    # the hang timeout is still the full window
-    assert p.fighter.ledge_hang_timer == config.LEDGE_HANG_FRAMES
+    assert p.fighter.ledge_invuln_timer <= config.LEDGE_INVULN_MAX_FRAMES  # a bounded burst
 
 
 def test_invuln_lapses_while_still_hanging():

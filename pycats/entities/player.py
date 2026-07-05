@@ -48,7 +48,6 @@ from ..config import (
     KNOCKBACK_DECAY,
     KNOCKDOWN_PRONE_FRAMES,
     LEDGE_GETUP_FRAMES,
-    LEDGE_HANG_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
     P1_COLOR,
     P1_STRIPE_COLOR,
@@ -361,9 +360,10 @@ class Player(pygame.sprite.Sprite):
 
         # ---------- ledge-hang driving (#14 + #311 edge-hog) ----------
         # While on the edge (hang or getup climb): pin position (skip gravity).
-        #  - Hanging: tick the percent-scaled intangibility burst (#311) + the hang
-        #    auto-release timeout; intangibility is `ledge_invuln_timer > 0` (a short
-        #    burst), NOT the whole hang. Up = neutral getup, down/away/timeout = drop.
+        #  - Hanging: tick the percent-scaled intangibility burst (#311). There is
+        #    NO hang timeout (#475: PM has no hang timer) — the fighter hangs until
+        #    it acts. Intangibility is `ledge_invuln_timer > 0` (a short burst), NOT
+        #    the whole hang. Up = neutral getup, down/away = drop.
         #  - Getup climb (#311): a LEDGE_GETUP_FRAMES action-lock on the stage; the
         #    edge frees to others at the halfway frame (half-animation regrab), and
         #    the climb completes to idle when the window closes.
@@ -379,7 +379,6 @@ class Player(pygame.sprite.Sprite):
                     ledge.occupied_by = None
                     self.fighter.grabbed_ledge = None
             else:
-                self.fighter.tick_ledge_hang()  # hang auto-release timeout
                 if self.fighter.ledge_invuln_timer > 0:
                     self.fighter.ledge_invuln_timer -= 1
                 self.fighter.invulnerable = self.fighter.ledge_invuln_timer > 0
@@ -391,7 +390,7 @@ class Player(pygame.sprite.Sprite):
                     self.fighter.invulnerable = False
                     self.fighter.ledge_invuln_timer = 0
                     self.fighter.ledge_getup_timer = LEDGE_GETUP_FRAMES
-                elif down or away or self.fighter.ledge_hang_timer == 0:  # drop
+                elif down or away:  # drop (no timeout auto-release — #475)
                     self.fighter.invulnerable = False
                     self.fighter.ledge_invuln_timer = 0
                     self.fighter.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
@@ -431,7 +430,6 @@ class Player(pygame.sprite.Sprite):
                     self.rect.topleft = ledge.hang_topleft(self.rect.size)
                     self.fighter.vel.x = 0
                     self.fighter.vel.y = 0
-                    self.fighter.ledge_hang_timer = LEDGE_HANG_FRAMES
                     self.fighter.ledge_invuln_timer = ledge_invuln_frames(self.fighter.percent)
                     self.fighter.invulnerable = True
                     self.fighter.facing_right = ledge.facing_right()

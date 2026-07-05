@@ -42,7 +42,6 @@ from .config import (
     HUD_PADDING,
     HUD_SPACING,
     KNOCKDOWN_PRONE_FRAMES,
-    LEDGE_HANG_FRAMES,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
     MAX_SHIELD_RADIUS,
     MIN_SHIELD_RADIUS,
@@ -512,7 +511,7 @@ STATUS_BAR_GAP_ABOVE_STARS = 6
 # which are left untouched so only the above-head bars recolour.
 SHIELD_BAR_COLOR = (70, 130, 255)  # blue — shield resource (#364)
 DIZZY_BAR_COLOR = (210, 90, 220)  # magenta — shield-break stun (#364)
-HANG_BAR_COLOR = (0, 210, 200)  # teal — ledge-hang timeout (#348)
+# (HANG_BAR_COLOR removed with the ledge-hang timeout — #475)
 DOWN_BAR_COLOR = (255, 140, 45)  # orange — knockdown/getup window (#350)
 LOCKOUT_BAR_COLOR = (230, 70, 70)  # red — post-drop regrab lockout (#357)
 INVULN_BAR_COLOR = (95, 225, 120)  # green — intangibility window (#358)
@@ -546,9 +545,10 @@ def _invuln_remaining_max(p):
     by several actions, each with its own timer and constant max — dodge
     (DODGE_TIME), getup-roll (GETUP_ROLL_FRAMES), getup-attack (the whole swing).
     Gated on the `invulnerable` bool so the bar shows only while actually
-    intangible, and **suppressed while ledge-hanging** (the HANG bar already shows
-    that clock — no redundant duplicate). Returns None when not intangible or the
-    source has no tracked frame window (e.g. respawn grants no count-down invuln).
+    intangible, and **suppressed while ledge-hanging** — the ledge-grab burst gets
+    its own dedicated bar in #531; until then the hang shows no intangibility bar
+    (the HANG timeout bar it used to defer to is gone, #475). Returns None when not
+    intangible or the source has no tracked frame window (e.g. respawn grants none).
     """
     f = p.fighter
     if not f.invulnerable or p.state == "ledge_hang":
@@ -612,12 +612,8 @@ STATUS_SOURCES = [
                  recency=lambda f, p: SHIELD_BREAK_STUN_MAX - f.stun_timer),
     StatusSource("dodge", 3, kind="COUNTDOWN", tint=WHITE,
                  active=lambda f, p: f.dodge_timer > 0),
-    StatusSource("ledge_hang", 4, kind="COUNTDOWN",
-                 active=lambda f, p: p.state == "ledge_hang" and f.ledge_hang_timer > 0,
-                 bar_color=HANG_BAR_COLOR, bar_label="HANG", bar_class="exclusive",
-                 ratio=lambda f, p: f.ledge_hang_timer / LEDGE_HANG_FRAMES,
-                 readout=lambda f, p: _secs(f.ledge_hang_timer),
-                 recency=lambda f, p: LEDGE_HANG_FRAMES - f.ledge_hang_timer),
+    # (ledge_hang COUNTDOWN bar removed with the hang timeout — #475. The ledge
+    # intangibility burst is still suppressed here; #531 gives it its own bar.)
     StatusSource("prone", 5, kind="COUNTDOWN",
                  active=lambda f, p: p.state == "prone" and f.prone_timer > 0,
                  bar_color=DOWN_BAR_COLOR, bar_label="DOWN", bar_class="exclusive",

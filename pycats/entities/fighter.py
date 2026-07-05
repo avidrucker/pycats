@@ -53,6 +53,7 @@ from ..config import (
     INITIAL_LIVES,
     KNOCKBACK_LAUNCH_FACTOR,
     KNOCKDOWN_VY_THRESHOLD,
+    LEDGE_REGRAB_LOCKOUT_FRAMES,
     PLAYER_SIZE,
     RESPAWN_DELAY_FRAMES,
     SAKURAI_ANGLE_CODE,
@@ -149,8 +150,8 @@ class Fighter:
         self.getup_attack_timer = 0  # wake-up attack duration out of prone (#225)
         self.landing_lag_timer = 0  # post-waveland action lock (#202); locked while > 0
         self.grabbed_ledge = None  # the Ledge being held, or None (#14); its presence
-        # is the authoritative "am I hanging" signal the statechart reads.
-        self.ledge_hang_timer = 0  # hang auto-release timeout (#14)
+        # is the authoritative "am I hanging" signal the statechart reads. No hang
+        # timeout (#475: PM has no hang timer) — hang persists until the fighter acts.
         self.ledge_regrab_lockout_timer = 0  # post-release regrab suppression (#14)
         self.ledge_invuln_timer = 0  # percent-scaled ledge-grab intangibility burst (#311)
         self.ledge_getup_timer = 0  # neutral ledge-getup climb window; edge frees at half (#311)
@@ -293,12 +294,19 @@ class Fighter:
         Player.update()."""
         self.respawn_timer -= 1
 
-    def tick_ledge_hang(self) -> None:
-        """Advance the ledge-hang timeout while hanging (#264/S4b). Floored; the
-        caller only invokes it inside the `grabbed_ledge is not None` block, so the
-        drop/timeout logic stays in Player.update()."""
-        if self.ledge_hang_timer > 0:
-            self.ledge_hang_timer -= 1
+    def _dislodge_from_ledge(self) -> None:
+        """Knock a ledge-hanging fighter off the edge (#475). PM lets you hit a hanger
+        off once its grab-intangibility burst has lapsed; with no auto-drop timeout,
+        this is how a hang ends under attack. Free the edge, clear the hang + its
+        intangibility, arm the regrab lockout (so the launch can't instantly re-grab),
+        and go airborne — the caller's knockback then carries the fighter away."""
+        if self.grabbed_ledge is not None:
+            self.grabbed_ledge.occupied_by = None
+        self.grabbed_ledge = None
+        self.ledge_invuln_timer = 0
+        self.invulnerable = False
+        self.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
+        self.on_ground = False
 
     # ----------- hit processing ------------
     def receive_hit(self, atk, is_crouching=False):
@@ -309,6 +317,14 @@ class Fighter:
         False so the "no `.state` ⇒ not crouching" contract holds for minimal
         combat stand-ins and non-crouch callers."""
         self.record_hit_received()  # Track that this player was hit
+        # A connecting hit reaches receive_hit only past the ledge-grab intangibility
+        # burst (combat skips `invulnerable` defenders), so any hit that lands while
+        # hanging knocks the fighter OFF the ledge (#475). Release the hang before the
+        # knockback below so the launch actually carries — while grabbed_ledge is set,
+        # Player.update pins the body and discards velocity. This is what lets a hanger
+        # be edge-guarded / KO'd now that there's no auto-drop timeout to do it.
+        if getattr(self, "grabbed_ledge", None) is not None:
+            self._dislodge_from_ledge()
         if self.shield_attempting and self.shield_hp > 0:
             self.shield_hp = self.shield_hp - atk.damage  # setter clamps >= 0
             if self.shield_hp == 0:
@@ -493,7 +509,6 @@ class Fighter:
         if self.grabbed_ledge is not None:
             self.grabbed_ledge.occupied_by = None
         self.grabbed_ledge = None
-        self.ledge_hang_timer = 0
         self.ledge_regrab_lockout_timer = 0
         self.hitlag_timer = 0  # don't carry a freeze across a KO/respawn (#138)
         self.shieldstun_timer = 0  # nor a block-stun (#140)

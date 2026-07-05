@@ -40,13 +40,12 @@ ANTI_STALL_MOVE_PX = 8
 # mid-stage into a self-destruct. ⚠ GUESS px (~2 char-lengths, like the #251 ranges).
 EDGE_HOG_RANGE = 120
 
-# #424: while hold-to-deny hanging, climb to safety (neutral getup) once the bot's
-# own ledge_hang_timer falls to this floor — instead of holding to the auto-release
-# timeout and dropping (a self-KO when no jump is left to recover). Sits above
-# LEDGE_GETUP_FRAMES (16) so the climb completes before the drop would fire; the
-# getup freezes the hang timer, so any positive floor is drop-safe — the margin is
-# for reaction delay across levels. ⚠ tuning starting point.
-LEDGE_HOG_SAFETY_FLOOR = 20
+# #424/#475: bounded hold-to-deny. The engine no longer imposes a ledge-hang timeout
+# (#475), so the bot would hog forever if unbounded. Instead the controller counts its
+# OWN consecutive hang frames and, after this many, stops denying and climbs to safety
+# (neutral getup). Matches the old effective hog window (120f hang − 20f safety floor =
+# 100f of denying before the pre-#475 timeout would have dropped it). ⚠ tuning start.
+LEDGE_HOG_MAX_FRAMES = 100
 
 # #413 (edge-guard): vertical reach of the edge-guard MELEE poke — the recovering foe
 # must be near the lip (below the on-stage poke's dy<60 band, but not far below). ⚠
@@ -360,6 +359,7 @@ class AttackerController(BaseController):
         # #277 (model A): suppress the standoff back-off when the opponent is vulnerable.
         self.reactive_spacing = reactive_spacing
         self.edge_hog = edge_hog  # #404: contest the ledge vs a recovering opponent
+        self._hog_frames = 0  # #424/#475: consecutive frames spent hold-to-deny hogging
         self.recover = recover  # #409: aim for the ledge when the bot is off-stage
         self.edge_guard = edge_guard  # #413: poke/projectile a recovering foe from on-stage
         # #338: seeded reactive roll-away (evade). Default 0.0 → never rolls (golden-safe).
@@ -501,24 +501,25 @@ class AttackerController(BaseController):
         held = set()
 
         # Ledge recovery (#291): a hanging fighter only escapes by pressing up (the
-        # neutral getup, #14) — otherwise it hangs to a timeout/drop KO. Skilled bots
-        # (level >= 5) recover; low levels and the default (level=None) fall through
-        # unchanged, so the baseline / golden-safe controller is untouched.
+        # neutral getup, #14) — otherwise it hangs indefinitely (#475: no timeout).
+        # Skilled bots (level >= 5) recover; low levels and the default (level=None)
+        # fall through unchanged, so the baseline / golden-safe controller is untouched.
         grabbed = getattr(a.fighter, "grabbed_ledge", None)
         if grabbed is not None and self.level is not None and self.level >= 5:
             # #404 edge-hog: while the opponent is still recovering off-stage on THIS
             # ledge's side, HOLD the hang (deny the regrab via the one-occupant
             # lockout, #14/#311) instead of getting up. Off by default → golden-safe.
-            # #424: but never hold past our OWN hang timeout — tick_ledge_hang counts
-            # the bot's ledge_hang_timer down every hang frame, and at 0 the hang
-            # auto-releases and drops (a self-KO if no jump is left). Once the timer
-            # falls to LEDGE_HOG_SAFETY_FLOOR, stop denying and climb to the stage
-            # (fall through to the neutral getup) so the deny never costs the denier.
+            # #424/#475: the engine no longer auto-releases the hang (#475), so bound
+            # the deny in the CONTROLLER — hold for at most LEDGE_HOG_MAX_FRAMES of our
+            # own hang frames, then stop denying and climb to the stage (fall through to
+            # the neutral getup) so the bot never hogs forever and always reaches safety.
             if self.edge_hog and self._off_stage_side(t, grabbed):
-                hang_timer = getattr(a.fighter, "ledge_hang_timer", 0)
-                if hang_timer > LEDGE_HOG_SAFETY_FLOOR:
+                if self._hog_frames < LEDGE_HOG_MAX_FRAMES:
+                    self._hog_frames += 1
                     return set()
             return {keys["up"]}
+        # not hanging (or a non-hogging bot): reset the deny budget for the next grab.
+        self._hog_frames = 0
 
         # #409 deliberate recovery: when the bot ITSELF is airborne off-stage, aim for
         # the near ledge — move inward toward the corner + jump for height — instead of

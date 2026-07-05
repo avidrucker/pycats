@@ -149,11 +149,13 @@ PM deliberately **reworked Brawl's ledge mechanics** — this is a defining chan
 
 **v1 implemented** ([#14](https://github.com/avidrucker/pycats/issues/14)): automatic
 grab at a **solid** stage edge (thin platforms are NOT grabbable — owner ruling),
-**ledge-hang** with full-window intangibility (reusing the `invulnerable` flag), and
-three exits — **neutral getup** (up, climb on), **drop** (down or away → fall with a
-regrab lockout), and a **timeout** (120f auto-release → off-stage drop; unfaithful,
-**slated for removal in [#475](https://github.com/avidrucker/pycats/issues/475)** per #458).
-Occupancy is a **one-occupant lockout**
+**ledge-hang** with a short percent-scaled intangibility **burst** (`ledge_invuln_frames`,
+#311), and exits — **neutral getup** (up, climb on) and **drop** (down or away → fall
+with a regrab lockout). There is **no hang timeout** (removed in
+[#475](https://github.com/avidrucker/pycats/issues/475) per #458 — no lineage game
+force-drops a hanger); a fighter hangs until it acts. A **connecting hit past the
+intangibility burst knocks a hanger off the ledge** (#475), so a hang is ended under
+attack (edge-guard) rather than by a timer. Occupancy is a **one-occupant lockout**
 per edge (no trump yet). The state lives in the fighter chart
 ([fighter-states](./fighter-states.md)) as `ledge_hang`; design +
 plan in `docs/superpowers/specs/2026-06-30-ledge-hang-design.md` /
@@ -162,17 +164,19 @@ plan in `docs/superpowers/specs/2026-06-30-ledge-hang-design.md` /
 **Deferred** (epic [#267](https://github.com/avidrucker/pycats/issues/267)): the other
 getup options (**ledge roll / attack / jump**), **intangibility decay** on repeated
 grabs, the **"2-frame"**, **teching**, **up-B sweetspot** recovery, and
-hold-away-to-decline + a frame-accurate getup window. Per-character/longer hang tuning
-is ⚠ playtest (`LEDGE_HANG_FRAMES` et al.).
+hold-away-to-decline + a frame-accurate getup window. (Per-character/longer *hang*
+tuning is moot — #475 removed the hang timer entirely.)
 
 **Researched values to apply** (#297, [findings](../research/2026-06-30-ledge-recovery-mechanics.md)):
 - Grab **intangibility** should be a **short burst (~23f, Brawl)** — pycats currently
   grants the *whole* `LEDGE_HANG_FRAMES` (120f), which is over-generous.
-- **Hang auto-release:** ⚠ **contested** (#458). The ≈360/300f Brawl figure is
-  unsourced, and #458 found **no documented** hard single-hang timer for Melee/PM.
-  pycats' 120f timeout that **drops you off-stage** is an invention (no lineage game
-  force-KOs a hanger) — **slated for removal in [#475](https://github.com/avidrucker/pycats/issues/475)**;
-  do not "tune" it toward a PM value until one is actually sourced.
+- **Hang auto-release:** ⚠ **contested** (#458), and now **removed** (#475). The
+  ≈360/300f Brawl figure is unsourced, and #458 found **no documented** hard single-hang
+  timer for Melee/PM. pycats' 120f timeout that **dropped you off-stage** was an invention
+  (no lineage game force-KOs a hanger); [#475](https://github.com/avidrucker/pycats/issues/475)
+  deleted it (`LEDGE_HANG_FRAMES` gone). The faithful anti-stall answer is
+  intangibility-decay-on-regrab (#267), not a timer — do not reintroduce a hang timeout
+  unless one is actually sourced.
 - Neutral getup is currently **instant**; needs a real frame window + the fast/slow
   (<100% / ≥100%) variant. Ledge attack ≈ 55f/69f (Mario ref).
 - **Occupied-edge: pycats' one-occupant lockout already models PM edge-hogging

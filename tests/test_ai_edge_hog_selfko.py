@@ -1,12 +1,13 @@
-"""AI edge-hog must never KO its OWN bot (#424).
+"""AI edge-hog must reach safety, never hog forever (#424, updated for #475).
 
 Two facets of the #404 edge-hog were flagged by the #417 persona review:
 
-1. **Hold-to-deny past its own hang timeout.** The deny branch returned `set()`
-   (hold, suppress getup) with no regard for the bot's own `ledge_hang_timer`;
-   at timeout the hang auto-releases and — if the bot has no jump left to recover —
-   it drops off-stage and self-KOs. Fix: climb (neutral getup) once the hang timer
-   falls to `LEDGE_HOG_SAFETY_FLOOR`, reaching the stage instead of dropping.
+1. **Hold-to-deny forever.** The deny branch returned `set()` (hold, suppress getup)
+   unconditionally. Pre-#475 the engine's 120f hang timeout eventually force-dropped
+   the bot (a self-KO with no jump). #475 removed that timeout — so the bot would now
+   hang *forever*. Fix: the controller counts its OWN hang frames and, after
+   `LEDGE_HOG_MAX_FRAMES`, stops denying and climbs (neutral getup) to the stage.
+   The bot always reaches safety; it never self-KOs and never hogs indefinitely.
 
 2. **Go-to-ledge walk-off miss.** Investigated and found already safe: the
    `{left/right}` walk toward the ledge is arrested at the platform edge (plus the
@@ -19,9 +20,9 @@ import types
 
 import pygame as pg
 
-from pycats.config import LEDGE_HANG_FRAMES
+from pycats import config
 from pycats.entities.ledge import Ledge, ledges_from_platforms
-from pycats.sim.controllers import EDGE_HOG_RANGE, LEDGE_HOG_SAFETY_FLOOR, AttackerController
+from pycats.sim.controllers import EDGE_HOG_RANGE, LEDGE_HOG_MAX_FRAMES, AttackerController
 
 pg.init()
 
@@ -29,13 +30,12 @@ _CTRL = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6, "
 _LEFT = Ledge("left", ax=60, ay=300)   # off-stage is x < 60
 
 
-def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None, hang_timer=LEDGE_HANG_FRAMES):
+def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None):
     s = types.SimpleNamespace()
     s.rect = pg.Rect(0, 0, 40, 60)
     s.rect.center = (cx, cy)
     s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground, hurt_timer=0,
-                                      stun_timer=0, grabbed_ledge=grabbed_ledge,
-                                      ledge_hang_timer=hang_timer)
+                                      stun_timer=0, grabbed_ledge=grabbed_ledge)
     s.controls = _CTRL
     s.current_move = None
     s.move_frame = 0
@@ -48,29 +48,30 @@ def _hogger():
 
 
 # ---- facet 1: decide-level contract ----------------------------------------
-def test_holds_the_deny_while_the_hang_is_healthy():
-    # A healthy hang timer -> still HOLD to deny (the #404 behaviour is preserved).
+def test_holds_the_deny_while_within_the_hog_budget():
+    # A fresh hogger (0 hog frames spent) HOLDS to deny — the #404 behaviour, bounded.
     c = _hogger()
-    a = _stub(48, 300, grabbed_ledge=_LEFT, hang_timer=LEDGE_HANG_FRAMES)
+    a = _stub(48, 300, grabbed_ledge=_LEFT)
     off = _stub(30, 320, on_ground=False)
     assert c.decide(a, off, 0, None, [_LEFT]) == set()
 
 
-def test_climbs_instead_of_holding_when_the_hang_nears_timeout():
-    # #424: at/below the safety floor the bot must GET UP (climb to safety) rather
-    # than hold to a self-KO drop — even though the opponent is still off-stage.
+def test_climbs_instead_of_holding_once_the_hog_budget_is_spent():
+    # #424/#475: after LEDGE_HOG_MAX_FRAMES of denying, the bot must GET UP (climb to
+    # safety) rather than hog forever — even though the opponent is still off-stage.
     c = _hogger()
-    a = _stub(48, 300, grabbed_ledge=_LEFT, hang_timer=LEDGE_HOG_SAFETY_FLOOR)
+    c._hog_frames = LEDGE_HOG_MAX_FRAMES          # budget already spent
+    a = _stub(48, 300, grabbed_ledge=_LEFT)
     off = _stub(30, 320, on_ground=False)
     assert c.decide(a, off, 0, None, [_LEFT]) == {_CTRL["up"]}
 
 
 # ---- facet 1: real loop (the #248 gotcha — must survive, not just decide) ----
-def _survives_a_full_hold_to_deny(*, apply_fix_bot, jumps):
+def _run_a_full_hold_to_deny(*, jumps):
     """Seed a level-9 edge-hog bot HANGING on the left ledge (as player.update does
-    on grab) with `jumps` air-jumps left, pin the opponent off-stage to keep the
-    deny live, and run past the hang timeout. Return (is_alive, lives) at the end.
-    With jumps=0 the pre-fix hold-to-timeout drop is unrecoverable -> self-KO."""
+    on grab) with `jumps` air-jumps left, pin the opponent off-stage to keep the deny
+    live, and run well past the hog budget. Return (is_alive, lives, climbed) — the bot
+    must climb to the stage (grabbed_ledge cleared) rather than hog forever."""
     from pycats.sim import runner
     plats = runner.build_stage()
     p1, p2, _ = runner.build_players(p1_char="nalio", p2_char="nalio")
@@ -82,27 +83,27 @@ def _survives_a_full_hold_to_deny(*, apply_fix_bot, jumps):
     p1.fighter.on_ground = False
     p1.fighter.vel.x = 0
     p1.fighter.vel.y = 0
-    p1.fighter.ledge_hang_timer = LEDGE_HANG_FRAMES
     p1.fighter.ledge_invuln_timer = 0
     p1.fighter.jumps_remaining = jumps
-    c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
-    if not apply_fix_bot:
-        c1.edge_hog = True  # (default at lv9) — the buggy hold path
+    c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))  # edge_hog on @ lv9
     attacks = pg.sprite.Group()
-    for f in range(LEDGE_HANG_FRAMES + 90):
+    for f in range(LEDGE_HOG_MAX_FRAMES + config.LEDGE_GETUP_FRAMES + 90):
         p2.rect.center = (left.ax - 60, left.ay + 40)   # keep the opponent off-stage left
         p2.fighter.on_ground = False
         p1.update(c1(p1, p2, f, attacks, ledges), plats, attacks)
         if not p1.fighter.is_alive:
             break
-    return p1.fighter.is_alive, p1.fighter.lives
+    climbed = p1.fighter.grabbed_ledge is None and p1.fighter.on_ground
+    return p1.fighter.is_alive, p1.fighter.lives, climbed
 
 
-def test_edge_hog_survives_the_deny_even_with_no_jump_to_recover():
-    # RED before the fix: the bot holds to timeout, drops with no jump, self-KOs.
-    # GREEN after: it climbs before the floor and stays on the stage.
-    alive, lives = _survives_a_full_hold_to_deny(apply_fix_bot=True, jumps=0)
-    assert alive, "edge-hog bot self-KO'd holding the deny past its own hang timeout"
+def test_edge_hog_climbs_to_safety_instead_of_hogging_forever():
+    # Able-to-fail: an UNBOUNDED deny (return set() every frame) would leave the bot
+    # hanging forever — grabbed_ledge never clears, `climbed` is False. The bounded
+    # counter climbs it onto the stage after the budget, with no jump needed and no KO.
+    alive, lives, climbed = _run_a_full_hold_to_deny(jumps=0)
+    assert climbed, "edge-hog bot never climbed to safety — it hogged the ledge forever"
+    assert alive, "edge-hog bot self-KO'd off the ledge"
     assert lives == 3, f"edge-hog bot lost a life to a self-destruct (lives={lives})"
 
 

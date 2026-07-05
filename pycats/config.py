@@ -126,7 +126,9 @@ WAVEDASH_LANDING_LAG = 10
 # scale). The catch region is a box hanging off a solid-stage corner.
 LEDGE_CATCH_W = 24  # px outward from the edge corner the catch box spans
 LEDGE_CATCH_H = 64  # px downward from the lip the catch box spans
-LEDGE_HANG_FRAMES = 120  # ~2s @60fps before auto-release (timeout)
+# No ledge-hang timeout (#475): PM/Melee impose none — you hang until you act, only
+# the intangibility burst (ledge_invuln_frames) expires over time. The old 120f
+# auto-release was an unfaithful pycats invention that dropped a hanger off-stage.
 LEDGE_REGRAB_LOCKOUT_FRAMES = 30  # post-release frames grab is suppressed
 # True PM edge-hog (#311, grounded by #297): the ledge-grab intangibility is a
 # short percent-scaled burst (Brawl ~23f baseline, scaling up with the occupant's

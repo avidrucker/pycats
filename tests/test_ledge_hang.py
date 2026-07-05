@@ -1,8 +1,9 @@
 """Ledge-hang state (#14, v1 slice).
 
-Automatic grab at a solid stage edge -> ledge_hang (timed intangible hang) ->
-neutral getup (up) / drop (down or away) / timeout. One-occupant lockout per edge
-(no trump). Spec: docs/superpowers/specs/2026-06-30-ledge-hang-design.md.
+Automatic grab at a solid stage edge -> ledge_hang (intangible-burst hang) ->
+neutral getup (up) / drop (down or away). No auto-release timeout (#475: PM has no
+hang timer). One-occupant lockout per edge (no trump).
+Spec: docs/superpowers/specs/2026-06-30-ledge-hang-design.md.
 """
 import pygame
 
@@ -124,7 +125,6 @@ def test_ledge_hang_release_on_ground_goes_idle():
 def test_fighter_ledge_fields_default():
     p = _player()
     assert p.fighter.grabbed_ledge is None
-    assert p.fighter.ledge_hang_timer == 0
     assert p.fighter.ledge_regrab_lockout_timer == 0
 
 
@@ -140,7 +140,6 @@ def test_descending_into_left_catch_region_grabs():
     p.update(_empty_frame(), plats, p_attack_group(), ledges)
     assert p.state == "ledge_hang"
     assert p.fighter.invulnerable is True
-    assert p.fighter.ledge_hang_timer == config.LEDGE_HANG_FRAMES
     assert (p.rect.left, p.rect.top) == (40, 410)     # snapped to hang_topleft
     assert any(l.occupied_by is p for l in ledges)
 
@@ -213,15 +212,48 @@ def test_away_also_drops():
     assert p.state == "fall"
 
 
-def test_timeout_auto_releases():
+def test_hang_persists_past_the_old_timeout_frame():
+    # #475: PM imposes no ledge-hang timeout — a hanging fighter holding no drop
+    # input hangs indefinitely (only the intangibility burst expires over time).
+    # Able-to-fail: the removed 120f auto-release dropped the fighter off-stage at
+    # frame 120 (a self-KO with no jumps); with the timeout gone the hang holds.
     plats = _stage()
     ledges = ledges_from_platforms(plats)
     p = _player()
     _grab_left(p, plats, ledges)
-    p.fighter.ledge_hang_timer = 1                              # imminent timeout
-    p.update(_empty_frame(), plats, p_attack_group(), ledges)  # tick to 0 -> release
-    assert p.fighter.grabbed_ledge is None
-    assert p.state == "fall"
+    for _ in range(config.LEDGE_GETUP_FRAMES + 200):           # well past old 120f
+        p.update(_empty_frame(), plats, p_attack_group(), ledges)
+    assert p.fighter.grabbed_ledge is not None                 # still hanging
+    assert p.state == "ledge_hang"                             # never auto-dropped
+
+
+def test_a_connecting_hit_knocks_a_hanger_off_the_ledge():
+    # #475: with no auto-drop timeout, a hanger is ended under attack — a hit that
+    # lands past the grab-intangibility burst knocks it OFF the ledge so knockback
+    # carries (edge-guard / KO). Able-to-fail: without the dislodge the fighter stays
+    # pinned (grabbed_ledge set) and absorbs hits forever -> the chase-bot stall.
+    from pycats.combat.data import Circle, Hitbox
+    from pycats.entities.attack import Attack
+
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
+    p = _player()
+    _grab_left(p, plats, ledges)
+    for _ in range(config.LEDGE_INVULN_MAX_FRAMES + 1):        # let the intangibility burst lapse
+        p.update(_empty_frame(), plats, p_attack_group(), ledges)
+    assert p.fighter.invulnerable is False                     # vulnerable now (burst gone)
+    assert p.fighter.grabbed_ledge is not None                 # still hanging (no timeout)
+
+    attacker = _player()
+    hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=10,
+                angle=0, base_knockback=30.0, knockback_growth=100.0)
+    p.fighter.receive_hit(Attack(owner=attacker, hitbox=hb, lifetime=1))
+
+    assert p.fighter.grabbed_ledge is None                     # knocked off the ledge
+    assert p.fighter.on_ground is False                        # airborne
+    assert p.fighter.ledge_regrab_lockout_timer > 0            # can't instantly re-grab
+    assert all(l.occupied_by is None for l in ledges)          # the edge is freed
+    assert p.fighter.percent == 10                             # the hit landed (knockback applies)
 
 
 def test_regrab_lockout_blocks_immediate_regrab():
