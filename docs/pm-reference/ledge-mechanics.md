@@ -207,10 +207,11 @@ Spike #538 validated the "ledge invincibility scales with the occupant's percent
   `ratio = ledge_invuln_timer / ledge_invuln_granted` (a truthful 100%→0 drain). Robust whether
   pycats keeps its divergent scaling *or* later aligns to a fixed burst; a cap-denominator would
   misrender a short low-% burst.
-- **Decision needed (separate ticket, per RULES "Changing values"):** keep the percent-scaled
-  invincibility as an intentional pycats edge-hog game-feel divergence, or align to PM's fixed
-  burst? Changing `23 / 0.3 / 60` needs that ruling. A rukaidata PM 3.6 dump or playtest would
-  lift the "fixed" finding from inferred-strong to explicit.
+- **Decision — RATIFIED (#543, 2026-07-05): align to PM's fixed burst.** Drop the continuous
+  percent-scaling (`+0.3/%` + cap 60); the grab intangibility becomes a fixed per-grab window.
+  #543 is the game-designer basis (RULES "Changing values") the implementing DEV cites to change
+  `23 / 0.3 / 60`. Scoping of the code change + the exact PM 3.6 value is a follow-up ARCH spike →
+  DEV (see #543). A rukaidata PM 3.6 dump would lift the "fixed" finding from inferred-strong to explicit.
 
 Sources: [SmashWiki — Edge recovery](https://www.ssbwiki.com/Edge_recovery),
 [SmashWiki — Ledgestall](https://www.ssbwiki.com/Ledgestall) (CliffCatch 7 f + ~30 f intangibility,
