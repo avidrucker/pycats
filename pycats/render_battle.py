@@ -32,6 +32,8 @@ from .config import (
     EYE_OFFSET_X,
     EYE_OFFSET_Y,
     EYE_RADIUS,
+    FIGHTER_OUTLINE_COLOR,
+    FIGHTER_OUTLINE_WIDTH,
     FPS,
     GETUP_ROLL_FRAMES,
     GLINT_OFFSET_X,
@@ -398,6 +400,13 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
             draw_eye(surf, shim, eye=False)
             draw_cat_features(surf, shim)
         draw_player_name(surf, shim)
+        # Body outline (#546): a thin light ring on the body rect keeps a
+        # low-luminance skin separable from the dark stage bg (tabby/void/legacy-P2
+        # bodies sit below WCAG 3:1 vs BG_COLOR; the outline measures 8.7:1). Drawn
+        # last so stripes/face/name never overpaint the ring. Skin-independent, so
+        # every fighter gains it — light skins are already visible, so it's a
+        # harmless no-op there.
+        pygame.draw.rect(surf, FIGHTER_OUTLINE_COLOR, vrect, FIGHTER_OUTLINE_WIDTH)
         _body_cache[key] = surf
     return surf
 

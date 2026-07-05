@@ -4,7 +4,14 @@ import pygame
 import pytest
 
 from pycats import render_battle as rb
-from pycats.config import BG_COLOR, RED, SCREEN_HEIGHT, SCREEN_WIDTH
+from pycats.config import (
+    BG_COLOR,
+    FIGHTER_OUTLINE_COLOR,
+    FIGHTER_OUTLINE_WIDTH,
+    RED,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+)
 from pycats.core.input import InputFrame
 from pycats.sim.runner import build_players, build_stage
 
@@ -26,6 +33,8 @@ def _direct(surface, p):
     rb.draw_eye(surface, shim, eye=False)
     rb.draw_cat_features(surface, shim)
     rb.draw_player_name(surface, shim)
+    # Body outline drawn last, mirroring _cat_body_surface (#546).
+    pygame.draw.rect(surface, FIGHTER_OUTLINE_COLOR, p.rect, FIGHTER_OUTLINE_WIDTH)
 
 
 def _cached(surface, p):

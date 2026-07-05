@@ -288,6 +288,16 @@ HUD_SPACING = 22
 BG_COLOR = (60, 60, 70)
 P1_COLOR = (255, 160, 64)  # orange — P1's body
 P2_COLOR = (90, 90, 90)  # gray — P2's body
+# Fighter body outline (#546): a thin light border ringing each fighter's body
+# rect so a low-luminance skin stays separable from the dark stage bg. The gray
+# tabby (2.76:1), black void (1.69:1), and legacy P2 gray (1.58:1) bodies all sit
+# below WCAG's 3:1 large-object target vs BG_COLOR; the outline is the separator
+# and measures 8.7:1 vs BG_COLOR. Light-on-dark by design: it rescues dark bodies
+# and is harmlessly redundant on already-visible light skins (ghost/bengal). This
+# is a functional accessibility separator validated by the #346 audit's contrast
+# measurement — not a P2 identity recolor (which would need a design decision).
+FIGHTER_OUTLINE_COLOR = (230, 230, 230)
+FIGHTER_OUTLINE_WIDTH = 2
 P1_STRIPE_COLOR = (204, 102, 0)  # dark orange — P1's secondary fur (P2's is BLACK)
 # Player identity ACCENT colours (#450): the red/blue used for name labels
 # (render_battle), cursors/confirmations (char_select), and confirmation borders
