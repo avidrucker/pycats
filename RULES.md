@@ -288,6 +288,13 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    Because your shell stayed in the main checkout the whole time, it is never
    stranded in a deleted directory. (Running from *inside* the worktree still works
    but strands your shell — prefer from-main.)
+4. **Run the pre-close error self-audit.** Before posting the closing comment,
+   re-read the session from claim → now, enumerate every log-error trigger event
+   (including resolved ones), log any missing rows (`pmtools error log`), and include
+   one of `error self-audit: N row(s) logged (#…)` or `error self-audit: no loggable
+   errors this session` in the closing comment. See the **log-error** skill for the
+   trigger list + fields. This turns silence into a checkable acknowledgement — a
+   clean session and a forgotten log stop looking identical.
 
 **Never `git push` to `main` directly, and never manually `git merge` your feature
 branch into `main`.** `pmtools close` exists to make the close atomic and
@@ -302,6 +309,9 @@ incident"). Hand-closing also leaves a dangling `refs/claims/issue-N` that
   rides in the close commit.
 - **No code markers** — pycats does not use `@todo`/`@inprogress #N` markers, so
   there is nothing to delete in the close commit; just include `Closes #N`.
+- **The errors store is live** (`storage.errors.enabled = true`) — `pmtools error
+  log '<json>'` records to `~/.pmtools/pycats/pmtools.db`. The step-4 self-audit
+  logs to it, so the `error self-audit: …` line is always available to state.
 - **Fallback only if `pmtools` is unavailable:** `gh issue close <N>` plus a
   closing comment. Prefer the tool whenever it is installed.
 
@@ -319,9 +329,11 @@ incident"). Hand-closing also leaves a dangling `refs/claims/issue-N` that
   directory (`getcwd: cannot access parent directories`, with a stale `wt-…-issue-N`
   in your prompt) until you `cd /abs/path/to/pycats`. From-main (pmtools#104) avoids
   all of this — which is why it is the default in step 3.
-- **Post the closing comment from `<main>` (where you already are):**
+- **Post the closing comment from `<main>` (where you already are)**, and include the
+  step-4 `error self-audit: …` line:
 
-      gh issue comment <N> --body "Closed in <sha>. <summary>"
+      gh issue comment <N> --body "Closed in <sha>. <summary>
+      error self-audit: no loggable errors this session"
 - **No-code tickets close differently.** `pmtools close` needs a `Closes #N`
   *commit* to land and verify; a **decision / research / comment-only** ticket has
   none. Close those with `gh issue close <N>` (after posting the ruling/finding as

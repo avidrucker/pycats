@@ -38,9 +38,12 @@ Critical rules:
   hand — the tool owns the race-safe push + teardown. From main, `close` exits **0**
   and you comment in place; running it from *inside* the worktree still works but
   exits 1 (deleted cwd) and strands your shell. No-code (decision/research) tickets
-  close via `gh issue close` + **`pmtools release`**. See [RULES.md](./RULES.md) →
-  "Closing work". And **run the suite right after claiming** (fleet merge race) —
-  see "Claiming work".
+  close via `gh issue close` + **`pmtools release`**. Before posting the closing
+  comment, **run the pre-close error self-audit** (re-read the session, log any
+  missed rows via `pmtools error log`) and state `error self-audit: N row(s) logged
+  (#…)` or `error self-audit: no loggable errors this session` in the comment — see
+  the **log-error** skill. See [RULES.md](./RULES.md) → "Closing work". And **run the
+  suite right after claiming** (fleet merge race) — see "Claiming work".
 - **Surface the run/sim command for runnable changes.** Any change to the live
   game / render / input / screens / sim must end the final response with the exact
   full-path run command — a `REPO=`/`PY=` block pointing at the main repo's venv,
