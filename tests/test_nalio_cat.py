@@ -32,6 +32,26 @@ def test_nalio_weight_is_pm_mario_100():
     assert load_fighter_data("nalio").weight == 100
 
 
+def test_nalio_falls_on_pm_mario_baseline():
+    """Nalio (Mario) is pinned to the PM-Mario-calibrated fall baseline (#557).
+
+    #528 established that Nalio's `gravity`/`max_fall_speed` were the *generic
+    engine defaults*, uncited as Mario's — yet they serve as the anchor every
+    other cat's fall is scaled against (Birky's #229 ratios were derived from
+    them). The pin (#530 routing: already-sourced → DEV) binds Nalio explicitly
+    to `config.GRAVITY` / `config.MAX_FALL_SPEED`, which already carry provenance
+    to PM Mario: GRAVITY is FOUND (PM Mario 0.095 u/f^2 -> PX_PER_UNIT, #384);
+    MAX_FALL_SPEED is the documented single-cap DIVERGENCE (~ Mario fast-fall).
+    No runtime value change — the guard locks the *relationship* so Nalio can't
+    silently drift off the Mario baseline with a divergent literal.
+    """
+    from pycats import config
+
+    fd = load_fighter_data("nalio")
+    assert fd.gravity == config.GRAVITY
+    assert fd.max_fall_speed == config.MAX_FALL_SPEED
+
+
 def test_fighter_data_weight_defaults_to_100():
     """The default cat keeps the Smash baseline weight without specifying it."""
     assert DEFAULT_FIGHTER_DATA.weight == 100

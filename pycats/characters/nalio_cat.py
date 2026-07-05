@@ -68,6 +68,7 @@ Down-tilt ("attack") — PM3.6 Mario `AttackLw3` (rukaidata), real 3-hitbox form
 
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 from pycats.combat.units import u  # units->px authoring scale (#195)
+from pycats.config import GRAVITY, MAX_FALL_SPEED  # PM-Mario-calibrated fall baseline (#557)
 
 # --- Hurtbox: reuse the 2-circle stack (40×60 body) as a medium-build ---------
 # approximation (spec §3: Mario's datamined capsules are a later refinement).
@@ -588,6 +589,14 @@ _PRONE_HURTBOX = Hurtbox(
 # --- Assembled FighterData ----------------------------------------------------
 NALIO_FIGHTER_DATA = FighterData(
     weight=100,  # PM3.6 Mario (== pycats default → no KB change)
+    # Fall physics (#557, from #528): Nalio (Mario) IS the PM-Mario-calibrated
+    # engine baseline, so bind explicitly to the sourced config constants rather
+    # than silently inheriting them. GRAVITY = FOUND PM Mario 0.095 u/f^2 → PX
+    # (combat/provenance.py, #384); MAX_FALL_SPEED = the documented single-cap
+    # DIVERGENCE (~ Mario fast-fall). Same runtime value (0.5 / 13) — now cited.
+    # Every other cat's fall is scaled against this anchor (e.g. Birky #229).
+    gravity=GRAVITY,
+    max_fall_speed=MAX_FALL_SPEED,
     hurtbox=_HURTBOX,
     moves={
         "attack": _DOWN_TILT,
