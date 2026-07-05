@@ -921,19 +921,28 @@ def draw_controls(surface, p: Player, label, topright=False):
         pygame.K_SLASH: "/",
         pygame.K_PERIOD: ".",
         pygame.K_COMMA: ",",
-        pygame.K_b: "B",  # P1 default smash (#462)
-        pygame.K_QUOTE: "'",  # P2 default smash — apostrophe glyph, not a typo (#462)
+        pygame.K_b: "B",  # #462 P1 default smash (now just a prettifier — pygame names it 'b' too)
+        pygame.K_QUOTE: "'",  # #462 P2 default smash — pygame names K_QUOTE 'quote', so the glyph still helps
     }
+
+    def keyname(code):
+        # #469: render ANY bound key by name so a rebind (#439) to a key outside the
+        # glyph dict shows its actual name instead of '?'. The dict above is now an
+        # optional prettifier (arrows/punctuation), not a correctness requirement.
+        # None (an unbound action, e.g. missing 'smash') has no name -> stays '?'.
+        if code is None:
+            return "?"
+        return key_names.get(code) or pygame.key.name(code).upper() or "?"
 
     controls = [
         f"{label} Controls:",
-        f"Move: {key_names.get(p.controls['left'], '?')}/{key_names.get(p.controls['right'], '?')}",
-        f"Jump: {key_names.get(p.controls['up'], '?')}",
-        f"Down: {key_names.get(p.controls['down'], '?')}",
-        f"Attack: {key_names.get(p.controls['attack'], '?')}",
-        f"Shield: {key_names.get(p.controls['shield'], '?')}",
-        f"Special: {key_names.get(p.controls['special'], '?')}",
-        f"Smash: {key_names.get(p.controls.get('smash'), '?')}",  # #462
+        f"Move: {keyname(p.controls['left'])}/{keyname(p.controls['right'])}",
+        f"Jump: {keyname(p.controls['up'])}",
+        f"Down: {keyname(p.controls['down'])}",
+        f"Attack: {keyname(p.controls['attack'])}",
+        f"Shield: {keyname(p.controls['shield'])}",
+        f"Special: {keyname(p.controls['special'])}",
+        f"Smash: {keyname(p.controls.get('smash'))}",  # #462
     ]
 
     # Start drawing below the HUD (its live row count + some spacing) — the count
