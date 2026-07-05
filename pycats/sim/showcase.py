@@ -1,7 +1,7 @@
 # pycats/sim/showcase.py
 """The curated Nalio-vs-Birky feature-showcase demo (#325, epic #308; re-choreographed #398).
 
-A deterministic scripted battle whose eight captioned `DemoSegment`s each demonstrate an
+A deterministic scripted battle whose nine captioned `DemoSegment`s each demonstrate an
 implemented feature **within that caption's own frame window** — so every beat a viewer
 reads is actually happening on screen. `tests/test_showcase_demo.py` binds each feature to
 its window and fails if a beat drifts out (the #395 audit found the earlier cut narrated
@@ -22,6 +22,8 @@ The beats, and what each depends on (the #398 re-choreography):
      through the body when it has room; the light combo above preserves that room).
   8. Ledge grab — P1 walks to the right ledge and presses BACK as it slips off, so it
      catches and HANGS (no walk-off).
+  9. Ledge recovery — from the hang, P1 presses UP for a neutral getup (#311), climbing
+     onto the lip, then walks in off the edge to finish grounded on the stage.
 
 **Shield-break stun and KO are intentionally NOT staged.** A fixed script can't reliably
 break a held shield (the jab whiffs on the shield bubble, draining it only passively), and
@@ -135,6 +137,21 @@ _SEGMENTS = (
         end=600,
         dwell_at=542,
         spans=(InputSpan(485, 500, 1, "right"), InputSpan(502, 585, 1, "left")),
+    ),
+    DemoSegment(
+        # From the hang (still holding at ~f585, auto-release not until ~f621), P1 presses
+        # UP for a neutral getup (#311): it repositions onto the lip and opens the
+        # LEDGE_GETUP_FRAMES climb window (ledge_hang -> ledge_getup -> idle on the stage).
+        # Then a short LEFT walk steps P1 in off the edge, so it ends grounded on the
+        # platform (not hanging, not KO'd). dwell_at (#412): freeze at f612 mid-climb,
+        # while P1 is in `ledge_getup` on the stage lip. New beat 9 — beats 1-8 keep their
+        # indices, so the #397/#412/#419 index-keyed tests are unaffected.
+        "Ledge recovery — climb back up",
+        anchor=BOTTOM_CENTER,
+        start=601,
+        end=660,
+        dwell_at=612,
+        spans=(InputSpan(603, 608, 1, "up"), InputSpan(610, 655, 1, "left")),
     ),
 )
 

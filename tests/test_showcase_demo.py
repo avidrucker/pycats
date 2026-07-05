@@ -29,7 +29,7 @@ from pycats.config import SHIELD_DRAIN_PER_FRAME
 from pycats.sim.battle_log import events_from_snaps
 from pycats.sim.captions import is_active
 from pycats.sim.demo import DEMOS, demo_captions, demo_frames, demo_timeline
-from pycats.sim.runner import KEYMAPS, run_battle
+from pycats.sim.runner import KEYMAPS, build_stage, run_battle
 
 
 def _run_showcase():
@@ -80,7 +80,7 @@ def test_showcase_exercises_each_feature():
 # fix is tracked separately.
 #
 # PlayerSnap field indices (mirror `runner.PlayerSnap` field order).
-_STATE, _RECT_X, _ON_GROUND, _PERCENT, _SHIELD_HP, _JUMPS = 1, 2, 6, 7, 8, 11
+_STATE, _RECT_X, _ON_GROUND, _PERCENT, _SHIELD_HP, _LIVES, _IS_ALIVE, _JUMPS = 1, 2, 6, 7, 8, 9, 10, 11
 
 # A demonstrated ledge grab holds the ledge, not a 1-frame incidental touch.
 _LEDGE_HANG_MIN_FRAMES = 10
@@ -185,6 +185,24 @@ def test_beat8_ledge_hang_is_held_in_window(showcase_run):
         f"the edge-grab beat should hold the ledge >= {_LEDGE_HANG_MIN_FRAMES} frames (got {held})")
 
 
+def test_beat9_ledge_recovery_climbs_onto_stage(showcase_run):
+    # #421: from the hang, P1 presses UP for a neutral getup, enters the `ledge_getup`
+    # climb, and steps onto the stage — ending grounded on the platform, not hanging/KO'd.
+    _d, snaps, caps = showcase_run
+    fr = _frames(caps, snaps, 8)
+    climbed = any(_snap(snaps, f, 0)[_STATE] == "ledge_getup" for f in fr)
+    assert climbed, "the recovery beat should show P1 transition ledge_hang -> ledge_getup in its window"
+    # By the end of the beat P1 is recovered: grounded, alive (full lives, not KO'd), and
+    # standing within the thick platform's x-span (not still hanging off its right edge).
+    plat = build_stage()[0].rect
+    last = _snap(snaps, fr.stop - 1, 0)
+    assert last[_ON_GROUND], f"P1 should end the recovery beat grounded, not airborne (state={last[_STATE]})"
+    assert last[_STATE] != "ledge_hang", "P1 should be off the ledge by the end of the recovery beat"
+    assert last[_IS_ALIVE] and last[_LIVES] == snaps[0][0][0][_LIVES], "P1 should recover without losing a stock"
+    assert plat.left <= last[_RECT_X] <= plat.right, (
+        f"P1 should end on the platform (x={last[_RECT_X]} within [{plat.left}, {plat.right}])")
+
+
 def test_late_payoff_beats_freeze_on_their_action_frame(showcase_run):
     # #412: beats 2/3/7 pay off late in their window, so they set `dwell_at` to freeze on
     # the action (not a pre-action pose). Assert P1 is in the beat's action state at each
@@ -195,6 +213,7 @@ def test_late_payoff_beats_freeze_on_their_action_frame(showcase_run):
         1: ("double-jump airborne", lambda p: not p[_ON_GROUND]),
         2: ("jab attacking", lambda p: p[_STATE] == "attack"),
         7: ("ledge hang", lambda p: p[_STATE] == "ledge_hang"),
+        8: ("ledge-recovery climb", lambda p: p[_STATE] == "ledge_getup"),
     }
     for idx, (what, pred) in checks.items():
         at = caps[idx].dwell_at
