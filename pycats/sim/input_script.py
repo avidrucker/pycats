@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from ..core.input import InputFrame
 
-ACTIONS = ("left", "right", "up", "down", "attack", "shield")
+ACTIONS = ("left", "right", "up", "down", "attack", "shield", "smash")
 
 
 @dataclass(frozen=True)
@@ -66,33 +66,43 @@ def default_timeline(keymaps):
     return compile_timeline(DEFAULT_SCRIPT, keymaps)
 
 
-# A scripted battle that exercises the hurt and ko states.
+# A scripted battle that exercises the hurt and ko states via a legitimate,
+# fully-charged smash KO — NOT the pre-#475 self-destruct (the old version relied on
+# the ledge-hang auto-drop timeout, which #475 removed; see #588).
 #
-# Setup: the DEFAULT_SCRIPT already moves both players onto the thick main
-# platform and leaves them ~48 px apart (P1 centre≈424, P2 centre≈472) from
-# frames 120-149.  After P1's shield drops at frame 140, P1 is idle and P2 is
-# idle — perfect for a grounded hit chain.
+# Intended characters: **Nalio (P1) vs Birky (P2)** — the combat golden passes these to
+# run_battle (test_golden_combat). The default cat (used by test_runner) still produces
+# attacks from the jab spans, so the "attacks appear" contract holds there too.
 #
-# Frame 141: P1 attacks P2 → P2 enters "hurt" (hurt_timer=12).
-# Frames 142-164: P1 chases right to stay in range.
-# Frames 165, 185, 210, 240: P1 lands additional hits, each raising P2's
-# percent by 10 and increasing knockback velocity.  After ~4-5 hits P2's
-# cumulative knockback is strong enough to carry it past the right blast zone
-# (SCREEN_WIDTH + BLAST_PADDING = 1010 px), triggering "ko".
-# P2 then respawns after RESPAWN_DELAY_FRAMES (120 frames) and transitions
-# back to "idle", completing the ko→idle arc.
-#
-# Timer reference (config.py): HURT_TIME=12, PLAYER_ATTACK_DURATION=12,
-# RESPAWN_DELAY_FRAMES=120. (The jab's active window is now move data, not a
-# global ATTACK_LIFETIME — retired in #70.)
-COMBAT_SCRIPT = list(DEFAULT_SCRIPT) + [
-    InputSpan(141, 142, 1, "attack"),  # P1 hits P2 on the ground → P2 hurt
-    InputSpan(142, 165, 1, "right"),  # P1 chases P2 rightward
-    InputSpan(165, 166, 1, "attack"),  # second hit (P2 percent 20)
-    InputSpan(166, 185, 1, "right"),  # keep chasing
-    InputSpan(185, 186, 1, "attack"),  # third hit (P2 percent 30)
-    InputSpan(186, 210, 1, "right"),  # keep chasing
-    InputSpan(210, 211, 1, "attack"),  # fourth hit (P2 percent 40)
-    InputSpan(211, 240, 1, "right"),  # keep chasing
-    InputSpan(240, 241, 1, "attack"),  # fifth hit → enough knockback to KO P2
-]
+# Choreography (spike-derived in #588):
+# - DEFAULT_SCRIPT settles both on the main platform ~48 px apart (~frame 120).
+# - Frame 141-145: P1 closes the gap with a short walk (jab reach ~34-54 px).
+# - Frames 148..412: P1 jabs IN PLACE every 8 frames (34 jabs). Birky, driven by no
+#   inputs, is pinned near centre-stage (x≈501, gap ≈50) and racks to ~66% — jab-in-place
+#   avoids the overshoot-to-the-ledge that a walking chase causes.
+# - Frame 436: after a 16-frame settle to idle (so the smash press registers), P1 holds
+#   right+smash for ~62 frames → a FULLY charged forward-smash (charge = SMASH_CHARGE_FRAMES,
+#   60f) fires ~frame 496. It deals ~+20% (→ ~86%) and launches Birky right off the blast
+#   zone (SCREEN_WIDTH + BLAST_PADDING = 1010 px) → "ko" at ~66%→86%, P1 safe at x≈462.
+#   (A vertical up-smash KO was ruled infeasible in the #588 spike: it needs ~140%+ and
+#   pixel-perfect overlap; the side-blast fsmash is the sanctioned fallback.)
+# - P2 respawns after RESPAWN_DELAY_FRAMES, completing the ko→idle arc.
+_COMBAT_JAB_START = 148
+_COMBAT_N_JABS = 34
+_COMBAT_JAB_PERIOD = 8
+_COMBAT_FSMASH_START = _COMBAT_JAB_START + _COMBAT_N_JABS * _COMBAT_JAB_PERIOD + 16  # 436
+COMBAT_SCRIPT = (
+    list(DEFAULT_SCRIPT)
+    + [InputSpan(141, 146, 1, "right")]  # close the initial ~48px gap into jab range
+    + [
+        InputSpan(_COMBAT_JAB_START + i * _COMBAT_JAB_PERIOD,
+                  _COMBAT_JAB_START + i * _COMBAT_JAB_PERIOD + 1, 1, "attack")
+        for i in range(_COMBAT_N_JABS)  # rack Birky to ~66% with in-place jabs
+    ]
+    + [
+        # fully-charged forward smash: right sets the f-smash direction; smash charges
+        # (movement locks during smash_charge) and auto-fires at full charge → side KO.
+        InputSpan(_COMBAT_FSMASH_START, _COMBAT_FSMASH_START + 62, 1, "right"),
+        InputSpan(_COMBAT_FSMASH_START, _COMBAT_FSMASH_START + 62, 1, "smash"),
+    ]
+)

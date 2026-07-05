@@ -14,8 +14,6 @@ tests/golden/REGEN_PROTOCOL.md (S4).
 """
 import random
 
-import pytest
-
 from pycats.sim.controllers import AttackerController, ChaseController, FollowerController
 from pycats.sim.input_script import COMBAT_SCRIPT, compile_timeline
 from pycats.sim.runner import KEYMAPS, run_battle
@@ -35,37 +33,25 @@ def test_golden_default():
 
 
 def _run_combat():
+    # Nalio (P1) vs Birky (P2): COMBAT_SCRIPT racks Birky with in-place jabs then lands a
+    # fully-charged forward-smash for a legitimate side-blast KO (#588). The default cat
+    # has no fsmash, so the KO needs these characters.
     frame_inputs = compile_timeline(COMBAT_SCRIPT, KEYMAPS)
     frames = len(frame_inputs) + COMBAT_TAIL
-    snaps = run_battle(frames=frames, frame_inputs=frame_inputs)
+    snaps = run_battle(frames=frames, frame_inputs=frame_inputs, p1_char="nalio", p2_char="birky")
     assert len(snaps) == frames
     return snaps
 
 
 def test_golden_combat():
-    """COMBAT_SCRIPT + tail: the hurt state is exercised; stable golden."""
+    """COMBAT_SCRIPT + tail: hurt and ko are exercised via a fully-charged smash KO
+    (Nalio fsmashes Birky off the side, ~66%→86%); stable golden. Post-#475 the KO is a
+    real knockback launch, not the removed ledge-hang self-destruct (#588)."""
     snaps = _run_combat()
-    # hurt still reached (P1 lands jabs on P2). The KO assertion moved to the xfail
-    # below: #475 removed the ledge-hang auto-drop timeout that used to produce this
-    # scenario's KO (a self-destruct at ~30%), and the default cat's weak jab can't
-    # legitimately KO before P2 reaches the ledge — see #588 for the re-author.
     all_states = {p[1] for snap in snaps for p in snap[0]}
     assert "hurt" in all_states, f"'hurt' never reached; states={sorted(all_states)}"
-    check_or_update("combat", snaps)
-
-
-@pytest.mark.xfail(
-    reason="#588: COMBAT_SCRIPT's KO was the #475-removed self-destruct; re-author as "
-    "a Nalio/Birky fully-charged-smash KO to restore a legitimate ko.",
-    strict=True,
-)
-def test_combat_reaches_ko():
-    """The combat scenario should exercise a real KO. Currently xfails: post-#475 the
-    default-cat jab can't KO P2 before it reaches the ledge (no more auto-drop). #588
-    re-authors this as a charged-smash KO, after which this becomes a hard assertion."""
-    snaps = _run_combat()
-    all_states = {p[1] for snap in snaps for p in snap[0]}
     assert "ko" in all_states, f"'ko' never reached; states={sorted(all_states)}"
+    check_or_update("combat", snaps)
 
 
 def _capture_full_match_inputs():

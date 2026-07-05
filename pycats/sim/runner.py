@@ -57,6 +57,7 @@ P1_KEYS = dict(
     attack=pygame.K_v,
     special=pygame.K_c,
     shield=pygame.K_x,
+    smash=pygame.K_b,  # dedicated smash input (#327/#331) — lets scripts drive smashes (#588)
 )
 P2_KEYS = dict(
     left=pygame.K_LEFT,
@@ -66,6 +67,7 @@ P2_KEYS = dict(
     attack=pygame.K_SLASH,
     special=pygame.K_PERIOD,
     shield=pygame.K_COMMA,
+    smash=pygame.K_QUOTE,  # dedicated smash input (#327/#331) (#588)
 )
 KEYMAPS = [P1_KEYS, P2_KEYS]
 

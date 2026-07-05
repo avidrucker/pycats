@@ -1,7 +1,7 @@
 {
-  "attack_active_frames": 14,
+  "attack_active_frames": 42,
   "final_phase": "in_play",
-  "frames": 481,
+  "frames": 738,
   "players": {
     "P1": {
       "ko_frames": [],
@@ -11,27 +11,29 @@
       "percent_max": 0,
       "states": [
         "attack",
-        "dodge",
         "fall",
-        "helpless",
         "idle",
         "jump",
         "shield",
+        "smash_charge",
         "walk"
       ]
     },
     "P2": {
-      "ko_frames": [],
-      "lives_end": 3,
-      "lives_min": 3,
+      "ko_frames": [
+        586
+      ],
+      "lives_end": 2,
+      "lives_min": 2,
       "lives_start": 3,
-      "percent_max": 30.0,
+      "percent_max": 85.6,
       "states": [
         "attack",
         "fall",
         "hurt",
         "idle",
-        "ledge_hang",
+        "jump",
+        "ko",
         "walk"
       ]
     }
