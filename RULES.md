@@ -36,6 +36,7 @@
   - `area:screens` — screen system/manager, start/win-loss screens, menus, skins, input feedback
   - `area:watch` — `--watch` / `--vs` spectator battles
   - `area:tracker` — ticket discipline, TODO reconciliation, rules/process docs
+  - `area:docs` — README, docs, setup, contributor workflow, and developer-experience documentation
 
   **One area per issue:** if it spans two, pick the dominant one (the orchestrator
   uses the *first-listed*) and **make a suggestion of how to effectively split the
