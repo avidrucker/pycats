@@ -67,6 +67,44 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
         "FOUND",
         384,
     ),
+    # ---- authoring scale + walk/dash/jump (#195/#388, sourced-scalars slice #581) ----
+    "PX_PER_UNIT": Provenance(
+        5.4,
+        "px/unit",
+        "data-authoring units->px calibration ~=5.4 (docs/research-120-smash-units-and-sources.md; #120/#195); the base every spatial derivation in this registry references",  # noqa: E501
+        "FOUND",
+        195,
+    ),
+    "DASH_SPEED": Provenance(
+        8,
+        "px/frame",
+        "PM Mario dash ~1.5 u/f (config #388 comment; docs/research-120) -> round(1.5 * PX_PER_UNIT) = round(8.1)",
+        "FOUND",
+        388,
+        "round(1.5 * PX_PER_UNIT)",
+    ),
+    "MAX_JUMPS": Provenance(
+        2,
+        "jumps",
+        "Mario/PM jump count: 1 ground + 1 midair = 2 (standard 2-jump character; SmashWiki:Mario_(PM))",
+        "FOUND",
+        None,
+    ),
+    # ---- smash charge (#327 slice 3 / #426) ----
+    "SMASH_CHARGE_FRAMES": Provenance(
+        60,
+        "frames",
+        "PM/Melee full smash charge = 60 frames = 1s (confirmed #426, SmashWiki:Smash_attack)",
+        "FOUND",
+        426,
+    ),
+    "SMASH_CHARGE_SCALE": Provenance(
+        1.4,
+        "factor",
+        "PM (Brawl-era) full-charge damage multiplier 1.4 (Melee 1.3671; confirmed #426, SmashWiki:Smash_attack)",
+        "FOUND",
+        426,
+    ),
     # ---- dodges / rolls ----
     "DODGE_FRAMES": Provenance(15, "frames", "roll intangibility window; playtest starting point", "GUESS", None),
     "DODGE_TIME": Provenance(14, "frames", "roll duration; playtest starting point", "GUESS", None),
@@ -258,6 +296,11 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "MAX_FALL_SPEED",
         "MOVE_SPEED",
         "JUMP_VEL",
+        "PX_PER_UNIT",
+        "DASH_SPEED",
+        "MAX_JUMPS",
+        "SMASH_CHARGE_FRAMES",
+        "SMASH_CHARGE_SCALE",
         "DODGE_FRAMES",
         "DODGE_TIME",
         "DODGE_SPEED",
