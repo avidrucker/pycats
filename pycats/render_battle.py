@@ -848,20 +848,46 @@ def render_hitbox_overlay(surface, players, attacks):
 # size was repeated at ~10 call sites; the line counts + block gap couple the
 # controls / input-history blocks' start-y to the HUD's row count.
 HUD_FONT_SIZE = 24  # shared size for HUD / controls / input-history / chrome text
-HUD_LINE_COUNT = 7  # rows drawn by draw_hud (label + 6 stats)
+# draw_hud rows split by audience (#545): the player-facing rows always render;
+# the two implementation-jargon rows (FSM state, Shield Attempting bool) render
+# only when the dev-info flag is on. HUD_LINE_COUNT is the all-rows total kept
+# for back-compat; layout below anchors on the live hud_line_count() instead.
+HUD_PLAYER_LINE_COUNT = 5  # label + jumps + Shield HP + Lives + Damage (always on)
+HUD_DEV_LINE_COUNT = 2  # FSM: + Shield Attempting: (dev-info-gated)
+HUD_LINE_COUNT = HUD_PLAYER_LINE_COUNT + HUD_DEV_LINE_COUNT  # 7, all rows (dev-info on)
 CONTROLS_LINE_COUNT = 7  # rows drawn by draw_controls (header + 6 controls)
 HUD_BLOCK_GAP = 20  # vertical gap between stacked text blocks
 
 
+def hud_line_count():
+    """Rows draw_hud actually draws given the live dev-info flag (#545). The
+    controls / input-history blocks anchor below the HUD, so they must follow the
+    real row count, not the all-rows maximum, or a gap opens when the flag is off."""
+    return HUD_PLAYER_LINE_COUNT + (HUD_DEV_LINE_COUNT if runtime_settings.show_dev_info() else 0)
+
+
+def hud_rows(label, p: Player):
+    """The ordered HUD row strings for player `p`, honouring the live dev-info
+    flag (#545): the FSM / Shield Attempting jargon rows are included only when
+    show_dev_info() is on; the player-facing rows always are. Row order matches
+    the pre-gate layout so the flag-on render is unchanged."""
+    dev = runtime_settings.show_dev_info()
+    rows = [label]
+    if dev:
+        rows.append(f"FSM: {p.state.capitalize()}")
+    rows.append(f"{p.fighter.jumps_remaining} jump{'s' if p.fighter.jumps_remaining != 1 else ''} left")
+    rows.append(f"Shield HP: {p.fighter.shield_hp}")
+    if dev:
+        rows.append(f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}")
+    rows.append(f"Lives: {p.fighter.lives}")
+    rows.append(f"Damage: {int(p.fighter.percent)}%")
+    return rows
+
+
 def draw_hud(surface, p: Player, label, topright=False):
-    """Draws the HUD for a player, showing their state, jumps left, shield HP, lives, and damage percent."""
-    fsm = f"FSM: {p.state.capitalize()}"
-    jumps = f"{p.fighter.jumps_remaining} jump{'s' if p.fighter.jumps_remaining != 1 else ''} left"
-    shield = f"Shield HP: {p.fighter.shield_hp}"
-    shield_attempting = f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}"
-    stocks = f"Lives: {p.fighter.lives}"
-    percent = f"Damage: {int(p.fighter.percent)}%"
-    for i, txt in enumerate((label, fsm, jumps, shield, shield_attempting, stocks, percent)):
+    """Draws the HUD for a player: jumps left, shield HP, lives, and damage percent,
+    plus the dev-info rows (FSM state, Shield Attempting) when the flag is on (#545)."""
+    for i, txt in enumerate(hud_rows(label, p)):
         x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
         y_pos = HUD_PADDING + i * HUD_SPACING
 
@@ -901,8 +927,9 @@ def draw_controls(surface, p: Player, label, topright=False):
         f"Smash: {key_names.get(p.controls.get('smash'), '?')}",  # #462
     ]
 
-    # Start drawing below the HUD (7 lines of HUD + some spacing)
-    start_y = HUD_PADDING + HUD_LINE_COUNT * HUD_SPACING + HUD_BLOCK_GAP
+    # Start drawing below the HUD (its live row count + some spacing) — the count
+    # shrinks when the dev-info rows are gated off (#545), so read it live.
+    start_y = HUD_PADDING + hud_line_count() * HUD_SPACING + HUD_BLOCK_GAP
 
     for i, txt in enumerate(controls):
         x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
@@ -924,11 +951,12 @@ def draw_input_history(surface, history, label, topright=False):
     ``history`` is an :class:`~pycats.input_history.InputHistory`; entries render
     oldest->newest as absolute-direction arrows + A/B/S, joined by ' · '. Unicode
     arrows go through ``render_text_mixed`` (same path draw_controls uses). One
-    line, anchored under the HUD (7 lines) + controls (7 lines) blocks."""
+    line, anchored under the HUD (its live row count, #545) + controls (7 lines)
+    blocks."""
     line = format_line(label, history.entries())
 
-    # Below the HUD (7 lines) and the controls block (header + 6 rows).
-    y_pos = HUD_PADDING + (HUD_LINE_COUNT + CONTROLS_LINE_COUNT) * HUD_SPACING + 2 * HUD_BLOCK_GAP
+    # Below the HUD (its live row count, #545) and the controls block (header + 6 rows).
+    y_pos = HUD_PADDING + (hud_line_count() + CONTROLS_LINE_COUNT) * HUD_SPACING + 2 * HUD_BLOCK_GAP
     x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
 
     if topright:

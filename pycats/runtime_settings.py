@@ -53,6 +53,12 @@ def show_controls():
     return bool(get("show_controls"))
 
 
+def show_dev_info():
+    """Live toggle the HUD's dev-jargon rows (FSM / Shield Attempting) honour
+    (#545). Default off — players never see it; a dev turns it on for debugging."""
+    return bool(get("show_dev_info"))
+
+
 def font_scale():
     """Live UI-text size multiplier (0.5 / 1.0 / 2.0) from the font_scale preset
     (#345). Unknown presets fall back to 1.0 (standard)."""

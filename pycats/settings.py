@@ -46,6 +46,11 @@ _DEFAULTS = {
     # Global font-scale (#345): "small"/"standard"/"large" — a UI-text size
     # multiplier the Options menu cycles. "standard" (1.0) is byte-identical.
     "font_scale": "standard",
+    # Dev-info HUD flag (#545): when True the HUD shows the implementation-jargon
+    # rows (FSM state, Shield Attempting bool); when False (default) only the
+    # player-facing stats render. Mirrors show_status_timer_bars; an Options
+    # toggle is a later child (#544).
+    "show_dev_info": False,
 }
 
 
@@ -85,6 +90,7 @@ def _validated(raw):
     out["show_input_history"] = bool(raw.get("show_input_history", out["show_input_history"]))
     out["show_controls"] = bool(raw.get("show_controls", out["show_controls"]))
     out["esc_hold_to_navigate"] = bool(raw.get("esc_hold_to_navigate", out["esc_hold_to_navigate"]))
+    out["show_dev_info"] = bool(raw.get("show_dev_info", out["show_dev_info"]))
     fs = raw.get("font_scale")
     if fs in FONT_SCALES:  # snap an unknown preset back to the default
         out["font_scale"] = fs
