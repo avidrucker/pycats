@@ -59,5 +59,10 @@ Critical rules:
   Name the concrete quality instead (crisp → specific / precise / clean; honest →
   plain / direct / candid / faithful). Proofread the closing line, where they slip in.
   Full list + replacements: [docs/banned_words.md](./docs/banned_words.md).
+- **Reference locations by named landmark, not raw line number** — in tickets, reviews,
+  commits, and docs, point at a **function/class + file path** (or a bare symbol) for
+  code and a **section heading** for markdown; line numbers drift and misdirect. A line
+  number may ride along as a secondary as-of hint; commit-pinned permalinks and quoted
+  tool output are exempt. See [RULES.md](./RULES.md) → "Referencing code & docs".
 
 Run & test: see [README.md](./README.md).

@@ -189,6 +189,27 @@
   failing test. Bit twice: `os.environ` at module top (#345, ~15 tests), hand-restored
   `settings.load` (#453, ~19 tests).
 
+## Referencing code & docs
+
+- **Point at named landmarks, not raw line numbers.** When an *authored* reference — a
+  ticket, issue comment, review, commit message, or doc — points at a location, use a
+  **stable landmark**. Line numbers drift the moment a file changes and then silently
+  misdirect the next reader to the wrong (or deleted) line; a landmark is greppable and
+  self-correcting.
+  - **Code** → the **function / method / class name** + the **file path**
+    (`build_stage()` in `pycats/sim/runner.py`), or the bare **symbol** when there's no
+    enclosing definition (`LEDGE_GETUP_FRAMES` in `pycats/config.py`) — never
+    `runner.py:73` / `config.py:142`.
+  - **Markdown docs** → the **section heading** (under `## Filing work` in RULES.md) —
+    never `RULES.md:47`.
+- A line number **may** ride along as a secondary, clearly-as-of hint (`~L73 at time of
+  writing`), but never stand alone as the reference.
+- **Carve-outs** — these don't rot, so a line number is fine: a **commit-pinned
+  permalink** (`blob/<sha>/file#L73`) is a valid *primary* locator (it points at a frozen
+  commit, not the moving branch), and **quoted tool output** (stack traces, `pytest` /
+  `ruff` output, diffs) keeps its own line numbers. The rule governs the refs you *write*,
+  not machine output you paste.
+
 ## PM-parity markers (`⚠` / `🔬` / `❓`)
 
 Inline glyph markers make unresolved-vs-Project-M work **greppable**. Use them at write
