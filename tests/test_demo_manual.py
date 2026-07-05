@@ -38,6 +38,7 @@ def _manual_presenter(captions, interactive="manual", cap_fps=False):
     p.speed = 1.0
     p.captions = list(captions)
     p.interactive = interactive
+    p._init_input_strip(False)  # #434: show() now records/draws the input strip (off here)
     return p
 
 
@@ -137,7 +138,7 @@ class _SpyPresenter:
         _SpyPresenter.last_kwargs = kwargs
         self.captions = []
 
-    def show(self, *a):
+    def show(self, *a, **k):
         pass
 
     def close(self):

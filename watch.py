@@ -138,6 +138,9 @@ def main(argv=None, presenter=None):
                     help="capture a PNG per caption (start/mid/end of each caption "
                          "window) into DIR for visual inspection, headless — instead "
                          "of live/video playback. Writes a MANIFEST.txt (#411/#308).")
+    ap.add_argument("--show-inputs", action="store_true",
+                    help="overlay each fighter's recent inputs — the same #21 PM-notation "
+                         "strip the live game shows (draw_input_history). Default off (#434).")
     args = ap.parse_args(argv)
 
     # Seed home is this CLI edge (#166): an explicit --seed is reproducible; absent
@@ -183,13 +186,14 @@ def main(argv=None, presenter=None):
 
     if presenter is None:
         if args.shots:
-            presenter = ScreenshotPresenter(args.shots, captions=captions)
+            presenter = ScreenshotPresenter(args.shots, captions=captions, show_inputs=args.show_inputs)
         elif args.video:
-            presenter = VideoPresenter(args.video, speed=args.demo_speed)
+            presenter = VideoPresenter(args.video, speed=args.demo_speed, show_inputs=args.show_inputs)
         else:
             presenter = LivePresenter(cap_fps=not args.uncapped, overlay=args.overlay,
                                       speed=args.demo_speed,
-                                      interactive="manual" if args.demo_manual else None)
+                                      interactive="manual" if args.demo_manual else None,
+                                      show_inputs=args.show_inputs)
     if captions:                              # attach; don't clobber an injected list (#306)
         presenter.captions = list(captions)
     snaps = []

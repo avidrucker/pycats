@@ -7,7 +7,8 @@ import pygame
 
 from .. import text_utils
 from ..config import BG_COLOR, FPS, HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
-from ..render_battle import render_attacks, render_battle
+from ..input_history import InputHistory
+from ..render_battle import draw_input_history, render_attacks, render_battle
 from .captions import caption_hold_frames, draw_captions
 
 # Live-replay overlay text sizes (#444: named from inline literals).
@@ -43,20 +44,63 @@ def tick_fps(speed: float) -> int:
     return max(1, round(FPS * speed))
 
 
+# --- Watch/demo input display (#434) -----------------------------------------
+# Reuse #21's per-fighter InputHistory + render_battle.draw_input_history in the
+# presenters, instead of the reverted #405 held-only overlay. One notation, one
+# component, one maintenance site — the watch path shows the same strip the live
+# game (battle_screen) does.
+
+
+def record_player_histories(histories, players, pressed):
+    """Record this frame's press-edge into each player's InputHistory via that
+    player's own keymap (``player.controls``). Pure (no surface) so the data path
+    is unit-testable; the pixel draw is separate. Mirrors ``battle_screen.step``'s
+    ``p1_history.record(pressed, self.p1_keys)`` — but reuses each player's controls
+    (the presenter has ``players``, not the P1_KEYS/P2_KEYS globals)."""
+    for hist, player in zip(histories, players):
+        hist.record(pressed, player.controls)
+
+
+class _InputStripMixin:
+    """Optional #21 input strip for a presenter. Recording is split from drawing so
+    a sampling presenter (ScreenshotPresenter) can still build a correct history every
+    frame while only drawing on the frames it saves."""
+
+    def _init_input_strip(self, show_inputs):
+        self.show_inputs = show_inputs
+        self._input_histories = None  # lazily sized to len(players) on first record
+
+    def _record_input_strip(self, players, inputs):
+        if not self.show_inputs or inputs is None:
+            return
+        if self._input_histories is None:
+            self._input_histories = [InputHistory() for _ in players]
+        pressed = getattr(inputs, "pressed", None) or ()
+        record_player_histories(self._input_histories, players, pressed)
+
+    def _draw_input_strip(self, surface):
+        if not self.show_inputs or not self._input_histories:
+            return
+        for i, hist in enumerate(self._input_histories):
+            draw_input_history(surface, hist, f"P{i + 1}", topright=(i == 1))
+
+
 class HeadlessPresenter:
-    def show(self, platforms, players, attacks, frame): ...
+    def show(self, platforms, players, attacks, frame, inputs=None): ...
     def close(self): ...
 
 
-class LivePresenter:
+class LivePresenter(_InputStripMixin):
     """Opens a real window and renders the replay.
 
     `cap_fps=True` paces the window to 60 FPS (so the on-screen FPS reads ~60
     when the renderer is keeping up). `cap_fps=False` runs uncapped, so the FPS
     readout shows the true achievable rate. `overlay=True` draws an FPS counter
-    plus each fighter's stocks/damage."""
+    plus each fighter's stocks/damage. `show_inputs=True` adds the #21 input strip
+    (#434), same as the live game."""
 
-    def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True, captions=(), speed=1.0, interactive=None):
+    def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True, captions=(), speed=1.0, interactive=None,
+                 show_inputs=False):
         import os
 
         os.environ.pop("SDL_VIDEODRIVER", None)
@@ -72,6 +116,7 @@ class LivePresenter:
         # Interactivity (#393): "manual" makes each caption's dwell frame wait for an
         # advance key (self-paced reading) instead of the timed #352 dwell. None = off.
         self.interactive = interactive
+        self._init_input_strip(show_inputs)  # #434 input strip (default off)
 
     def _draw_overlay(self, players):
         cap = "capped@60" if self.cap_fps else "uncapped"
@@ -152,7 +197,7 @@ class LivePresenter:
                     raise KeyboardInterrupt
             self._tick()
 
-    def show(self, platforms, players, attacks, frame):
+    def show(self, platforms, players, attacks, frame, inputs=None):
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 raise KeyboardInterrupt
@@ -161,6 +206,8 @@ class LivePresenter:
         render_attacks(self.screen, attacks)
         if self.overlay:
             self._draw_overlay(players)
+        self._record_input_strip(players, inputs)  # #434
+        self._draw_input_strip(self.screen)
         draw_captions(self.screen, self.captions, frame)
         pygame.display.flip()
         self._tick()
@@ -170,10 +217,10 @@ class LivePresenter:
         pygame.display.quit()
 
 
-class VideoPresenter:
+class VideoPresenter(_InputStripMixin):
     """Writes each frame to a video file. Requires imageio (+ imageio-ffmpeg)."""
 
-    def __init__(self, path="battle.mp4", fps=FPS, captions=(), speed=1.0):
+    def __init__(self, path="battle.mp4", fps=FPS, captions=(), speed=1.0, show_inputs=False):
         try:
             import imageio.v2 as imageio
         except Exception as exc:  # pragma: no cover - optional dep
@@ -186,11 +233,14 @@ class VideoPresenter:
         # video plays back `1/speed`x longer while staying 60fps-smooth (not choppy
         # half-fps). speed 1.0 -> 1 (unchanged).
         self._dup = frames_per_output(speed)
+        self._init_input_strip(show_inputs)  # #434 input strip (default off)
 
-    def show(self, platforms, players, attacks, frame):
+    def show(self, platforms, players, attacks, frame, inputs=None):
         self._surface.fill(BG_COLOR)
         render_battle(self._surface, players, platforms)
         render_attacks(self._surface, attacks)
+        self._record_input_strip(players, inputs)  # #434
+        self._draw_input_strip(self._surface)
         draw_captions(self._surface, self.captions, frame)
         arr = pygame.surfarray.array3d(self._surface).transpose(1, 0, 2)
         # `_dup` copies for slow-mo (#351); a caption's start frame also freezes for
@@ -203,7 +253,7 @@ class VideoPresenter:
         self._writer.close()
 
 
-class ScreenshotPresenter:
+class ScreenshotPresenter(_InputStripMixin):
     """Renders chosen frames to an off-screen Surface and saves them as PNGs — for
     visual inspection of a demo (e.g. a shot per caption). Headless: it never opens a
     window, so it works under the `dummy` SDL driver the runner sets by default.
@@ -217,7 +267,7 @@ class ScreenshotPresenter:
     `overlay=True` draws a per-fighter stocks/%/state line (no FPS — it's a still),
     so the inspector can read what each fighter is doing in the frame."""
 
-    def __init__(self, out_dir, captions=(), frames=None, overlay=True):
+    def __init__(self, out_dir, captions=(), frames=None, overlay=True, show_inputs=False):
         import os
 
         os.makedirs(out_dir, exist_ok=True)
@@ -228,6 +278,7 @@ class ScreenshotPresenter:
         self._frames = frames if frames is not None else self._default_frames(self.captions)
         self.saved = []  # (frame, path) in save order — inspection manifest
         self._manifest = []  # (label, caption text) lines
+        self._init_input_strip(show_inputs)  # #434 input strip (default off)
 
     @staticmethod
     def _default_frames(captions):
@@ -255,7 +306,10 @@ class ScreenshotPresenter:
                 WHITE,
             )
 
-    def show(self, platforms, players, attacks, frame):
+    def show(self, platforms, players, attacks, frame, inputs=None):
+        # Record every frame so a saved frame's strip reflects the full recent history,
+        # even though only selected frames are rendered (#434).
+        self._record_input_strip(players, inputs)
         if frame not in self._frames:
             return
         self._surface.fill(BG_COLOR)
@@ -263,6 +317,7 @@ class ScreenshotPresenter:
         render_attacks(self._surface, attacks)
         if self.overlay:
             self._draw_overlay(players)
+        self._draw_input_strip(self._surface)  # #434
         draw_captions(self._surface, self.captions, frame)
         label = self._frames[frame]
         path = f"{self.out_dir}/{label}.png"

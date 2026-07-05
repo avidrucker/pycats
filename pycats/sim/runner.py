@@ -228,7 +228,7 @@ def run_battle(
         match.tick()
         snaps.append(snapshot(players, attacks, match))
         if presenter is not None:
-            presenter.show(platforms, players, attacks, f)
+            presenter.show(platforms, players, attacks, f, inputs=fi)  # #434: input strip
         if stop_on_match_over and match.phase == "match_over":
             break
     if presenter is not None:
