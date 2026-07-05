@@ -13,10 +13,10 @@ than dashing; and a hit-stunned fighter never dashes off a stale window (#370).
 """
 import pygame as pg
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
+from pycats.config import DASH_SPEED, DOUBLE_TAP_WINDOW, P1_COLOR, WHITE
 from pycats.core.input import InputFrame
-from pycats.config import P1_COLOR, WHITE, DOUBLE_TAP_WINDOW, DASH_SPEED
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 CONTROLS = {
     "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,

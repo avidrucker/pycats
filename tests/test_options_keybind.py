@@ -72,7 +72,7 @@ def test_submode_special_exits_back_to_options():
 def test_keybind_view_renders_without_error():
     import pygame
     pygame.init()
-    from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAIN_MENU_BG_COLOR
+    from pycats.config import MAIN_MENU_BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH
     p1 = Keymap(dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
                      attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x, smash=pygame.K_b))
     p2 = Keymap(dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,

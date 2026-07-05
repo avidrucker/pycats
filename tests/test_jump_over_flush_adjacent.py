@@ -11,11 +11,11 @@ resolve_player_push) holds the stationary fighter's displacement at ~0.
 """
 import pygame as pg
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
+from pycats.config import P1_COLOR, P2_COLOR, WHITE
 from pycats.core.input import InputFrame
 from pycats.core.physics import resolve_player_push
-from pycats.config import P1_COLOR, P2_COLOR, WHITE
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 P1K = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
        "down": pg.K_s, "shield": pg.K_x, "attack": pg.K_v}

@@ -29,8 +29,8 @@ import random
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
-from pycats.sim.runner import run_battle
 from pycats.sim.controllers import AttackerController
+from pycats.sim.runner import run_battle
 
 # indices into snapshot player tuple (see sim/runner.snapshot)
 _PERCENT, _LIVES = 7, 9

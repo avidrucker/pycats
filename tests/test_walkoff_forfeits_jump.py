@@ -15,10 +15,10 @@ clean ground→air transition with no ledge-grab intercepting it.
 """
 import pygame as pg
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 from pycats.config import P1_COLOR, WHITE
+from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 CONTROLS = {
     "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,

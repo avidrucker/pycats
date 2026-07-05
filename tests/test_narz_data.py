@@ -5,8 +5,8 @@ its movement scalars (weight/gravity/jump_vel), the load_fighter_data branch, an
 selectable-roster entry. No moves authored yet (the tippered forward-tilt is slice 2).
 Golden-free: the sim/golden path loads the default cat via "P1"/"P2".
 """
-from pycats.combat.data import load_fighter_data
 from pycats.characters import roster
+from pycats.combat.data import load_fighter_data
 
 
 def test_narz_loads_distinct_movement_scalars():

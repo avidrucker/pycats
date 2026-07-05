@@ -5,8 +5,8 @@ Slow-motion is presentation-only: the sim is fixed-timestep (#166/#80), so the
 helpers pin the math (video frame-duplication + live tick pacing), plus a
 VideoPresenter integration confirming the duplication actually happens.
 """
-import pytest
 import pygame as pg
+import pytest
 
 from pycats.config import FPS
 from pycats.sim.presenters import frames_per_output, tick_fps

@@ -9,11 +9,10 @@ off-body toward the attacker. Both must connect now.
 """
 import pygame as pg
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
-from pycats.entities.attack import Attack
-from pycats.systems import combat
 from pycats.config import P1_COLOR, P2_COLOR, WHITE
+from pycats.entities.attack import Attack
+from pycats.entities.player import Player
+from pycats.systems import combat
 
 P1K = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
        "down": pg.K_s, "shield": pg.K_x, "attack": pg.K_v}

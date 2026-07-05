@@ -11,8 +11,8 @@ import types
 
 import pygame as pg
 
-from pycats.sim.controllers import AttackerController
 from pycats.entities.ledge import Ledge
+from pycats.sim.controllers import AttackerController
 
 pg.init()
 
@@ -100,8 +100,9 @@ def _guards_in_real_battle(edge_guard_on):
     near it; run a REAL loop and return whether the bot emitted an attack/projectile
     toward the off-stage foe IN the loop. Discriminates the feature (#248/#370)."""
     import pygame
-    from pycats.sim import runner
+
     from pycats.entities.ledge import ledges_from_platforms
+    from pycats.sim import runner
 
     plats = runner.build_stage()
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")

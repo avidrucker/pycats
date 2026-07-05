@@ -1,7 +1,7 @@
 """Unit tests for the authentic Brawl/PM knockback + hitstun formula (#40, #44)."""
 import pytest
 
-from pycats.combat.knockback import knockback, hitstun_frames, decay_velocity
+from pycats.combat.knockback import decay_velocity, hitstun_frames, knockback
 from pycats.config import HITSTUN_FLOOR
 
 

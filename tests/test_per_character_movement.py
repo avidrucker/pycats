@@ -10,10 +10,14 @@ differ.
 import pygame
 from pygame import Vector2
 
+from pycats.combat.data import Circle, FighterData, Hurtbox
 from pycats.config import (
-    GRAVITY, MAX_FALL_SPEED, MOVE_SPEED, JUMP_VEL, MAX_JUMPS,
+    GRAVITY,
+    JUMP_VEL,
+    MAX_FALL_SPEED,
+    MAX_JUMPS,
+    MOVE_SPEED,
 )
-from pycats.combat.data import FighterData, Hurtbox, Circle
 from pycats.core.physics import apply_gravity
 from pycats.systems.movement import step_horizontal
 

@@ -16,7 +16,6 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame  # noqa: E402
 
 from pycats.menu_widgets import (  # noqa: E402
-    BUTTON_FILL_FOCUSED,
     BUTTON_FILL_PRESSED,
     PRESS_PULSE_FRAMES,
     draw_menu_button,
@@ -75,8 +74,8 @@ def test_pressed_only_matters_when_focused():
 
 
 # ---- screen wiring: the press_pulse counter ------------------------------- #
-from pycats.main_menu import MainMenuManager  # noqa: E402
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
+from pycats.main_menu import MainMenuManager  # noqa: E402
 
 
 def test_main_menu_pulse_set_on_select():

@@ -8,15 +8,14 @@ frames before the knockback slide. SmashWiki Hitlag (Brawl/PM):
 with h = e = c = 1 in this slice. Position, velocity, move-clock and the hitstun
 timer are all held during the freeze, then resume intact.
 """
-import math
 import pygame
 
+from pycats.combat.data import Circle, Hitbox
 from pycats.combat.knockback import hitlag_frames
-from pycats.entities.player import Player
+from pycats.core.input import InputFrame
 from pycats.entities.attack import Attack
 from pycats.entities.platform import Platform
-from pycats.combat.data import Circle, Hitbox
-from pycats.core.input import InputFrame
+from pycats.entities.player import Player
 
 P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)

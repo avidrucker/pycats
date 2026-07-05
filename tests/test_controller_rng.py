@@ -14,7 +14,7 @@ wired), the two-distinct-seeds-diverge test goes red (both streams identical).
 import random
 from types import SimpleNamespace
 
-from pycats.sim.controllers import IdlerController, AttackerController, BaseController
+from pycats.sim.controllers import AttackerController, BaseController, IdlerController
 
 CONTROLS = {"left": "L", "right": "R", "up": "U", "down": "D",
             "shield": "S", "attack": "A"}

@@ -6,12 +6,12 @@ position-tuned). So a dwell can't insert idle timeline frames — that would des
 tuned beats. Instead it's a presenter-level freeze: hold (re-present) the caption's first
 frame for `dwell` sim-frame-durations. Presentation-only; sim + goldens byte-identical.
 """
-import pytest
 import pygame as pg
+import pytest
 
 from pycats.config import FPS
 from pycats.sim.captions import Caption, caption_hold_frames
-from pycats.sim.demo import DemoSegment, Demo, demo_captions, DEMOS
+from pycats.sim.demo import DEMOS, Demo, DemoSegment, demo_captions
 from pycats.sim.input_script import InputSpan
 
 

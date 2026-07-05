@@ -13,8 +13,8 @@ import json
 import pygame
 import pytest
 
-from pycats.core.keymap import Keymap
 from pycats import keybind_store
+from pycats.core.keymap import Keymap
 
 
 def _km():

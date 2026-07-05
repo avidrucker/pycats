@@ -2,24 +2,25 @@
 """Comprehensive dodge test with wide platform for both idle and shield state transitions."""
 
 try:
-    import pygame as pg
-    import sys
     import os
+    import sys
+
+    import pygame as pg
 
     # Add parent directory to path for imports
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-    from pycats.entities.player import Player
-    from pycats.entities.platform import Platform
-    from pycats.core.input import InputFrame
     from pycats.config import DODGE_SPEED, DODGE_TIME
+    from pycats.core.input import InputFrame
+    from pycats.entities.platform import Platform
+    from pycats.entities.player import Player
 
     print("Starting dodge tests...")
     pg.init()
 
     # Create very wide platform - 800px wide to ensure no edge issues
     platforms = [Platform(pg.Rect(100, 400, 800, 30), False)]
-    print(f"Platform: x=100-900, y=400, width=800px")
+    print("Platform: x=100-900, y=400, width=800px")
     print(f"DODGE_SPEED={DODGE_SPEED}, DODGE_TIME={DODGE_TIME}")
 
     def test_dodge(test_name, start_in_shield, direction, dir_key):
@@ -111,7 +112,7 @@ try:
     results["shield_left"] = test_dodge("Shield to Left Dodge", True, -1, pg.K_a)
 
     # Summary
-    print(f"\n=== RESULTS SUMMARY ===")
+    print("\n=== RESULTS SUMMARY ===")
     print(f"Expected distance per dodge: {DODGE_SPEED * DODGE_TIME}px")
 
     for key, distance in results.items():
@@ -119,7 +120,7 @@ try:
         print(f"{state.capitalize()} {direction}: {distance}px")
 
     # Check for issues
-    print(f"\n=== ISSUE ANALYSIS ===")
+    print("\n=== ISSUE ANALYSIS ===")
 
     # Check idle symmetry
     idle_diff = abs(results["idle_right"]) - abs(results["idle_left"])
@@ -128,7 +129,7 @@ try:
             f"❌ IDLE ASYMMETRY: Right={results['idle_right']}, Left={results['idle_left']}, Diff={idle_diff}"
         )
     else:
-        print(f"✅ Idle dodges symmetric")
+        print("✅ Idle dodges symmetric")
 
     # Check shield symmetry
     shield_diff = abs(results["shield_right"]) - abs(results["shield_left"])
@@ -137,7 +138,7 @@ try:
             f"❌ SHIELD ASYMMETRY: Right={results['shield_right']}, Left={results['shield_left']}, Diff={shield_diff}"
         )
     else:
-        print(f"✅ Shield dodges symmetric")
+        print("✅ Shield dodges symmetric")
 
     # Check idle vs shield consistency
     right_consistency = abs(results["idle_right"] - results["shield_right"])
@@ -149,7 +150,7 @@ try:
             f"Shield={results['shield_right']}, Diff={right_consistency}"
         )
     else:
-        print(f"✅ Right dodge consistent between states")
+        print("✅ Right dodge consistent between states")
 
     if left_consistency > 5:
         print(
@@ -157,7 +158,7 @@ try:
             f"Shield={abs(results['shield_left'])}, Diff={left_consistency}"
         )
     else:
-        print(f"✅ Left dodge consistent between states")
+        print("✅ Left dodge consistent between states")
 
     pg.quit()
     print("Test completed successfully")

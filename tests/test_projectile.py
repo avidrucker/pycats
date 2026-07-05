@@ -9,8 +9,8 @@ import types
 
 import pygame as pg
 
-from pycats.entities.attack import Attack, Projectile
 import pycats.characters.nalio_cat as nalio
+from pycats.entities.attack import Attack, Projectile
 
 pg.init()
 
@@ -116,9 +116,11 @@ def test_player_spawns_projectile_for_projectile_move_static_stays_attack():
     # Real spawn path: a Lv9 (specials) bot throws → the moving attack is a Projectile;
     # a Lv1 (melee) bot's hitbox is a plain Attack, never a Projectile.
     import random
+
     import pygame
-    from pycats.sim import runner
+
     from pycats.core.input import merge_frames
+    from pycats.sim import runner
     from pycats.sim.controllers import AttackerController
 
     def spawned_types(level, frames=120):
@@ -149,8 +151,9 @@ def test_fireball_reaches_lower_platform_foe_in_real_battle():
     # (cy~260) should arc/bounce DOWN and hit a foe on the main platform (cy~380) —
     # the cross-elevation case that whiffed with flat travel.
     import pygame
-    from pycats.sim import runner
+
     from pycats.core.input import merge_frames
+    from pycats.sim import runner
     from pycats.sim.controllers import BaseController, IdlerController
     from pycats.systems import combat
 

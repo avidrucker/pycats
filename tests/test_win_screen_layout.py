@@ -19,8 +19,8 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame  # noqa: E402  (must follow the dummy-driver env setup)
 import pytest  # noqa: E402
 
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT  # noqa: E402
 from pycats import text_utils  # noqa: E402
+from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
 from pycats.win_screen import WinScreenManager  # noqa: E402
 
 # Reuse the suite's font-cache isolation so this passes regardless of order (#63).

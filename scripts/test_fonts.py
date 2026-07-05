@@ -4,9 +4,10 @@ Font diagnostic test script for the cat fighting game.
 Run this to see which fonts support Unicode arrows and symbols.
 """
 
-import pygame
-import sys
 import os
+import sys
+
+import pygame
 
 # Add the pycats module to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pycats"))

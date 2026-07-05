@@ -8,8 +8,8 @@ self.controls, so the union is unambiguous.
 import pytest
 
 from pycats.core.input import InputFrame, merge_frames
-from pycats.sim.runner import run_battle, P1_KEYS
 from pycats.sim.controllers import ChaseController
+from pycats.sim.runner import P1_KEYS, run_battle
 
 
 def test_merge_frames_unions_held_pressed_released():

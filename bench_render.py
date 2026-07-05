@@ -19,12 +19,12 @@ from __future__ import annotations
 
 import argparse
 import cProfile
-import pstats
 import io
+import os
+import pstats
 import statistics
 import time
 
-import os
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame  # noqa: E402
@@ -32,15 +32,21 @@ import pygame  # noqa: E402
 if not pygame.get_init():
     pygame.init()
 
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT, BG_COLOR  # noqa: E402
-from pycats.sim.runner import build_stage, build_players  # noqa: E402
+from pycats.config import BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
 from pycats.core.input import InputFrame  # noqa: E402
 from pycats.entities.attack import Attack  # noqa: E402
 from pycats.render_battle import (  # noqa: E402
-    render_battle, render_attacks, draw_stripes, draw_eye,
-    draw_cat_features, draw_player_name,
-    _cat_body_surface, _BODY_PAD_X, _BODY_PAD_TOP,
+    _BODY_PAD_TOP,
+    _BODY_PAD_X,
+    _cat_body_surface,
+    draw_cat_features,
+    draw_eye,
+    draw_player_name,
+    draw_stripes,
+    render_attacks,
+    render_battle,
 )
+from pycats.sim.runner import build_players, build_stage  # noqa: E402
 
 BUDGET_US = 1_000_000 / 60  # 16,667 us/frame at 60 FPS
 
@@ -144,7 +150,7 @@ def main():
     print("(CPU draw cost only; excludes GPU/display blit, vsync, and HUD/text.)")
 
     # cProfile hotspots over the full render.
-    print("\nTop functions (cProfile, full render x{}):".format(iters))
+    print(f"\nTop functions (cProfile, full render x{iters}):")
     pr = cProfile.Profile()
     pr.enable()
     for _ in range(iters):

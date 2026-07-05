@@ -7,8 +7,8 @@ config and would drift the moment a player is constructed facing the other way).
 """
 import pygame as pg
 
-from pycats.entities.player import Player
 from pycats.config import P1_COLOR, WHITE
+from pycats.entities.player import Player
 
 C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
      "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
@@ -60,6 +60,7 @@ def test_fighter_does_not_reach_owner_clock_tail_or_size():
     """
     import ast
     import pathlib
+
     import pycats.entities.fighter as fm
 
     tree = ast.parse(pathlib.Path(fm.__file__).read_text(encoding="utf-8"))
@@ -85,6 +86,7 @@ def test_fighter_has_no_player_back_reference():
     """
     import ast
     import pathlib
+
     import pycats.entities.fighter as fm
 
     tree = ast.parse(pathlib.Path(fm.__file__).read_text(encoding="utf-8"))

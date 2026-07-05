@@ -18,13 +18,13 @@ Revert-the-fix checks:
     survives a hurt flash" pixel-count assertions go red (the ear/tail pixels
     stay exactly char_color).
 """
-import pytest
 import pygame as pg
+import pytest
 
 from pycats import cat_faces
 from pycats import render_battle as rb
+from pycats.config import RED, WHITE, YELLOW
 from pycats.entities.player import Player
-from pycats.config import WHITE, RED, YELLOW
 
 pytestmark = pytest.mark.usefixtures("render_isolation")
 

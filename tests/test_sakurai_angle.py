@@ -19,24 +19,23 @@ crouch/prone numbers), so these tests pin the *mechanism* — monotonic, the two
 extremes, airborne-fixed, and the end-to-end launch through receive_hit — not
 brittle magic angles.
 """
-from types import SimpleNamespace
-
 import math
+from types import SimpleNamespace
 
 import pygame
 import pytest
 
-from pycats.entities import Player
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 from pycats.combat.knockback import sakurai_angle
 from pycats.config import (
-    SAKURAI_ANGLE_CODE,
     SAKURAI_AIRBORNE_DEG,
-    SAKURAI_GROUNDED_MAX_DEG,
-    SAKURAI_GROUNDED_LOW_KB,
+    SAKURAI_ANGLE_CODE,
     SAKURAI_GROUNDED_HIGH_KB,
+    SAKURAI_GROUNDED_LOW_KB,
+    SAKURAI_GROUNDED_MAX_DEG,
 )
+from pycats.core.input import InputFrame
+from pycats.entities import Player
+from pycats.entities.platform import Platform
 
 _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
@@ -126,8 +125,10 @@ def test_airborne_361_launches_up_not_flat():
 def test_grounded_weak_361_stays_flat():
     """A weak 361 hit on a grounded defender launches flat (no upward pop)."""
     plats = _ground()
-    attacker = _mk(); _settle(attacker, plats)
-    defender = _mk(); _settle(defender, plats)
+    attacker = _mk()
+    _settle(attacker, plats)
+    defender = _mk()
+    _settle(defender, plats)
     assert defender.fighter.on_ground
     defender.fighter.vel.x = 0.0
     defender.fighter.vel.y = 0.0

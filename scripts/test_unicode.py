@@ -3,9 +3,10 @@
 Simple test to verify Unicode rendering is working.
 """
 
-import pygame
-import sys
 import os
+import sys
+
+import pygame
 
 # Add the pycats module to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pycats"))

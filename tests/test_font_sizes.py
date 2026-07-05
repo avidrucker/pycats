@@ -9,11 +9,11 @@ these tests pin the single-source structure so a future re-scatter is caught.
 cat_faces._MONO_SIZE is intentionally NOT centralised (a monospace FACE-render size,
 not a UI text size) — a test pins that it stays local.
 """
-import re
 import pathlib
+import re
 
-from pycats import config, render_battle, text_utils
 import pycats.cat_faces as cat_faces
+from pycats import config, render_battle, text_utils
 
 _PKG = pathlib.Path(config.__file__).parent
 

@@ -8,10 +8,13 @@ alias. This is a pure refactor — the existing chase-bot golden + full_match su
 are the byte-identical proof; the tests here pin structure + the attack policy.
 """
 from pycats.sim.controllers import (
-    BaseController, AttackerController, ChaseController, IdlerController,
+    AttackerController,
+    BaseController,
+    ChaseController,
     FollowerController,
+    IdlerController,
 )
-from pycats.sim.runner import run_battle, P1_KEYS, P2_KEYS
+from pycats.sim.runner import P1_KEYS, P2_KEYS, run_battle
 
 
 def test_attacker_subclasses_base_and_chase_is_alias():

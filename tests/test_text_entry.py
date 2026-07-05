@@ -9,7 +9,7 @@ import os
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
-from pycats.text_entry import TextEntry, DEL, DONE, draw_text_entry
+from pycats.text_entry import DEL, DONE, TextEntry, draw_text_entry
 
 
 def test_new_text_entry_starts_empty_at_the_first_cell():
@@ -62,7 +62,9 @@ def test_select_del_removes_the_last_char():
 
 def test_select_is_a_silent_noop_at_maxlen():
     te = TextEntry(maxlen=2)
-    te.select(); te.select(); te.select()   # three appends of "A"
+    te.select()
+    te.select()
+    te.select()   # three appends of "A"
     assert te.text == "AA"               # capped at maxlen, no error
 
 
@@ -78,7 +80,7 @@ def test_backspace_removes_last_char_and_is_safe_when_empty():
 def test_draw_text_entry_renders_without_error():
     import pygame
     pygame.init()
-    from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAIN_MENU_BG_COLOR
+    from pycats.config import MAIN_MENU_BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH
     te = TextEntry(maxlen=4)
     te.select()                          # "A" in the buffer
     surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))

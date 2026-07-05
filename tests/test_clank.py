@@ -15,10 +15,12 @@ Geometry: attacker A at (0,0) facing right, attacker B at (200,100) facing left,
 both with a hitbox resolving to absolute centre (120,130) so they overlap.
 """
 from __future__ import annotations
+
 import types
+
 import pygame
 
-from pycats.combat.data import Circle, Hitbox, Hurtbox, FighterData
+from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox
 from pycats.entities.attack import Attack
 from pycats.systems.combat import process_hits
 

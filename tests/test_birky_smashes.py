@@ -7,10 +7,10 @@ chargeable via the mechanic in #371/#377. Values are PM3.6-Kirby-shaped
 Golden-safe: the sim path loads the default cat (no smash, not chargeable); a
 test pins that.
 """
+from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+from pycats.combat.charge import scale_hitboxes
 from pycats.combat.data import load_fighter_data
 from pycats.combat.move_select import resolve_move_key
-from pycats.combat.charge import scale_hitboxes
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 
 _BIRKY = load_fighter_data("birky")
 

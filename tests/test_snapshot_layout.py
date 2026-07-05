@@ -10,8 +10,8 @@ import os
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
-from pycats.sim.runner import run_battle, PlayerSnap  # noqa: E402
 from pycats.config import INITIAL_LIVES  # noqa: E402
+from pycats.sim.runner import PlayerSnap, run_battle  # noqa: E402
 
 
 def test_playersnap_names_map_to_real_snapshot_field_positions():

@@ -26,10 +26,10 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pytest
 
 from pycats.config import SHIELD_DRAIN_PER_FRAME
-from pycats.sim.captions import is_active
-from pycats.sim.demo import DEMOS, demo_timeline, demo_frames, demo_captions
-from pycats.sim.runner import run_battle, KEYMAPS
 from pycats.sim.battle_log import events_from_snaps
+from pycats.sim.captions import is_active
+from pycats.sim.demo import DEMOS, demo_captions, demo_frames, demo_timeline
+from pycats.sim.runner import KEYMAPS, run_battle
 
 
 def _run_showcase():

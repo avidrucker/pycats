@@ -10,8 +10,8 @@ loads "P1"/"P2", never "nalio").
 """
 import pygame
 
-from pycats.combat.data import load_fighter_data, FighterData
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+from pycats.combat.data import FighterData, load_fighter_data
 from pycats.entities import Player
 
 P1_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,

@@ -160,9 +160,10 @@ def test_specials_capability_throws_fireball_at_range():
 def _battle_spawns_fireball(p1_level, frames=120, seed=3):
     """Run a leveled two-Nalio battle; True if a moving projectile (fireball) spawns."""
     import pygame
+
     import watch
-    from pycats.sim import runner
     from pycats.core.input import merge_frames
+    from pycats.sim import runner
     plats = runner.build_stage()
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
     c1, c2 = watch.cpu_controllers(p1_level, 1, random.Random(seed))
@@ -302,8 +303,9 @@ def test_reactive_bot_shields_incoming_melee_in_real_battle():
     # Real AI battle: an aggressive Lv7 attacker (p1) vs a reactive defender (p2).
     # p2 should be in `shield` state while p1 is winding up an attack in range.
     import pygame
-    from pycats.sim import runner
+
     from pycats.core.input import merge_frames
+    from pycats.sim import runner
     plats = runner.build_stage()
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
     c1 = AttackerController(attacker_num=1, level=7, rng=random.Random(3))
@@ -330,10 +332,11 @@ def test_reactive_bot_shields_incoming_projectile_in_real_loop():
     # attacks.update()). The opponent (p1) is idle and FAR (400px), so the ONLY
     # in-band threat is the projectile — proving the projectile branch end-to-end.
     import pygame
+
     import pycats.characters.nalio_cat as nalio
-    from pycats.sim import runner
     from pycats.core.input import merge_frames
     from pycats.entities.attack import Attack
+    from pycats.sim import runner
     from pycats.sim.controllers import IdlerController
     fb_move = next(v for v in vars(nalio).values()
                    if getattr(v, "projectile_speed", None) is not None)

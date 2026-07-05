@@ -11,11 +11,10 @@ import random
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
-from pycats.combat.geometry import move_reach
 from pycats.combat.data import load_fighter_data
+from pycats.combat.geometry import move_reach
 from pycats.sim.controllers import AttackerController
 from pycats.sim.runner import build_players, run_battle
-
 
 # ---- move_reach: pure reach from FighterData (the #285 catalogue) --------------
 

@@ -13,8 +13,8 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame
 import pytest
 
-from pycats.core.keymap import Keymap
 from pycats import keybind_store
+from pycats.core.keymap import Keymap
 from pycats.options_menu import OptionsMenu
 
 _P1 = {"up": 1, "down": 2, "left": 3, "right": 4, "attack": 5, "special": 6, "shield": 7}
@@ -89,7 +89,7 @@ def test_saving_through_the_ui_captures_the_live_rebound_keymap():
 
 def test_sets_views_render_without_error():
     pygame.init()
-    from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAIN_MENU_BG_COLOR
+    from pycats.config import MAIN_MENU_BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH
     om, _p1, _p2 = _options()
     keybind_store.save_set("demo", Keymap(dict(_P1)))
     om.keybind_mode = True

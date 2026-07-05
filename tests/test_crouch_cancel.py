@@ -17,10 +17,10 @@ from types import SimpleNamespace
 import pygame
 import pytest
 
+from pycats.config import CROUCH_CANCEL_FACTOR
+from pycats.core.input import InputFrame
 from pycats.entities import Player
 from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
-from pycats.config import CROUCH_CANCEL_FACTOR
 
 _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
@@ -63,8 +63,10 @@ def _atk(attacker, damage=10.0, bkb=30.0, kbg=100.0, angle=0):
 def _struck_launch(crouching: bool):
     """Strike a settled defender (optionally crouching) and return (vel_x, hurt)."""
     plats = _ground()
-    attacker = _mk(); _settle(attacker, plats)
-    defender = _mk(); _settle(defender, plats)
+    attacker = _mk()
+    _settle(attacker, plats)
+    defender = _mk()
+    _settle(defender, plats)
     if crouching:
         _run(defender, plats, _frame("down"))
         assert defender.state == "crouch"
@@ -113,8 +115,10 @@ def _body_attack(owner, cx, cy, r=40):
 
 def _launch_via_process_hits(crouching: bool):
     plats = _ground()
-    attacker = _mk(); _settle(attacker, plats)
-    defender = _mk(); _settle(defender, plats)
+    attacker = _mk()
+    _settle(attacker, plats)
+    defender = _mk()
+    _settle(defender, plats)
     if crouching:
         _run(defender, plats, _frame("down"))
         assert defender.state == "crouch"

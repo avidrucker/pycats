@@ -8,11 +8,11 @@ right, independent of facing). The HUD render + Options toggle are exercised
 elsewhere (test_battle_screen_render / a runtime_settings toggle test).
 """
 from pycats.input_history import (
-    InputHistory,
-    glyphs_for_frame,
-    format_line,
     INPUT_HISTORY_MAX,
     INPUT_HISTORY_TTL_FRAMES,
+    InputHistory,
+    format_line,
+    glyphs_for_frame,
 )
 
 # A minimal controls dict shaped like game.P1_KEYS (name -> pygame keycode).

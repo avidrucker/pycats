@@ -9,12 +9,12 @@ import types
 
 import pygame as pg
 
-from pycats.entities.attack import Attack
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
 from pycats.combat.data import Circle, Hitbox, load_fighter_data
-from pycats.core.input import InputFrame
 from pycats.config import P1_COLOR, WHITE
+from pycats.core.input import InputFrame
+from pycats.entities.attack import Attack
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 
 def _owner(x=100, y=100):

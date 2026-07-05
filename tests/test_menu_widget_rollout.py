@@ -19,7 +19,7 @@ from unittest.mock import patch  # noqa: E402
 import pygame  # noqa: E402
 
 from pycats import runtime_settings, settings  # noqa: E402
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT  # noqa: E402
+from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
 from pycats.main_menu import MainMenuManager  # noqa: E402
 from pycats.pause_menu import PauseMenuManager  # noqa: E402
 

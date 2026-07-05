@@ -2,16 +2,16 @@
 """Debug script to examine FSM behavior during spot dodge."""
 
 try:
-    import pygame
-    import sys
     import os
+    import sys
+
+    import pygame
 
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-    from pycats.entities.player import Player
-    from pycats.entities.platform import Platform
-    from pycats.core.input import InputFrame
     from pycats.config import DODGE_TIME
+    from pycats.entities.platform import Platform
+    from pycats.entities.player import Player
 
     print("Imports successful")
 

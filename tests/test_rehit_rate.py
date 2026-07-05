@@ -9,11 +9,12 @@ then re-hits an overlapping target every `rehit_rate` frames across its active
 window. Moves without it are byte-identical to today (single hit).
 """
 from __future__ import annotations
+
 import types
 
 import pygame
 
-from pycats.combat.data import Circle, Hitbox, Hurtbox, FighterData, MoveData
+from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 from pycats.entities.attack import Attack
 from pycats.systems.combat import process_hits
 

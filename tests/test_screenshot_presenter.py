@@ -4,9 +4,9 @@ import os
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
-from pycats.sim.demo import DEMOS, demo_timeline, demo_frames, demo_captions
-from pycats.sim.runner import run_battle, KEYMAPS
+from pycats.sim.demo import DEMOS, demo_captions, demo_frames, demo_timeline
 from pycats.sim.presenters import ScreenshotPresenter
+from pycats.sim.runner import KEYMAPS, run_battle
 
 
 def test_screenshot_presenter_writes_a_shot_per_caption(tmp_path):

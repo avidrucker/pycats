@@ -3,9 +3,10 @@
 Test the new whitelist-based Unicode font detection.
 """
 
-import pygame
-import sys
 import os
+import sys
+
+import pygame
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "pycats"))
 

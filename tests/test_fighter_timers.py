@@ -12,6 +12,7 @@ os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
+
 from pycats.entities.player import Player  # noqa: E402
 
 CONTROLS = {"left": pygame.K_a, "right": pygame.K_d, "up": pygame.K_w,

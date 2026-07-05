@@ -6,11 +6,11 @@ neutral getup (up) / drop (down or away) / timeout. One-occupant lockout per edg
 """
 import pygame
 
-from pycats.entities import Player
-from pycats.entities.ledge import Ledge, LEFT, RIGHT, ledges_from_platforms
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 from pycats import config
+from pycats.core.input import InputFrame
+from pycats.entities import Player
+from pycats.entities.ledge import LEFT, RIGHT, Ledge, ledges_from_platforms
+from pycats.entities.platform import Platform
 
 
 def _thick(x, y, w, h):
@@ -171,7 +171,8 @@ def test_getup_climbs_onto_stage_and_idles():
     # #311: neutral getup is now a windowed climb (ledge_getup), not instant. Up
     # repositions onto the stage and enters the climb; the edge frees at ~half; the
     # fighter idles when the window closes.
-    plats = _stage(); ledges = ledges_from_platforms(plats)
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
     p = _player()
     _grab_left(p, plats, ledges)
     p.update(_frame_up(p), plats, p_attack_group(), ledges)   # press up -> getup climb
@@ -190,7 +191,8 @@ def test_getup_climbs_onto_stage_and_idles():
 
 
 def test_drop_releases_into_fall_with_lockout():
-    plats = _stage(); ledges = ledges_from_platforms(plats)
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
     p = _player()
     _grab_left(p, plats, ledges)
     p.update(_frame_down(p), plats, p_attack_group(), ledges)  # press down -> drop
@@ -202,7 +204,8 @@ def test_drop_releases_into_fall_with_lockout():
 
 
 def test_away_also_drops():
-    plats = _stage(); ledges = ledges_from_platforms(plats)
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
     p = _player()
     _grab_left(p, plats, ledges)              # LEFT edge -> "away" is left
     p.update(_frame_left(p), plats, p_attack_group(), ledges)
@@ -211,7 +214,8 @@ def test_away_also_drops():
 
 
 def test_timeout_auto_releases():
-    plats = _stage(); ledges = ledges_from_platforms(plats)
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
     p = _player()
     _grab_left(p, plats, ledges)
     p.fighter.ledge_hang_timer = 1                              # imminent timeout
@@ -221,12 +225,14 @@ def test_timeout_auto_releases():
 
 
 def test_regrab_lockout_blocks_immediate_regrab():
-    plats = _stage(); ledges = ledges_from_platforms(plats)
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
     p = _player()
     _grab_left(p, plats, ledges)
     p.update(_frame_down(p), plats, p_attack_group(), ledges)   # drop -> lockout armed
     p.rect.topleft = (80 - 40, 420)
-    p.fighter.vel.y = 5; p.fighter.on_ground = False
+    p.fighter.vel.y = 5
+    p.fighter.on_ground = False
     p.update(_empty_frame(), plats, p_attack_group(), ledges)   # in region again
     assert p.fighter.grabbed_ledge is None                      # blocked by lockout
 
@@ -234,14 +240,20 @@ def test_regrab_lockout_blocks_immediate_regrab():
 # --- Task 5: one-occupant lockout across two fighters ------------------------
 
 def test_occupied_edge_blocks_second_grabber():
-    plats = _stage(); ledges = ledges_from_platforms(plats)
-    p1 = _player(); p2 = _player()
+    plats = _stage()
+    ledges = ledges_from_platforms(plats)
+    p1 = _player()
+    p2 = _player()
     # p1 grabs the LEFT edge
-    p1.rect.topleft = (80 - 40, 420); p1.fighter.vel.y = 5; p1.fighter.on_ground = False
+    p1.rect.topleft = (80 - 40, 420)
+    p1.fighter.vel.y = 5
+    p1.fighter.on_ground = False
     p1.update(_empty_frame(), plats, p_attack_group(), ledges)
     assert p1.state == "ledge_hang"
     # p2 enters the SAME left catch region while p1 holds it
-    p2.rect.topleft = (80 - 40, 420); p2.fighter.vel.y = 5; p2.fighter.on_ground = False
+    p2.rect.topleft = (80 - 40, 420)
+    p2.fighter.vel.y = 5
+    p2.fighter.on_ground = False
     p2.update(_empty_frame(), plats, p_attack_group(), ledges)
     assert p2.fighter.grabbed_ledge is None     # blocked: one occupant per edge
     assert p2.state != "ledge_hang"

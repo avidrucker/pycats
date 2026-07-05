@@ -10,13 +10,12 @@ Both are gated by TAIL_CURL_STRENGTH (0 = pure passive physics), which is why th
 physics tests disable this layer.
 """
 import pygame as pg
-import pytest
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
-from pycats.config import P1_COLOR, WHITE
 import pycats.entities.tail as _tail
+from pycats.config import P1_COLOR, WHITE
+from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
      "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}

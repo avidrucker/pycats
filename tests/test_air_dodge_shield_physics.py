@@ -2,9 +2,10 @@
 """Test script to check if air dodging while holding shield causes physics issues."""
 
 import pygame as pg
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
+
 from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 # Initialize pygame
 pg.init()
@@ -75,10 +76,10 @@ for frame in range(1, 8):
 
     if not gravity_applied and player.state == "dodge":
         print(
-            f"  ⚠️  WARNING: Gravity not being applied! This suggests air dodge is using spot dodge physics."
+            "  ⚠️  WARNING: Gravity not being applied! This suggests air dodge is using spot dodge physics."
         )
     elif gravity_applied:
-        print(f"  ✅ Gravity applied normally")
+        print("  ✅ Gravity applied normally")
 
 print(f"\nFinal result: spot_dodge_flag={player.fighter.spot_dodge_shield_held}")
 

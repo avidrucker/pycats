@@ -120,8 +120,9 @@ def _off_cadence_recovery_attack(whiff_punish_on, frames=200):
     cleanly discriminates whiff-punish from normal cadence attacking (the #248 gotcha:
     a "real battle" test must FAIL when the feature is off)."""
     import pygame
-    from pycats.sim import runner
+
     from pycats.core.input import merge_frames
+    from pycats.sim import runner
     from pycats.sim.controllers import BaseController
     from pycats.systems import combat
 

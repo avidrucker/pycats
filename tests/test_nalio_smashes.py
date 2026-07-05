@@ -8,10 +8,10 @@ seam; the charge scaling is slice 3.
 Golden-safety is structural: the sim path loads the default cat, which has no
 smash move, so these never touch a golden. A test pins that.
 """
-from pycats.combat.data import load_fighter_data
-from pycats.combat.units import u
-from pycats.combat.move_select import resolve_move_key
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+from pycats.combat.data import load_fighter_data
+from pycats.combat.move_select import resolve_move_key
+from pycats.combat.units import u
 
 _NALIO = load_fighter_data("nalio")
 

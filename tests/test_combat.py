@@ -17,14 +17,13 @@ Origin convention (from default_cat.py, confirmed in task-5-brief.md):
   when facing left.
 """
 from __future__ import annotations
+
 import types
-import pytest
+
 import pygame
 
-from pycats.combat.data import Circle, Hitbox, Hurtbox, FighterData
-from pycats.combat.geometry import resolve_circle
+from pycats.combat.data import Circle, FighterData, Hurtbox
 from pycats.systems.combat import process_hits
-
 
 # ---------------------------------------------------------------------------
 # Stub helpers

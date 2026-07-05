@@ -3,7 +3,6 @@
 RED phase: these tests should FAIL before implementation, PASS after.
 """
 import os
-import sys
 import tempfile
 
 # Isolate settings to a tmp dir so save/load don't touch the user's config.
@@ -18,7 +17,7 @@ import pytest
 # Initialize pygame before importing pycats modules
 pygame.init()
 
-from pycats.settings import load, save, defaults
+from pycats.settings import defaults, load, save
 
 
 class TestSettingsToggle:

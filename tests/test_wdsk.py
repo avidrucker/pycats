@@ -11,16 +11,12 @@ scaling (today's behavior). Opt-in, so goldens stay byte-identical.
 """
 from types import SimpleNamespace
 
-import math
-
 import pygame
 import pytest
 
-from pycats.entities import Player
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 from pycats.combat.data import Circle, Hitbox
 from pycats.combat.knockback import knockback, set_knockback
+from pycats.entities import Player
 
 _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,

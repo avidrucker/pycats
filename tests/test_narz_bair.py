@@ -4,10 +4,12 @@ Marth's backward KO/spacing poke: a 2-box tipper (tip first) BEHIND the body (ne
 dx), disjoint. Golden-free: sim loads the default cat.
 """
 from __future__ import annotations
+
 import types
+
 import pygame
 
-from pycats.combat.data import Circle, Hurtbox, FighterData, load_fighter_data
+from pycats.combat.data import Circle, FighterData, Hurtbox, load_fighter_data
 from pycats.entities.attack import Attack
 from pycats.systems.combat import process_hits
 

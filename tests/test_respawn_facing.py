@@ -16,10 +16,10 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame  # type: ignore
 import pytest
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 from pycats.config import RESPAWN_DELAY_FRAMES, SCREEN_HEIGHT
+from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)

@@ -9,13 +9,15 @@ Pins the two PM-Marth signature mechanics, both pure data on the current engine 
 Harness mirrors tests/test_multi_hitbox.py (process_hits + lightweight player stubs).
 """
 from __future__ import annotations
+
 import types
+
 import pygame
 
-from pycats.combat.data import Circle, Hurtbox, FighterData, load_fighter_data
+from pycats.characters.narz_cat import _NARZ_FTILT
+from pycats.combat.data import Circle, FighterData, Hurtbox, load_fighter_data
 from pycats.entities.attack import Attack
 from pycats.systems.combat import process_hits
-from pycats.characters.narz_cat import _NARZ_FTILT
 
 
 def _player(rect, *, hurtbox_circles, facing_right=True):

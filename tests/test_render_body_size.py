@@ -10,7 +10,10 @@ import pygame
 from pycats.battle_screen import BattleScreen
 from pycats.config import BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.render_battle import (
-    _BODY_PAD_BOT, _BODY_PAD_TOP, _cat_body_surface, render_battle,
+    _BODY_PAD_BOT,
+    _BODY_PAD_TOP,
+    _cat_body_surface,
+    render_battle,
 )
 
 _P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,

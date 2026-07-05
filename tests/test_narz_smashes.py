@@ -7,9 +7,9 @@ in #371/#377. Values are PM3.6-Marth-shaped (⚠ playtest, like the rest of the 
 Golden-safe: the sim path loads the default cat (no smash, not chargeable); Narz is
 never the golden cat. A test pins that.
 """
+from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 from pycats.combat.data import load_fighter_data
 from pycats.combat.move_select import resolve_move_key
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 
 _NARZ = load_fighter_data("narz")
 

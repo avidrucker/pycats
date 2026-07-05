@@ -6,8 +6,8 @@ unchanged (golden-safe).
 """
 import random
 
-from pycats.sim.runner import build_players, run_battle
 from pycats.sim.controllers import AttackerController
+from pycats.sim.runner import build_players, run_battle
 from watch import cpu_controllers
 
 

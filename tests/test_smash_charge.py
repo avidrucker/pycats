@@ -12,12 +12,12 @@ chargeable move, and scripted controllers never press smash.
 """
 import pygame as pg
 
-from pycats.combat.data import MoveData, Circle, Hitbox, load_fighter_data
-from pycats.config import SMASH_CHARGE_FRAMES
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+from pycats.combat.data import Circle, Hitbox, MoveData, load_fighter_data
+from pycats.config import SMASH_CHARGE_FRAMES
 from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
           attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)

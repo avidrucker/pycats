@@ -9,11 +9,11 @@ remain pass-through.
 import pygame as pg
 import pytest
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
-from pycats.config import P1_COLOR, WHITE
 import pycats.entities.tail as _tail
+from pycats.config import P1_COLOR, WHITE
+from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 
 @pytest.fixture(autouse=True)

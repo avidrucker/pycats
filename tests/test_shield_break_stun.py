@@ -11,11 +11,11 @@ inputs for a damage-scaled duration, matching Project M / Melee. Three concerns:
 """
 import pygame as pg
 
-from pycats.entities.player import Player
 from pycats.combat.shield import shield_break_stun_frames
-from pycats.config import SHIELD_BREAK_STUN_MIN, SHIELD_BREAK_STUN_MAX
+from pycats.config import SHIELD_BREAK_STUN_MAX, SHIELD_BREAK_STUN_MIN
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
           attack=pg.K_v, special=pg.K_c, shield=pg.K_x)
@@ -109,12 +109,14 @@ def test_draw_dizzy_stars_only_when_stunned():
     p = _mk_player()
     p.rect.topleft = (60, 60)   # leave room above the head on the surface
 
-    blank = pg.Surface((160, 160)); blank.fill((0, 0, 0))
+    blank = pg.Surface((160, 160))
+    blank.fill((0, 0, 0))
     p.fighter.stun_timer = 0
     draw_dizzy_stars(blank, p)
     assert _nonblack_pixel_count(blank) == 0, "drew dizzy stars while not stunned"
 
-    lit = pg.Surface((160, 160)); lit.fill((0, 0, 0))
+    lit = pg.Surface((160, 160))
+    lit.fill((0, 0, 0))
     p.fighter.stun_timer = 200
     draw_dizzy_stars(lit, p)
     assert _nonblack_pixel_count(lit) > 0, "no dizzy stars drawn while stunned"
@@ -126,7 +128,8 @@ def test_draw_dizzy_stars_animate_between_frames():
     p.rect.topleft = (60, 60)
 
     def _frame(timer):
-        s = pg.Surface((160, 160)); s.fill((0, 0, 0))
+        s = pg.Surface((160, 160))
+        s.fill((0, 0, 0))
         p.fighter.stun_timer = timer
         draw_dizzy_stars(s, p)
         return pg.image.tobytes(s, "RGB")
@@ -141,11 +144,13 @@ def test_render_battle_invokes_dizzy_for_stunned_player(monkeypatch):
     monkeypatch.setattr(rb, "draw_dizzy_stars", lambda surf, p: calls.append(p.fighter.stun_timer))
     surf = pg.Surface((400, 300))
 
-    calm = _mk_player(); calm.fighter.stun_timer = 0
+    calm = _mk_player()
+    calm.fighter.stun_timer = 0
     rb.render_battle(surf, [calm], pg.sprite.Group())
     assert calls == [], "dizzy drawn for a non-stunned fighter"
 
-    dizzy = _mk_player(); dizzy.fighter.stun_timer = 200
+    dizzy = _mk_player()
+    dizzy.fighter.stun_timer = 200
     rb.render_battle(surf, [dizzy], pg.sprite.Group())
     assert calls == [200], "render_battle did not draw dizzy for a stunned fighter"
 

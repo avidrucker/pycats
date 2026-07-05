@@ -12,19 +12,17 @@ These tests assert the COMBINE-don't-zero behaviour. The knockback magnitude is
 now the authentic Brawl/PM formula (#40); the expected launch is computed with the
 same pure `knockback()` so the assertions track the model, not a hard-coded number.
 """
-import math
 
 import pygame as pg
 import pytest
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
-from pycats.entities.attack import Attack
-from pycats.combat.data import Hitbox, Circle
-from pycats.core.input import InputFrame
+from pycats.combat.data import Circle, Hitbox
 from pycats.combat.knockback import knockback
-from pycats.config import (P1_COLOR, P2_COLOR, WHITE, MOVE_SPEED,
-                           KNOCKBACK_LAUNCH_FACTOR)
+from pycats.config import KNOCKBACK_LAUNCH_FACTOR, MOVE_SPEED, P1_COLOR, P2_COLOR, WHITE
+from pycats.core.input import InputFrame
+from pycats.entities.attack import Attack
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 # The default cat jab's data (see characters/default_cat.py). These tests build a
 # real Hitbox so the launch is non-zero and the model is exercised end-to-end.
@@ -85,7 +83,7 @@ def test_stationary_knockback_unchanged():
 
 def test_hitstun_is_computed_from_knockback_not_fixed():
     """#40: hurt_timer comes from hitstun_frames(KB), not the old fixed 12."""
-    from pycats.combat.knockback import knockback, hitstun_frames
+    from pycats.combat.knockback import hitstun_frames, knockback
     attacker, defender, *_ = _setup(defender_vel_x=0.0)
     defender.fighter.receive_hit(_jab(attacker))
     kb = knockback(defender.fighter.percent, _JAB_DAMAGE, defender.fighter.weight, _JAB_BKB, _JAB_KBG)

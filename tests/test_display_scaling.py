@@ -7,7 +7,7 @@ the chosen blit mode actually produces the expected dimensions.
 import pytest
 
 from pycats import display
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
 
 
 @pytest.mark.parametrize(

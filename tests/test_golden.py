@@ -14,9 +14,9 @@ tests/golden/REGEN_PROTOCOL.md (S4).
 """
 import random
 
-from pycats.sim.runner import run_battle, KEYMAPS
-from pycats.sim.input_script import compile_timeline, COMBAT_SCRIPT
-from pycats.sim.controllers import ChaseController, AttackerController, FollowerController
+from pycats.sim.controllers import AttackerController, ChaseController, FollowerController
+from pycats.sim.input_script import COMBAT_SCRIPT, compile_timeline
+from pycats.sim.runner import KEYMAPS, run_battle
 from tests.golden_util import check_or_update
 
 # ---- scenario constants ----

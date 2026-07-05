@@ -5,11 +5,16 @@ through settings.py + updates the live runtime accessor; the display rows call
 back into game.py through injected hooks (faked here). Navigation wraps; B backs
 out; the FSM gains an `options` state reachable from and returning to the menu.
 """
+import contextlib
+
 import pygame
+
 from pycats import runtime_settings, settings
-from pycats.options_menu import OptionsMenu
-from pycats.screen_manager import ScreenStateManager
+from pycats.config import MAIN_MENU_OPTION_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.core.input import InputFrame
+from pycats.menu_widgets import menu_button_size
+from pycats.options_menu import ROW_DESCRIPTIONS, OptionsMenu
+from pycats.screen_manager import ScreenStateManager
 
 P1 = {"up": pygame.K_w, "down": pygame.K_s, "left": pygame.K_a, "right": pygame.K_d,
       "attack": pygame.K_v, "special": pygame.K_c}
@@ -146,12 +151,6 @@ def test_options_back_returns_to_main_menu():
 
 
 # --- #390: focused-option captions (content + visibility/no-overlap) ---
-import contextlib
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT, MAIN_MENU_OPTION_SIZE
-from pycats.options_menu import ROW_DESCRIPTIONS, CAPTION_SIZE
-from pycats.menu_widgets import menu_button_size
-
-
 @contextlib.contextmanager
 def _scale(preset):
     prev = runtime_settings.get("font_scale")

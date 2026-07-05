@@ -19,9 +19,9 @@ import types
 
 import pygame as pg
 
-from pycats.sim.controllers import AttackerController, LEDGE_HOG_SAFETY_FLOOR, EDGE_HOG_RANGE
-from pycats.entities.ledge import Ledge, ledges_from_platforms
 from pycats.config import LEDGE_HANG_FRAMES
+from pycats.entities.ledge import Ledge, ledges_from_platforms
+from pycats.sim.controllers import EDGE_HOG_RANGE, LEDGE_HOG_SAFETY_FLOOR, AttackerController
 
 pg.init()
 

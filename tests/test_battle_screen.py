@@ -9,8 +9,6 @@ sim/runner.py path.
 import pygame
 
 from pycats.battle_screen import BattleScreen
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 
 _P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
            attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
@@ -33,9 +31,8 @@ def test_battle_screen_step_matches_runner_sim_path():
     attack snapshots as sim/runner.run_battle (the golden-covered path) for identical
     fighters (calico/tabby — what build_players() uses), stage, and inputs. This
     proves the two parallel sim copies are equivalent, not just 'looks the same'."""
-    from pycats.sim.runner import (run_battle, build_stage, snapshot,
-                                    KEYMAPS, P1_KEYS, P2_KEYS)
-    from pycats.sim.input_script import compile_timeline, InputSpan
+    from pycats.sim.input_script import InputSpan, compile_timeline
+    from pycats.sim.runner import KEYMAPS, P1_KEYS, P2_KEYS, build_stage, run_battle, snapshot
 
     spans = [
         InputSpan(start=5, end=40, player=1, action="right"),

@@ -7,8 +7,7 @@ existing `self.controls["attack"]` / `.controls.get(name)` reads unchanged.
 """
 import pytest
 
-from pycats.core.keymap import Keymap, KeyBindingConflict
-
+from pycats.core.keymap import KeyBindingConflict, Keymap
 
 _DEFAULTS = {"left": 1, "right": 2, "attack": 3, "shield": 4}
 
@@ -66,7 +65,8 @@ def test_a_player_reads_a_rebound_keymap_and_not_the_old_key():
     # Integration contract: a Keymap is a drop-in for the plain `controls` dict, so a
     # rebind on it is seen live by the Player that reads `self.controls`.
     import pygame
-    from pycats.sim.runner import build_players, P1_KEYS
+
+    from pycats.sim.runner import P1_KEYS, build_players
     p1, _p2, _group = build_players()
     p1.controls = Keymap(dict(P1_KEYS))
     old, new = P1_KEYS["attack"], pygame.K_j

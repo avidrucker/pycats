@@ -17,8 +17,8 @@ import pygame as pg
 import pytest
 
 import pycats.sim.presenters as pr
-from pycats.sim.presenters import LivePresenter
 from pycats.sim.captions import Caption
+from pycats.sim.presenters import LivePresenter
 
 
 @pytest.fixture(autouse=True)

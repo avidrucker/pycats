@@ -5,9 +5,9 @@ directly, and nothing in the default path starts a dash (golden-safe).
 """
 import pygame
 
-from pycats.entities.player import Player
-from pycats.config import DASH_SPEED, DASH_DURATION, MOVE_SPEED
 from pycats.combat.data import load_fighter_data
+from pycats.config import DASH_DURATION, DASH_SPEED, MOVE_SPEED
+from pycats.entities.player import Player
 
 pygame.init()
 

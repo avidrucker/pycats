@@ -9,13 +9,13 @@ already zeroes these timers; _respawn() must match it.
 """
 import pygame as pg
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
-from pycats.entities.attack import Attack
-from pycats.combat.data import Hitbox, Circle
+from pycats.combat.data import Circle, Hitbox
+from pycats.config import P1_COLOR, P2_COLOR, RESPAWN_DELAY_FRAMES, WHITE
 from pycats.core.input import InputFrame
+from pycats.entities.attack import Attack
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 from pycats.render_battle import body_tint
-from pycats.config import P1_COLOR, P2_COLOR, WHITE, RESPAWN_DELAY_FRAMES
 
 CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
             "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}

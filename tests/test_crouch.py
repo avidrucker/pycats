@@ -10,10 +10,10 @@ these tests pin the new behaviour.
 """
 import pygame
 
-from pycats.combat.data import load_fighter_data, FighterData, Hurtbox, Circle
+from pycats.combat.data import Circle, FighterData, Hurtbox, load_fighter_data
+from pycats.core.input import InputFrame
 from pycats.entities import Player
 from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 
 _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
@@ -128,13 +128,15 @@ def test_crouch_lowers_hurtbox_high_attack_whiffs():
     plats = _ground()
     attacker = _mk()
 
-    standing = _mk(); _settle(standing, plats)
+    standing = _mk()
+    _settle(standing, plats)
     # A small hitbox up at the head connects with the standing hurtbox.
     cx, cy = standing.rect.centerx, standing.rect.top + 5
     combat.process_hits([standing], [_high_attack(attacker, cx, cy)])
     assert standing.fighter.percent == 10.0, "high hit should connect standing"
 
-    crouched = _mk(); _settle(crouched, plats)
+    crouched = _mk()
+    _settle(crouched, plats)
     _run(crouched, plats, _frame("down"))
     assert crouched.state == "crouch"
     # Same world-space point now sits above the lowered crouch hurtbox -> whiff.
@@ -147,8 +149,8 @@ def test_crouch_lowers_hurtbox_high_attack_whiffs():
 def test_crouch_scenario_reaches_crouch():
     """A down-holding scenario actually reaches the crouch state through the full
     sim loop (the golden in test_golden.py guards byte-stability)."""
-    from pycats.sim.runner import run_battle, KEYMAPS
-    from pycats.sim.input_script import compile_timeline, InputSpan
+    from pycats.sim.input_script import InputSpan, compile_timeline
+    from pycats.sim.runner import KEYMAPS, run_battle
     spans = [InputSpan(start=10, end=120, player=1, action="down")]
     frame_inputs = compile_timeline(spans, KEYMAPS)
     snaps = run_battle(frames=len(frame_inputs), frame_inputs=frame_inputs)

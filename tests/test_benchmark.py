@@ -1,5 +1,6 @@
 # tests/test_benchmark.py
 import pytest
+
 from bench import benchmark, bucketed
 
 

@@ -10,8 +10,8 @@ unlabelled ``TimerBar``; the multi-bar/label/stacking behaviour is covered in
 *above* the dizzy-star animation so the stars are never covered.
 """
 
-import os
 import math
+import os
 import types
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
@@ -22,9 +22,16 @@ import pytest  # noqa: E402
 
 from pycats import render_battle as rb  # noqa: E402
 from pycats.config import (  # noqa: E402
-    SHIELD_MAX_HP, SHIELD_BREAK_STUN_MAX, SHIELD_DRAIN_PER_FRAME, FPS,
-    EAR_HEIGHT, LEDGE_HANG_FRAMES, KNOCKDOWN_PRONE_FRAMES,
-    LEDGE_REGRAB_LOCKOUT_FRAMES, DODGE_TIME, GETUP_ROLL_FRAMES,
+    DODGE_TIME,
+    EAR_HEIGHT,
+    FPS,
+    GETUP_ROLL_FRAMES,
+    KNOCKDOWN_PRONE_FRAMES,
+    LEDGE_HANG_FRAMES,
+    LEDGE_REGRAB_LOCKOUT_FRAMES,
+    SHIELD_BREAK_STUN_MAX,
+    SHIELD_DRAIN_PER_FRAME,
+    SHIELD_MAX_HP,
     SMASH_CHARGE_FRAMES,
 )
 from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402

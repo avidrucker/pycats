@@ -9,10 +9,9 @@ chart sub-phases progress as move_frame advances.
 """
 import pygame
 
-from pycats.entities.player import Player
-from pycats.entities.attack import Attack
-from pycats.entities.platform import Platform
 from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
@@ -98,7 +97,6 @@ def test_hitbox_spawns_once_only_in_active_window():
             spawned_frames.append(p.move_frame)
 
     # Exactly one Attack ever spawned for the move.
-    attacks = [s for s in grp]  # remaining (may have been killed already)
     # Count via spawned_frames (robust to kills)
     assert len(spawned_frames) == 1, f"expected one spawn, got at {spawned_frames}"
     # The single spawn happened inside the active window:

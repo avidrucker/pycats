@@ -95,8 +95,10 @@ def test_cached_output_is_byte_identical_to_direct_blit():
                         ("Options ► ON", True),
                         ("Status Bars: ON", False)]:
         tr = _tr()
-        a = pygame.Surface((520, 90)); a.fill((10, 10, 20))
-        b = pygame.Surface((520, 90)); b.fill((10, 10, 20))
+        a = pygame.Surface((520, 90))
+        a.fill((10, 10, 20))
+        b = pygame.Surface((520, 90))
+        b.fill((10, 10, 20))
         tr.render_text_mixed(txt, 24, (255, 255, 0), a, (260, 40), center=center)
         _direct_blit_reference(tr, txt, 24, (255, 255, 0), b, (260, 40), center)
         assert pygame.image.tobytes(a, "RGBA") == pygame.image.tobytes(b, "RGBA"), txt

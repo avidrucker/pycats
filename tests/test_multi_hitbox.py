@@ -17,10 +17,12 @@ resolves to absolute centre (dx, dy). Defender rect at (100,100,40,60) with a
 single hurtbox circle dx=20,dy=30,r=14 → absolute centre (120,130).
 """
 from __future__ import annotations
+
 import types
+
 import pygame
 
-from pycats.combat.data import Circle, Hitbox, Hurtbox, FighterData
+from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox
 from pycats.entities.attack import Attack
 from pycats.systems.combat import process_hits
 

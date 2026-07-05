@@ -4,13 +4,12 @@ import pygame
 pygame.init()
 
 import sys
-import os
 
 sys.path.insert(0, "pycats")
 
 print("=== Testing Unicode Rendering ===")
 
-from pycats.text_utils import text_renderer, quick_unicode_test
+from pycats.text_utils import quick_unicode_test, text_renderer
 
 # Run diagnostic
 quick_unicode_test()

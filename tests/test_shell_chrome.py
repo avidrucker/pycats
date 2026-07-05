@@ -12,8 +12,8 @@ input-present cases.
 """
 import pygame
 
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, WHITE
 from pycats import text_utils
+from pycats.config import HUD_PADDING, HUD_SPACING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 from pycats.core.input import InputFrame
 from pycats.render_battle import draw_shell_chrome
 

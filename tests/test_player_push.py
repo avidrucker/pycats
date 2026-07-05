@@ -10,11 +10,11 @@ Repro/proof of the original defect: repros/repro_issue_1.py.
 """
 import pygame
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
+from pycats.config import PLAYER_SIZE
 from pycats.core.input import InputFrame
 from pycats.core.physics import resolve_player_push
-from pycats.config import PLAYER_SIZE
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 PW = PLAYER_SIZE[0]  # player width (40)
 

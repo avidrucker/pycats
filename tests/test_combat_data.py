@@ -6,12 +6,13 @@ swap-to-files seam even in tests.
 """
 
 import pytest
+
 from pycats.combat.data import (
     Circle,
-    Hitbox,
-    MoveData,
-    Hurtbox,
     FighterData,
+    Hitbox,
+    Hurtbox,
+    MoveData,
     load_fighter_data,
 )
 

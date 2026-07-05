@@ -2,14 +2,15 @@
 """Minimal test to trace velocity changes during dodge."""
 
 try:
-    import pygame as pg
     import sys
+
+    import pygame as pg
 
     sys.path.append(".")
 
-    from pycats.entities.player import Player
-    from pycats.entities.platform import Platform
     from pycats.core.input import InputFrame
+    from pycats.entities.platform import Platform
+    from pycats.entities.player import Player
 
     pg.init()
 
@@ -35,7 +36,7 @@ try:
     )
 
     # Trigger dodge
-    print(f"\n--- Triggering Dodge ---")
+    print("\n--- Triggering Dodge ---")
     dodge_frame = InputFrame(held={pg.K_d}, pressed={pg.K_d}, released=set())
     print(f"Before update: vel={player.vel}")
 

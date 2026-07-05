@@ -14,17 +14,23 @@ import argparse
 import random
 from collections import Counter
 
-from pycats.config import FPS
-from pycats.sim.runner import run_battle, KEYMAPS
-from pycats.sim.presenters import LivePresenter, VideoPresenter, ScreenshotPresenter
-from pycats.sim.controllers import (
-    AttackerController, IdlerController, FollowerController,
-)
-from pycats.sim.battle_log import events_from_snaps, render
-from pycats.sim.demo import (
-    DEMOS, demo_captions, demo_timeline, demo_frames, captions_from_srt,
-)
 from pycats.characters.roster import ARCHETYPE_ROSTER
+from pycats.config import FPS
+from pycats.sim.battle_log import events_from_snaps, render
+from pycats.sim.controllers import (
+    AttackerController,
+    FollowerController,
+    IdlerController,
+)
+from pycats.sim.demo import (
+    DEMOS,
+    captions_from_srt,
+    demo_captions,
+    demo_frames,
+    demo_timeline,
+)
+from pycats.sim.presenters import LivePresenter, ScreenshotPresenter, VideoPresenter
+from pycats.sim.runner import KEYMAPS, run_battle
 
 
 def battle_log_text(snaps) -> str:

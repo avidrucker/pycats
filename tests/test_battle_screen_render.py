@@ -11,14 +11,23 @@ home, beside their sibling drawers render_battle / render_attacks).
 """
 import pygame
 
+from pycats import runtime_settings, settings, text_utils
 from pycats.battle_screen import BattleScreen
 from pycats.config import (
-    BG_COLOR, SCREEN_WIDTH, SCREEN_HEIGHT, HUD_PADDING, HUD_SPACING, WHITE,
+    BG_COLOR,
+    HUD_PADDING,
+    HUD_SPACING,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WHITE,
 )
-from pycats import runtime_settings, settings, text_utils
 from pycats.render_battle import (
-    render_battle, render_attacks, render_hitbox_overlay, draw_hud, draw_controls,
+    draw_controls,
+    draw_hud,
     draw_input_history,
+    render_attacks,
+    render_battle,
+    render_hitbox_overlay,
 )
 
 _P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,

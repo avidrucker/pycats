@@ -11,9 +11,9 @@ penetrates above the ceiling's bottom face.
 """
 import pygame
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
 from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)

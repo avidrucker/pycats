@@ -6,6 +6,8 @@ screen engine (the legacy FSM was retired across slices 4a/4b/4c, ADR-0002) — 
 live screen flow correctly. No backend selection remains: the manager constructs the
 statechart engine unconditionally.
 """
+import types
+
 import pygame
 
 from pycats.core.input import InputFrame
@@ -55,9 +57,6 @@ def test_reset_to_main_menu_force_path():
 
 
 # --- #230 (slice 3 of #100): transition side-effects via entry/update actions ---
-import types
-
-
 def test_pause_to_win_screen_wires_stats_from_battle_via_on_enter():
     """pause -> win_screen (the 'end_match' stats view) wires the stats from the
     battle threaded into ctx, via _on_enter_win_screen — replacing game.py's

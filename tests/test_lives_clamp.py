@@ -15,8 +15,8 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # type: ignore
 
+from pycats.config import INITIAL_LIVES, P1_COLOR, WHITE
 from pycats.entities.player import Player
-from pycats.config import P1_COLOR, WHITE, INITIAL_LIVES
 
 pygame.init()
 

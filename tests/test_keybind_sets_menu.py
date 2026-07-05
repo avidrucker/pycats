@@ -12,8 +12,8 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame
 import pytest
 
-from pycats.core.keymap import Keymap
 from pycats import keybind_store
+from pycats.core.keymap import Keymap
 from pycats.keybind_sets_menu import KeybindSetsMenu
 
 

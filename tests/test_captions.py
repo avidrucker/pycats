@@ -8,10 +8,17 @@ with a fake video writer (no ffmpeg).
 import pygame
 import pytest
 
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.sim.captions import (
-    Caption, TOP_CENTER, MIDDLE_CENTER, BOTTOM_CENTER, CAPTION_MARGIN,
-    is_active, anchored_rect, render_caption_surface, draw_captions,
+    BOTTOM_CENTER,
+    CAPTION_MARGIN,
+    MIDDLE_CENTER,
+    TOP_CENTER,
+    Caption,
+    anchored_rect,
+    draw_captions,
+    is_active,
+    render_caption_surface,
 )
 
 

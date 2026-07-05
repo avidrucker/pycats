@@ -11,12 +11,13 @@ each window on its own start frame; `MoveTick`'s shape is unchanged (≤1 window
 starts per frame), so `player.py`/`attack.py` are untouched.
 """
 import pygame
+import pytest
 
 from pycats.combat.data import Circle, Hitbox, MoveData
 from pycats.combat.move_clock import MoveClock
+from pycats.core.input import InputFrame
 from pycats.entities import Player
 from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 
 _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
@@ -114,8 +115,6 @@ def test_two_windows_become_two_separate_attacks_via_player_update():
 
 
 # ------------------------------------------------- Cycle 4: validation guards
-
-import pytest
 
 
 def test_half_specified_window_is_rejected():

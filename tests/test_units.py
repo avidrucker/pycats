@@ -4,8 +4,8 @@ Pins the px↔unit authoring scale so it is single-sourced (not a magic 5.4 in
 comments) and so the ADR-0003 derivation-guard (#233) has an importable constant to
 re-evaluate against. Able-to-fail: change PX_PER_UNIT and these go red.
 """
-from pycats.config import PX_PER_UNIT
 from pycats.combat.units import u
+from pycats.config import PX_PER_UNIT
 
 
 def test_px_per_unit_is_the_calibrated_scale():

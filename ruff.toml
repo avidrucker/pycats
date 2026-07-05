@@ -33,3 +33,9 @@ select = ["F", "I", "E722", "E702", "E402", "UP", "E501"]
 "pycats/core/physics.py" = ["E402"]
 "pycats/entities/player.py" = ["E402"]
 "pycats/render_battle.py" = ["E402"]
+# Deliberate init-before-import (#532): these set os.environ (SDL/config isolation)
+# or run pygame.init() + sys.path.insert() that MUST precede the imports below them,
+# so E402 there is by design, not a misplaced import.
+"tests/test_hold_esc_quit.py" = ["E402"]
+"scripts/comprehensive_test.py" = ["E402"]
+"scripts/run_test.py" = ["E402"]

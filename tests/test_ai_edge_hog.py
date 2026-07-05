@@ -11,9 +11,9 @@ import types
 
 import pygame as pg
 
-from pycats.sim.controllers import AttackerController, EDGE_HOG_RANGE
-from pycats.entities.ledge import Ledge
 from pycats.config import LEDGE_HANG_FRAMES
+from pycats.entities.ledge import Ledge
+from pycats.sim.controllers import EDGE_HOG_RANGE, AttackerController
 
 pg.init()
 
@@ -141,8 +141,9 @@ def _closes_on_ledge_in_real_battle(edge_hog_on):
     the bot's closest approach to the ledge corner over the run (smaller = it
     committed to the ledge). Discriminates the feature: OFF must not close in."""
     import pygame
-    from pycats.sim import runner
+
     from pycats.entities.ledge import ledges_from_platforms
+    from pycats.sim import runner
 
     plats = runner.build_stage()
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")

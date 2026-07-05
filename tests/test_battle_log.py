@@ -11,7 +11,15 @@ dodge_timer, 13 hurt_timer, 14 stun_timer, 15 attack_timer, 16 invuln_timer, 17 
 active, hit_cx, hit_cy, hit_r); snap = (parts, attacks, phase, winner).
 """
 from pycats.sim.battle_log import (
-    events_from_snaps, render, BattleEvent, JUMP, ATTACK, HIT, KO, STATE, MATCH_END,
+    ATTACK,
+    HIT,
+    JUMP,
+    KO,
+    MATCH_END,
+    STATE,
+    BattleEvent,
+    events_from_snaps,
+    render,
 )
 
 
@@ -124,8 +132,9 @@ def test_events_from_real_seeded_run():
     os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
     os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
     import random
-    from pycats.sim.runner import run_battle
+
     from pycats.sim.controllers import AttackerController
+    from pycats.sim.runner import run_battle
     rng = random.Random(3)
     cs = (AttackerController(attacker_num=1, level=5, rng=rng),
           AttackerController(attacker_num=2, level=5, rng=rng))

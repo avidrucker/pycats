@@ -12,8 +12,8 @@ finish off a target parked at a ledge (full-defeat was deferred to #46). The #64
 jab-reach fix lets the bot connect a body-blocked/fleeing target again, so it now
 **fully 3-stocks** P2 — the assertion below is restored to a full defeat.
 """
-from pycats.sim.runner import run_battle
 from pycats.sim.controllers import ChaseController
+from pycats.sim.runner import run_battle
 
 
 def _captured_match_inputs():

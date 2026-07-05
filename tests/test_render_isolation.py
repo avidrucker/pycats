@@ -11,14 +11,14 @@ Revert-check: delete the ``pytestmark = pytest.mark.usefixtures(...)`` line belo
 (or empty out the fixture body) and ``test_b`` fails with
 ``pygame.error: Invalid font`` / ``font not initialized``.
 """
-import pytest
 import pygame
+import pytest
 
-from pycats.config import BG_COLOR, SCREEN_WIDTH, SCREEN_HEIGHT
-from pycats.sim.runner import build_stage, build_players
-from pycats.core.input import InputFrame
 from pycats import render_battle as rb
 from pycats import text_utils
+from pycats.config import BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH
+from pycats.core.input import InputFrame
+from pycats.sim.runner import build_players, build_stage
 
 # The fixture under test — exactly what guards the real render modules.
 pytestmark = pytest.mark.usefixtures("render_isolation")

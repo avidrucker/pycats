@@ -1,6 +1,6 @@
 # tests/conftest.py — fixtures shared across the test suite.
-import pytest
 import pygame
+import pytest
 
 from pycats import render_battle as rb
 from pycats import text_utils

@@ -3,14 +3,18 @@
 A demo composes input-script spans with captions over one timeline; captions can also
 come from an editable SRT file. All pure data + pure functions (no sim run needed).
 """
-from pycats.sim.captions import TOP_CENTER, BOTTOM_CENTER
+from pycats.sim.captions import TOP_CENTER
+from pycats.sim.demo import (
+    DEMOS,
+    Demo,
+    DemoSegment,
+    captions_from_srt,
+    demo_captions,
+    demo_frames,
+    demo_timeline,
+)
 from pycats.sim.input_script import InputSpan
 from pycats.sim.runner import KEYMAPS
-from pycats.sim.demo import (
-    Caption, DemoSegment, Demo, demo_captions, demo_timeline, demo_frames,
-    captions_from_srt, DEMOS,
-)
-
 
 # --- SRT captions --------------------------------------------------------------
 

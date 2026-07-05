@@ -11,12 +11,14 @@ import argparse
 import statistics
 import time
 
-from pycats.sim.runner import (
-    KEYMAPS, build_players, build_stage, run_battle,
-)
-from pycats.sim.input_script import default_timeline
-from pycats.systems import combat
 from pycats.core.physics import resolve_player_push
+from pycats.sim.input_script import default_timeline
+from pycats.sim.runner import (
+    KEYMAPS,
+    build_players,
+    build_stage,
+)
+from pycats.systems import combat
 from pycats.systems.match_engine import make_match_engine
 
 BUDGET_US = 1_000_000 / 60  # 16,667 us per frame at 60 FPS
@@ -138,8 +140,8 @@ def main():
     print_report(results)
 
     if args.json:
-        import json
         import datetime
+        import json
         import platform
         results = dict(results)  # shallow copy + add run metadata
         results["meta"] = {

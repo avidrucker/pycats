@@ -1,9 +1,10 @@
 # tests/test_render_battle.py
-import pytest
 import pygame
+import pytest
+
 import pycats.entities.tail
-from pycats.sim.runner import build_stage, build_players
 from pycats.render_battle import render_battle
+from pycats.sim.runner import build_players, build_stage
 
 # Re-init font + clear stale render/font caches before each test so a prior
 # test's pygame.quit() can't break rendering (#63).
@@ -51,7 +52,7 @@ def test_platform_renders_thickness_colour_pixels():
     """#317/H-b slice 1: render_battle paints each platform its thickness colour
     (thick (164,113,73) / thin (193,153,112)). Guards the Surface -> draw.rect
     extraction — able-to-fail if the colour mapping or the rect draw is wrong."""
-    from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT
+    from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
     plats = build_stage()
     surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     surf.fill((0, 0, 0))

@@ -10,8 +10,8 @@ import random
 
 import pygame as pg
 
+from pycats.sim.controllers import ANTI_STALL_MAX, ANTI_STALL_MOVE_PX, AttackerController
 from pycats.sim.runner import build_players
-from pycats.sim.controllers import AttackerController, ANTI_STALL_MAX, ANTI_STALL_MOVE_PX
 
 
 def _frozen_pair():

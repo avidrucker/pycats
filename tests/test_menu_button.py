@@ -74,9 +74,6 @@ def test_returns_rect_centered_at_position():
 # ---- pilot integration: OptionsMenu.render uses the widget ----------------- #
 from pycats import runtime_settings, settings  # noqa: E402
 from pycats.config import (  # noqa: E402
-    MAIN_MENU_OPTION_SPACING,
-    MAIN_MENU_PADDING,
-    MAIN_MENU_TITLE_SIZE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )

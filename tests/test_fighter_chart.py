@@ -1,9 +1,8 @@
 # tests/test_fighter_chart.py
 import pygame
+
 from pycats.entities.player import Player
 from pycats.systems.state_engine_sc import StatechartEngine
-from pycats.charts.fighter_chart import build_fighter_chart
-from statecharts import Session
 
 P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)

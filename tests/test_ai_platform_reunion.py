@@ -8,8 +8,8 @@ asserts the sustained x-aligned / different-platform standstill is gone.
 """
 import random
 
-from pycats.sim.runner import run_battle
 from pycats.sim.controllers import AttackerController
+from pycats.sim.runner import run_battle
 
 
 def _longest_standoff(p1_char, p2_char, l1, l2, seed=3, frames=1800):

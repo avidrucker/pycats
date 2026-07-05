@@ -9,13 +9,13 @@ Shield-BREAK still routes to the dizzy `stun`, not shieldstun.
 """
 import pygame as pg
 
-from pycats.entities.player import Player
+from pycats.combat.data import Circle, Hitbox
+from pycats.combat.knockback import hitlag_frames
+from pycats.combat.shield import shieldstun_frames
+from pycats.core.input import InputFrame
 from pycats.entities.attack import Attack
 from pycats.entities.platform import Platform
-from pycats.combat.shield import shieldstun_frames
-from pycats.combat.knockback import hitlag_frames
-from pycats.combat.data import Circle, Hitbox
-from pycats.core.input import InputFrame
+from pycats.entities.player import Player
 
 P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
           attack=pg.K_v, special=pg.K_c, shield=pg.K_x)

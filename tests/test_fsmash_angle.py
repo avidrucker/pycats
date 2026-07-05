@@ -12,10 +12,10 @@ import pygame as pg
 
 from pycats.combat.charge import angle_smash_hitboxes
 from pycats.combat.data import Circle, Hitbox, load_fighter_data
-from pycats.config import FSMASH_ANGLE_UP, FSMASH_ANGLE_DOWN
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
+from pycats.config import FSMASH_ANGLE_UP
 from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
           attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)

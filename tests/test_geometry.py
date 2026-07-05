@@ -9,10 +9,8 @@ Functions under test:
   circles_overlap(ax, ay, ar, circle_list_abs) -> bool
 """
 
-import pytest
-from pycats.combat.geometry import circle_overlap, resolve_circle, circles_overlap
 from pycats.combat.data import Circle
-
+from pycats.combat.geometry import circle_overlap, circles_overlap, resolve_circle
 
 # ---------------------------------------------------------------------------
 # circle_overlap — two absolute circles

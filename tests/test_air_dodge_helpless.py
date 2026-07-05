@@ -9,10 +9,10 @@ this file pins the helpless state machine + the SET (not add) semantics.
 """
 import pygame as pg
 
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
+from pycats.config import DODGE_AIR_SPEED, DODGE_TIME, P1_COLOR, WHITE
 from pycats.core.input import InputFrame
-from pycats.config import P1_COLOR, WHITE, DODGE_TIME, DODGE_AIR_SPEED
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 CONTROLS = {
     "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,

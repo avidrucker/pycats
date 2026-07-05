@@ -36,7 +36,7 @@ def test_snapshot_player_tuple_ends_with_defensive_status_and_move_frame():
 
 def test_snapshot_attack_tuple_ends_with_hitbox_circle():
     """Per-attack tuples must end with hit_cx, hit_cy, hit_r (float or int)."""
-    from pycats.sim.input_script import compile_timeline, COMBAT_SCRIPT
+    from pycats.sim.input_script import COMBAT_SCRIPT, compile_timeline
     from pycats.sim.runner import KEYMAPS
     frame_inputs = compile_timeline(COMBAT_SCRIPT, KEYMAPS)
     # Run enough frames that attacks actually appear

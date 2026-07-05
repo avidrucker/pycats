@@ -23,6 +23,7 @@ from pathlib import Path
 
 from pycats.systems.screen_engine import make_screen_engine
 
+
 def _table(flags):
     # 'a' has two ORDERED transitions; first matching guard wins (break-after-first).
     return {

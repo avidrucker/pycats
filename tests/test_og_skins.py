@@ -16,7 +16,6 @@ identity check is red. Green only when config re-exports the archive.
 from pycats.characters.og_skins import OG_SKINS
 from pycats.config import CAT_CHARACTERS
 
-
 # The canonical six, pinned verbatim from the pre-relocation config.py literals.
 EXPECTED = {
     "ghost":  {"name": "Ghost",  "color": (255, 255, 255), "stripe_color": (220, 220, 220), "eye_color": (100, 100, 255)},  # noqa: E501

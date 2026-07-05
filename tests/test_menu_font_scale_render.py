@@ -21,7 +21,7 @@ import pygame  # noqa: E402
 import pytest  # noqa: E402
 
 from pycats import runtime_settings, settings  # noqa: E402
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT  # noqa: E402
+from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
 from pycats.main_menu import MainMenuManager  # noqa: E402
 from pycats.options_menu import OptionsMenu  # noqa: E402
 from pycats.text_utils import text_renderer  # noqa: E402

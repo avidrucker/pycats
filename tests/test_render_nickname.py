@@ -13,7 +13,7 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame
 
 from pycats import render_battle
-from pycats.config import SCREEN_WIDTH, SCREEN_HEIGHT
+from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
 
 
 class _FakeP:

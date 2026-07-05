@@ -2,15 +2,16 @@
 """Debug test to isolate velocity issue."""
 
 try:
-    import pygame as pg
     import sys
+
+    import pygame as pg
 
     sys.path.append(".")
 
-    from pycats.entities.player import Player
-    from pycats.entities.platform import Platform
-    from pycats.core.input import InputFrame
     from pycats.config import DODGE_SPEED
+    from pycats.core.input import InputFrame
+    from pycats.entities.platform import Platform
+    from pycats.entities.player import Player
 
     pg.init()
 

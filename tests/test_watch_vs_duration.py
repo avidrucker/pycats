@@ -15,10 +15,9 @@ with `--frames` overriding the cap for `--vs` and the scripted replay.
 Revert-the-fix check: point `--vs` back at the scripted default / drop the stop
 flag (return (frames or 300, False)) and the 30s + early-stop assertions go red.
 """
-import pytest
 
-from pycats.config import FPS
 import watch
+from pycats.config import FPS
 
 
 def test_vs_runs_30s_and_stops_on_match_over():
@@ -64,8 +63,8 @@ def test_vs_battle_runs_headless_and_is_bounded():
     import os
     os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
     os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
-    from pycats.sim.runner import run_battle
     from pycats.sim.controllers import AttackerController
+    from pycats.sim.runner import run_battle
 
     cap = 40
     snaps = run_battle(

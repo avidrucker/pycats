@@ -8,10 +8,10 @@ resolution then falls back to what the character actually defines so partial kit
 """
 import pygame as pg
 
-from pycats.combat.move_select import select_move_key, resolve_move_key
-from pycats.combat.data import Circle, Hitbox, MoveData, FighterData, Hurtbox
-from pycats.entities.player import Player
+from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
+from pycats.combat.move_select import resolve_move_key, select_move_key
 from pycats.core.input import InputFrame
+from pycats.entities.player import Player
 
 P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
           attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
@@ -83,7 +83,8 @@ def _press(*names, held_extra=()):
 
 def test_default_cat_neutral_attack_unchanged():
     pg.init()
-    p = _mk("P1"); p.fighter.on_ground = True
+    p = _mk("P1")
+    p.fighter.on_ground = True
     p.handle_actions(_press("attack"), pg.sprite.Group())
     assert p.current_move is p.fighter_data.moves["attack"]
 
@@ -180,14 +181,16 @@ def test_b_button_starts_a_defined_special():
                   hitboxes=(Hitbox(circle=Circle(20, 30, 12), damage=7, angle=0),))
     fd = FighterData(hurtbox=Hurtbox(circles=(Circle(20, 30, 14),)),
                      moves={"attack": _mk().fighter_data.moves["attack"], "neutral_b": sb})
-    p = _mk("custom", fighter_data=fd); p.fighter.on_ground = True
+    p = _mk("custom", fighter_data=fd)
+    p.fighter.on_ground = True
     p.handle_actions(_press("special"), pg.sprite.Group())
     assert p.current_move is sb, "B should start the character's neutral_b"
 
 
 def test_b_button_noop_when_no_special_defined():
     pg.init()
-    p = _mk("P1"); p.fighter.on_ground = True
+    p = _mk("P1")
+    p.fighter.on_ground = True
     p.handle_actions(_press("special"), pg.sprite.Group())
     assert p.current_move is None, "B with no special move is a no-op"
 
@@ -223,7 +226,8 @@ def test_smash_through_player_begins_charge_since_slice3a():
     # the swing starts on release/max. (Slice 2's real-smash routing is now behind
     # the charge; the fire path is covered by tests/test_smash_charge.py.)
     pg.init()
-    p = _mk("nalio"); p.fighter.on_ground = True
+    p = _mk("nalio")
+    p.fighter.on_ground = True
     p.handle_actions(_press("smash", held_extra=("right",)), pg.sprite.Group())
     assert p.current_move is None                       # not fired yet — charging
     assert p.fighter.pending_smash_key == "fsmash"
@@ -231,7 +235,8 @@ def test_smash_through_player_begins_charge_since_slice3a():
 
 def test_smash_in_air_alone_is_a_noop_this_slice():
     pg.init()
-    p = _mk("nalio"); p.fighter.on_ground = False
+    p = _mk("nalio")
+    p.fighter.on_ground = False
     p.handle_actions(_press("smash", held_extra=("right",)), pg.sprite.Group())
     assert p.current_move is None, "smash is ground-only this slice; no air-smash"
 

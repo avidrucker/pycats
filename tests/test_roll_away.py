@@ -140,8 +140,9 @@ def _roll_emissions(evade_on, frames=400):
     FSM `state` label lags hurt_timer, so a dodge-able label alone does NOT prove a
     valid roll — the timer gate is what makes emissions non-wasted."""
     import pygame
-    from pycats.sim import runner
+
     from pycats.core.input import merge_frames
+    from pycats.sim import runner
     from pycats.sim.controllers import BaseController
     from pycats.systems import combat
 

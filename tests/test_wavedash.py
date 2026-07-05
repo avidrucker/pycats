@@ -19,16 +19,20 @@ with `escapeair_force` = 3.1 u/f → `DODGE_AIR_SPEED` = round(3.1 × 5.4) = 17 
 These tests assert magnitude *relative to* DODGE_AIR_SPEED, so they pin the model, not a
 literal — robust across a future tuning change.
 """
-import pygame as pg
-
-from pycats.entities.player import Player
-from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 import math
 
+import pygame as pg
+
 from pycats.config import (
-    P1_COLOR, WHITE, DODGE_AIR_SPEED, WAVEDASH_LANDING_LAG, WAVEDASH_ANGLE_DEG,
+    DODGE_AIR_SPEED,
+    P1_COLOR,
+    WAVEDASH_ANGLE_DEG,
+    WAVEDASH_LANDING_LAG,
+    WHITE,
 )
+from pycats.core.input import InputFrame
+from pycats.entities.platform import Platform
+from pycats.entities.player import Player
 
 CONTROLS = {
     "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,

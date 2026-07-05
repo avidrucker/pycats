@@ -1,5 +1,6 @@
 # tests/test_input_script.py
 import pygame
+
 from pycats.core.input import InputFrame
 from pycats.sim.input_script import InputSpan, compile_timeline
 

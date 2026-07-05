@@ -11,9 +11,9 @@ tests pin the new behaviour.
 """
 import pygame
 
+from pycats.core.input import InputFrame
 from pycats.entities import Player
 from pycats.entities.platform import Platform
-from pycats.core.input import InputFrame
 
 _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
@@ -223,12 +223,14 @@ def test_prone_lowers_hurtbox_high_attack_whiffs():
     plats = _ground()
     attacker = _mk()
 
-    standing = _mk(); _settle(standing, plats)
+    standing = _mk()
+    _settle(standing, plats)
     cx, cy = standing.rect.centerx, standing.rect.top + 5
     combat.process_hits([standing], [_high_attack(attacker, cx, cy)])
     assert standing.fighter.percent == 10.0, "high hit should connect standing"
 
-    downed = _mk(); _settle(downed, plats)
+    downed = _mk()
+    _settle(downed, plats)
     downed.force_prone(20)
     _run(downed, plats, _frame())
     assert downed.state == "prone"
@@ -245,7 +247,8 @@ def test_prone_uses_purpose_built_hurtbox_not_resized_standing():
     from pycats.systems import combat
     plats = _ground()
     attacker = _mk()
-    downed = _mk(); _settle(downed, plats)
+    downed = _mk()
+    _settle(downed, plats)
     downed.force_prone(20)
     _run(downed, plats, _frame())
     assert downed.state == "prone"
@@ -261,7 +264,7 @@ def test_prone_uses_purpose_built_hurtbox_not_resized_standing():
 def test_nalio_has_prone_geometry():
     """Nalio (Mario archetype) defines a prone box lower than its crouch box, with
     a hurtbox that sits lower than the standing one (mirrors the crouch data test)."""
-    from pycats.combat.data import load_fighter_data, Hurtbox
+    from pycats.combat.data import Hurtbox, load_fighter_data
     fd = load_fighter_data("nalio")
     assert fd.prone_size is not None
     w, h = fd.prone_size
@@ -275,9 +278,13 @@ def test_nalio_has_prone_geometry():
 def test_prone_pose_renders_without_error():
     """The prone render pose draws without raising (visual-only / playtested)."""
     import pygame
+
     from pycats import render_battle
-    p = _mk(); plats = _ground(); _settle(p, plats)
-    p.force_prone(20); _run(p, plats, _frame())
+    p = _mk()
+    plats = _ground()
+    _settle(p, plats)
+    p.force_prone(20)
+    _run(p, plats, _frame())
     assert p.state == "prone"
     surf = pygame.Surface((400, 300))
     render_battle.render_battle(surf, [p], pygame.sprite.Group())
@@ -350,6 +357,7 @@ def test_fighter_does_not_drive_the_player_engine():
     reach. AST-checked. Able-to-fail: re-adding either reach reds this."""
     import ast
     import pathlib
+
     import pycats.entities.fighter as fm
 
     tree = ast.parse(pathlib.Path(fm.__file__).read_text(encoding="utf-8"))
