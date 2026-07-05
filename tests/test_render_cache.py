@@ -6,7 +6,6 @@ import pytest
 from pycats import render_battle as rb
 from pycats.config import (
     BG_COLOR,
-    FIGHTER_OUTLINE_COLOR,
     FIGHTER_OUTLINE_WIDTH,
     RED,
     SCREEN_HEIGHT,
@@ -45,8 +44,9 @@ def _direct(surface, p):
     rb.draw_eye(comp, shim)
     rb.draw_eye(comp, shim, eye=False)
     rb.draw_cat_features(comp, shim)
-    # #564 silhouette outline behind the sprite, then name on top — before the blit.
-    halo = rb._dilated_silhouette(comp, FIGHTER_OUTLINE_COLOR, FIGHTER_OUTLINE_WIDTH)
+    # #564 silhouette outline behind the sprite (per-slot colour since #572), then
+    # name on top — before the blit.
+    halo = rb._dilated_silhouette(comp, rb.slot_accent_color(p), FIGHTER_OUTLINE_WIDTH)
     halo.blit(comp, (0, 0))
     comp = halo
     rb.draw_player_name(comp, shim)

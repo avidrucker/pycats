@@ -14,7 +14,10 @@ from pycats.core.input import InputFrame
 from pycats.render_battle import _BODY_PAD_TOP, _BODY_PAD_X, _cat_body_surface
 from pycats.sim.runner import build_players, build_stage
 
-_OUT = tuple(FIGHTER_OUTLINE_COLOR)
+# The body ring is per-slot since #572 (P1 red / P2 blue) — body tests read it via
+# slot_accent_color(p). FIGHTER_OUTLINE_COLOR is now only render_tail's default,
+# which the tail test below still exercises.
+_DEFAULT_OUT = tuple(FIGHTER_OUTLINE_COLOR)
 
 
 def _settle():
@@ -38,12 +41,13 @@ def test_outline_wraps_the_ears_above_the_body_rect():
     """The silhouette includes the ears, so outline pixels exist ABOVE the body
     rect top — the torso-box outline (#546) never painted there."""
     p = _settle()
+    ring = tuple(rb.slot_accent_color(p))
     surf = _cat_body_surface(p)
     vrect = _vrect(p)
     found = False
     for y in range(max(0, vrect.top - rb.FIGHTER_OUTLINE_WIDTH - 8), vrect.top):
         for x in range(vrect.left, vrect.right):
-            if tuple(surf.get_at((x, y)))[:3] == _OUT:
+            if tuple(surf.get_at((x, y)))[:3] == ring:
                 found = True
                 break
         if found:
@@ -55,19 +59,20 @@ def test_outline_is_behind_the_sprite_not_over_the_body_edge():
     """The body-rect edge shows the sprite's own colour (outline is behind it),
     and the ring shows just OUTSIDE the silhouette."""
     p = _settle()
+    ring = tuple(rb.slot_accent_color(p))
     surf = _cat_body_surface(p)
     vrect = _vrect(p)
     edge = tuple(surf.get_at((vrect.left, vrect.centery)))[:3]
     just_outside = tuple(surf.get_at((vrect.left - 1, vrect.centery)))[:3]
-    assert edge != _OUT, "body edge is painted with the outline — it's still drawn over the sprite"
-    assert just_outside == _OUT, "no outline ring just outside the body silhouette"
+    assert edge != ring, "body edge is painted with the outline — it's still drawn over the sprite"
+    assert just_outside == ring, "no outline ring just outside the body silhouette"
 
 
 def test_interior_pixel_is_never_overpainted():
     """A deep-interior pixel keeps its body/stripe colour, never the outline."""
     p = _settle()
     surf = _cat_body_surface(p)
-    assert tuple(surf.get_at(_vrect(p).center))[:3] != _OUT
+    assert tuple(surf.get_at(_vrect(p).center))[:3] != tuple(rb.slot_accent_color(p))
 
 
 def test_tail_gets_the_outline_too():
@@ -75,12 +80,12 @@ def test_tail_gets_the_outline_too():
     pixels appear on the rendered tail (able-to-fail: no tail outline -> none)."""
     p = _settle()
     surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-    rb.render_tail(surface, p.tail, (20, 20, 20))  # a dark, low-contrast tail
+    rb.render_tail(surface, p.tail, (20, 20, 20))  # default outline colour (#572 arg omitted)
     bb = surface.get_bounding_rect()  # only the tail's drawn area — keep the scan small
     hits = sum(
         1
         for sx in range(bb.left, bb.right)
         for sy in range(bb.top, bb.bottom)
-        if tuple(surface.get_at((sx, sy)))[:3] == _OUT
+        if tuple(surface.get_at((sx, sy)))[:3] == _DEFAULT_OUT
     )
     assert hits > 0, "tail has no outline pixels"

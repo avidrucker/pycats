@@ -240,16 +240,23 @@ def draw_stripes(surface, p: Player):
         pygame.draw.polygon(surface, _blend(p.stripe_color, getattr(p, "tint", None)), stripe_points)
 
 
+def slot_accent_color(p: Player):
+    """The player *slot*'s accent colour — P1 red / P2 blue (#450) — keyed off
+    `char_name` (the win-attribution identity, `battle_screen.py`), not the
+    displayed text. One source shared by the name label and the fighter outline
+    (#572), so both stay the same colour per slot."""
+    return P1_UI_COLOR if p.char_name == "P1" else P2_UI_COLOR
+
+
 def draw_player_name(surface, p: Player):
     """Draw the fighter's name above the cat: the `nickname` if set (#478), else the
     "P1"/"P2" identity.
 
-    Colour is selected by the player *slot* — `char_name`, the win-attribution identity
-    (`battle_screen.py`) — NOT by the displayed text, so setting a nickname changes the
-    label while keeping the slot's accent colour. `nickname` None → the label is
-    `char_name` in the same colour as before (byte-identical default → the render-parity
-    oracle stays green)."""
-    color = P1_UI_COLOR if p.char_name == "P1" else P2_UI_COLOR
+    Colour is the slot accent (`slot_accent_color`) — NOT the displayed text, so
+    setting a nickname changes the label while keeping the slot's accent colour.
+    `nickname` None → the label is `char_name` in the same colour as before
+    (byte-identical default → the render-parity oracle stays green)."""
+    color = slot_accent_color(p)
     label = getattr(p, "nickname", None) or p.char_name
 
     text_utils.render_text(
@@ -381,8 +388,11 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
     # in the cache key so different-sized fighters don't share one cached body.
     w, h = p.fighter.stand_size
     tint = tuple(body_tint(p))
+    outline = tuple(slot_accent_color(p))  # #572: P1 red / P2 blue silhouette ring
     # nickname (#478) is in the key so a nickname change re-renders the label instead of
     # serving a stale composite; None (the default) leaves the key byte-identical.
+    # `outline` (#572) is keyed too so the two slots never share a cached ring — it's a
+    # function of char_name (already keyed), but keying the resolved colour is explicit.
     key = (
         tuple(p.char_color),
         tuple(p.stripe_color),
@@ -393,6 +403,7 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
         tint,
         face_style,
         (w, h),
+        outline,
     )
     surf = _body_cache.get(key)
     if surf is None:
@@ -426,11 +437,12 @@ def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
             draw_cat_features(surf, shim)
         # Silhouette outline (#564, was a torso-box rect in #546): trace the cat's
         # actual alpha silhouette — body + ears — and lay it BEHIND the sprite so
-        # the ring hugs the real outline and never overpaints interior pixels. It
-        # keeps a low-luminance skin separable from the dark stage (tabby/void/
-        # legacy-P2 bodies sit below WCAG 3:1 vs BG_COLOR; the ring measures 8.7:1)
-        # and is skin-independent. Built BEFORE the name so the label isn't haloed.
-        halo = _dilated_silhouette(surf, FIGHTER_OUTLINE_COLOR, FIGHTER_OUTLINE_WIDTH)
+        # the ring hugs the real outline and never overpaints interior pixels.
+        # Coloured per slot (#572) — P1 red / P2 blue, matching the name label — so
+        # the ring doubles as an identity cue. Built BEFORE the name so the label
+        # isn't haloed. (P2's blue is 2.50:1 vs BG_COLOR, below the #546 3:1 target
+        # — a deliberate owner call for identity over strict contrast, see #572.)
+        halo = _dilated_silhouette(surf, outline, FIGHTER_OUTLINE_WIDTH)
         halo.blit(surf, (0, 0))  # sprite over its own halo -> ring shows only outside it
         surf = halo
         draw_player_name(surf, shim)  # on top of the ring, un-haloed
@@ -743,21 +755,23 @@ def draw_timer_bars(surface, p, specs):
 # tails; cleared by the render_isolation fixture (surfaces go stale after a
 # pygame.quit(), #63) like _body_cache.
 _tail_seg_cache: dict = {}
-# (seg_width, deg°) -> the segment's dilated outline halo (#564). Colour-independent
-# (the halo is FIGHTER_OUTLINE_COLOR and a segment's silhouette is the same shape
-# for any tint), so it keys on shape alone. Cleared with _tail_seg_cache (#63).
+# (seg_width, deg°, outline_color) -> the segment's dilated outline halo (#564).
+# The silhouette shape is tint-independent, but the ring colour is per-slot since
+# #572 (P1 red / P2 blue), so it's in the key. Cleared with _tail_seg_cache (#63).
 _tail_outline_cache: dict = {}
 
 
-def render_tail(surface, tail, color):
+def render_tail(surface, tail, color, outline_color=FIGHTER_OUTLINE_COLOR):
     """Draw a fighter's Verlet `tail` as cached, rotated, tapering rects in `color`
     (#330/H-b — was Tail.draw; the entity holds only sim data now). `color` is the
-    already-resolved tint the caller computes (#265).
+    already-resolved tint the caller computes (#265); `outline_color` is the slot
+    accent for the tail's outline ring (#572, defaults to the shared light ring).
 
     The tail's outline (#564) is drawn as a first pass BEHIND every segment body,
     so the bodies cover the interior stamps and only the tail's outer silhouette
     ring remains — matching the body outline and keeping a low-luminance tail
     separable from the stage."""
+    outline_color = tuple(outline_color)
     cache = _tail_seg_cache
     color = tuple(color)
     length = TAIL_SEGMENT_LENGTH
@@ -782,10 +796,10 @@ def render_tail(surface, tail, color):
     # Pass 1: outline halos, behind everything.
     ow = FIGHTER_OUTLINE_WIDTH
     for surf, rect, width, deg in placed:
-        okey = (width, deg)
+        okey = (width, deg, outline_color)
         halo = _tail_outline_cache.get(okey)
         if halo is None:
-            halo = _dilated_silhouette(surf, FIGHTER_OUTLINE_COLOR, ow, pad=ow)
+            halo = _dilated_silhouette(surf, outline_color, ow, pad=ow)
             _tail_outline_cache[okey] = halo
         blit(halo, (rect.x - ow, rect.y - ow))
     # Pass 2: segment bodies on top, covering the interior stamps.
@@ -803,7 +817,8 @@ def render_battle(surface, players, platforms):
     for p in players:
         if not p.fighter.is_alive:
             continue
-        render_tail(surface, p.tail, tinted(p.char_color, p))  # #330: adapter draws the tail
+        # #330: adapter draws the tail; #572: its outline ring takes the slot accent
+        render_tail(surface, p.tail, tinted(p.char_color, p), slot_accent_color(p))
         # Body composite (rect + stripes + eyes + ears + whiskers + name).
         body = _cat_body_surface(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
         # Posture squash (#124 crouch / #173 prone): vertically scale the body
