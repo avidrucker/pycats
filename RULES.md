@@ -191,8 +191,9 @@
 ## PM-parity markers (`⚠` / `🔬` / `❓`)
 
 Inline glyph markers make unresolved-vs-Project-M work **greppable**. Use them at write
-time. (Axis A of the labeling system #451; design #448; the human-facing key lives on
-**#452**. Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-audit.md`.)
+time. (Axis A of the labeling system #451; design #448; the human-facing key across all
+three axes: **[docs/parity-labeling-legend.md](docs/parity-labeling-legend.md)** (#452).
+Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-audit.md`.)
 
 | Marker | Means | `grep -rn` answers |
 |---|---|---|
