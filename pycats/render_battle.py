@@ -102,7 +102,7 @@ STRIPE_BACK_OFFSET_X = 10  # stripes sit this far toward the back from center-x
 STRIPE_START_Y_OFFSET = 15  # first stripe starts this far below the head top
 FACE_BLIT_OFFSET_Y = 10  # glyph face centred this far below the head top
 NAME_FONT_SIZE = 20  # player-name label above the cat
-NAME_LABEL_OFFSET_Y = 25  # name sits this far above the head top
+NAME_LABEL_OFFSET_Y = 35  # name sits this far above the head top (clears EAR_HEIGHT + label glyph, #573)
 # Name-label colours are the shared player accents (#450: config.P1_UI_COLOR/P2_UI_COLOR).
 SHIELD_FILL_ALPHA = 100  # alpha of the translucent shield-bubble fill
 
