@@ -103,6 +103,40 @@ if the maintainer prefers the better-sourced 60, that is a defensible `decision:
 - Update `smash-charge-hold.md` Q4's "primary" mislabel → "secondary" (fold into the same
   follow-up or #625's doc pass).
 
+## Update (#649) — GCT disassembly: the codeset does **not** hold the charge values as literals
+
+Static analysis of the vanilla PM 3.6 codeset `RSBE01.gct` (staged by #640; 64,352 bytes / 8,044
+Gecko codes; valid header `00d0c0de…` + terminator `f0000000…`), plus a byte search across the
+**whole** extracted build (`pf/module/*.rel` etc.):
+
+- **`1.3671` (float32 BE `3faefd22`) — absent** from the GCT and from every file in the build.
+- **`0.3671` (`3ebbf488`) and the per-frame `0.3671/60` (`3bc87c4d`) — absent** everywhere.
+- **Brawl's `1.4` (`3fb33333`) — present**, but only inside an **unidentified embedded
+  multiplier table** in the GCT (near byte offset ~45,836: `…3fb33333…3fb33333…3faaaaab…` =
+  1.4, 1.4, 1.333, among 0.91 / 1.167 / 1.579). Without a `main.dol` symbol map this table can
+  **not** be tied to the smash-charge mechanic — it could be any scaling table.
+- **`59` / `60`** are too low-signal to locate in ASM without symbols.
+
+**Interpretation.** Smash charge is **global engine** behavior — it lives in Brawl's `main.dol`
+(not shipped in this Homebrew set; PM hooks it via Gecko codes), and the per-fighter `ft_*.rel`
+modules hold no global charge logic. The absence of any `1.3671`/`0.3671` literal means PM does
+**not** store the Melee multiplier as a discoverable constant in the codeset — the computation is
+engine ASM without an extractable literal.
+
+**Correction.** This **retracts the earlier optimism** (in #640's notes and this doc's premise)
+that `RSBE01.gct` would be a clean offline primary for these values. For the smash-charge ramp and
+multiplier specifically, **the codeset is insufficient** — it neither confirms nor refutes 59 or
+1.3671.
+
+**Lead (unverified).** *If* the multiplier table at ~45,836 were the smash-charge table, its `1.4`
+would suggest PM kept Brawl's multiplier (refuting SmashWiki's `1.3671`). That is an **unconfirmed
+inference** — do not act on it; it needs symbol-mapped identification.
+
+**Route.** #637 stays `⚠ primary-unconfirmed`. The remaining primary paths are (a) analyze
+**`main.dol`** against the **`doldecomp/brawl`** symbol map to find the charge routine by name, or
+(b) the **live Dolphin RAM read** at the charge-computation site (needs the Brawl ISO). Both are
+later #638 children; neither is opened here.
+
 ## Sources
 
 - meleelight (Melee engine reimpl, **[primary]** literal) — `~/Documents/Study/JavaScript/meleelight/src/characters/*/moves/*SMASH.js` (clone #616)
