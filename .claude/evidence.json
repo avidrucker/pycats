@@ -1,0 +1,6 @@
+{
+  "canon": "Project M 3.6",
+  "evidence_map": "docs/project-m-rules-by-category.md",
+  "value_registry": "pycats/combat/provenance.py",
+  "governed_domains": ["canon", "in-repo-fact"]
+}
