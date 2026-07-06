@@ -65,6 +65,7 @@
   are the tell (errors db 23/24). (Execution-time complement of "a question is not
   authorization" above: that rule bars acting when only *asked* a question; this one
   bars over-acting when *given* an action.)
+- **Suggest, don't act** — see ~/.claude/CLAUDE.md → "Suggest, don't act". When asked for a narrow action, do only that; propose anything further, don't perform it.
 - Shape every ticket as a complaint: **have X / should have Y / repro**
   (yegor-bdd).
 - **Repro/spec-first for unclear bugs.** If a bug's symptom isn't specific enough to
