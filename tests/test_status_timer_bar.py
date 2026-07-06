@@ -36,18 +36,32 @@ from pycats.config import (  # noqa: E402
 from pycats.render_battle import DIZZY_ORBIT_LIFT  # noqa: E402
 
 
-def _fake(state="idle", shield_hp=SHIELD_MAX_HP, stun_timer=0,
-          prone_timer=0, ledge_regrab_lockout_timer=0,
-          invulnerable=False, dodge_timer=0, getup_roll_timer=0,
-          getup_attack_timer=0, smash_charge_timer=0, cx=120, top=200):
+def _fake(
+    state="idle",
+    shield_hp=SHIELD_MAX_HP,
+    stun_timer=0,
+    prone_timer=0,
+    ledge_regrab_lockout_timer=0,
+    invulnerable=False,
+    dodge_timer=0,
+    getup_roll_timer=0,
+    getup_attack_timer=0,
+    smash_charge_timer=0,
+    cx=120,
+    top=200,
+):
     # timer_bar_specs reads the timers through `.fighter` (#90); `state` stays a
     # direct Player attr. Self-ref so the flat stand-in satisfies both.
     ns = types.SimpleNamespace(
-        state=state, shield_hp=shield_hp, stun_timer=stun_timer,
+        state=state,
+        shield_hp=shield_hp,
+        stun_timer=stun_timer,
         prone_timer=prone_timer,
         ledge_regrab_lockout_timer=ledge_regrab_lockout_timer,
-        invulnerable=invulnerable, dodge_timer=dodge_timer,
-        getup_roll_timer=getup_roll_timer, getup_attack_timer=getup_attack_timer,
+        invulnerable=invulnerable,
+        dodge_timer=dodge_timer,
+        getup_roll_timer=getup_roll_timer,
+        getup_attack_timer=getup_attack_timer,
         smash_charge_timer=smash_charge_timer,
         rect=pygame.Rect(cx - 20, top, 40, 60),
     )
@@ -65,7 +79,7 @@ def test_shield_ratio_and_seconds():
     assert bar.ratio == 25 / SHIELD_MAX_HP
     # seconds to depletion at the hold-drain rate.
     assert bar.readout == f"{math.ceil(25 / (SHIELD_DRAIN_PER_FRAME * FPS))}s"
-    assert bar.color == rb.SHIELD_BAR_COLOR   # blue bar hue (#364), != shield bubble
+    assert bar.color == rb.SHIELD_BAR_COLOR  # blue bar hue (#364), != shield bubble
     assert bar.label == "SHIELD"
 
 
@@ -75,7 +89,7 @@ def test_stun_ratio_and_seconds():
     # Fill is remaining-frames over the CONSTANT max — no stored initial value.
     assert bar.ratio == 240 / SHIELD_BREAK_STUN_MAX
     assert bar.readout == f"{math.ceil(240 / FPS)}s"
-    assert bar.color == rb.DIZZY_BAR_COLOR    # magenta bar hue (#364), != dizzy stars
+    assert bar.color == rb.DIZZY_BAR_COLOR  # magenta bar hue (#364), != dizzy stars
     assert bar.label == "DIZZY"
 
 
@@ -100,6 +114,7 @@ def test_toggle_off_suppresses_bar(monkeypatch):
 # ledge-hang state now shows no HANG bar; the ledge intangibility burst gets its
 # own bar in the follow-up #531.
 
+
 def test_no_hang_bar_while_ledge_hanging():
     assert rb.timer_bar_specs(_fake(state="ledge_hang")) == []
 
@@ -107,6 +122,7 @@ def test_no_hang_bar_while_ledge_hanging():
 # --- DOWN bar (#350, slice 3 of #334) ----------------------------------------
 # An orange count-down bar labelled DOWN while a fighter is knocked down (prone,
 # #13), draining as the ~0.5s getup window (prone_timer) runs out.
+
 
 def test_down_bar_ratio_seconds_label_colour():
     p = _fake(state="prone", prone_timer=20)
@@ -132,6 +148,7 @@ def test_down_bar_suppressed_by_toggle(monkeypatch):
 # timer: it co-activates with the exclusive-state bars, so timer_bar_specs now
 # returns a LIST ordered newest-on-top (least frames elapsed = nearest head).
 
+
 def test_lockout_bar_ratio_seconds_label_colour():
     p = _fake(state="fall", ledge_regrab_lockout_timer=20)
     (bar,) = rb.timer_bar_specs(p)
@@ -147,24 +164,29 @@ def test_no_lockout_bar_when_zero():
 
 def test_lockout_bar_suppressed_by_toggle(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
-    assert rb.timer_bar_specs(
-        _fake(state="fall", ledge_regrab_lockout_timer=20)) == []
+    assert rb.timer_bar_specs(_fake(state="fall", ledge_regrab_lockout_timer=20)) == []
 
 
 def test_lockout_and_down_coactivate_ordered_by_recency():
     # LOCKOUT just started (elapsed 2), DOWN older (elapsed 25) -> LOCKOUT nearer
     # the head. Accumulation order is [DOWN, LOCKOUT], so [LOCKOUT, DOWN] proves
     # the recency SORT, not insertion order.
-    p = _fake(state="prone", prone_timer=5,   # elapsed 25 of 30
-              ledge_regrab_lockout_timer=28)  # elapsed 2 of 30
+    p = _fake(
+        state="prone",
+        prone_timer=5,  # elapsed 25 of 30
+        ledge_regrab_lockout_timer=28,
+    )  # elapsed 2 of 30
     labels = [b.label for b in rb.timer_bar_specs(p)]
     assert labels == ["LOCKOUT", "DOWN"]
 
 
 def test_down_and_lockout_reverse_recency():
     # DOWN just started (elapsed 2), LOCKOUT older (elapsed 25) -> DOWN nearer head.
-    p = _fake(state="prone", prone_timer=28,  # elapsed 2 of 30
-              ledge_regrab_lockout_timer=5)   # elapsed 25 of 30
+    p = _fake(
+        state="prone",
+        prone_timer=28,  # elapsed 2 of 30
+        ledge_regrab_lockout_timer=5,
+    )  # elapsed 25 of 30
     labels = [b.label for b in rb.timer_bar_specs(p)]
     assert labels == ["DOWN", "LOCKOUT"]
 
@@ -192,6 +214,7 @@ def test_shield_sorts_last_under_a_lockout_overlay():
 # The bar resolves the current source to (remaining, max); it is suppressed while
 # ledge-hanging (the dedicated ledge-invuln bar is #531; #475 removed the old HANG).
 
+
 def test_invuln_bar_dodge_source():
     p = _fake(state="dodge", invulnerable=True, dodge_timer=10)
     (bar,) = rb.timer_bar_specs(p)
@@ -218,8 +241,7 @@ def test_invuln_bar_getup_attack_source():
 def test_no_invuln_bar_when_not_invulnerable():
     # The bool gates it: a lingering dodge_timer with invulnerable already cleared
     # shows no INVULN bar.
-    assert rb.timer_bar_specs(
-        _fake(state="dodge", invulnerable=False, dodge_timer=10)) == []
+    assert rb.timer_bar_specs(_fake(state="dodge", invulnerable=False, dodge_timer=10)) == []
 
 
 def test_invuln_suppressed_while_ledge_hanging():
@@ -233,15 +255,18 @@ def test_invuln_suppressed_while_ledge_hanging():
 
 def test_invuln_bar_suppressed_by_toggle(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
-    assert rb.timer_bar_specs(
-        _fake(state="dodge", invulnerable=True, dodge_timer=10)) == []
+    assert rb.timer_bar_specs(_fake(state="dodge", invulnerable=True, dodge_timer=10)) == []
 
 
 def test_invuln_and_lockout_coactivate_ordered_by_recency():
     # Dodge INVULN just started (elapsed 4 of 14), LOCKOUT older (elapsed 25 of
     # 30) -> INVULN nearer the head.
-    p = _fake(state="dodge", invulnerable=True, dodge_timer=10,  # elapsed 4
-              ledge_regrab_lockout_timer=5)                      # elapsed 25
+    p = _fake(
+        state="dodge",
+        invulnerable=True,
+        dodge_timer=10,  # elapsed 4
+        ledge_regrab_lockout_timer=5,
+    )  # elapsed 25
     labels = [b.label for b in rb.timer_bar_specs(p)]
     assert labels == ["INVULN", "LOCKOUT"]
 
@@ -250,12 +275,13 @@ def test_invuln_and_lockout_coactivate_ordered_by_recency():
 # Grows 0->100% as smash_charge_timer accumulates (#371); readout = %-and-
 # seconds-to-full; holds at 100% when maxed.
 
+
 def test_charge_bar_fills_and_reads_percent_and_seconds():
-    p = _fake(state="smash_charge", smash_charge_timer=30)   # half of 60
+    p = _fake(state="smash_charge", smash_charge_timer=30)  # half of 60
     (bar,) = rb.timer_bar_specs(p)
     assert bar.label == "CHARGE"
     assert bar.color == rb.CHARGE_BAR_COLOR
-    assert bar.ratio == 30 / SMASH_CHARGE_FRAMES            # fills UP
+    assert bar.ratio == 30 / SMASH_CHARGE_FRAMES  # fills UP
     secs = math.ceil((SMASH_CHARGE_FRAMES - 30) / FPS)
     assert bar.readout == f"50%·{secs}s"
 
@@ -264,7 +290,7 @@ def test_charge_bar_holds_at_full():
     p = _fake(state="smash_charge", smash_charge_timer=SMASH_CHARGE_FRAMES)
     (bar,) = rb.timer_bar_specs(p)
     assert bar.ratio == 1.0
-    assert bar.readout == "100%·0s"                          # holds at 100%, 0s to full
+    assert bar.readout == "100%·0s"  # holds at 100%, 0s to full
 
 
 def test_no_charge_bar_when_not_charging():
@@ -273,17 +299,79 @@ def test_no_charge_bar_when_not_charging():
 
 def test_charge_bar_suppressed_by_toggle(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
-    assert rb.timer_bar_specs(
-        _fake(state="smash_charge", smash_charge_timer=30)) == []
+    assert rb.timer_bar_specs(_fake(state="smash_charge", smash_charge_timer=30)) == []
 
 
 def test_charge_and_lockout_coactivate_ordered_by_recency():
     # CHARGE just started (elapsed 3), LOCKOUT older (elapsed 25 of 30) -> CHARGE
     # nearer the head. Proves the fill bar's up-count joins the recency sort.
-    p = _fake(state="smash_charge", smash_charge_timer=3,   # elapsed 3
-              ledge_regrab_lockout_timer=5)                 # elapsed 25
+    p = _fake(
+        state="smash_charge",
+        smash_charge_timer=3,  # elapsed 3
+        ledge_regrab_lockout_timer=5,
+    )  # elapsed 25
     labels = [b.label for b in rb.timer_bar_specs(p)]
     assert labels == ["CHARGE", "LOCKOUT"]
+
+
+# --- RECHARGE bar (#597) — shield HP regenerating after release ---------------
+# A teal FILL bar shown ONLY while the shield is recharging (not shielding, HP
+# below full, and NOT during shield-break dizzy). Fills 0->100% as shield_hp
+# climbs; readout = whole seconds to full. Never co-renders with DIZZY.
+
+
+def test_recharge_bar_fills_and_reads_seconds_to_full():
+    p = _fake(state="idle", shield_hp=20)  # released, regenerating toward full
+    (bar,) = rb.timer_bar_specs(p)
+    assert bar.label == "RECHARGE"
+    assert bar.color == rb.RECHARGE_BAR_COLOR
+    assert bar.ratio == 20 / SHIELD_MAX_HP  # fills UP toward full
+    frames_to_full = (SHIELD_MAX_HP - 20) / SHIELD_DRAIN_PER_FRAME
+    assert bar.readout == f"{math.ceil(frames_to_full / FPS)}s"  # seconds to 100%
+
+
+def test_no_recharge_bar_when_shield_full():
+    # At full HP there is nothing to recharge — no bar.
+    assert rb.timer_bar_specs(_fake(state="idle", shield_hp=SHIELD_MAX_HP)) == []
+
+
+def test_no_recharge_bar_while_shielding():
+    # Actively shielding drains, so it shows the SHIELD bar, never RECHARGE.
+    labels = [b.label for b in rb.timer_bar_specs(_fake(state="shield", shield_hp=20))]
+    assert labels == ["SHIELD"]
+
+
+def test_recharge_never_coexists_with_dizzy():
+    # A shield that broke -> dizzy stun with HP below full: only DIZZY shows. The
+    # `stun_timer == 0` clause makes the mutual exclusion structural, not incidental.
+    # Able-to-fail: drop that clause and RECHARGE joins DIZZY here.
+    p = _fake(state="idle", shield_hp=0, stun_timer=240)
+    labels = [b.label for b in rb.timer_bar_specs(p)]
+    assert "DIZZY" in labels
+    assert "RECHARGE" not in labels
+
+
+def test_recharge_shows_climbing_from_empty_after_stun_ends():
+    # Once the dizzy stun clears (stun_timer == 0) the shield is still at 0 and
+    # regenerating -> RECHARGE now shows, filling from empty (ratio 0.0). This is
+    # the intended post-stun behaviour; only the overlap-with-stun window is hidden.
+    p = _fake(state="idle", shield_hp=0, stun_timer=0)
+    (bar,) = rb.timer_bar_specs(p)
+    assert bar.label == "RECHARGE"
+    assert bar.ratio == 0.0
+
+
+def test_recharge_bar_suppressed_by_toggle(monkeypatch):
+    monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
+    assert rb.timer_bar_specs(_fake(state="idle", shield_hp=20)) == []
+
+
+def test_recharge_sorts_last_under_a_lockout_overlay():
+    # A regenerating shield reads as background (like the drain gauge): a co-active
+    # LOCKOUT count-down stacks above it (nearer the head).
+    p = _fake(state="fall", shield_hp=20, ledge_regrab_lockout_timer=10)
+    labels = [b.label for b in rb.timer_bar_specs(p)]
+    assert labels == ["LOCKOUT", "RECHARGE"]  # LOCKOUT nearest head, recharge last
 
 
 @pytest.mark.usefixtures("render_isolation")

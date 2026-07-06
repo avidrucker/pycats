@@ -548,6 +548,7 @@ DOWN_BAR_COLOR = (255, 140, 45)  # orange — knockdown/getup window (#350)
 LOCKOUT_BAR_COLOR = (230, 70, 70)  # red — post-drop regrab lockout (#357)
 INVULN_BAR_COLOR = (95, 225, 120)  # green — intangibility window (#358)
 CHARGE_BAR_COLOR = (255, 205, 40)  # gold — smash charge, the one FILL bar (#380)
+RECHARGE_BAR_COLOR = (60, 200, 140)  # teal — shield HP regen after release (#597)
 
 # The getup-attack (#225) intangibility window = the whole swing, so its bar's
 # max is the move's total frames (kept in sync with the move data, not hardcoded).
@@ -610,16 +611,16 @@ class StatusSource(NamedTuple):
     byte-identical to the pre-#522 inline logic)."""
 
     name: str
-    precedence: int                # tint order + exclusive-bar selection order (low first)
-    active: object                 # (f, p) -> bool: is this source live?
-    kind: object = None            # "COUNTDOWN" | "RESOURCE" | "FILL" (documentation)
-    tint: object = None            # body-flash overlay colour, or None
-    bar_color: object = None       # timer-bar colour, or None
+    precedence: int  # tint order + exclusive-bar selection order (low first)
+    active: object  # (f, p) -> bool: is this source live?
+    kind: object = None  # "COUNTDOWN" | "RESOURCE" | "FILL" (documentation)
+    tint: object = None  # body-flash overlay colour, or None
+    bar_color: object = None  # timer-bar colour, or None
     bar_label: object = None
-    bar_class: object = None       # "exclusive" | "overlay"
-    ratio: object = None           # (f, p) -> float  (0..1 fill; drawer clamps)
-    readout: object = None         # (f, p) -> str
-    recency: object = None         # (f, p) -> float  (sort key; lower = nearer head)
+    bar_class: object = None  # "exclusive" | "overlay"
+    ratio: object = None  # (f, p) -> float  (0..1 fill; drawer clamps)
+    readout: object = None  # (f, p) -> str
+    recency: object = None  # (f, p) -> float  (sort key; lower = nearer head)
 
 
 # The single source of truth for status tints + above-head bars (#522). Order here is
@@ -628,56 +629,112 @@ class StatusSource(NamedTuple):
 # identical to the pre-#522 `active_tint` if-chain and `timer_bar_specs` branches.
 # The dizzy star-halo (draw_dizzy_stars) is a separate render path, not modelled here.
 STATUS_SOURCES = [
-    StatusSource("hurt", 0, kind="COUNTDOWN", tint=RED,
-                 active=lambda f, p: f.hurt_timer > 0),
-    StatusSource("shield", 1, kind="RESOURCE",
-                 active=lambda f, p: p.state == "shield",
-                 bar_color=SHIELD_BAR_COLOR, bar_label="SHIELD", bar_class="exclusive",
-                 ratio=lambda f, p: f.shield_hp / SHIELD_MAX_HP,
-                 readout=lambda f, p: f"{math.ceil(f.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))}s",
-                 recency=lambda f, p: _SHIELD_RECENCY_KEY),
-    StatusSource("stun", 2, kind="COUNTDOWN", tint=YELLOW,
-                 active=lambda f, p: f.stun_timer > 0,
-                 bar_color=DIZZY_BAR_COLOR, bar_label="DIZZY", bar_class="exclusive",
-                 ratio=lambda f, p: f.stun_timer / SHIELD_BREAK_STUN_MAX,
-                 readout=lambda f, p: _secs(f.stun_timer),
-                 recency=lambda f, p: SHIELD_BREAK_STUN_MAX - f.stun_timer),
-    StatusSource("dodge", 3, kind="COUNTDOWN", tint=WHITE,
-                 active=lambda f, p: f.dodge_timer > 0),
+    StatusSource("hurt", 0, kind="COUNTDOWN", tint=RED, active=lambda f, p: f.hurt_timer > 0),
+    StatusSource(
+        "shield",
+        1,
+        kind="RESOURCE",
+        active=lambda f, p: p.state == "shield",
+        bar_color=SHIELD_BAR_COLOR,
+        bar_label="SHIELD",
+        bar_class="exclusive",
+        ratio=lambda f, p: f.shield_hp / SHIELD_MAX_HP,
+        readout=lambda f, p: f"{math.ceil(f.shield_hp / (SHIELD_DRAIN_PER_FRAME * FPS))}s",
+        recency=lambda f, p: _SHIELD_RECENCY_KEY,
+    ),
+    StatusSource(
+        "stun",
+        2,
+        kind="COUNTDOWN",
+        tint=YELLOW,
+        active=lambda f, p: f.stun_timer > 0,
+        bar_color=DIZZY_BAR_COLOR,
+        bar_label="DIZZY",
+        bar_class="exclusive",
+        ratio=lambda f, p: f.stun_timer / SHIELD_BREAK_STUN_MAX,
+        readout=lambda f, p: _secs(f.stun_timer),
+        recency=lambda f, p: SHIELD_BREAK_STUN_MAX - f.stun_timer,
+    ),
+    StatusSource("dodge", 3, kind="COUNTDOWN", tint=WHITE, active=lambda f, p: f.dodge_timer > 0),
     # (ledge_hang COUNTDOWN bar removed with the hang timeout — #475. The ledge
     # intangibility burst is still suppressed here; #531 gives it its own bar.)
-    StatusSource("prone", 5, kind="COUNTDOWN",
-                 active=lambda f, p: p.state == "prone" and f.prone_timer > 0,
-                 bar_color=DOWN_BAR_COLOR, bar_label="DOWN", bar_class="exclusive",
-                 ratio=lambda f, p: f.prone_timer / KNOCKDOWN_PRONE_FRAMES,
-                 readout=lambda f, p: _secs(f.prone_timer),
-                 recency=lambda f, p: KNOCKDOWN_PRONE_FRAMES - f.prone_timer),
-    StatusSource("lockout", 6, kind="COUNTDOWN",
-                 active=lambda f, p: f.ledge_regrab_lockout_timer > 0,
-                 bar_color=LOCKOUT_BAR_COLOR, bar_label="LOCKOUT", bar_class="overlay",
-                 ratio=lambda f, p: f.ledge_regrab_lockout_timer / LEDGE_REGRAB_LOCKOUT_FRAMES,
-                 readout=lambda f, p: _secs(f.ledge_regrab_lockout_timer),
-                 recency=lambda f, p: LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer),
+    StatusSource(
+        "prone",
+        5,
+        kind="COUNTDOWN",
+        active=lambda f, p: p.state == "prone" and f.prone_timer > 0,
+        bar_color=DOWN_BAR_COLOR,
+        bar_label="DOWN",
+        bar_class="exclusive",
+        ratio=lambda f, p: f.prone_timer / KNOCKDOWN_PRONE_FRAMES,
+        readout=lambda f, p: _secs(f.prone_timer),
+        recency=lambda f, p: KNOCKDOWN_PRONE_FRAMES - f.prone_timer,
+    ),
+    StatusSource(
+        "lockout",
+        6,
+        kind="COUNTDOWN",
+        active=lambda f, p: f.ledge_regrab_lockout_timer > 0,
+        bar_color=LOCKOUT_BAR_COLOR,
+        bar_label="LOCKOUT",
+        bar_class="overlay",
+        ratio=lambda f, p: f.ledge_regrab_lockout_timer / LEDGE_REGRAB_LOCKOUT_FRAMES,
+        readout=lambda f, p: _secs(f.ledge_regrab_lockout_timer),
+        recency=lambda f, p: LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer,
+    ),
     # INVULN — the dodge / getup-roll / getup-attack intangibility window, resolved
     # (with its `invulnerable`-bool gate + ledge-hang suppression) by
     # _invuln_remaining_max. One overlay bar; #531 (ledge-invuln) and #506 (respawn)
     # each add their OWN separate source rather than extend this resolver.
-    StatusSource("invuln", 7, kind="COUNTDOWN",
-                 active=lambda f, p: _invuln_remaining_max(p) is not None,
-                 bar_color=INVULN_BAR_COLOR, bar_label="INVULN", bar_class="overlay",
-                 ratio=lambda f, p: _invuln_remaining_max(p)[0] / _invuln_remaining_max(p)[1],
-                 readout=lambda f, p: _secs(_invuln_remaining_max(p)[0]),
-                 recency=lambda f, p: _invuln_remaining_max(p)[1] - _invuln_remaining_max(p)[0]),
+    StatusSource(
+        "invuln",
+        7,
+        kind="COUNTDOWN",
+        active=lambda f, p: _invuln_remaining_max(p) is not None,
+        bar_color=INVULN_BAR_COLOR,
+        bar_label="INVULN",
+        bar_class="overlay",
+        ratio=lambda f, p: _invuln_remaining_max(p)[0] / _invuln_remaining_max(p)[1],
+        readout=lambda f, p: _secs(_invuln_remaining_max(p)[0]),
+        recency=lambda f, p: _invuln_remaining_max(p)[1] - _invuln_remaining_max(p)[0],
+    ),
     # CHARGE (#380) — the one FILL bar: grows 0->100% as smash_charge_timer accumulates
     # rather than draining; recency = the up-count (frames elapsed since charge began).
-    StatusSource("charge", 8, kind="FILL",
-                 active=lambda f, p: f.smash_charge_timer > 0,
-                 bar_color=CHARGE_BAR_COLOR, bar_label="CHARGE", bar_class="overlay",
-                 ratio=lambda f, p: min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES),
-                 readout=lambda f, p: (
-                     f"{round(min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES) * 100)}%·"
-                     f"{math.ceil((SMASH_CHARGE_FRAMES - f.smash_charge_timer) / FPS)}s"),
-                 recency=lambda f, p: f.smash_charge_timer),
+    StatusSource(
+        "charge",
+        8,
+        kind="FILL",
+        active=lambda f, p: f.smash_charge_timer > 0,
+        bar_color=CHARGE_BAR_COLOR,
+        bar_label="CHARGE",
+        bar_class="overlay",
+        ratio=lambda f, p: min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES),
+        readout=lambda f, p: (
+            f"{round(min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES) * 100)}%·"
+            f"{math.ceil((SMASH_CHARGE_FRAMES - f.smash_charge_timer) / FPS)}s"
+        ),
+        recency=lambda f, p: f.smash_charge_timer,
+    ),
+    # RECHARGE (#597) — shield HP regenerating back to full after release. A FILL bar
+    # (fills 0->100% as shield_hp climbs), shown ONLY while regenerating and never
+    # during shield-break dizzy: the `stun_timer == 0` clause makes it provably never
+    # co-live with the "stun"/DIZZY source (active on stun_timer > 0). Overlay so it
+    # composes with a concurrent action bar (e.g. DOWN/LOCKOUT while HP climbs); as a
+    # background resource gauge it reuses _SHIELD_RECENCY_KEY to sort last, so action
+    # count-downs stack above it (mirrors the SHIELD drain gauge, with which it is
+    # state-exclusive: that needs state == "shield", this needs state != "shield").
+    StatusSource(
+        "recharge",
+        9,
+        kind="FILL",
+        active=lambda f, p: p.state != "shield" and f.shield_hp < SHIELD_MAX_HP and f.stun_timer == 0,
+        bar_color=RECHARGE_BAR_COLOR,
+        bar_label="RECHARGE",
+        bar_class="overlay",
+        ratio=lambda f, p: f.shield_hp / SHIELD_MAX_HP,
+        readout=lambda f, p: _secs((SHIELD_MAX_HP - f.shield_hp) / SHIELD_DRAIN_PER_FRAME),
+        recency=lambda f, p: _SHIELD_RECENCY_KEY,
+    ),
 ]
 
 
