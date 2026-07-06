@@ -108,8 +108,12 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
         599,
     ),
     # ---- dodges / rolls ----
-    "DODGE_FRAMES": Provenance(15, "frames", "roll intangibility window; playtest starting point", "GUESS", None),
-    "DODGE_TIME": Provenance(14, "frames", "roll duration; playtest starting point", "GUESS", None),
+    "DODGE_FRAMES": Provenance(
+        15, "frames", "roll intangibility window; playtest starting point (tracked #65)", "GUESS", 65
+    ),
+    "DODGE_TIME": Provenance(
+        14, "frames", "roll duration; playtest starting point (tracked #65)", "GUESS", 65
+    ),
     "DODGE_SPEED": Provenance(
         14,
         "px/frame",
@@ -448,3 +452,27 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "BLAST_PADDING",
     }
 )
+
+
+# --- status views (#643) ------------------------------------------------------
+# The registry is the single source of truth for value status; these are filters
+# over it, not a second store. "what do we knowingly diverge on / haven't sourced?"
+# is a query:  divergences()  (knowing canon departures),  debt()  (unsourced GUESS).
+# TUNED is a settled design choice — deliberately not a "divergence".
+
+
+def by_status(*statuses: str) -> dict[str, Provenance]:
+    """Registry rows whose `status` is one of `statuses`
+    (e.g. ``by_status("DIVERGENCE", "GUESS")``)."""
+    wanted = set(statuses)
+    return {name: prov for name, prov in TUNING_PROVENANCE.items() if prov.status in wanted}
+
+
+def divergences() -> dict[str, Provenance]:
+    """Values that knowingly depart from a canon value (DIVERGENCE) — the audit-risk list."""
+    return by_status("DIVERGENCE")
+
+
+def debt() -> dict[str, Provenance]:
+    """Unsourced values (GUESS) awaiting a sourcing pass (#319) — the grounding-debt list."""
+    return by_status("GUESS")

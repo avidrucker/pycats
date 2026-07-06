@@ -138,3 +138,35 @@ def test_manifest_status_matches_registry():
         "Status columns (registry is the value source of truth; ADR-0003):\n  "
         + "\n  ".join(problems)
     )
+
+
+# --- #643: status accessors + traceability guard (divergences view, #575 Q4) ---
+
+
+def test_by_status_and_named_views():
+    from pycats.combat.provenance import by_status, debt, divergences
+
+    assert set(by_status("GUESS")) == {
+        n for n, p in TUNING_PROVENANCE.items() if p.status == "GUESS"
+    }
+    assert set(by_status("DIVERGENCE", "GUESS")) == {
+        n for n, p in TUNING_PROVENANCE.items() if p.status in ("DIVERGENCE", "GUESS")
+    }
+    # named views mean distinct things: departures vs unsourced debt
+    assert divergences() == by_status("DIVERGENCE")
+    assert debt() == by_status("GUESS")
+    # TUNED is a settled design choice — never surfaced as a divergence or as debt
+    assert all(p.status == "DIVERGENCE" for p in divergences().values())
+    assert all(p.status == "GUESS" for p in debt().values())
+
+
+def test_divergence_and_guess_carry_issue():
+    untraceable = sorted(
+        name
+        for name, prov in TUNING_PROVENANCE.items()
+        if prov.status in ("DIVERGENCE", "GUESS") and prov.issue is None
+    )
+    assert untraceable == [], (
+        "every DIVERGENCE/GUESS constant must carry a tracking `issue` so the "
+        f"departure/debt is traceable (backfill the issue field): {untraceable}"
+    )

@@ -41,9 +41,9 @@
 | `AIR_FRICTION` | 0.85 | TUNED | 🟡 | pycats air friction; deliberate design knob, no PM equivalent |
 | `BLAST_PADDING` | 50 | TUNED | 🟡 | pycats KO boundary = px beyond the screen edge; pycats stage rule, no canon |
 | `DASH_DURATION` | 12 | GUESS | 🟡 | pycats initial-dash burst window; GUESS tuning start (config ⚠, #388), no canon single value |
-| `DODGE_FRAMES` | 15 | GUESS | 🟡 | roll intangibility window; playtest starting point |
+| `DODGE_FRAMES` | 15 | GUESS | 🟡 | roll intangibility window; playtest starting point (tracked #65) |
 | `DODGE_SPEED` | 14 | TUNED | 🟡 | pycats ground-roll horizontal boost; Melee rolls are animation-driven per-character, no single canon speed to derive |
-| `DODGE_TIME` | 14 | GUESS | 🟡 | roll duration; playtest starting point |
+| `DODGE_TIME` | 14 | GUESS | 🟡 | roll duration; playtest starting point (tracked #65) |
 | `FSMASH_ANGLE_DOWN` | 330 | GUESS | 🟡 | pycats angled-fsmash down-forward launch angle (-30deg); GUESS (config ⚠ playtest, #327) |
 | `FSMASH_ANGLE_UP` | 50 | GUESS | 🟡 | pycats angled-fsmash up-forward launch angle; GUESS (config ⚠ playtest, #327), no canon value |
 | `GETUP_ROLL_SPEED` | 12.0 | TUNED | 🟡 | pycats getup-roll horizontal speed (decays under friction); no canon single value (animation-driven) |
