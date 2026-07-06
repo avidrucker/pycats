@@ -282,9 +282,12 @@ def test_charge_bar_fills_and_reads_percent_and_seconds():
     assert bar.label == "CHARGE"
     assert bar.color == rb.CHARGE_BAR_COLOR
     assert bar.ratio == 30 / SMASH_CHARGE_FRAMES  # fills UP
-    pct = round(30 / SMASH_CHARGE_FRAMES * 100)  # 51% over the PM 59f ramp (was 50% over 60f)
-    secs = math.ceil((SMASH_CHARGE_FRAMES - 30) / FPS)
-    assert bar.readout == f"{pct}%·{secs}s"
+    # Concrete literal, NOT derived from SMASH_CHARGE_FRAMES, so this test itself reds
+    # on a wrong ramp (#627 — was tautological/Free-Ride when the expected was computed
+    # from the code's own constant). At timer=30 over the PM 59f ramp:
+    # round(30/59*100) = 51%, ceil((59-30)/60) = 1s. Revert-check: set the ramp to 60
+    # and the readout becomes "50%·1s", flipping this assertion red.
+    assert bar.readout == "51%·1s"
 
 
 def test_charge_bar_holds_at_full():
