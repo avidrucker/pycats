@@ -82,13 +82,15 @@ SHIELDSTUN_FACTOR = 0.345
 DODGE_TIME = 14
 DODGE_SPEED = 14  # horizontal boost for a roll
 # Smash charge (#327 slice 3a): frames of holding the smash input to reach full
-# charge (fraction 0 -> 1). PM/Melee: 60 frames = 1s (confirmed #426, SmashWiki).
-SMASH_CHARGE_FRAMES = 60
+# charge (fraction 0 -> 1). PM: 59 frames (SmashWiki:Project_M — "chargable for 59
+# frames as opposed to 60"; supersedes the base-game 60 #581 registered, #599/#595).
+SMASH_CHARGE_FRAMES = 59
 # Smash charge (#327 slice 3b): full-charge output multiplier. A charged hit's
 # damage scales by 1 + c*(SMASH_CHARGE_SCALE - 1) for charge fraction c (c=0 ->
 # authored, c=1 -> base x SCALE); knockback rises through the formula, BKB/KBG are
-# NOT scaled (#437/#423/#426). PM (Brawl-era) = 1.4 (Melee 1.3671; confirmed #426).
-SMASH_CHARGE_SCALE = 1.4
+# NOT scaled (#437/#423/#426). PM restored Melee's 1.3671 (not Brawl's 1.4;
+# SmashWiki:Project_M; supersedes #581's Brawl value, #599/#595).
+SMASH_CHARGE_SCALE = 1.3671
 # Angleable f-smash (#327 slice 4): a forward smash held with up/down aims the swing.
 # The angled variant REPLACES the fsmash hitboxes' launch angle with these literals
 # (facing-right-relative degrees: 0=forward, 90=up, 270=down). ⚠ playtest.

@@ -68,7 +68,8 @@ def _matrix():
 
 
 # Frozen snapshot of the PRE-refactor outputs (captured from the old active_tint /
-# timer_bar_specs). The registry must reproduce these byte-for-byte.
+# timer_bar_specs). The registry must reproduce these byte-for-byte. (The CHARGE
+# entries read 30/59 ≈ 0.508 / "51%" since #599 corrected the ramp 60→59 frames.)
 EXPECTED_TINT = {
     "calm": None, "hurt": (255, 0, 0), "stun_tint": (255, 255, 0), "dodge": (255, 255, 255),
     "hurt+stun": (255, 0, 0), "stun+dodge": (255, 255, 0), "shield": None, "dizzy": (255, 255, 0),
@@ -93,14 +94,14 @@ EXPECTED_BARS = {
     "invuln_getuproll": [(0.625, "1s", (95, 225, 120), "INVULN")],
     "invuln_getupatk": [(0.5714285714285714, "1s", (95, 225, 120), "INVULN")],
     "invuln_suppressed_hang": [],  # #475: HANG gone; INVULN still suppressed in ledge_hang
-    "charge": [(0.5, "50%·1s", (255, 205, 40), "CHARGE")],
+    "charge": [(0.5084745762711864, "51%·1s", (255, 205, 40), "CHARGE")],
     "overlay_combo": [
         (1.0714285714285714, "1s", (95, 225, 120), "INVULN"),
         (0.6666666666666666, "1s", (230, 70, 70), "LOCKOUT"),
-        (0.5, "50%·1s", (255, 205, 40), "CHARGE")],
+        (0.5084745762711864, "51%·1s", (255, 205, 40), "CHARGE")],
     "excl+overlays": [
         (0.6666666666666666, "1s", (230, 70, 70), "LOCKOUT"),
-        (0.5, "50%·1s", (255, 205, 40), "CHARGE"),
+        (0.5084745762711864, "51%·1s", (255, 205, 40), "CHARGE"),
         (0.4897959183673469, "4s", (210, 90, 220), "DIZZY")],
 }
 

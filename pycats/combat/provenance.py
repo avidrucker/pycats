@@ -92,20 +92,20 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
         "FOUND",
         None,
     ),
-    # ---- smash charge (#327 slice 3 / #426) ----
+    # ---- smash charge (#327 slice 3 / #599, PM-specific; supersedes #581/#426) ----
     "SMASH_CHARGE_FRAMES": Provenance(
-        60,
+        59,
         "frames",
-        "PM/Melee full smash charge = 60 frames = 1s (confirmed #426, SmashWiki:Smash_attack)",
+        'PM smash charge ramp = 59 frames (SmashWiki:Project_M, "chargable for 59 frames as opposed to 60"); supersedes the base-game 60 #581 registered',  # noqa: E501
         "FOUND",
-        426,
+        599,
     ),
     "SMASH_CHARGE_SCALE": Provenance(
-        1.4,
+        1.3671,
         "factor",
-        "PM (Brawl-era) full-charge damage multiplier 1.4 (Melee 1.3671; confirmed #426, SmashWiki:Smash_attack)",
+        'PM full-charge damage multiplier = 1.3671, Melee value restored in PM (SmashWiki:Project_M, "deals x1.3671 of the uncharged amount"); supersedes #581 Brawl-era 1.4',  # noqa: E501
         "FOUND",
-        426,
+        599,
     ),
     # ---- dodges / rolls ----
     "DODGE_FRAMES": Provenance(15, "frames", "roll intangibility window; playtest starting point", "GUESS", None),

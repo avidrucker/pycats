@@ -55,11 +55,12 @@ the ramp to 59 frames.
 | Aspect | pycats today | PM (sourced) | Faithful? |
 |---|---|---|---|
 | Hold at full charge | none — auto-fires at cap (`fighter_input.py`, full-charge auto-release) | none (auto-release) | ✅ **yes** |
-| Charge ramp | `SMASH_CHARGE_FRAMES = 60` | **59** frames | ⚠ off by one |
-| Full-charge multiplier | `SMASH_CHARGE_SCALE = 1.4` (Brawl value) | **1.3671** (Melee, restored in PM) | ⚠ wrong lineage |
+| Charge ramp | `SMASH_CHARGE_FRAMES = 59` | **59** frames | ✅ **yes** (corrected in #599) |
+| Full-charge multiplier | `SMASH_CHARGE_SCALE = 1.3671` | **1.3671** (Melee, restored in PM) | ✅ **yes** (corrected in #599) |
 
 `SMASH_CHARGE_FRAMES` / `SMASH_CHARGE_SCALE` carry `Provenance` rows (`pycats/combat/provenance.py`,
-ADR-0003 / #233), so any value change must update those too and will flip the #588 combat golden.
+ADR-0003 / #233); **#599** applied both corrections (values + `FOUND` rows re-cited to `SmashWiki:Project_M`)
+and regenerated the #588 combat golden.
 
 ---
 
@@ -68,11 +69,12 @@ ADR-0003 / #233), so any value change must update those too and will flip the #5
 - **Hold mechanic:** **KEEP** pycats' auto-fire-at-full-charge — it is PM-faithful. Do **not** add
   a "hold at full charge" state; that would import an Ultimate-only mechanic PM never had. No DEV
   ticket for the hold question.
-- **Charge values:** two concrete, sourced discrepancies remain (ramp 60→**59**, multiplier
-  1.4→**1.3671**). These are a separate, well-founded correction — filed as follow-up DEV **#599**.
-  Both are `FOUND` values (primary-sourced), not game-feel guesses.
+- **Charge values:** two concrete, sourced discrepancies (ramp 60→**59**, multiplier
+  1.4→**1.3671**) were corrected in DEV **#599** — both now `FOUND` values (primary-sourced from
+  `SmashWiki:Project_M`), superseding #581's base-game/Brawl rows. Not game-feel guesses.
 
 ## Sources
 
 - SmashWiki — *Smash attack*: <https://www.ssbwiki.com/Smash_attack>
+- SmashWiki — *Charge*: <https://www.ssbwiki.com/Charge> (corroborates the 1.4× / 1.3671×-in-Melee lineage)
 - SmashWiki — *Project M*: <https://www.ssbwiki.com/Project_M>

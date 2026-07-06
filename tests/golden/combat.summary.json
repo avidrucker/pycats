@@ -1,7 +1,7 @@
 {
-  "attack_active_frames": 42,
+  "attack_active_frames": 44,
   "final_phase": "in_play",
-  "frames": 738,
+  "frames": 754,
   "players": {
     "P1": {
       "ko_frames": [],
@@ -21,12 +21,12 @@
     },
     "P2": {
       "ko_frames": [
-        586
+        601
       ],
       "lives_end": 2,
       "lives_min": 2,
       "lives_start": 3,
-      "percent_max": 85.6,
+      "percent_max": 88.1394,
       "states": [
         "attack",
         "fall",

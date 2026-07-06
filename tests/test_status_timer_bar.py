@@ -277,13 +277,14 @@ def test_invuln_and_lockout_coactivate_ordered_by_recency():
 
 
 def test_charge_bar_fills_and_reads_percent_and_seconds():
-    p = _fake(state="smash_charge", smash_charge_timer=30)  # half of 60
+    p = _fake(state="smash_charge", smash_charge_timer=30)  # ~half of the 59f ramp (#599)
     (bar,) = rb.timer_bar_specs(p)
     assert bar.label == "CHARGE"
     assert bar.color == rb.CHARGE_BAR_COLOR
     assert bar.ratio == 30 / SMASH_CHARGE_FRAMES  # fills UP
+    pct = round(30 / SMASH_CHARGE_FRAMES * 100)  # 51% over the PM 59f ramp (was 50% over 60f)
     secs = math.ceil((SMASH_CHARGE_FRAMES - 30) / FPS)
-    assert bar.readout == f"50%·{secs}s"
+    assert bar.readout == f"{pct}%·{secs}s"
 
 
 def test_charge_bar_holds_at_full():

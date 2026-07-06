@@ -12,6 +12,7 @@ in tests/golden/<name>.summary.json.  Set PYCATS_UPDATE_GOLDENS=1 to (re)record
 them — but a regen must be REVIEWED, not rubber-stamped: see
 tests/golden/REGEN_PROTOCOL.md (S4).
 """
+
 import random
 
 from pycats.sim.controllers import AttackerController, ChaseController, FollowerController
@@ -45,8 +46,9 @@ def _run_combat():
 
 def test_golden_combat():
     """COMBAT_SCRIPT + tail: hurt and ko are exercised via a fully-charged smash KO
-    (Nalio fsmashes Birky off the side, ~66%→86%); stable golden. Post-#475 the KO is a
-    real knockback launch, not the removed ledge-hang self-destruct (#588)."""
+    (Nalio fsmashes Birky off the side, ~69%→88%); stable golden. Post-#475 the KO is a
+    real knockback launch, not the removed ledge-hang self-destruct (#588). Percents
+    rose from ~66→86 when #599 corrected the smash to PM's weaker 1.3671×/59f."""
     snaps = _run_combat()
     all_states = {p[1] for snap in snaps for p in snap[0]}
     assert "hurt" in all_states, f"'hurt' never reached; states={sorted(all_states)}"
