@@ -227,3 +227,18 @@ is missing or PM is Melee-faithful. Remember the **256× hitbox-unit** quirk.
 - pycats code: `pycats/config.py`, `pycats/combat/knockback.py`,
   `pycats/combat/data.py`, `pycats/characters/default_cat.py`.
 - Prior pycats research: #80 (off-pixel), #43 (knockback launch), #38 framerate.
+
+## Local reference clones (offline)
+
+Read-only source clones kept under `~/Documents/Study/<Stack>/` — **grep for literals, not run.**
+
+- **meleelight** (`schmooblidon/meleelight`, JS) → `~/Documents/Study/JavaScript/meleelight` (#616).
+  A faithful Melee reimplementation that hardcodes engine-hardcoded **literals** rukaidata/brawllib_rs
+  cannot give (engine globals, not subaction scripts — see the `rukaidata-engine-hardcoded-limit`
+  finding, #215/#222). Confirmed finds:
+  - **Smash-charge damage scaling** — `src/physics/hitDetection.js`: `damage *= 1 + (chargeFrames * (0.3671 / 60))`.
+    At full charge (`chargeFrames === 60`) this is **×1.3671** — the Melee full-charge multiplier
+    (feeds #599 `SMASH_CHARGE_SCALE`). Note the ramp is **60 frames** in Melee (the `/60`, and the
+    smash fires at `chargeFrames === 60` in each `characters/*/moves/*SMASH.js`) — meleelight is Melee,
+    so it does **not** confirm PM's claimed 59-frame ramp; that stays PM-specific (SmashWiki `Project_M`).
+  - **Air-dodge** — `src/characters/shared/moves/ESCAPEAIR.js`: `escapeair_force = 3.1` (the #222 source for `DODGE_AIR_SPEED`).
