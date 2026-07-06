@@ -283,6 +283,33 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
 - This gates *changing* a value; the `⚠`/`🔬`/`❓` markers above only *label* an unpinned
   one — the two compose (a changed value should shed its `⚠` and land a `FOUND`/`TUNED` entry).
 
+## Read the source before asserting
+
+- **Ground a governed claim before you assert or classify it.** Any claim touching an
+  external canon (**Project M / Melee / Brawl**) — or an **in-repo fact you're recalling
+  rather than reading** that feeds a decision/artifact (a commit, ticket, doc,
+  classification, closing summary) — must rest on a **checkable authority** *before* it is
+  stated: the ticket **body** over its title, the **code** over memory, the **registry**
+  over prose. Grounding is one of two authorities:
+  1. a **verbatim primary quote** (external canon, or a `FOUND` value); or
+  2. the **provenance record + deciding issue** (a pycats decision — `TUNED`/`DIVERGENCE`;
+     `combat/provenance.py`, ADR-0003). A decision-grounded claim must carry a **"not canon"** tag.
+- **No authority in hand → don't assert from a proxy.** Emit an **evidence-deviation
+  notice** and get consent (interactive), or **withhold + log** the claim as a grounding
+  debt (autonomous / fleet). A `GUESS`/unsourced value is a debt to drive to zero, never a
+  silent assertion. The **`grounded-claim`** skill runs this reflex; **#575** is the
+  detective backstop. (Protocol: `docs/superpowers/specs/2026-07-05-grounded-claim-protocol-design.md`;
+  origin #571 / #611 / #620.)
+- **Cite primary sources for parity/mechanics claims** (the PM instance of the reflex above).
+  When asserting how Project M / Melee / Brawl behaves, pull a **verbatim quote** from a
+  **primary source** — PMDT changelogs, rukaidata / `brawllib_rs`, OpenSA/dantarion,
+  doldecomp — with the **URL + tier** (T1 primary / T2 secondary: SmashWiki, Liquipedia,
+  Smashboards). **Label inference as inference** — never issue a **"refuted"/"confirmed"**
+  verdict from a chain of reasoning over secondary facts; scope the verdict to what a primary
+  quote supports and record the rest as a flagged **`gap`**. Flag Melee/Brawl/Smash-4/Ultimate
+  values so they are **never silently attributed to PM**. (Origin: #520 → correction #537,
+  reframe #527, audit #536; ratified **#562**.)
+
 ## Process lessons
 
 Working-discipline lessons distilled from session retrospectives (TILs), codified here so

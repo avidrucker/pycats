@@ -27,6 +27,11 @@ Critical rules:
   with a **research/data citation** or a **game-designer decision** (design doc / ratified
   `decision:` ticket); bare game-feel is declined `wont-do`/`vapid`. Record it as
   `FOUND`/`TUNED`, not as sourced-when-guessed. See [RULES.md](./RULES.md) → "Changing values".
+- **Read the source before asserting** — ground any PM/canon claim, or an in-repo fact
+  you're recalling rather than reading, in a **verbatim primary quote** or a **provenance
+  record + issue** (body over title, code over memory, registry over prose); no authority →
+  declare it and get consent (or withhold + log), don't assert from a proxy. The
+  `grounded-claim` skill runs this. See [RULES.md](./RULES.md) → "Read the source before asserting".
 - **Research epics:** one umbrella `research` tracker; file child threads one at a
   time, finishing each before filing the next.
 - **Every `research` ticket produces ≥1 findings doc** (e.g. `docs/research/<topic>-findings.md`)
