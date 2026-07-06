@@ -75,7 +75,7 @@ microtasks — A finding and a code-swap are two commit-worthy deliverables with
 
 bdd — "Nalio falls on an unsourced default; should fall on the sourced PM value" is a well-formed complaint
        (have/should) — but it can't be *worked* until the basis exists, and the fix needs a proving test.
-  BECAUSE: work is a complaint best expressed as a failing test; "no code PR without a proving test" (yegor-bdd);
+  BECAUSE: work is a complaint best expressed as a failing test; "no code change without a proving test" (yegor-bdd);
            RULES → "Changing values": a value change must cite its basis. The finding produces the basis; the
            correction is the bug-shaped DEV.
   STANDING: advisory — shapes the DEV child (proving test), doesn't set the top label.
@@ -120,7 +120,7 @@ execution. The line for "research + one-line change": the two are separate modes
 (`yegor-architect`: "never mix modes"). Cite: `yegor-architect` (modes; "the *what* is owned by the requirements").
 
 **Q2 — Bug vs feature vs decision.** An unsourced/wrong value is a legitimate **complaint** (have/should) — so the
-*apply* step is a **bug-shaped DEV with a proving test** (`yegor-bdd`: "no code PR without a proving test"; RULES:
+*apply* step is a **bug-shaped DEV with a proving test** (`yegor-bdd`: "no code change without a proving test"; RULES:
 "a value change must cite its basis"). But the complaint is **not actionable until the basis exists**: gathering it
 is **research**, and inventing it (no faithful source) is a **`decision`** (RULES #489/#491: game-feel alone →
 `wont-do`/`vapid`). Cite: `yegor-bdd`, `yegor-tickets`, RULES → "Changing values".
@@ -184,7 +184,7 @@ So #528's three proposed follow-ups, re-labeled under this ruling, are already w
 - **RULES → "Changing values"** (basis (1) research/data / (2) designer decision; "picking a surrogate is a
   decision, not a DEV edit"; FOUND/TUNED; `combat/provenance.py`, ADR-0003; precedents #489, #491).
 - **`yegor-architect`** (architect vs courier; "never mix modes"; "the *what* is owned by the requirements").
-- **`yegor-bdd`** (work is a complaint; "no code PR without a proving test").
+- **`yegor-bdd`** (work is a complaint; "no code change without a proving test").
 - **`yegor-microtasks`** (one concern / one deliverable per ticket; the finding and the swap are two deliverables).
 - **`yegor-tickets`** (decisions live in the tracker as artifacts).
 - **`yegor-personas`** (council + authority ladder: requirements → objective measure → architect tie-break).

@@ -135,7 +135,7 @@ this slice — default 100 for all.
    hitstun change. Regenerate with `PYCATS_UPDATE_GOLDENS=1`, then **verify the
    diff semantically** (only velocity / hurt_timer / percent-derived fields move,
    in the expected direction) before committing — the #31 discipline. Document the
-   verification in the implementation PR/commit.
+   verification in the implementation commit.
 4. **Parity:** legacy↔statechart parity may legitimately end for combat math (the
    roadmap §6 flags this); knockback lives in `receive_hit` (shared by both
    backends), so parity should hold here — confirm, and if it diverges, treat

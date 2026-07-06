@@ -89,7 +89,7 @@ drift resistance · fit with the existing `gh`-based collection.
 |---|---|---|---|---|---|
 | **A. `ice:impact-N` / `ice:confidence-N` / `ice:ease-N` label triplets** | ✅ in the `gh issue list --json labels` pycats already runs | ⚠ 3 label picks per issue; fractional scales (0.25, 0.8) don't fit label names cleanly | ✅ score lives on the issue | ❌ **label sprawl**: 5+3+5 = 13 value labels × the taxonomy, ~150+ label-applications across the backlog; every re-score = label churn + a `gh` write; pollutes the shared cross-repo label set (RULES.md: keep labels identical across repos) | ✗ |
 | **B. `ICE: I/C/E` line convention in the issue body** | ⚠ needs a per-issue body fetch (`gh issue view N`) + parse; not in the cheap `--json labels` sweep | ✅ one line at filing time | ❌ silent drift — a stale body line is invisible; no diff review | ⚠ N extra `gh` calls at triage time (the skills deliberately avoid per-body reads except for `sequenced` tickets) | ✗ |
-| **C. Advisory CSV keyed by issue #** (`stats/ice-scores.csv`) | ✅ `grep -v '^#' stats/ice-scores.csv` — **zero tooling, zero network** | ✅ edit one row; a stdlib maintainer script is an easy follow-up | ✅ **git-tracked → drift shows in the PR diff, review-gated**; one file to eyeball | ✅ **the two skills already hardcode this exact path**; join to issues by number | ✅ **recommended** |
+| **C. Advisory CSV keyed by issue #** (`stats/ice-scores.csv`) | ✅ `grep -v '^#' stats/ice-scores.csv` — **zero tooling, zero network** | ✅ edit one row; a stdlib maintainer script is an easy follow-up | ✅ **git-tracked → drift shows in the commit diff, review-gated**; one file to eyeball | ✅ **the two skills already hardcode this exact path**; join to issues by number | ✅ **recommended** |
 
 ### Recommendation: **Option C — committed advisory CSV, hand/PM-maintained.**
 
@@ -102,7 +102,7 @@ Rationale:
    DB-backed design needs `better-sqlite3`; a flat CSV needs nothing. The one accepted
    trade: pycats loses lccjs's upsert/atomic-export/migration machinery and instead treats
    the CSV as the primary artifact a human or agent edits directly.
-3. **Drift is visible, not silent.** A CSV row change lands in a reviewable PR diff;
+3. **Drift is visible, not silent.** A CSV row change lands in a reviewable commit diff;
    a body line or a mislabelled issue does not.
 4. **No label sprawl / no per-body reads** — the two costs that sink A and B.
 

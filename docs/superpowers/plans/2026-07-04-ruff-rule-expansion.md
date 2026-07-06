@@ -39,7 +39,7 @@ Each child: drive `ruff check --select <F,…>` to 0 for its rule **and** widen 
 
 ## The two decisions (policy — need a human call; recommend a `decision:` ticket each)
 - **Decision 1 — E501 line-length. ✅ DECIDED 2026-07-04 (#512): `line-length = 120`** (in `ruff.toml`; changeable later). Effect: E501 drops **390 → 67** (67 lines still exceed 120). E501 is **not enforced yet** (`[lint] select = ["F"]`), so those 67 are informational — a future child that enables `E`/E501 either wraps them, raises the limit, or per-file-ignores them. Original options were: relax (chosen), exclude E501, or reflow 390 (avoided).
-- **Decision 2 — adopt `ruff format` (64/78 files).** ADR-0006 left it optional. Adopting = a one-time whole-repo diff (~82% of files): ends style bikeshedding, but churns `git blame` and is a large review. If yes: land as a **single mechanical PR in a quiet fleet window** (merge-conflict risk), verified against the full suite + a golden run. Pairs with Decision 1 (the formatter enforces a line-length).
+- **Decision 2 — adopt `ruff format` (64/78 files).** ADR-0006 left it optional. Adopting = a one-time whole-repo diff (~82% of files): ends style bikeshedding, but churns `git blame` and is a large review. If yes: land as a **single mechanical commit in a quiet fleet window** (merge-conflict risk), verified against the full suite + a golden run. Pairs with Decision 1 (the formatter enforces a line-length).
 
 ## Cross-cutting caveats
 - **Hook coupling:** every rule enabled must widen `.pre-commit-config.yaml`'s `--select` (#502), else it's cleaned but not enforced.
