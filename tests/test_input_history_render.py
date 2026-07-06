@@ -4,10 +4,7 @@ Smoke-level pixel checks (the byte-exact oracle is the render golden in
 test_battle_screen_render.py, re-baselined when this landed). Confirms the
 strip actually draws and the right-aligned P2 path doesn't crash.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

@@ -8,10 +8,7 @@ through the real per-frame ``update`` loop so the behavior cannot silently
 regress.
 """
 
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # type: ignore
 import pytest

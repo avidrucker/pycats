@@ -10,10 +10,7 @@ This surfaced #401 (mixed-font text was frozen across a scale change because
 _compose_mixed keyed its cache by the authored size, not the scaled one) and #402
 (button/grid geometry is unscaled — overflow/overlap at large).
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import contextlib  # noqa: E402
 

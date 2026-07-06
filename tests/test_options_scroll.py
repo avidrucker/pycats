@@ -5,10 +5,7 @@ screen, so the grid drops to a single scrollable column that keeps the focused r
 visible. These assert the acceptance: adaptive column count, on-screen + non-
 overlapping buttons, and scrolling that follows the selection.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import contextlib  # noqa: E402
 

@@ -18,10 +18,7 @@ cleanly with P1 hanging on the ledge and does not stage a KO. `battle_log.NOTABL
 also doesn't emit STATE events for `ledge_hang`, so those states are read from the raw
 snapshot state (part index 1), not the event-log.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pytest
 

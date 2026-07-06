@@ -128,9 +128,6 @@ def test_events_from_real_seeded_run():
     # stocks); the leveled bot now lands percent-scaling f-tilts, so a KO converts.
     # Regression coverage for the win-condition itself lives in
     # tests/test_bot_match_resolves.py; here we only assert the log DERIVES the KO.
-    import os
-    os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-    os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
     import random
 
     from pycats.sim.controllers import AttackerController

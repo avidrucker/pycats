@@ -13,11 +13,7 @@ every status source.
   surface in **both** `active_tint` and `timer_bar_specs` with no code edits — the whole
   point of the registry (and the path #531 / #506 take).
 """
-import os
 import types
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 import pytest  # noqa: E402

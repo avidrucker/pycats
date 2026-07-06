@@ -23,11 +23,7 @@ stock is slow to close out for this particular seed (a separate difficulty-tunin
 concern), whereas KO *conversion* — the thing #292 was about — is immediate and
 robust.
 """
-import os
 import random
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 from pycats.sim.controllers import AttackerController
 from pycats.sim.runner import run_battle

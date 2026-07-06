@@ -5,11 +5,7 @@ Reach numbers are the #285 catalogue (center-relative = max(dx+r) − body_width
 computed from live FighterData. Gated behind `reach_aware`; the level-less default
 keeps 45 (golden-safe).
 """
-import os
 import random
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 from pycats.combat.data import load_fighter_data
 from pycats.combat.geometry import move_reach

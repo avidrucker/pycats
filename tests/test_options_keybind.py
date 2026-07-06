@@ -3,10 +3,7 @@
 Drives OptionsMenu.update with synthetic `pressed` sets (the same edge set the game
 feeds it) and asserts the KeybindMenu state / bindings change. Headless (no render).
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 from pycats.core.keymap import Keymap
 from pycats.options_menu import OptionsMenu

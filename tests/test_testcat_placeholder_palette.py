@@ -15,10 +15,7 @@ Able-to-fail: without the dedicated `testcat` palette it falls back to the gener
 below.
 """
 
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 from pycats.characters.roster import ARCHETYPE_ROSTER, palette_for  # noqa: E402
 

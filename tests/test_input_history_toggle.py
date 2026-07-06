@@ -5,10 +5,6 @@ settings default + coercion, runtime live accessor, Options row label + activate
 Default ON preserves the (new) always-visible strip; a user can hide it.
 """
 import json
-import os
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

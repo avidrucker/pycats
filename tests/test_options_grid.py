@@ -5,10 +5,7 @@ overflowed into the instruction line), navigable in 2D (up/down within a column,
 left/right between columns). Labels are centered in their button rects on BOTH
 axes (vertical centering was the visible defect — text sat low in the rect).
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

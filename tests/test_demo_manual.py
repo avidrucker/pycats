@@ -8,10 +8,7 @@ sim frame never advances during the hold (the runner is blocked inside one show(
 Tested headlessly: the freeze loop is driven with synthesized pygame events (no live
 window / no timer wait), mirroring test_caption_dwell.py's monkeypatch style.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame as pg
 import pytest

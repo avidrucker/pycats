@@ -10,10 +10,7 @@ Ladder (2s hold):
   char_select / options        -> main_menu
   main_menu                    -> quit app
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
 import pytest

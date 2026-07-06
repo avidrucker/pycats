@@ -9,10 +9,7 @@ option list — out of scope here, split to a follow-up.)
 Able-to-fail: before adoption the menus render plain text and never call
 `draw_menu_button`, so the spy records no calls and these go red.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 from unittest.mock import patch  # noqa: E402
 

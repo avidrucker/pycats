@@ -60,9 +60,6 @@ def test_vs_battle_runs_headless_and_is_bounded():
     """Headless smoke: the --vs controllers pair + stop flag drive run_battle to
     a bounded snapshot list (the early KO-out path is exercised; at this tiny cap
     no match resolves, so it runs the full cap)."""
-    import os
-    os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-    os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
     from pycats.sim.controllers import AttackerController
     from pycats.sim.runner import run_battle
 

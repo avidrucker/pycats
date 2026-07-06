@@ -12,10 +12,7 @@ ring colour is the body ring painted over the tail = a seam. There must be none.
 Able-to-fail: revert render_battle to `tail then merged body composite` and the
 body ring lands back over the tail (~40 px) -> the count is non-zero.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
 import pytest

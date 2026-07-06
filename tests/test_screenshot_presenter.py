@@ -1,8 +1,5 @@
 """ScreenshotPresenter captures a PNG per caption for visual demo inspection (#411)."""
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 from pycats.sim.demo import DEMOS, demo_captions, demo_frames, demo_timeline
 from pycats.sim.presenters import ScreenshotPresenter

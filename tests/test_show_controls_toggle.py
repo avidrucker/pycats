@@ -6,10 +6,6 @@ input history #21). This makes it a persisted Options toggle, default ON (so a
 fresh config is unchanged). Mirrors the show_input_history chain landed in #21.
 """
 import json
-import os
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

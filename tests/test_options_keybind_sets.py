@@ -5,10 +5,7 @@ rename / delete sub-mode over `keybind_store` (#440). This drives OptionsMenu.up
 with synthetic `pressed` sets and asserts the sub-mode + persistence react. Headless;
 the store writes under PYCATS_CONFIG_DIR (tmp_path).
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
 import pytest

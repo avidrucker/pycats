@@ -5,10 +5,7 @@ the player *slot* (char_name — the P1/P2 identity), NOT by the displayed text.
 None nickname renders "P1"/"P2" exactly as before (byte-identical → the render-parity
 oracle stays green). Pixel-level (pygame.image.tobytes) comparisons, headless.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
 

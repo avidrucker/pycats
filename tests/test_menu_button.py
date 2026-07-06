@@ -5,10 +5,7 @@ A coloured rect that brightens/glows when focused, plus a non-colour focus cue
 `focus_label` is unit-tested for the marker; `draw_menu_button` for the glow.
 Piloted in OptionsMenu here; rolled out to the other menus in #360.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

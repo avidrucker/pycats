@@ -8,10 +8,7 @@ it survives future callers that might KO a dead/zero-life player.
 Revert check: remove the `max(0, ...)` clamp in `_ko` and
 `test_ko_at_zero_lives_does_not_underflow` goes red (lives == -1).
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # type: ignore
 

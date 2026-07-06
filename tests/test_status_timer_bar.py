@@ -11,11 +11,7 @@ unlabelled ``TimerBar``; the multi-bar/label/stacking behaviour is covered in
 """
 
 import math
-import os
 import types
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 import pytest  # noqa: E402

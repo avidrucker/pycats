@@ -5,10 +5,7 @@ multiplier (0.5/1.0/2.0) applied at the single text_utils font chokepoint. Stand
 (1.0) is an exact identity, so the default render is byte-identical. Options-menu
 cycles the preset; a MIN_FONT_PX clamp keeps a scaled-down size readable.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 # NB: do NOT set PYCATS_NO_PERSIST here — os.environ at import time leaks into the
 # whole session and breaks other modules' save/load tests. These tests never do
 # real I/O (they use _validated / in-memory set + a monkeypatched settings.save).

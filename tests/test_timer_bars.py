@@ -12,11 +12,7 @@ preservation — the byte-identity guard for shield/stun). The shield/stun *data
 regression stays in ``test_status_timer_bar.py``.
 """
 
-import os
 import types
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 import pytest  # noqa: E402

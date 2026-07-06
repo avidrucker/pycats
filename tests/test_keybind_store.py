@@ -3,12 +3,8 @@
 Pure JSON store under PYCATS_CONFIG_DIR (pointed at tmp_path here, the #95 pattern).
 Bindings serialize as key NAMES, and loading replaces a Keymap wholesale.
 """
-import os
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
-
 import json
+import os
 
 import pygame
 import pytest

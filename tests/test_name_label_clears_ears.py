@@ -7,10 +7,7 @@ the ear zone (bottom edge below `rect.top - EAR_HEIGHT`), the ears tangle the te
 Able-to-fail: revert NAME_LABEL_OFFSET_Y back to 25 and the label bottom drops over
 the ears -> the clearance assertion fails.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
 import pytest

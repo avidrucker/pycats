@@ -5,10 +5,7 @@ each keymap (P1_KEYS / P2_KEYS are disjoint). This is a side buffer — it must
 NOT perturb the golden sim path (test_battle_screen_step_matches_runner_sim_path
 still passes). reset() clears the buffers for a fresh match.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

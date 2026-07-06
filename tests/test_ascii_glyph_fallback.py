@@ -14,10 +14,7 @@ tofu. Able-to-fail: revert a map entry (or drop ▶ from the map / the
 render_text_simple replace chain) and the glyph falls back to "?"/tofu → red.
 """
 
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

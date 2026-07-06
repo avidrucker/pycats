@@ -4,10 +4,7 @@ A navigable character grid (A-Z, 0-9, SPACE, DEL, DONE) that builds a short stri
 from pressed-nav — pure (no pygame), so it's fully unit-tested here. Consumers
 (#463 set names, #441 nicknames) host it; the render is a thin separate function.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 from pycats.text_entry import DEL, DONE, TextEntry, draw_text_entry
 

@@ -5,10 +5,7 @@ font-system (fontconfig) lookup building a new font each frame, ~173x slower tha
 the cached path and a real-display hard-hang source. After the fix all font
 access is cached, so a steady-state render frame makes zero SysFont calls.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

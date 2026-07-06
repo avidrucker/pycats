@@ -7,11 +7,7 @@ combat.process_hits resolves (``atk.resolved`` + ``resolve_circle`` on the
 fighter hurtbox). Combat is untouched; ``Attack.rect`` is untouched (Attack.image was removed in #326).
 """
 import json
-import os
 import types
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 import pytest  # noqa: E402

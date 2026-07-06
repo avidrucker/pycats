@@ -8,10 +8,7 @@ respawn can clear them. Guards the behaviour through the real per-frame
 ``update`` loop.
 """
 
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # type: ignore
 

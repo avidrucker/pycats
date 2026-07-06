@@ -11,10 +11,7 @@ rows but the original (too-large) section spacing, green once the spacing is
 tightened.
 """
 
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402  (must follow the dummy-driver env setup)
 import pytest  # noqa: E402

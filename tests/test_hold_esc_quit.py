@@ -8,8 +8,6 @@ import tempfile
 # Isolate settings to a tmp dir so save/load don't touch the user's config.
 _TMP_CONFIG = tempfile.mkdtemp(prefix="pycats_test_")
 os.environ["PYCATS_CONFIG_DIR"] = _TMP_CONFIG
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
 import pytest

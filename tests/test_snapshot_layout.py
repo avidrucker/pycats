@@ -5,10 +5,7 @@ POSITIONS. It asserts known frame-0 semantic values *by name*, so reordering or
 inserting a field in snapshot() (without matching PlayerSnap) reds this — the
 named accessor can't silently read the wrong slot.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 from pycats.config import INITIAL_LIVES  # noqa: E402
 from pycats.sim.runner import PlayerSnap, run_battle  # noqa: E402

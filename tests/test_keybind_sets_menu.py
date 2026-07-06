@@ -4,10 +4,7 @@ Pure logic over `keybind_store` (#440) + a `TextEntry` (#471) + a set-list curso
 driven by discrete method calls (the OptionsMenu adapter turns `pressed` into these).
 Headless; the store writes under PYCATS_CONFIG_DIR (pointed at tmp_path, the #95 pattern).
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame
 import pytest

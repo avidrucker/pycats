@@ -7,12 +7,8 @@ is reserved empty for #442. Pure JSON store under PYCATS_CONFIG_DIR (pointed at
 tmp_path here, the #95 pattern), mirroring keybind_store (#440): missing/corrupt
 files degrade gracefully, never crash.
 """
-import os
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
-
 import json
+import os
 
 import pytest
 

@@ -14,11 +14,7 @@ The respawn-survival case is the one that matters most: it is exactly where a
 naive "reuse percent" implementation would be wrong.
 """
 
-import os
 import types
-
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402  (must follow the dummy-driver env setup)
 

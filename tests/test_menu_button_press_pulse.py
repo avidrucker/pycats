@@ -8,10 +8,7 @@ back. The widget owns the pixels (``pressed`` kwarg); each screen owns the short
 Default ``pressed=False`` keeps ``draw_menu_button`` byte-identical to before, so
 render goldens / screen-parity are untouched.
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 

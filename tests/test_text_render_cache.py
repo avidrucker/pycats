@@ -7,10 +7,7 @@ composes each (text,size,colour) once onto an intermediate surface and blits the
 cached surface thereafter. Output must stay byte-identical (glyphs are
 non-overlapping side-by-side blits, so one-step vs two-step compositing match).
 """
-import os
 
-os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
-os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 
