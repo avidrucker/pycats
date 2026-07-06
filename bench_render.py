@@ -15,6 +15,7 @@ render_battle); it also does not include vsync, which the live game caps at 60.
 
 Usage: python bench_render.py [--iters N]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -60,8 +61,7 @@ def _build_scene():
     right = InputFrame(held={p1.controls["right"]}, pressed=set(), released=set())
     for f in range(40):
         for p in players:
-            p.update(right if f < 20 else InputFrame(set(), set(), set()),
-                     platforms, attacks)
+            p.update(right if f < 20 else InputFrame(set(), set(), set()), platforms, attacks)
     # Force one fighter to render its shield bubble, and add a live attack hitbox
     # (the fighter's jab move data — the single attack model).
     p2.shield_attempting = True
@@ -144,9 +144,11 @@ def main():
         print(f"{name:<40}{mean:>10.2f}{median:>12.2f}")
     print("-" * 64)
     fps = 1e6 / full_mean if full_mean else 0.0
-    print(f"render-only ceiling: {fps:,.0f} FPS  "
-          f"({full_mean:.1f} us/frame = {full_mean / BUDGET_US * 100:.1f}% of the "
-          f"16.67ms/60fps budget)")
+    print(
+        f"render-only ceiling: {fps:,.0f} FPS  "
+        f"({full_mean:.1f} us/frame = {full_mean / BUDGET_US * 100:.1f}% of the "
+        f"16.67ms/60fps budget)"
+    )
     print("(CPU draw cost only; excludes GPU/display blit, vsync, and HUD/text.)")
 
     # cProfile hotspots over the full render.
@@ -160,8 +162,7 @@ def main():
     pstats.Stats(pr, stream=s).sort_stats("cumulative").print_stats(12)
     # Trim pstats header noise; show the table lines.
     for line in s.getvalue().splitlines():
-        if line.strip() and ("function)" in line or "{" in line or "/" in line
-                             or "pycats" in line or "ncalls" in line):
+        if line.strip() and ("function)" in line or "{" in line or "/" in line or "pycats" in line or "ncalls" in line):
             print("  " + line.strip())
 
 

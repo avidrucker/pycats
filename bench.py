@@ -5,6 +5,7 @@ Reports per-frame timing and a per-bucket breakdown (state engine vs physics vs
 combat) so we can see whether the state machine is a meaningful slice of the
 frame budget. Usage: python bench.py [--frames N]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,6 +40,7 @@ def benchmark(frames=10_000):
     platforms = build_stage()
     p1, p2, players = build_players()
     import pygame
+
     attacks = pygame.sprite.Group()
     match = make_match_engine([p1, p2])
     for f in range(frames):
@@ -70,6 +72,7 @@ def bucketed(frames=10_000):
     platforms = build_stage()
     p1, p2, players = build_players()
     import pygame
+
     attacks = pygame.sprite.Group()
     match = make_match_engine([p1, p2])
     plist = list(players)
@@ -94,6 +97,7 @@ def bucketed(frames=10_000):
         push.append((t2 - t1) * 1e6)
         comb.append((t3 - t2) * 1e6)
     import statistics as st
+
     return {
         "physics_us": st.mean(phys),
         "push_us": st.mean(push),
@@ -122,8 +126,7 @@ def print_report(results):
     for k in ("mean_us", "median_us", "p95_us", "p99_us", "fps"):
         print(f"{k:<14}{row[k]:>16.2f}")
     print("-" * 40)
-    print(f"mean {row['mean_us']:.2f} us/frame "
-          f"({results['overhead_pct_of_budget']:.3f}% of 16.67ms budget)")
+    print(f"mean {row['mean_us']:.2f} us/frame ({results['overhead_pct_of_budget']:.3f}% of 16.67ms budget)")
     print("\nper-bucket mean us/frame:")
     for k, v in results["buckets_us"].items():
         print(f"  {k:<12}{v:>10.2f}")
@@ -132,8 +135,7 @@ def print_report(results):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--frames", type=int, default=20_000)
-    ap.add_argument("--json", default=None,
-                    help="write results to this JSON path (timestamped) and print")
+    ap.add_argument("--json", default=None, help="write results to this JSON path (timestamped) and print")
     args = ap.parse_args()
 
     results = collect(args.frames)
@@ -143,6 +145,7 @@ def main():
         import datetime
         import json
         import platform
+
         results = dict(results)  # shallow copy + add run metadata
         results["meta"] = {
             "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
