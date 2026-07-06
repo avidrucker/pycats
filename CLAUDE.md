@@ -29,6 +29,9 @@ Critical rules:
   `FOUND`/`TUNED`, not as sourced-when-guessed. See [RULES.md](./RULES.md) → "Changing values".
 - **Research epics:** one umbrella `research` tracker; file child threads one at a
   time, finishing each before filing the next.
+- **Every `research` ticket produces ≥1 findings doc** (e.g. `docs/research/<topic>-findings.md`)
+  as its closing artifact — a bare comment isn't sufficient; follow-up tickets are optional
+  and filed one-at-a-time downstream of the doc. See [RULES.md](./RULES.md) → "Filing work".
 - **Verify ticket numbers before stating them; mint IDs/refs sequentially** — don't
   tell the human or write a ticket's #/title until confirmed via a `gh` lookup; never
   run `gh issue create` / `pmtools claim` concurrently (numbers/refs race + swap).

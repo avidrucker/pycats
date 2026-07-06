@@ -96,6 +96,19 @@
   ONE umbrella `research` tracker issue listing the threads; file each child
   thread **one at a time**, finishing it before filing the next sibling. This
   avoids premature decomposition (yegor: only decompose when about to start work).
+- **Every `research` ticket produces ≥1 findings doc; follow-ups are optional.** Two
+  clauses ratified in **#618**:
+  **(A) The findings doc is the mandatory artifact.** A `research`-labelled ticket
+  closes only when it has written **one or more** durable findings docs (e.g.
+  `docs/research/<topic>-findings.md`) — a bare issue comment is **not** a sufficient
+  closing artifact; the closing comment **links** the doc(s). "At least one" lets a
+  single investigation emit multiple docs when it naturally splits. (Ties to the
+  issue-review research rubric's "expected output format" check.)
+  **(B) Follow-up tickets are optional and filed downstream of the doc, one at a
+  time.** Findings **may** cause follow-up tickets (a DEV to implement, a `decision`
+  to rule, or further `research`); those cite the findings doc as their source and are
+  filed **one at a time** per *Lazy decomposition* and the sequential-minting rule
+  below. Filing follow-ups is optional; the findings doc (A) is not.
 - **Verify a ticket's identity before stating it; mint IDs/refs one at a time.** Two
   clauses from the #535/#536 misnumbering (errors db 51), ratified in **#541**:
   **(A) Verify before you state.** Never tell the human — or write into any doc,
