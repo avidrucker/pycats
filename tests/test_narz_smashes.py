@@ -7,11 +7,12 @@ in #371/#377. Values are PM3.6-Marth-shaped (⚠ playtest, like the rest of the 
 Golden-safe: the sim path loads the default cat (no smash, not chargeable); Narz is
 never the golden cat. A test pins that.
 """
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 from pycats.combat.data import load_fighter_data
 from pycats.combat.move_select import resolve_move_key
 
 _NARZ = load_fighter_data("narz")
+# The minimal one-move test fixture, loaded by name (#591).
+_TESTCAT = load_fighter_data("testcat")
 
 
 def _forward_hurtbox_extent():
@@ -68,5 +69,5 @@ def test_smashes_reachable_through_the_331_seam():
 
 def test_default_cat_has_no_chargeable_smash_golden_safety():
     for k in ("fsmash", "usmash", "dsmash"):
-        assert k not in DEFAULT_FIGHTER_DATA.moves
-    assert not any(mv.chargeable for mv in DEFAULT_FIGHTER_DATA.moves.values())
+        assert k not in _TESTCAT.moves
+    assert not any(mv.chargeable for mv in _TESTCAT.moves.values())

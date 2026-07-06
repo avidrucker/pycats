@@ -7,12 +7,13 @@ chargeable via the mechanic in #371/#377. Values are PM3.6-Kirby-shaped
 Golden-safe: the sim path loads the default cat (no smash, not chargeable); a
 test pins that.
 """
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 from pycats.combat.charge import scale_hitboxes
 from pycats.combat.data import load_fighter_data
 from pycats.combat.move_select import resolve_move_key
 
 _BIRKY = load_fighter_data("birky")
+# The minimal one-move test fixture, loaded by name (#591).
+_TESTCAT = load_fighter_data("testcat")
 
 
 def test_smashes_exist_chargeable_and_grounded():
@@ -69,5 +70,5 @@ def test_charged_smash_scales_damage_only():
 
 def test_default_cat_has_no_chargeable_smash_golden_safety():
     for k in ("fsmash", "usmash", "dsmash"):
-        assert k not in DEFAULT_FIGHTER_DATA.moves
-    assert not any(mv.chargeable for mv in DEFAULT_FIGHTER_DATA.moves.values())
+        assert k not in _TESTCAT.moves
+    assert not any(mv.chargeable for mv in _TESTCAT.moves.values())

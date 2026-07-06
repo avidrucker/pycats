@@ -248,8 +248,9 @@ def load_fighter_data(character: str) -> FighterData:
     and goldens are unaffected by new archetypes.
 
     Args:
-        character: an archetype key (e.g. "nalio"), a CAT_CHARACTERS key, or any
-            string. Unknown strings fall through to the default cat.
+        character: an archetype key (e.g. "nalio"), a CAT_CHARACTERS key, the
+            "testcat" test-fixture key (the minimal one-move kit, #591), or any
+            other string. Unknown strings fall through to the default cat.
 
     Returns:
         FighterData instance (frozen, deterministic, no RNG).
@@ -266,6 +267,14 @@ def load_fighter_data(character: str) -> FighterData:
         from pycats.characters.narz_cat import NARZ_FIGHTER_DATA
 
         return NARZ_FIGHTER_DATA
+    if character == "testcat":
+        # Named handle for the minimal one-move fixture (#591): tests that want
+        # the minimal kit load it by this name rather than the anonymous
+        # fallback. NOT a player-selectable archetype — deliberately absent from
+        # ARCHETYPE_ROSTER. Same object as today's default (see below).
+        from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+
+        return DEFAULT_FIGHTER_DATA
     # default cat for every other key (incl. the "P1"/"P2" sim path)
     from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 

@@ -45,6 +45,37 @@ def test_load_fighter_data_unknown_char_returns_fighter_data():
 
 
 # ---------------------------------------------------------------------------
+# "testcat" — named handle for the minimal one-move fixture (#591). Non-breaking
+# prep for #586: tests that want the minimal kit load it BY NAME rather than the
+# anonymous fallback. Same object/data as today's default (child 2 later removes
+# the fallback and repoints "P1"/"P2" → Nalio).
+# ---------------------------------------------------------------------------
+
+def test_load_fighter_data_testcat_returns_minimal_one_move_kit():
+    """"testcat" resolves to the minimal fixture — exactly one move ("attack")."""
+    fd = load_fighter_data("testcat")
+    assert isinstance(fd, FighterData)
+    assert set(fd.moves) == {"attack"}
+
+
+def test_load_fighter_data_testcat_is_the_default_cat_object():
+    """The named handle returns the SAME object as the default cat (no copy),
+    so migrated tests observe identical data. Guards the #586 acceptance that
+    testcat is the minimal fixture, not a new archetype."""
+    from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+
+    assert load_fighter_data("testcat") is DEFAULT_FIGHTER_DATA
+
+
+def test_testcat_is_not_a_selectable_archetype():
+    """testcat is a TEST FIXTURE, not a playable archetype — it must never leak
+    into the player-selectable roster. Able-to-fail if someone adds it."""
+    from pycats.characters.roster import ARCHETYPE_ROSTER
+
+    assert "testcat" not in ARCHETYPE_ROSTER
+
+
+# ---------------------------------------------------------------------------
 # Hurtbox has exactly 2 circles
 # ---------------------------------------------------------------------------
 

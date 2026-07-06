@@ -6,7 +6,10 @@ which also needs Birky-own posture hurtboxes: combat tests the hurtbox *circles*
 (systems/combat.py), and the inherited default circles reach below the shorter boxes.
 """
 from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA as BIRKY
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as DEFAULT
+from pycats.combat.data import load_fighter_data
+
+# The minimal one-move test fixture, loaded by name (#591).
+_TESTCAT = load_fighter_data("testcat")
 
 
 def test_birky_crouch_and_prone_sizes_are_kirby_low():
@@ -42,5 +45,5 @@ def test_birky_posture_hurtboxes_fit_inside_the_new_boxes():
 def test_birky_no_longer_shares_the_default_posture_hurtboxes():
     # Re-authored, not inherited — combat reads these per defender, so they must be
     # Birky's own values, not the default objects sized for the 40/22 boxes.
-    assert BIRKY.crouch_hurtbox is not DEFAULT.crouch_hurtbox
-    assert BIRKY.prone_hurtbox is not DEFAULT.prone_hurtbox
+    assert BIRKY.crouch_hurtbox is not _TESTCAT.crouch_hurtbox
+    assert BIRKY.prone_hurtbox is not _TESTCAT.prone_hurtbox

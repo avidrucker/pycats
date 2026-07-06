@@ -10,9 +10,11 @@ loads "P1"/"P2", never "nalio").
 """
 import pygame
 
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 from pycats.combat.data import FighterData, load_fighter_data
 from pycats.entities import Player
+
+# The minimal one-move test fixture, loaded by name (#591).
+_TESTCAT = load_fighter_data("testcat")
 
 P1_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                    down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
@@ -24,7 +26,7 @@ def test_nalio_is_distinct_fighter_data():
     default object every other key still maps to."""
     fd = load_fighter_data("nalio")
     assert isinstance(fd, FighterData)
-    assert fd is not DEFAULT_FIGHTER_DATA
+    assert fd is not _TESTCAT
 
 
 def test_nalio_weight_is_pm_mario_100():
@@ -54,7 +56,7 @@ def test_nalio_falls_on_pm_mario_baseline():
 
 def test_fighter_data_weight_defaults_to_100():
     """The default cat keeps the Smash baseline weight without specifying it."""
-    assert DEFAULT_FIGHTER_DATA.weight == 100
+    assert _TESTCAT.weight == 100
 
 
 def test_nalio_attack_is_pm_down_tilt():
@@ -375,7 +377,7 @@ def test_nalio_nair_is_pm_neutral_air():
 def test_default_cat_attack_is_unchanged():
     """Regression guard: branching Nalio must NOT alter the default cat's jab
     (the sim/golden path), which stays the placeholder (dmg 10, angle 0)."""
-    hb = DEFAULT_FIGHTER_DATA.moves["attack"].hitboxes[0]
+    hb = _TESTCAT.moves["attack"].hitboxes[0]
     assert hb.damage == 10.0
     assert hb.angle == 0
 

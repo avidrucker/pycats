@@ -15,12 +15,14 @@ import dataclasses
 
 import pygame as pg
 
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
-from pycats.combat.data import MoveData
+from pycats.combat.data import MoveData, load_fighter_data
 from pycats.config import GRAVITY, P1_COLOR, WHITE
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
+
+# The minimal one-move test fixture, loaded by name (#591).
+_TESTCAT = load_fighter_data("testcat")
 
 CONTROLS = {
     "left": pg.K_a,
@@ -48,7 +50,7 @@ def _recovery_fd(recovery_vx=0.0):
         recovery_vy=RECOVERY_VY,
         recovery_vx=recovery_vx,
     )
-    return dataclasses.replace(DEFAULT_FIGHTER_DATA, moves={**DEFAULT_FIGHTER_DATA.moves, "up_b": up_b})
+    return dataclasses.replace(_TESTCAT, moves={**_TESTCAT.moves, "up_b": up_b})
 
 
 def _frame(held, pressed):

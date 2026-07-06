@@ -8,12 +8,13 @@ seam; the charge scaling is slice 3.
 Golden-safety is structural: the sim path loads the default cat, which has no
 smash move, so these never touch a golden. A test pins that.
 """
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 from pycats.combat.data import load_fighter_data
 from pycats.combat.move_select import resolve_move_key
 from pycats.combat.units import u
 
 _NALIO = load_fighter_data("nalio")
+# The minimal one-move test fixture, loaded by name (#591).
+_TESTCAT = load_fighter_data("testcat")
 
 
 def test_fsmash_frames_and_hitboxes():
@@ -68,4 +69,4 @@ def test_default_cat_has_no_smash_golden_safety():
     """The sim/golden path loads the default cat — it must stay smash-free so no
     golden is touched by Nalio's new smash data."""
     for k in ("fsmash", "usmash", "dsmash"):
-        assert k not in DEFAULT_FIGHTER_DATA.moves
+        assert k not in _TESTCAT.moves

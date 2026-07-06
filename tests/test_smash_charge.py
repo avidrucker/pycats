@@ -12,12 +12,14 @@ chargeable move, and scripted controllers never press smash.
 """
 import pygame as pg
 
-from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 from pycats.combat.data import Circle, Hitbox, MoveData, load_fighter_data
 from pycats.config import SMASH_CHARGE_FRAMES
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
+
+# The minimal one-move test fixture, loaded by name (#591).
+_TESTCAT = load_fighter_data("testcat")
 
 P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
           attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
@@ -139,4 +141,4 @@ def test_uncharged_move_fires_on_press_no_charge():
 
 
 def test_default_cat_has_no_chargeable_move_golden_safety():
-    assert not any(m.chargeable for m in DEFAULT_FIGHTER_DATA.moves.values())
+    assert not any(m.chargeable for m in _TESTCAT.moves.values())
