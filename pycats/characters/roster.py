@@ -33,10 +33,19 @@ ARCHETYPE_NAME = {
 # Neutral fallback cosmetic for any key with no archetype/OG palette.
 _NEUTRAL = {"name": "?", "color": (200, 200, 200), "stripe_color": (150, 150, 150), "eye_color": (0, 0, 0)}
 
+# The `testcat` fixture (#591) is a test scaffold, not a playable cat — it must read on
+# screen as clearly non-standard. Give it a deliberate opaque mid-gray ("50% gray")
+# placeholder look: fully achromatic, including the EYES (every real archetype has
+# coloured eyes, so colourless eyes uniquely mark the fixture). Opaque, not alpha, so it
+# stays legible against the dark stage (the #546 outline-legibility basis). #636.
+_TESTCAT = {"name": "Test", "color": (128, 128, 128), "stripe_color": (96, 96, 96), "eye_color": (64, 64, 64)}
+
 
 def palette_for(key):
-    """Resolve a selection key to a cosmetic palette: the archetype's default →
-    the OG skin of that name (legacy / sim-runner-parity keys) → a neutral fallback.
-    Never raises. The *fighter data* for a key is resolved separately via
-    `load_fighter_data` (which likewise defaults the cat for unknown keys)."""
+    """Resolve a selection key to a cosmetic palette: the `testcat` placeholder (#636) →
+    the archetype's default → the OG skin of that name (legacy / sim-runner-parity keys) →
+    a neutral fallback. Never raises. The *fighter data* for a key is resolved separately
+    via `load_fighter_data` (which likewise defaults the cat for unknown keys)."""
+    if key == "testcat":
+        return _TESTCAT
     return ARCHETYPE_PALETTE.get(key) or _PAL.get(key) or _NEUTRAL
