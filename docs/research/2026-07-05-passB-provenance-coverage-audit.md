@@ -7,7 +7,9 @@
 
 ## TL;DR — the recommendation
 
-Pass B ("extend the #233 registry beyond the ~34 config scalars") should extend it to the **config gameplay scalars and the two mis-shelved collision constants — NOT to the ~900 per-character move-data values.**
+> **Status update (post-decision, #596).** Pass B slices shipped: **#581** (FOUND config scalars) and **#582** (GUESS/TUNED config scalars). The ambiguous set was ruled by **#584** — register `PLAYER_SIZE`, `LEDGE_CATCH_W/H`, `BLAST_PADDING` (TUNED); exclude `SCREEN_WIDTH/HEIGHT`, `FPS`, `MAX/MIN_SHIELD_RADIUS`, `ATTACK_SIZE` (with a despawn-coupling note) — applied by DEV **#598**. `LEDGE_HANG_FRAMES`, listed in the original draft, was dropped: it does not exist (the ledge-hang timeout was removed in **#475**). The analysis below is the original recommendation, preserved.
+
+Pass B ("extend the #233 registry beyond the ~34 config scalars") should extend it to the **config gameplay scalars plus the #584-ratified collision/rule constants (`PLAYER_SIZE`, `LEDGE_CATCH_W/H`, `BLAST_PADDING`) — NOT the ~900 per-character move-data values.**
 
 - **Config scalars (30 in play): the registry's natural home.** They are bare literals with no inline context, exactly what a keyed sidecar + drift-guard is for. 20 are gameplay-tuning; ~10 are ambiguous (need a human scope call). This is the tractable, high-ROI extension.
 - **Per-character move data (~900 values across 4 cats / 38 moves / 117 hitboxes): keep inline.** It is **already densely sourced inline** (PM3.6 move names + rukaidata citations + issue refs on nearly every move; positions `⚠`-approximated by design). Mirroring it into a machine registry would be ~900 rows of noise plus a drift-guard nightmare (117 hitboxes re-checked against live `FighterData`) — the exact "marker soup / provenance noise" the registry design warns against. Its provenance layer already exists (Axis A markers + the char-spec docs). Recommend **structure/greppability**, not duplication.
@@ -39,7 +41,6 @@ The registry covers 38 `config.py` scalars. Of the **137 uncovered** UPPER_CASE 
 | `DOUBLE_TAP_WINDOW` | 8 | **decision-pending** | already a live decision **#491** (from #407/#489) — do not re-litigate here. |
 | `SMASH` angles `FSMASH_ANGLE_UP`/`_DOWN` | 50 / 330 | TUNED | pycats smash-angle design. |
 | `HURT_TIME` | 12 | GUESS/TUNED | hitstun-adjacent timer, uncited. |
-| `LEDGE_HANG_FRAMES` | 120 | TUNED | "~2s auto-release timeout" — pycats rule. |
 | `LEDGE_REGRAB_LOCKOUT_FRAMES` | 30 | TUNED | pycats regrab suppression. |
 | `PLAYER_ATTACK_DURATION` | 12 | TUNED | default attack window. |
 | `INITIAL_LIVES` | 3 | TUNED (ruleset) | stock count — a match rule, not a PM physics value. |
@@ -96,9 +97,9 @@ Rejected: (a) full parallel `MoveData` registry — ~900 rows, drift-guard night
 
 ## Follow-up slices (filed one at a time, per research-epic discipline; routed per #530)
 
-1. **DEV — register the already-sourced config scalars (basis (1), FOUND).** `PX_PER_UNIT`, `SMASH_CHARGE_FRAMES`, `SMASH_CHARGE_SCALE`, `DASH_SPEED`, `MAX_JUMPS` — rows + `TUNING_CONSTANT_NAMES` + drift-guard + citation in each comment. Ready now (findings exist). ≤30–60m.
-2. **DEV — register the tuning/guessed config scalars (GUESS/TUNED).** `PROJECTILE_*`, `DASH_DURATION`, `GROUND_FRICTION`, `AIR_FRICTION`, `HURT_TIME`, `FSMASH_ANGLE_*`, `LEDGE_HANG_FRAMES`, `LEDGE_REGRAB_LOCKOUT_FRAMES`, `PLAYER_ATTACK_DURATION`, `INITIAL_LIVES`, `RESPAWN_DELAY_FRAMES` — candid GUESS/TUNED status, no fabricated sourcing.
-3. **decision (humans-only) — the 10 ambiguous constants (2b) + `PLAYER_SIZE`/`ATTACK_SIZE` collision reclassification.** Which does the registry own? (`DOUBLE_TAP_WINDOW` is already #491 — excluded from this decision.)
+1. **DEV — register the already-sourced config scalars (basis (1), FOUND).** `PX_PER_UNIT`, `SMASH_CHARGE_FRAMES`, `SMASH_CHARGE_SCALE`, `DASH_SPEED`, `MAX_JUMPS` — rows + `TUNING_CONSTANT_NAMES` + drift-guard + citation in each comment. **✅ shipped: #581.**
+2. **DEV — register the tuning/guessed config scalars (GUESS/TUNED).** `PROJECTILE_*`, `DASH_DURATION`, `GROUND_FRICTION`, `AIR_FRICTION`, `HURT_TIME`, `FSMASH_ANGLE_*`, `LEDGE_REGRAB_LOCKOUT_FRAMES`, `PLAYER_ATTACK_DURATION`, `INITIAL_LIVES`, `RESPAWN_DELAY_FRAMES` — candid GUESS/TUNED status, no fabricated sourcing. **✅ shipped: #582** (13 constants; `LEDGE_HANG_FRAMES` dropped as non-existent).
+3. **decision (humans-only) — the 10 ambiguous constants (2b) + `PLAYER_SIZE`/`ATTACK_SIZE` collision reclassification.** Which does the registry own? (`DOUBLE_TAP_WINDOW` is already #491 — excluded from this decision.) **✅ ruled: #584 → apply DEV #598.**
 4. *(optional, out of Pass B)* **design ticket — machine-tracked per-move provenance**, only if the inline layer proves insufficient. Not recommended now.
 
 Pass C (parity-light generator) then renders `🟢/🟡/🔴` from whatever B ends up covering. Umbrella #451's Pass B box stays open until slices 1–2 (at least) land.
