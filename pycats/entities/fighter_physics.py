@@ -73,10 +73,18 @@ def step_physics(p, platforms, held):
                 p.fighter.vel.x = 0
 
     # Prevent drop-through of thin platforms when shield is held with down (both
-    # during a ground spot dodge and in shield state).
+    # during a ground spot dodge and in shield state), and while stunned — a
+    # hit-stunned or shield-break-dizzy fighter can't *input* a platform
+    # drop-through in PM/Melee (drop-through needs the standing/actionable state;
+    # #612). Gate on the hitstun TIMERS, not the lagging state label (#370), to
+    # match Player.update's in_hitstun. This only suppresses the held-down input
+    # path below — knockback trajectory still resolves normally in solve_vertical.
     is_shield_down_held = p._pressed(held, "shield") and p._pressed(held, "down")
-    should_prevent_drop_through = (p.state == "dodge" and p.fighter.spot_dodge_shield_held) or (
-        p.state == "shield" and is_shield_down_held
+    in_hitstun = p.fighter.hurt_timer > 0 or p.fighter.stun_timer > 0
+    should_prevent_drop_through = (
+        (p.state == "dodge" and p.fighter.spot_dodge_shield_held)
+        or (p.state == "shield" and is_shield_down_held)
+        or in_hitstun
     )
 
     # Record the downward impact speed before solve_vertical zeroes vel.y on a
