@@ -64,7 +64,8 @@ never presented as sourced when it is a guess. See [RULES.md](../RULES.md) →
 ## Axis C — parity light (generated report only, derived from B)
 
 An **at-a-glance status** rendered *from Axis B* into a generated report — never written
-by hand. Home: **the generated `parity-status.md` report** (Pass C).
+by hand. Home: **the generated [`parity-status.md`](parity-status.md) report** (Pass C;
+run `python parity_report.py` to regenerate it from the registry).
 
 | Circle | Means | Derived from B |
 |---|---|---|
