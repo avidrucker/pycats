@@ -272,6 +272,31 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
 - This gates *changing* a value; the `⚠`/`🔬`/`❓` markers above only *label* an unpinned
   one — the two compose (a changed value should shed its `⚠` and land a `FOUND`/`TUNED` entry).
 
+## Process lessons
+
+Working-discipline lessons distilled from session retrospectives (TILs), codified here so
+they outlive the session that surfaced them.
+
+- **Calibrate before executing a planned sweep.** Before trusting a multi-module plan's
+  ordering, recon the *actual* current state — a module the plan lists may already be
+  factored. Report an already-clean module as an explicit **finding**, not a silent skip,
+  so the plan's premise is corrected rather than quietly diverged from. (From the #410
+  magic-number audit: combat/systems were already factored via ADR-0003; the real debt lived
+  in render/UI.)
+- **An identity refactor needs a proof, and the proof needs an able-to-fail check.** A
+  "behaviour-unchanged" refactor must be backed by evidence that behaviour did not change —
+  and that evidence must be shown to *fail* when behaviour does. Where goldens are thin (e.g.
+  `screen_parity` is an FSM state-trace, not pixels), use a **before/after render-hash across
+  the affected states**, and confirm the harness reds by flipping one constant before
+  trusting a green. (Same able-to-fail discipline as *Fixing bugs* above; precedents #420 /
+  #433 / #450.)
+- **Research produces a design *choice*, not a unilateral fix.** When a parity fix collides
+  with possible game-feel or design intent, surface the options to the reporter / designer as
+  an A/B choice rather than auto-filing or auto-applying one branch — the research output is
+  the *decision material*, not the decision. (E.g. #466 walk-off jump → A/B; #480 spawn
+  model. Composes with *Changing values* above: picking a surrogate is a `decision:`, not a
+  DEV edit.)
+
 ## Surfacing run/sim commands
 
 When a change would **benefit from or require a live run or simulation** to verify
