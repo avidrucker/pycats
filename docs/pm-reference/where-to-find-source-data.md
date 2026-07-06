@@ -42,8 +42,8 @@ multiplier, …) are **not** in the per-move scripts. Route the question by orig
 
 | Data type | Best source | Tier | Online now | Offline (local clone) |
 |---|---|---|---|---|
-| Move/hitbox data (damage, BKB, KBG, angle, size, positions, scripted self-vel) | rukaidata.com / brawllib_rs | ⭐ primary for moves | rukaidata.com (HTML/bincode) ⚠ | ⏳ #614 (brawllib_rs → `~/Documents/Study/Rust/`) |
-| Melee-inherited engine literals (air-dodge, L-cancel, smash multiplier…) | meleelight (JS reimpl), doldecomp/melee | primary literal / model | github (schmooblidon/meleelight) ⚠ | ⏳ #616 (meleelight → `~/Documents/Study/JavaScript/`) |
+| Move/hitbox data (damage, BKB, KBG, angle, size, positions, scripted self-vel) | rukaidata.com / brawllib_rs | ⭐ primary for moves | rukaidata.com (HTML/bincode) ⚠ | ✅ `~/Documents/Study/Rust/brawllib_rs/` (#614) |
+| Melee-inherited engine literals (air-dodge, L-cancel, smash multiplier…) | meleelight (JS reimpl), doldecomp/melee | primary literal / model | github (schmooblidon/meleelight) ⚠ | ✅ `~/Documents/Study/JavaScript/meleelight/` (#616) |
 | Brawl engine actions/states | OpenSA / dantarion, SmashWiki Brawl | engine/state ref | opensa.dantarion.com ⚠ | — |
 | PM-specific overrides / changes | PMDT changelogs, PM codeset, Project+ | authoritative for *what changed* | pmunofficial.com / Smashboards / Project+ repos ⚠ | — |
 | Mechanics prose / cross-checks | SmashWiki (Smash attack, Charge, Project M pages) | secondary, citable | ssbwiki.com | — |
@@ -82,8 +82,8 @@ path, and what it is authoritative for. Clone tickets flip a row from ⏳ pendin
 
 | Source | Local path | Authoritative for | Status |
 |---|---|---|---|
-| brawllib_rs | `~/Documents/Study/Rust/` (target) | Brawl-base scripted per-move data (hitbox BKB/KBG/angle/size, scripted self-vel) | ⏳ pending #614 |
-| meleelight | `~/Documents/Study/JavaScript/` (target) | Melee-inherited engine literals (air-dodge, L-cancel, smash multiplier) as a faithful JS reimpl | ⏳ pending #616 |
+| brawllib_rs | `~/Documents/Study/Rust/brawllib_rs/` | Brawl-base scripted per-move data (hitbox BKB/KBG/angle/size, scripted self-vel) | ✅ available (#614) |
+| meleelight | `~/Documents/Study/JavaScript/meleelight/` | Melee-inherited engine literals (air-dodge, L-cancel, smash multiplier) as a faithful JS reimpl | ✅ available (#616) |
 
 ## To-verify
 
