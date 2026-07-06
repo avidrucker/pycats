@@ -17,11 +17,16 @@ _PAL = load_palettes()
 ARCHETYPE_ROSTER = ("nalio", "birky", "narz")
 
 # Default cosmetic palette per archetype (an OG skin; cosmetic only, ⚠ playtest-TBD).
-ARCHETYPE_PALETTE = {
-    "nalio": _PAL["calico"],  # balanced all-rounder → warm orange
-    "birky": _PAL["ghost"],  # floaty featherweight → light/round
-    "narz": _PAL["void"],  # disjointed swordfighter → sleek/dark
+# Default OG-skin KEY per archetype — the single source (#650): the skin a character
+# wears until a player cycles it on the char-select screen (Part 3 of #127).
+ARCHETYPE_DEFAULT_SKIN = {
+    "nalio": "calico",  # balanced all-rounder → warm orange
+    "birky": "ghost",  # floaty featherweight → light/round
+    "narz": "void",  # disjointed swordfighter → sleek/dark
 }
+
+# Default cosmetic palette per archetype (derived from ARCHETYPE_DEFAULT_SKIN, cosmetic-only).
+ARCHETYPE_PALETTE = {archetype: _PAL[skin] for archetype, skin in ARCHETYPE_DEFAULT_SKIN.items()}
 
 # Display name shown on the char-select tile (the archetype, not the palette).
 ARCHETYPE_NAME = {

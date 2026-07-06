@@ -166,6 +166,10 @@ class ScreenStateManager:
         """Get the selected characters from character selection."""
         return self.char_selector.get_selected_characters()
 
+    def get_selected_palettes(self):
+        """Get the chosen OG-skin per player from character selection (#650)."""
+        return self.char_selector.get_selected_palettes()
+
     def set_stats_data(self, player1, player2):
         """Set stats data for viewing current match stats from pause."""
         # Set both players as winner/loser for stats display
@@ -271,7 +275,8 @@ class ScreenStateManager:
             return
         if battle.player1 is None or battle.player2 is None:
             p1_char, p2_char = self.get_selected_characters()
-            battle.create_from_selection(p1_char, p2_char)
+            p1_palette, p2_palette = self.get_selected_palettes()
+            battle.create_from_selection(p1_char, p2_char, p1_palette, p2_palette)
         battle.step(frame_input, ctx.get("platforms"))
         winner, loser = battle.winner()
         if winner:

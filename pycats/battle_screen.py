@@ -60,13 +60,17 @@ class BattleScreen:
         self.p1_history = InputHistory()
         self.p2_history = InputHistory()
 
-    def create_from_selection(self, p1_char, p2_char):
+    def create_from_selection(self, p1_char, p2_char, p1_palette=None, p2_palette=None):
         """Build the two fighters from the selected ARCHETYPES (#268, #127 Part 1):
-        cosmetic from each archetype's default palette, fighter data from
+        cosmetic from the chosen OG-skin palette (#650, Part 3), fighter data from
         load_fighter_data(key). char_name stays "P1"/"P2" so win-attribution
-        (stats_print) and name rendering are unchanged."""
-        p1_pal = palette_for(p1_char)
-        p2_pal = palette_for(p2_char)
+        (stats_print) and name rendering are unchanged.
+
+        p1_palette/p2_palette are chosen OG-skin keys from the char-select skin cycler;
+        None → the archetype's own default palette, so the no-cycle path is byte-identical
+        to before (golden/parity-safe)."""
+        p1_pal = palette_for(p1_palette or p1_char)
+        p2_pal = palette_for(p2_palette or p2_char)
 
         self.player1 = Player(
             PLAYER1_START_X,

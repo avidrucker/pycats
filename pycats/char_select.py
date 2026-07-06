@@ -11,7 +11,8 @@ This module handles:
 import pygame
 
 from . import text_utils
-from .characters.roster import ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
+from .characters.palettes import load_palettes
+from .characters.roster import ARCHETYPE_DEFAULT_SKIN, ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
 from .config import (
     BLACK,
     CHAR_SELECT_BG_COLOR,
@@ -69,6 +70,9 @@ class CharacterSelector:
         # OG colour-skins; each archetype's cosmetic comes from its default palette.
         self.characters = list(ARCHETYPE_ROSTER)
 
+        # OG-skin keys, in cycle order, for the post-confirm palette cycler (#650, Part 3).
+        self._palette_keys = list(load_palettes().keys())
+
         # Player cursors (grid positions)
         self.p1_cursor = 0  # grid index
         self.p2_cursor = 1  # grid index
@@ -76,6 +80,11 @@ class CharacterSelector:
         # Player character selection (which character they've selected, None if not selected)
         self.p1_selected = None
         self.p2_selected = None
+
+        # Chosen OG-skin key per player (None until confirmed → then the archetype default,
+        # cycled with left/right; #650). None also means "use the archetype's own palette".
+        self.p1_palette = None
+        self.p2_palette = None
 
         # Player confirmation status
         self.p1_confirmed = False
@@ -109,6 +118,10 @@ class CharacterSelector:
         # Reset selections
         self.p1_selected = None
         self.p2_selected = None
+
+        # Reset chosen skins (#650)
+        self.p1_palette = None
+        self.p2_palette = None
 
         # Reset confirmations
         self.p1_confirmed = False
@@ -187,16 +200,24 @@ class CharacterSelector:
                         self.p1_cursor = new_cursor
                     self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p1_controls["attack"] in pressed_keys:
-                    # Confirm selection
+                    # Confirm selection — skin starts at the archetype's default (#650)
                     self.p1_selected = self.characters[self.p1_cursor]
+                    self.p1_palette = ARCHETYPE_DEFAULT_SKIN.get(self.p1_selected)
                     self.p1_confirmed = True
                     self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
             else:
-                # If confirmed, B (special) cancels selection
+                # If confirmed, B (special) cancels selection; left/right cycles the skin (#650)
                 if self.p1_controls["special"] in pressed_keys:
                     self.p1_confirmed = False
                     self.p1_selected = None
+                    self.p1_palette = None
                     self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
+                elif self.p1_controls["left"] in pressed_keys:
+                    self.p1_palette = self._cycle_palette(self.p1_palette, -1)
+                    self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
+                elif self.p1_controls["right"] in pressed_keys:
+                    self.p1_palette = self._cycle_palette(self.p1_palette, +1)
+                    self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
 
         # Handle P2 input (character selection)
         if self.p2_input_cooldown == 0:
@@ -219,16 +240,24 @@ class CharacterSelector:
                         self.p2_cursor = new_cursor
                     self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p2_controls["attack"] in pressed_keys:
-                    # Confirm selection
+                    # Confirm selection — skin starts at the archetype's default (#650)
                     self.p2_selected = self.characters[self.p2_cursor]
+                    self.p2_palette = ARCHETYPE_DEFAULT_SKIN.get(self.p2_selected)
                     self.p2_confirmed = True
                     self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
             else:
-                # If confirmed, B (special) cancels selection
+                # If confirmed, B (special) cancels selection; left/right cycles the skin (#650)
                 if self.p2_controls["special"] in pressed_keys:
                     self.p2_confirmed = False
                     self.p2_selected = None
+                    self.p2_palette = None
                     self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
+                elif self.p2_controls["left"] in pressed_keys:
+                    self.p2_palette = self._cycle_palette(self.p2_palette, -1)
+                    self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
+                elif self.p2_controls["right"] in pressed_keys:
+                    self.p2_palette = self._cycle_palette(self.p2_palette, +1)
+                    self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
 
     def both_confirmed(self):
         """Check if both players have confirmed their character selection."""
@@ -237,6 +266,17 @@ class CharacterSelector:
     def get_selected_characters(self):
         """Get the selected characters for both players."""
         return self.p1_selected, self.p2_selected
+
+    def _cycle_palette(self, current, step):
+        """Advance an OG-skin key by ``step`` (±1) through the cycle, wrapping (#650).
+        ``current`` None (shouldn't happen post-confirm) starts from the first skin."""
+        keys = self._palette_keys
+        idx = keys.index(current) if current in keys else 0
+        return keys[(idx + step) % len(keys)]
+
+    def get_selected_palettes(self):
+        """Get the chosen OG-skin key per player (None → the archetype's own palette)."""
+        return self.p1_palette, self.p2_palette
 
     def can_start_game(self):
         """Check if the game can start (both players confirmed)."""
@@ -268,9 +308,10 @@ class CharacterSelector:
 
         return x, y
 
-    def _draw_cat_preview(self, screen, char_key, x, y, size):
-        """Draw a small cat preview in the given tile."""
-        char_data = palette_for(char_key)  # archetype's default cosmetic palette
+    def _draw_cat_preview(self, screen, char_key, x, y, size, palette_key=None):
+        """Draw a small cat preview in the given tile. ``palette_key`` overrides the
+        archetype default with a chosen OG skin (live skin preview, #650)."""
+        char_data = palette_for(palette_key or char_key)  # chosen skin → archetype default
 
         # Scale down for preview
         preview_size = (size * PREVIEW_SCALE_X, size * PREVIEW_SCALE_Y)
@@ -347,7 +388,7 @@ class CharacterSelector:
         # Instructions
         instructions = [
             "Use arrow keys to move cursor",
-            "Press A to confirm selection, B to cancel",
+            "Press A to confirm, B to cancel — after confirming, ←/→ changes your cat's skin",
             "When both players are ready, either can press A to start",
         ]
 
@@ -392,11 +433,11 @@ class CharacterSelector:
         # Draw selection confirmations
         if self.p1_confirmed and self.p1_selected:
             selected_idx = self.characters.index(self.p1_selected)
-            self._draw_confirmation(screen, selected_idx, P1_UI_COLOR, "P1", True)
+            self._draw_confirmation(screen, selected_idx, P1_UI_COLOR, "P1", True, self.p1_palette)
 
         if self.p2_confirmed and self.p2_selected:
             selected_idx = self.characters.index(self.p2_selected)
-            self._draw_confirmation(screen, selected_idx, P2_UI_COLOR, "P2", False)
+            self._draw_confirmation(screen, selected_idx, P2_UI_COLOR, "P2", False, self.p2_palette)
 
         # Control instructions at bottom
         self._draw_control_instructions(screen)
@@ -431,37 +472,31 @@ class CharacterSelector:
             center=True,
         )
 
-    def _draw_confirmation(self, screen, char_pos, color, player_name, use_unicode=True):
-        """Draw a confirmation checkmark on a selected character."""
+    def _draw_confirmation(self, screen, char_pos, color, player_name, use_unicode=True, palette_key=None):
+        """Draw a confirmation checkmark on a selected character, plus the chosen skin
+        name + colour swatch as a live preview of the palette cycler (#650)."""
         x, y = self._grid_pos_to_screen_pos(char_pos)
 
         # Draw thick border to show selection
         confirm_rect = pygame.Rect(x - 2, y - 2, CHAR_SELECT_TILE_SIZE + 4, CHAR_SELECT_TILE_SIZE + 4)
         pygame.draw.rect(screen, color, confirm_rect, 4)
 
-        # Draw confirmation label with checkmark/OK using mixed text rendering
+        # Confirmation label carries the chosen skin name so cycling gives live feedback (#650).
+        skin_name = palette_for(palette_key)["name"] if palette_key else ""
+        cx = x + CHAR_SELECT_TILE_SIZE // 2
+        cy = y + CHAR_SELECT_TILE_SIZE + 30
         if use_unicode:
-            # Use mixed rendering for Unicode checkmark
-            label = f"{player_name} ✓"
-            text_utils.text_renderer.render_text_mixed(
-                label,
-                CONFIRM_FONT_SIZE,
-                color,
-                screen,
-                (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + 30),
-                center=True,
-            )
+            label = f"{player_name} ✓ {skin_name}".rstrip()
+            text_utils.text_renderer.render_text_mixed(label, CONFIRM_FONT_SIZE, color, screen, (cx, cy), center=True)
         else:
-            # ASCII fallback
-            label = f"{player_name} OK"
-            text_utils.render_text(
-                screen,
-                label,
-                (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + 30),
-                CONFIRM_FONT_SIZE,
-                color,
-                center=True,
-            )
+            label = f"{player_name} OK {skin_name}".rstrip()
+            text_utils.render_text(screen, label, (cx, cy), CONFIRM_FONT_SIZE, color, center=True)
+
+        # A small swatch of the chosen skin's body colour, beside the label (live preview).
+        if palette_key:
+            swatch = pygame.Rect(cx - 10, cy + CONFIRM_FONT_SIZE, 20, 8)
+            pygame.draw.rect(screen, palette_for(palette_key)["color"], swatch)
+            pygame.draw.rect(screen, WHITE, swatch, 1)
 
     def _draw_control_instructions(self, screen):
         """Draw control instructions at the bottom of the screen."""
