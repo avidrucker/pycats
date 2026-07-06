@@ -656,8 +656,27 @@ STATUS_SOURCES = [
         recency=lambda f, p: SHIELD_BREAK_STUN_MAX - f.stun_timer,
     ),
     StatusSource("dodge", 3, kind="COUNTDOWN", tint=WHITE, active=lambda f, p: f.dodge_timer > 0),
-    # (ledge_hang COUNTDOWN bar removed with the hang timeout — #475. The ledge
-    # intangibility burst is still suppressed here; #531 gives it its own bar.)
+    # LEDGE-INVULN (#531) — the percent-scaled ledge-grab intangibility burst (#311),
+    # its own INVULN bar closing the #513 drift. Occupies the slot freed when the
+    # ledge_hang COUNTDOWN bar was removed with the hang timeout (#475). Ratio is
+    # against the *granted* length stored at grab (#538 decision: per-grab denominator,
+    # not the cap — a low-% burst still drains a truthful 100%->0), and the bar is
+    # suppressed while actually ledge-hanging (the hang owns that clock; matches the
+    # _invuln_remaining_max ledge-hang suppression). No body tint — ledge-invuln has
+    # never flashed the body. Disjoint from the "invuln" source below: the ledge burst
+    # sets none of dodge/getup-roll/getup-attack, so _invuln_remaining_max is None then.
+    StatusSource(
+        "ledge_invuln",
+        4,
+        kind="COUNTDOWN",
+        active=lambda f, p: f.ledge_invuln_timer > 0 and p.state != "ledge_hang",
+        bar_color=INVULN_BAR_COLOR,
+        bar_label="INVULN",
+        bar_class="overlay",
+        ratio=lambda f, p: f.ledge_invuln_timer / max(1, f.ledge_invuln_granted),
+        readout=lambda f, p: _secs(f.ledge_invuln_timer),
+        recency=lambda f, p: f.ledge_invuln_granted - f.ledge_invuln_timer,
+    ),
     StatusSource(
         "prone",
         5,

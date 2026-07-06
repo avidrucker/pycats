@@ -430,7 +430,9 @@ class Player(pygame.sprite.Sprite):
                     self.rect.topleft = ledge.hang_topleft(self.rect.size)
                     self.fighter.vel.x = 0
                     self.fighter.vel.y = 0
-                    self.fighter.ledge_invuln_timer = ledge_invuln_frames(self.fighter.percent)
+                    granted = ledge_invuln_frames(self.fighter.percent)
+                    self.fighter.ledge_invuln_timer = granted
+                    self.fighter.ledge_invuln_granted = granted  # #531: INVULN bar denominator
                     self.fighter.invulnerable = True
                     self.fighter.facing_right = ledge.facing_right()
                     self.fighter.grabbed_ledge = ledge

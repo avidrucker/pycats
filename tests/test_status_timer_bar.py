@@ -47,6 +47,8 @@ def _fake(
     getup_roll_timer=0,
     getup_attack_timer=0,
     smash_charge_timer=0,
+    ledge_invuln_timer=0,
+    ledge_invuln_granted=0,
     cx=120,
     top=200,
 ):
@@ -63,6 +65,8 @@ def _fake(
         getup_roll_timer=getup_roll_timer,
         getup_attack_timer=getup_attack_timer,
         smash_charge_timer=smash_charge_timer,
+        ledge_invuln_timer=ledge_invuln_timer,
+        ledge_invuln_granted=ledge_invuln_granted,
         rect=pygame.Rect(cx - 20, top, 40, 60),
     )
     ns.fighter = ns
@@ -269,6 +273,41 @@ def test_invuln_and_lockout_coactivate_ordered_by_recency():
     )  # elapsed 25
     labels = [b.label for b in rb.timer_bar_specs(p)]
     assert labels == ["INVULN", "LOCKOUT"]
+
+
+# --- LEDGE-INVULN bar (#531) — the percent-scaled ledge-grab intangibility burst
+# (#311) gets its OWN green INVULN bar, closing the #513 drift. Its own source
+# (precedence 4), disjoint from the dodge/getup "invuln" source (which needs one of
+# those timers, none set by a ledge grab). Ratio is against the granted length stored
+# at grab (#538: per-grab denominator, not the cap). Suppressed while ledge-hanging.
+
+
+def test_ledge_invuln_bar_ratio_seconds_label_colour():
+    # A ledge-invuln burst mid-drain (14 of a granted 23) and NOT hanging -> green
+    # INVULN bar ratioed against the granted value. Red before the registry entry
+    # (no ledge_invuln source existed), green after.
+    p = _fake(ledge_invuln_timer=14, ledge_invuln_granted=23)
+    (bar,) = rb.timer_bar_specs(p)
+    assert bar.label == "INVULN"
+    assert bar.color == rb.INVULN_BAR_COLOR
+    assert bar.ratio == 14 / 23  # per-grab denominator, a truthful 100%->0 drain
+    assert bar.readout == f"{math.ceil(14 / FPS)}s"
+
+
+def test_ledge_invuln_bar_suppressed_while_ledge_hanging():
+    # While actually hanging the burst ticks but shows no duplicate INVULN bar — the
+    # hang owns that clock (matches the _invuln_remaining_max ledge-hang suppression).
+    p = _fake(state="ledge_hang", ledge_invuln_timer=14, ledge_invuln_granted=23)
+    assert rb.timer_bar_specs(p) == []
+
+
+def test_no_ledge_invuln_bar_when_timer_zero():
+    assert rb.timer_bar_specs(_fake(ledge_invuln_timer=0, ledge_invuln_granted=23)) == []
+
+
+def test_ledge_invuln_bar_suppressed_by_toggle(monkeypatch):
+    monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
+    assert rb.timer_bar_specs(_fake(ledge_invuln_timer=14, ledge_invuln_granted=23)) == []
 
 
 # --- CHARGE bar (#380, final slice of #334) — the one FILL bar -----------------

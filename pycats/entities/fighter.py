@@ -154,6 +154,7 @@ class Fighter:
         # timeout (#475: PM has no hang timer) — hang persists until the fighter acts.
         self.ledge_regrab_lockout_timer = 0  # post-release regrab suppression (#14)
         self.ledge_invuln_timer = 0  # percent-scaled ledge-grab intangibility burst (#311)
+        self.ledge_invuln_granted = 0  # the burst's granted length at grab; INVULN bar denominator (#531)
         self.ledge_getup_timer = 0  # neutral ledge-getup climb window; edge frees at half (#311)
         self.land_impact_vy = 0.0  # downward speed at last ground contact (#145)
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
