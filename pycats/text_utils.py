@@ -470,6 +470,7 @@ class TextRenderer:
         if unicode_fallback:
             fallback_text = (
                 text.replace("►", ">")
+                .replace("▶", ">")
                 .replace("◄", "<")
                 .replace("↑", "^")
                 .replace("↓", "v")
@@ -642,6 +643,7 @@ class TextRenderer:
         """Get ASCII fallback for common Unicode characters."""
         fallbacks = {
             "►": ">",
+            "▶": ">",  # U+25B6, the black-triangle twin of ► (#547)
             "◄": "<",
             "↑": "^",
             "↓": "v",
