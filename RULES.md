@@ -45,6 +45,23 @@
   agent), so an unlabelled ticket lands in the wildcard pool and weakens the
   same-file collision guard. (Reproducible label *creation*: `avidrucker/pmtools#69`.)
 
+### Relationship labels (`parent` / `child`)
+
+- **`parent`** — the ticket has sub-issues / tracks child slices (an umbrella or
+  decomposition parent). **`child`** — the ticket has a parent / is a slice of a
+  larger tracker. A ticket that sits **mid-tree** (both a parent and a child) carries
+  **both** labels. These complement `area:*`: the area label says *what lane* the work
+  is in, the relationship label says *what tree* it belongs to.
+- **When to apply — at file/claim time, going forward.** When you file or claim a
+  ticket, tag it `parent` if it has sub-issues, `child` if it has a parent, both if
+  it's mid-tree. **Why:** GitHub's native sub-issue links (`parent:` / `sub-issues:`)
+  don't surface in the issue **list** view, so while working a child you can't
+  glance-see it's a slice of a bigger tracker, or that a parent has siblings you should
+  finish/close alongside it. The label makes the tree visible in the list.
+- **Backfill of already-open tickets is a one-time sweep, tracked separately** — this
+  note governs new/claimed tickets from now on; retro-tagging the existing backlog is
+  its own follow-up ticket, not an inline chore. (Labels created in **#641**.)
+
 ## Filing work
 
 - **A question or suggestion is not authorization to create work.** "Have you done
