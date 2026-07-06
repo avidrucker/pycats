@@ -83,6 +83,11 @@ duplicating them.
 For a fully-automated data dump, run `brawllib_rs` against PM 3.6 `.pac` files to
 emit structured JSON. Ranked source detail (incl. Melee/Brawl fallbacks): #120.
 
+**Which source for value X, and is it reachable offline yet?** See the sourcing
+map + local-clone tracker: [`where-to-find-source-data.md`](./where-to-find-source-data.md)
+— the decision tree for engine globals by origin (Melee-inherited / Brawl-base /
+PM-override) and the ⏳→✅ availability tracker.
+
 ## Index — sub-domain docs
 
 Status: ✅ written. **All 13 sub-domain docs are complete** ([epic #147](https://github.com/avidrucker/pycats/issues/147) — each was filed and written as its own ticket).
