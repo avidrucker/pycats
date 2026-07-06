@@ -1,9 +1,11 @@
 # Grounded-Claim Protocol — design spec
 
-**Status:** DRAFT (brainstorming, pending user review) · **Date:** 2026-07-05 · **Author:** FIG (opus-4.8)
+**Status:** DRAFT · grill-reviewed (#620) · **Date:** 2026-07-05 · **Author:** FIG (opus-4.8)
 **Origin:** generalizes #571 (proactive PM-grounding) + #575 (detective gate) into a project-neutral
 protocol. pycats is the first adopter. Prior findings:
 `docs/research/2026-07-05-pm-mechanics-grounding-mechanism-571.md`.
+**Critical review:** `2026-07-05-grounded-claim-protocol-grill.md` (#620) — five findings, all folded
+in below; read it for the *why* behind the walked-back claims.
 
 ## Goal
 
@@ -12,7 +14,7 @@ deviation the human consents to** — no silent guessing, no proxy-reasoning (as
 title, memory, or an unsourced doc instead of the primary evidence). Portable across projects via a
 project-agnostic **protocol** + a per-project **config**.
 
-Design decisions (from the brainstorming Q&A):
+Design decisions (from the brainstorming Q&A, refined by the grill):
 
 | # | Decision | Rationale |
 |---|---|---|
@@ -20,17 +22,43 @@ Design decisions (from the brainstorming Q&A):
 | Q2 | **Governed scope = external canon + in-repo facts**, with a **fast path** | Covers both real failures (ledge = canon, #363 = ticket-body); fast path keeps friction proportional to risk |
 | Q3 | **Two stores by type + consistency check** | `provenance.py` (values) + by-category manifest (mechanics), tied by a cross-check test = the #575 gate; reflects pycats today, small change |
 
+## Governed scope (precise — grill F4)
+
+- **Canon claim** — any assertion about the external authority the project mirrors (pycats: Project M
+  3.6 / Melee / Brawl mechanics + tuned game values).
+- **In-repo fact** — a claim about code/tickets/tests, governed **only when BOTH**: (1) **not in
+  view** (asserted from memory/inference, not a file being read *now*); **and** (2) **decision- or
+  artifact-bearing** (feeds a commit, ticket, doc, classification, or closing summary). This is the
+  **#363** shape — a v1 classification from a remembered title. Normal reasoning about an open file is
+  fast-path, not gated.
+- **Ungoverned** — opinions, design/UX judgment, transient working thoughts.
+
+## Two grounding authorities (grill F1)
+
+"Grounded" resolves to one of two checkable authorities — *not* a single quote bar:
+
+- **Canon-grounded** (canon claims + `FOUND` values) → authority = a **verbatim primary quote**. The
+  quote test applies: a source *name*/URL is not enough; you must hold the supporting **sentence**.
+  (That quote lives in `pm-reference/` or the #535 register — **not** in `provenance.py`, whose
+  `source` field is a reference, not a sentence.)
+- **Decision-grounded** (`TUNED`/`DIVERGENCE`/pycats-invented) → authority = the **provenance record +
+  deciding issue** (e.g. "TUNED, #543"). No canon quote exists by construction; the record *is* the
+  authority. The claim must carry its **non-canon tag** but does not gate.
+- **Neither** (no quote *and* no record) = the `GUESS` bucket = a **debt to drive to zero** (every
+  governed value should end in one of the two authorities; cf. the #319 value-sourcing pass). A
+  `GUESS`-basis claim **fires the gate**.
+
 ## Approach A — protocol + per-project manifest
 
 **Protocol (generic, ships once):**
 1. `grounded-claim` **skill** — the *procedure* (the claim lifecycle below).
-2. **RULES line** — the *reflex*, always-loaded (see Hardening #2): *"Read the source before asserting
-   — body over title, primary over memory, registry over prose. Assert from a proxy → emit an
-   evidence-deviation notice and get consent."* Folded into the existing "Changing values" rule.
+2. **RULES line** — the *reflex*, always-loaded (Hardening #2): *"Read the source before asserting —
+   body over title, primary over memory, registry over prose. Assert from a proxy → emit an
+   evidence-deviation notice and get consent."* (Host TBD — see grill open nit: "Changing values" vs
+   extending #562 vs its own line; decided at planning.)
 3. **Deviation-block format** — the consent gate.
-4. **Consistency-check test template** — the #575 detective gate.
-5. **The quote test** (Hardening #1) — "grounded" means *a verbatim supporting sentence in hand*, not
-   a source name.
+4. **Consistency-check test** — the #575 detective gate (two tiers; see Testing).
+5. **The two grounding authorities + quote test** — above.
 
 **Config (per-project, `.claude/evidence.json`):**
 ```json
@@ -51,41 +79,44 @@ Four units, each one job, communicating through a narrow interface so the store 
 
 | Unit | Job | Interface | pycats backing |
 |---|---|---|---|
-| **1. Store** | Hold sourced facts, each tagged | `lookup(topic) → {tag, quote, source, doc, const, last_validated, ticket}` | `provenance.py` (values) + evidence_map manifest (mechanics) |
+| **1. Store** | Hold sourced facts, each tagged | `lookup(topic) → {status, source, issue, …}` | `provenance.py` (values: `value/unit/source/status/issue/derivation`) + evidence_map manifest (mechanics). The **verbatim quote** for canon-grounding lives in `pm-reference/` / #535, *not* the registry. |
 | **2. Router** | Surface the right doc at the right moment | `route(claim) → topic → Store.lookup` | evidence_map is the routing table |
 | **3. Adherence** | Force cite-or-declare | `assert_or_declare(claim, basis) → cite-inline \| deviation-block` | `grounded-claim` skill + RULES line |
-| **4. Consent gate** | Make deviation visible + consentable | `deviation-block → {proceed \| cite \| drop}` | in-band message, no hook |
+| **4. Consent gate** | Make deviation visible + consentable | `deviation-block → {proceed \| cite \| drop}` (interactive) / `withhold + log` (autonomous) | in-band message, no hook |
 
 ## Claim lifecycle
 
-The path one governed claim takes. **The `basis` in hand decides the branch; the fast path (verbatim
-supporting quote in hand → cite) skips the gate.** "Source in hand" means the *quote*, not a URL
-(Hardening #1 — the quote test).
+The path one governed claim takes. **The `basis` in hand decides the branch; the fast path (a grounding
+authority already in hand → cite) skips the gate.** Canon claims need a *verbatim quote*; `TUNED`/
+`DIVERGENCE` values need a *decision record*; a `GUESS`/none basis fires the gate.
 
 ### Mermaid
 
 ```mermaid
 flowchart TD
-    A([Agent forms a claim]) --> B{Governed domain?<br/>canon mechanic/value<br/>OR code/ticket/test says X}
-    B -->|no: opinion / design / judgment| P0[Proceed normally]
-    B -->|yes| C{Verbatim supporting<br/>quote in hand?<br/>file:line · primary sentence · manifest row}
+    A([Agent forms a claim]) --> B{Governed?<br/>canon claim OR<br/>in-repo fact: not-in-view AND decision/artifact-bearing}
+    B -->|no: opinion / design / in-view reasoning| P0[Proceed normally]
+    B -->|yes| C{Grounding authority in hand?<br/>verbatim quote OR decision record}
 
-    C -->|yes| CITE1[Adherence: cite inline<br/>with the quote]
+    C -->|yes| CITE1[Adherence: cite inline]
     CITE1 --> PROCEED([PROCEED])
 
     C -->|no| D[Store: load evidence_map,<br/>open topic doc / value registry]
-    D --> E{Quote resolvable now?}
+    D --> E{Resolvable now?}
 
-    E -->|yes · tag = FOUND| CITE2[cite inline with quote]
+    E -->|FOUND / canon → verbatim quote| CITE2[cite inline with quote]
     CITE2 --> PROCEED
-    E -->|yes · tag = TUNED / DIVERGENCE / GUESS| CITE3[cite WITH tag:<br/>'pycats-tuned, not canon']
+    E -->|TUNED / DIVERGENCE → decision record| CITE3[cite record + issue,<br/>tag 'not canon']
     CITE3 --> PROCEED
 
-    E -->|no: not in store / no supporting quote / still inferring| G[Consent gate:<br/>emit EVIDENCE-DEVIATION block]
-    G --> WAIT{Human}
+    E -->|GUESS / not in store / no quote| G[Consent gate:<br/>emit EVIDENCE-DEVIATION block]
+    G --> M{Human present?}
+    M -->|interactive| WAIT{proceed / cite / drop}
+    M -->|autonomous / fleet| REC[withhold claim +<br/>log grounding-debt row]
     WAIT -->|proceed| H[act; claim carries GUESS label] --> PROCEED
     WAIT -->|cite| I[human supplies source; ground it] --> PROCEED
     WAIT -->|drop| J[retract claim]
+    REC --> K[async review queue]
 ```
 
 ### Ditaa
@@ -96,56 +127,61 @@ flowchart TD
     +------------+------------+
                  |
                  v
-        /--------------------\   no: opinion/design    +------------------+
-        | Governed domain?   +----------------------->| Proceed normally |
-        | canon OR in-repo   |                         | (ungoverned)     |
-        \---------+----------/                         +------------------+
+        /--------------------\   no: opinion / in-view    +------------------+
+        | Governed?          +------------------------->| Proceed normally |
+        | canon OR in-repo   |                           | (ungoverned)     |
+        | (not-in-view AND   |                           +------------------+
+        |  decision-bearing) |
+        \---------+----------/
                   | yes
                   v
         /----------------------\  yes   +------------------+
-        | Verbatim supporting  +------>| Adherence:       |
-        | quote in hand?       |       | cite inline      |----+
-        \---------+------------/       | (FAST PATH)      |    |
-                  | no                  +------------------+    |
-                  v                                            |
-        +--------------------+                                 |
-        | Store: load map,   |                                 |
-        | open doc/registry  |                                 |
-        +---------+----------+                                 |
-                  |                                            |
-                  v                                            |
-        /--------------------\                                 |
-        | Quote resolvable?  |                                 |
-        \-+-------+--------+-/                                  |
-     FOUND |  TUNED |      | no: not in store / no quote        |
-          |  DIVERG |      |     / still inferring              |
-          v  GUESS  v      v                                   |
+        | Grounding authority  +------>| Adherence:       |
+        | in hand? (quote OR   |       | cite inline      |----+
+        | decision record)     |       | (FAST PATH)      |    |
+        \---------+------------/       +------------------+    |
+                  | no                                        |
+                  v                                           |
+        +--------------------+                                |
+        | Store: load map,   |                                |
+        | open doc/registry  |                                |
+        +---------+----------+                                |
+                  |                                           |
+                  v                                           |
+        /--------------------\                                |
+        | Resolvable now?    |                                |
+        \-+-------+--------+-/                                 |
+    FOUND |  TUNED |      | GUESS / not in store / no quote    |
+    canon |  DIVERG|      |                                    |
+    quote v  rec.  v      v                                    |
     +--------+ +--------+ +-------------------+                 |
     | cite   | | cite   | | Consent gate:     |                 |
-    | inline | | +tag   | | emit EVIDENCE-    |                 |
-    +---+----+ +---+----+ | DEVIATION block   |                 |
-        |          |      +---------+---------+                 |
+    | +quote | | rec.+  | | emit EVIDENCE-    |                 |
+    +---+----+ | tag    | | DEVIATION block   |                 |
+        |      +---+----+ +---------+---------+                 |
         |          |                |                           |
         |          |                v                           |
         |          |        /---------------\                  |
-        |          |        |    Human?      |                  |
-        |          |        \-+-----+-----+-/                   |
-        |          |  proceed |  cite |   | drop                |
-        |          |          v       v   v                     |
-        |          |    +---------+ +----+ +----------+          |
-        |          |    | act +   | |grnd| | retract  |          |
-        |          |    | GUESS   | |it  | | claim    |          |
-        |          |    +----+----+ +-+--+ +----------+          |
-        |          |         |        |                          |
-        v          v         v        v                          v
-    +=------------------------------------------------------------=+
-    |                          PROCEED                             |
-    +=------------------------------------------------------------=+
+        |          |        | Human present? |                  |
+        |          |        \-+-----------+-/                    |
+        |          |  interactive |       | autonomous/fleet     |
+        |          |          v   |       v                      |
+        |          |   +----------+--+ +------------------+       |
+        |          |   | proceed/cite | | withhold claim + |       |
+        |          |   | / drop       | | log debt row     |       |
+        |          |   +------+-------+ +--------+---------+       |
+        |          |          |                 |                 |
+        v          v          v                 v                 v
+    +=-----------------------------------+  +----------------+
+    |              PROCEED               |  | async review   |
+    +=-----------------------------------+  | queue          |
+                                            +----------------+
 ```
 
-**Legend.** *FOUND* = sourced to primary, treat as canon. *TUNED / DIVERGENCE / GUESS* = usable but
-**not** canon — the claim must carry the tag. The gate fires only when no supporting quote can be
-produced from the store; consent is in-band (a message you answer), never a blocking hook.
+**Legend.** *FOUND* = canon, backed by a verbatim quote. *TUNED / DIVERGENCE* = pycats decision,
+backed by the registry record + issue — usable but the claim must carry a "not canon" tag. *GUESS* /
+not-in-store / no-quote → the gate. Consent is in-band, never a blocking hook; in autonomous mode the
+gate **withholds + logs** rather than blocking or proceeding silently (grill F3).
 
 ## Deviation-block format (the consent gate)
 
@@ -157,79 +193,89 @@ produced from the store; consent is in-band (a message you answer), never a bloc
   tag:    GUESS | UNKNOWN | contradicts-registry
   ask:    proceed / cite / drop?
 ```
-Emitted only on the "no quote" branch; the agent then **waits** for a yes/no. `proceed` → the claim
-carries its `GUESS` tag into whatever it writes; `cite` → human supplies the source; `drop` → retract.
+- **Interactive:** the agent **waits** for a yes/no. `proceed` → the claim carries its `GUESS` tag into
+  whatever it writes; `cite` → human supplies the source; `drop` → retract.
+- **Autonomous/fleet (no human):** the gate is **halt-and-record**, never block-forever and never
+  proceed-silently. The agent either grounds the claim or **withholds it and logs a grounding-debt
+  row** for async review. **The deviation log = the async consent queue = the gate-fire tally store**
+  (one store, not three).
 
 ## Failure modes & hardening (Murphy-jutsu pre-mortem)
 
-Full register below; the four load-bearing hardening changes are folded into the design above.
-
 ### 🔴 High
-- **Citation theater** (L:H·B:H) — a wrong claim with a real-*looking* source passes review that a
-  bare guess would fail (the exact ledge failure: doc cited #297 while asserting percent-scaling).
-  → **Hardening #1: the quote test.** "Grounded" = a *verbatim supporting sentence* in hand, not a URL.
-  No supporting sentence → it's synthesis → deviation. Converts citation-presence into citation-content.
+- **Citation theater** (L:H·B:H) — a wrong claim with a real-*looking* source passes review a bare
+  guess would fail (the ledge failure: doc cited #297 while asserting percent-scaling).
+  → **Hardening #1: the quote test** (for canon-grounding). "Grounded" = a *verbatim supporting
+  sentence*, not a URL. No sentence → synthesis → deviation.
 - **Reflex eviction in long/fleet sessions** (context-rot, L:H·B:H) — a skill-description trigger
-  loaded at session start scrolls off / gets lost-in-the-middle 150 turns later; the agent asserts
-  from memory having never invoked it. This *is* the honor-system hole.
-  → **Hardening #2: reflex in always-loaded RULES**, skill carries only the procedure. Backstop:
-  #575 detective gate. (Fold into the existing "Changing values" rule at high salience — do **not**
-  add a competing 17th bullet that gets buried.)
+  scrolls off 150 turns later; the agent asserts from memory having never invoked it. This *is* the
+  honor-system hole.
+  → **Hardening #2: reflex in always-loaded RULES**, skill carries only the procedure. Backstop: the
+  #575 detective gate. (High salience — don't bury it as a competing Nth bullet.)
 - **Consent-fatigue → rubber-stamping** (L:M·B:H) — if the gate fires often, the human stamps
   reflexively and the check becomes theater.
-  → **Hardening #3: gate-fire tally.** The fast path must dominate (cite inline = common case); the
-  gate stays rare. A lightweight tally makes fatigue *visible* — a high rate signals a mis-tuned
-  trigger, not a reason to stamp faster.
+  → **Hardening #3: gate-fire tally** (deferred — see Testing). The fast path must dominate; the gate
+  stays rare. A tally makes fatigue *visible* — a high rate signals a mis-tuned trigger.
 
 ### 🟡 Medium
 - **Wrong read of a correct source** (negation/caveat dropped, L:M·B:H) — the ledge *mechanism* (getup
   *speed* misread as intangibility *magnitude*). → Quote test catches it; scrutinize negations/tables/caveats.
 - **Stale evidence** (L:M·B:M) — a row tagged FOUND whose research was later reversed (#536 reversed
-  #538). → **Hardening #4: freshness metadata** — each manifest row carries `last_validated` +
-  validating ticket; tags can be downgraded.
+  #538). → **Freshness metadata** (deferred — has not yet bitten; build on incident, not guessed need).
 - **Grounding in unsourced prose** (L:M·B:M) — `pm-reference/` prose can itself be un-cited. → Ground
-  in the *tagged* manifest/registry first; treat untagged prose as unverified; #575 consistency test.
-- **Rule burial** (lost-in-the-middle, L:M·B:M) — a 17th critical rule gets skimmed. → Fold into an
-  existing rule, high salience.
+  in the *tagged* manifest/registry first; treat untagged prose as unverified; #575 Tier-2 lint.
+- **Rule burial** (lost-in-the-middle, L:M·B:M) — an Nth critical rule gets skimmed. → High salience.
 
 ### 🟢 Low
 - **Cross-session propagation** — one agent's GUESS becomes the next's "canon" via a doc; bounded by
   registry + #575 gate.
-- **Complexity/maintenance rot** — the consistency test creates self-maintaining pressure; keep the
-  protocol thin.
+- **Complexity/maintenance rot** — the Tier-1 consistency test creates self-maintaining pressure; keep
+  the protocol thin (see the MVP sequencing — grill F5).
 
 ### Accepted risks
-- **Convention has no hard teeth** (Q1 decision) — compensating control = #575 detective gate
-  (proactive convention + detective audit together bound it). Owner: human.
+- **Convention has no hard teeth** (Q1) — compensating control = #575 detective gate. Owner: human.
 - **Generalization unproven** — validate on one non-pycats repo before claiming general.
 
 ## Testing / validation
 
-- **Consistency-check test (#575):** a value tagged `TUNED`/`DIVERGENCE`/`GUESS` in `provenance.py`
-  may NOT be described as canon in the docs → test fails. This is the detective gate + the
-  self-maintaining pressure that keeps stores in sync.
-- **Quote-test fixture set:** negations, tables, and caveats — assert the protocol demands a complete
+- **Consistency-check test — #575, two tiers (grill F2):**
+  - *Tier 1 (mechanizable, hard test):* per constant, manifest Status == registry `status`; a
+    `TUNED`/`DIVERGENCE`/`GUESS` constant's manifest row can't present a canon primary-source. Catches
+    **store-vs-store drift**. Extends `tests/test_tuning_provenance.py`. Joined by **constant name**
+    (the manifest already names the constant).
+  - *Tier 2 (audit, not a hard gate):* every PM-mechanic *sentence* in `pm-reference/` carries an
+    inline tag or a manifest-row citation; a lint flags "canon-word near a mechanic/constant with no
+    adjacent tag" for **human review** (false-positive-prone).
+  - **Honest scope:** neither tier would have caught the ledge *prose* bug retroactively — the
+    **proactive quote test at authoring time** (#571) is what prevents it. #575's value = drift-catch
+    + enforcing the tagging convention.
+- **Quote-test fixture set:** negations, tables, caveats — assert canon-grounding demands a complete
   supporting quote and flags a claim whose quote doesn't support it.
-- **Gate-fire tally:** a counter (e.g. logged per session) so consent-fatigue is measurable.
-- **Freshness audit:** surface manifest rows whose `last_validated` is older than a threshold
-  (audit/report, not a hard fail).
+- **Gate-fire tally** *(deferred)* — a counter so consent-fatigue is measurable; build once the gate
+  exists and fires enough to measure.
+- **Freshness audit** *(deferred)* — surface manifest rows whose validation is stale; build on a real
+  stale-evidence incident.
 
 ## Generalization
 
-The **protocol** (skill, RULES line, deviation format, quote test, consistency-test template,
-gate-fire tally) is repo-neutral — nothing says "Project M." The **config** (`evidence.json` + the
-map + the value registry + the docs) is per-project. Adopt elsewhere by installing the skill and
-writing that project's `evidence.json` and evidence-map for its canon (a spec / RFC / standard / paper).
-**Validate on one non-pycats repo before claiming general** (accepted-risk mitigation).
+The **protocol** (skill, RULES line, deviation format, two-authority/quote test, consistency-test) is
+repo-neutral — nothing says "Project M." The **config** (`evidence.json` + the map + the value registry
++ the docs) is per-project. Adopt elsewhere by installing the skill and writing that project's
+`evidence.json` and evidence-map for its canon (a spec / RFC / standard / paper). **Validate on one
+non-pycats repo before claiming general** (accepted-risk mitigation).
 
-## Implementation decomposition (seeds — filed only on go-ahead)
+## Implementation decomposition (sequenced — grill F5; filed only on go-ahead)
 
-This design implements as ~5 tickets; sequencing is the writing-plans step:
-1. **DEV:** author the `grounded-claim` skill + `.claude/evidence.json` schema (uses `skill-creator`).
-2. **DECISION/DOCS:** fold the reflex RULES line into "Changing values" (extends #562).
-3. **DEV:** the consistency-check test — implements **#575**.
-4. **DOCS:** add `last_validated` + validating-ticket columns to the evidence_map; backfill.
-5. **DEV:** the gate-fire tally mechanism.
+Apply the protocol's own "no building on guessed need" rule to its roadmap:
+
+1. **MVP (build now) — prevents both observed failures:**
+   - **DEV:** `grounded-claim` skill + `.claude/evidence.json` schema (uses `skill-creator`), encoding
+     the two grounding authorities + the governed-scope boundary.
+   - **DECISION/DOCS:** the reflex RULES line (host per the open nit; extends #562's cite-primary rule).
+2. **Next — detective:** the #575 consistency test (Tier-1 structured; Tier-2 lint audit).
+3. **Deferred — evidence-gated fast-follows (do NOT build on guessed need):**
+   - freshness metadata (until a stale-evidence incident occurs);
+   - gate-fire tally (until the gate fires often enough to measure fatigue).
 
 Relates to: #571 (closed, proactive findings), #575 (detective gate), #562 (cite-primary rule),
 #535 (citation register), #536 (ledge audit).
