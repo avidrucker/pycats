@@ -269,6 +269,17 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
   basis (2). Record which basis applies in the commit, the constant's comment, and its
   `combat/provenance.py` entry (**#233** / ADR-0003) as **FOUND** (sourced) or **TUNED**
   (designer-chosen) — never presented as sourced when it is a guess.
+- **Routing a "source + pin a value" ticket** (which label, and how the steps chain; ruling in
+  **#530**, `docs/research/2026-07-05-value-sourcing-classification.md`). The rule above sets the
+  *basis* a value needs; this sets the **label** the sourcing work carries:
+  - **Already sourced** in an in-repo `docs/research/*` finding → a single **DEV** (`enhancement`):
+    swap the constant, record **FOUND**, cite the finding, land a proving test.
+  - **Sourceable but not yet sourced** → **research → DEV**: the research finds and cites the value,
+    then a DEV child (*blocked-by* the research) applies it.
+  - **No faithful value exists** → **decision → DEV**: a `decision:` ticket where the human picks
+    the surrogate (**TUNED**), then a DEV applies it — *choosing* is never a DEV edit.
+  - **No `architect` label** for this work — the architect role maps to `research` (source it) or
+    `decision` (invent it), not a separate label.
 - This gates *changing* a value; the `⚠`/`🔬`/`❓` markers above only *label* an unpinned
   one — the two compose (a changed value should shed its `⚠` and land a `FOUND`/`TUNED` entry).
 
