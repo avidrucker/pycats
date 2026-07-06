@@ -31,7 +31,9 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Provenance:
-    value: int | float  # MUST equal the live config constant (C4 anchor)
+    value: (
+        int | float | tuple[int, int]
+    )  # MUST equal the live config constant (C4 anchor); tuple for size pairs e.g. PLAYER_SIZE (#598)
     unit: str  # "px/frame" | "frames" | "deg" | "factor" | "%" | ...
     source: str  # citation: repo/path, SmashWiki page, or "unsourced …"
     status: str  # "FOUND" | "GUESS" | "TUNED" | "DIVERGENCE"
@@ -356,6 +358,23 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "RESPAWN_DELAY_FRAMES": Provenance(
         120, "frames", "pycats respawn freeze ~2s (config computes int(2*FPS)); ruleset value, no canon", "TUNED", None
     ),
+    # ---- Pass B: #584-ratified collision/rule constants (#598) — TUNED, no PM canon ----
+    "PLAYER_SIZE": Provenance(
+        (40, 60),
+        "px",
+        "pycats default fighter collision box (Fighter.__init__ reads stand_size or PLAYER_SIZE); reclassified render->collision per #584, no PM-mapped dimension",  # noqa: E501
+        "TUNED",
+        584,
+    ),
+    "LEDGE_CATCH_W": Provenance(
+        24, "px", "pycats ledge-grab catch-region width off the edge corner; pycats geometry, no canon", "TUNED", 584
+    ),
+    "LEDGE_CATCH_H": Provenance(
+        64, "px", "pycats ledge-grab catch-region height below the lip; pycats geometry, no canon", "TUNED", 584
+    ),
+    "BLAST_PADDING": Provenance(
+        50, "px", "pycats KO boundary = px beyond the screen edge; pycats stage rule, no canon", "TUNED", 584
+    ),
 }
 
 # The curated combat/physics set (excludes render/UI/tail/platform/menu constants).
@@ -422,5 +441,10 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "PLAYER_ATTACK_DURATION",
         "INITIAL_LIVES",
         "RESPAWN_DELAY_FRAMES",
+        # Pass B #584-ratified collision/rule constants (#598)
+        "PLAYER_SIZE",
+        "LEDGE_CATCH_W",
+        "LEDGE_CATCH_H",
+        "BLAST_PADDING",
     }
 )

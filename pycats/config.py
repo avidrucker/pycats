@@ -147,7 +147,10 @@ LEDGE_GETUP_FRAMES = 16
 # this can be different than the lifetime of an attack, for example, a fireball could
 # take 6 frames to fire, and then the lifetime of the fireball could be as long as 120 frames
 PLAYER_ATTACK_DURATION = 12
-ATTACK_SIZE = (30, 18)  # width, height — render-only: sizes the drawn hit-box rect
+ATTACK_SIZE = (30, 18)  # width, height — render-only: sizes the drawn hit-box rect.
+# NOTE (#584/#598): not render-ONLY — its width doubles as the projectile despawn
+# bound (the off-stage check in Attack.update). Excluded from the provenance registry
+# (a render constant), but the gameplay coupling is real; kept as a comment, not a row.
 # Per-move damage/lifetime/knockback now live in the move data (MoveData/Hitbox,
 # see characters/default_cat.py); the old global ATTACK_LIFETIME / HIT_DAMAGE
 # fallbacks were retired in #70.
