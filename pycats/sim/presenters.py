@@ -99,8 +99,16 @@ class LivePresenter(_InputStripMixin):
     plus each fighter's stocks/damage. `show_inputs=True` adds the #21 input strip
     (#434), same as the live game."""
 
-    def __init__(self, caption="PyCats replay", cap_fps=True, overlay=True, captions=(), speed=1.0, interactive=None,
-                 show_inputs=False):
+    def __init__(
+        self,
+        caption="PyCats replay",
+        cap_fps=True,
+        overlay=True,
+        captions=(),
+        speed=1.0,
+        interactive=None,
+        show_inputs=False,
+    ):
         import os
 
         os.environ.pop("SDL_VIDEODRIVER", None)

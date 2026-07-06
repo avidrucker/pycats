@@ -52,14 +52,14 @@ _CROUCH_SIZE = (40, 24)
 _CROUCH_HURTBOX = Hurtbox(
     circles=(
         Circle(dx=20, dy=10, r=10),  # upper dome, y 0..20
-        Circle(dx=20, dy=16, r=8),   # lower body, y 8..24
+        Circle(dx=20, dy=16, r=8),  # lower body, y 8..24
     )
 )
 _PRONE_SIZE = (40, 14)
 _PRONE_HURTBOX = Hurtbox(
     circles=(
-        Circle(dx=16, dy=7, r=7),   # front, lying flat, y 0..14
-        Circle(dx=25, dy=7, r=7),   # back, spread along x
+        Circle(dx=16, dy=7, r=7),  # front, lying flat, y 0..14
+        Circle(dx=25, dy=7, r=7),  # back, spread along x
     )
 )
 
