@@ -9,11 +9,17 @@ Three able-to-fail assertions:
 Each can fail: flip a `Provenance.value` (1), add/remove a name without its row (2),
 or rot a `derivation` (3), and the corresponding test reds.
 """
+from pathlib import Path
+
 from pycats import config
 from pycats.combat.provenance import (
     TUNING_CONSTANT_NAMES,
     TUNING_PROVENANCE,
 )
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+MANIFEST = REPO_ROOT / "docs" / "project-m-rules-by-category.md"
+STATUS_TOKENS = ("FOUND", "GUESS", "TUNED", "DIVERGENCE")
 
 
 def _config_namespace() -> dict[str, object]:
@@ -63,4 +69,72 @@ def test_derivation_integrity_reevaluates_to_value():
     assert bad == [], (
         "a recorded derivation no longer yields its value (a derivation rotted):\n  "
         + "\n  ".join(bad)
+    )
+
+
+# --- #575 Tier-1: registry <-> by-category manifest status consistency (#635) ---
+# The detective gate: a value the registry tags TUNED/DIVERGENCE/GUESS must not be
+# described with a different status in the by-category manifest. Joined by the bare
+# constant name in the manifest's `Constant` column (blank for compound/mechanic rows).
+
+
+def _parse_manifest_table() -> tuple[list[str], list[dict[str, str]]]:
+    """Parse the first markdown table of the by-category manifest into
+    (header, rows) where each row is a dict keyed by column header."""
+    header: list[str] | None = None
+    rows: list[dict[str, str]] = []
+    for line in MANIFEST.read_text().splitlines():
+        s = line.strip()
+        if not s.startswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if all(set(c) <= set("-: ") for c in cells):
+            continue  # separator row (|---|---|)
+        if header is None:
+            header = cells
+            continue
+        rows.append(dict(zip(header, cells)))
+    return (header or []), rows
+
+
+def _leading_status(status_cell: str) -> str | None:
+    """The status token a manifest Status cell starts with (e.g.
+    'DIVERGENCE → aligning (#543)' -> 'DIVERGENCE')."""
+    for tok in STATUS_TOKENS:
+        if status_cell.startswith(tok):
+            return tok
+    return None
+
+
+def test_manifest_has_constant_column():
+    header, _ = _parse_manifest_table()
+    assert "Constant" in header, (
+        "the by-category manifest needs a `Constant` column so its rows can be "
+        "joined to the provenance registry for the consistency gate (#635)"
+    )
+
+
+def test_manifest_status_matches_registry():
+    _, rows = _parse_manifest_table()
+    keyed = [r for r in rows if r.get("Constant", "").strip()]
+    assert keyed, (
+        "no manifest row names a Constant — the registry<->manifest gate would be "
+        "vacuous; keep at least one 1:1 row keyed (#635)"
+    )
+    problems = []
+    for r in keyed:
+        key = r["Constant"].strip().strip("`").strip()
+        if key not in TUNING_PROVENANCE:
+            problems.append(f"{key}: Constant not in provenance registry")
+            continue
+        want = TUNING_PROVENANCE[key].status
+        got = _leading_status(r["Status"])
+        if got != want:
+            problems.append(
+                f"{key}: manifest Status {r['Status']!r} (-> {got}) != registry {want!r}"
+            )
+    assert problems == [], (
+        "by-category manifest disagrees with the provenance registry — reconcile the "
+        "Status columns (registry is the value source of truth; ADR-0003):\n  "
+        + "\n  ".join(problems)
     )
