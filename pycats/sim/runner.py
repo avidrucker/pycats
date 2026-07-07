@@ -181,6 +181,7 @@ def run_battle(
     controllers=None,
     p1_char=None,
     p2_char=None,
+    boundaries=None,
 ):
     """Run the headless battle.
 
@@ -196,6 +197,13 @@ def run_battle(
     this is unambiguous because P1/P2 keymaps are disjoint. To freeze a 2-NPC
     battle for replay, capture the per-controller `.emitted` lists and zip them
     through `merge_frames`. Pass at most one of `controller` / `controllers`.
+
+    `boundaries` (sorted or not) are the caption-section start frames used by
+    skip-to-next-section (#508): when `presenter.show()` returns `"skip"`, the runner
+    keeps running every sim frame but suppresses `presenter.show()` (render + display
+    pacing) until the cursor reaches the nearest boundary after the current frame, then
+    resumes. `boundaries=None` (headless/goldens) makes a skip intent a no-op — the sim
+    path is byte-identical. Frames are never dropped: `snaps` stays continuous.
     """
     if controller is not None and controllers is not None:
         raise ValueError("pass at most one of `controller` / `controllers`")
@@ -211,6 +219,7 @@ def run_battle(
     match = make_match_engine([p1, p2])
 
     snaps = []
+    skip_to = None  # #508: while set, fast-forward (suppress show()) until f reaches it
     for f in range(frames):
         if controllers is not None:
             # Call every controller on the SAME frame-start snapshot, THEN merge
@@ -230,7 +239,13 @@ def run_battle(
         match.tick()
         snaps.append(snapshot(players, attacks, match))
         if presenter is not None:
-            presenter.show(platforms, players, attacks, f, inputs=fi)  # #434: input strip
+            if skip_to is not None and f < skip_to:
+                pass  # #508: fast-forwarding — run the sim but suppress render + pacing
+            else:
+                skip_to = None  # reached the boundary (or not skipping): render this frame
+                intent = presenter.show(platforms, players, attacks, f, inputs=fi)  # #434
+                if intent == "skip" and boundaries:
+                    skip_to = min((b for b in boundaries if b > f), default=None)
         if stop_on_match_over and match.phase == "match_over":
             break
     if presenter is not None:

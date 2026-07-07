@@ -248,6 +248,10 @@ def main(argv=None, presenter=None):
             )
     if captions:  # attach; don't clobber an injected list (#306)
         presenter.captions = list(captions)
+    # Skip-to-next-section boundaries (#508): each caption window's start frame, sorted.
+    # Only the live presenter reports a "skip" intent, so this is inert (empty -> no-op)
+    # for --shots/--video and any non-interactive run.
+    boundaries = sorted(c.frames[0] for c in captions if c.frames)
     snaps = []
     try:
         snaps = run_battle(
@@ -259,6 +263,7 @@ def main(argv=None, presenter=None):
             stop_on_match_over=stop_on_match_over,
             p1_char=p1_char,
             p2_char=p2_char,
+            boundaries=boundaries,
         )
     except KeyboardInterrupt:
         presenter.close()

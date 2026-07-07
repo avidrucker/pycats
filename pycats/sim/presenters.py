@@ -17,6 +17,11 @@ OVERLAY_FPS_FONT_SIZE = 24  # the FPS readout (top-right)
 OVERLAY_STAT_FONT_SIZE = 22  # each fighter's stocks/damage line
 OVERLAY_STAT_LINE_SPACING = 22  # vertical stride between fighter stat lines
 
+# Section-skip key (#508): fast-forwards the gameplay between caption beats to the next
+# section's start. A DISTINCT action from the any-key dwell-skip (#514) and hold-Esc exit
+# (#515), so it gets its own key — the → arrow (ratified 2026-07-06).
+SECTION_SKIP_KEY = pygame.K_RIGHT
+
 
 # --- Playback-speed scalar (#351) --------------------------------------------
 # Slow-motion is presentation-only: the sim is fixed-timestep (#166/#80), so we pace
@@ -160,6 +165,11 @@ class LivePresenter(_InputStripMixin):
             raise KeyboardInterrupt
 
     @staticmethod
+    def _pressed_section_skip(events):
+        """True if the section-skip key (#508, →) is among this batch's KEYDOWNs."""
+        return any(ev.type == pygame.KEYDOWN and ev.key == SECTION_SKIP_KEY for ev in events)
+
+    @staticmethod
     def _dwell_interrupt(events):
         """Classify a batch of pygame events for the timed dwell (#514):
         ``"skip"`` on **any** KEYDOWN (end the remaining dwell early), ``"quit"``
@@ -176,31 +186,40 @@ class LivePresenter(_InputStripMixin):
 
     def _hold(self, frame):
         """Freeze on a caption's dwell frame (#352). No hold on a non-dwell frame.
+        Returns a ``"skip"`` section-skip intent (#508) when the → key ended the dwell,
+        else ``None``.
 
         The dwell stays timed (auto-advances after `hold`), but any key ends the
         remaining dwell early (#514), and a held Esc keeps counting toward the 2s
         exit (#515) so a hold that spans a dwell quits instead of stalling."""
         hold = caption_hold_frames(self.captions, frame)
         if not hold:
-            return
+            return None
         # Timed dwell: keep showing the same frame for `hold` more sim-frame-durations
         # WITHOUT advancing the sim. Events still pump so the window stays quittable, and
         # any key ends the remaining dwell early (#514) — the dwell stays timed (it still
         # auto-advances after `hold`), a keypress only skips the rest of the wait. Non-
         # interactive playback gets an empty queue every tick -> full `hold` (golden-safe).
         for _ in range(hold):
-            action = self._dwell_interrupt(pygame.event.get())
+            events = pygame.event.get()
+            action = self._dwell_interrupt(events)
             if action == "quit":
                 raise KeyboardInterrupt
             if action == "skip":
-                return
+                # Any key ended the dwell (#514); if it was → , also begin a section
+                # fast-forward (#508 — #394's "→ during a pause begins fast-forward").
+                return "skip" if self._pressed_section_skip(events) else None
             self._service_esc_hold()  # #515: a held Esc across dwell ticks still quits at 2s
             self._tick()
+        return None
 
     def show(self, platforms, players, attacks, frame, inputs=None):
+        skip = None
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 raise KeyboardInterrupt
+            if ev.type == pygame.KEYDOWN and ev.key == SECTION_SKIP_KEY:
+                skip = "skip"  # #508: fast-forward gameplay to the next caption section
         self._service_esc_hold()  # #515: hold Esc ~2s to exit the run
         self.screen.fill(BG_COLOR)
         render_battle(self.screen, players, platforms)
@@ -213,7 +232,9 @@ class LivePresenter(_InputStripMixin):
         draw_esc_hold_arc(self.screen, self._esc_hold.progress)  # #515 hold-Esc feedback
         pygame.display.flip()
         self._tick()
-        self._hold(frame)
+        # → can also be pressed during the dwell that follows this frame (#508); _hold
+        # surfaces it. Either source reports the skip intent up to run_battle.
+        return self._hold(frame) or skip
 
     def close(self):
         pygame.display.quit()
