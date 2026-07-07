@@ -70,7 +70,7 @@ a full engine image. Consequences for value verification:
   (#649) landed in the worst case: no literal present, so either PM didn't change it via a stored
   constant, or the change is ASM in `main.dol` — neither extractable from the GCT alone.
 
-## 5. Open questions (owned by #652 — do not answer here)
+## 5. Open questions (posed by #649; **answered in §6** by the #652 spike)
 
 To make GCT-based verification **effective and consistent**, we'd need to resolve:
 
@@ -83,6 +83,69 @@ To make GCT-based verification **effective and consistent**, we'd need to resolv
 4. **Verdict** — can we verify values from the GCT **now**, **now-with-X**, or **not at all** — and
    does it help the 59/1.3671 charge case, or must that go via `main.dol`+`doldecomp/brawl` / a live
    RAM read.
+
+## 6. Methodology & viability verdict (#652)
+
+The #652 spike answered §5 by running the ticket's first probe + fall-through.
+
+### First probe — published code list: **exists, but doesn't name the charge value**
+
+The PMDT/PM codeset **is** published in human-readable text form: the **Project-M-CC** repo
+(`github.com/Project-M-CC/Project-M-CC`) ships `[Text Codesets]/codes-cc-3_6.txt` (named) and
+`[Dev Resources]/codes-3_6.txt` (nameless). The nameless `codes-3_6.txt` is **8,044 code lines —
+a 1:1 text mirror of our vanilla `RSBE01.gct`** (cross-check: same code count).
+
+But the codeset names only ~33 top-level entries, and they are either **monolithic
+"Part of Codeset 1–4" blobs** (the PMDT engine changes, *unnamed inside*) or community add-ons
+(`Alternate Stage Loader`, `Clone Engine`, per-character `... Fixes`). **No `Smash Charge` /
+`Charge` / `Smash Attack` code exists.** So the published list is a Rosetta stone for **named**
+codes, but **not** for engine globals like smash charge — those are buried, unnamed, in the blobs.
+*(Caveat: the named file is the "CC" variant, 8,525 lines ≠ vanilla's 8,044; use it for names, but
+verify any hex against the vanilla `.gct`.)*
+
+### Probe-2 — `doldecomp/brawl` symbol map: **available, address-indexed**
+
+`github.com/doldecomp/brawl` (a matching Brawl decompilation) ships
+`config/RSBE01_02/symbols.txt` — **34,802 symbols**, each `name = .text:0xADDRESS` (Rev 2), and it
+decompiles the engine (`src/sora`, `src/mo_fighter`). Grepping the names for "charge"/"smash"
+finds nothing relevant — but that's the wrong direction: the map is **address-indexed**, so the
+workflow is **address → name**, not name → address. So address→meaning mapping **is obtainable**.
+
+### Q3 tooling — a PPC disassembler is **not on hand** (gated dependency)
+
+System `objdump` 2.42 has **no PowerPC target**; Python `capstone` is not installed. Reading a
+`C2` ASM hook therefore needs a **new dependency** — `binutils-multiarch` / a `powerpc-*-objdump`,
+or `pip install capstone`. Per RULES → Dependencies, that's **propose, don't install**.
+
+### The repeatable pipeline (Q4)
+
+`parse GCT → for each 04/06 write take its target address → look it up in symbols.txt → read the
+value` (direct); `for each C2 hook take its address → look up the symbol → disassemble the injected
+PPC` (needs the disassembler). Reusable for #192 / #243 / #536, etc.
+
+### Verdict (Q5): **viable-with-X**
+
+| Value class | Verdict |
+|---|---|
+| A **named** code (e.g. a `Clone Engine` tweak) | **viable-now** — read it from the Project-M-CC text codeset (mind CC≠vanilla; verify hex vs the `.gct`). |
+| An engine global changed by a **`04`/`06` write** | **viable-with-X**, X = clone `doldecomp/brawl` for the address-indexed `symbols.txt`. Parse the GCT, take the write's address, look it up. |
+| An engine global changed by a **`C2` ASM hook** | **viable-with-X**, X = the above **plus** a PPC disassembler (gated dep). |
+| A value PM **left at Brawl's default** | **not verifiable from the GCT** — it isn't in the diff at all (structural, §4). |
+
+**Charge-value routing (the #637 unblock):** the GCT does **not** suffice. #649 found **no charge
+literal** in the codeset, so there is no `04`-write address to look up — the behavior is either a
+`C2` ASM hook (needs disasm) or unchanged from Brawl. The cleaner primary for 59/1.3671 is
+**`doldecomp/brawl`'s decompiled fighter/engine source** (read the charge routine directly, once
+that code is covered) **or a live Dolphin RAM read** — not the GCT. So #637 stays
+`⚠ primary-unconfirmed`; its resolution moves to a `doldecomp/brawl`-source or RAM-read child, not
+this GCT track.
+
+### Downstream follow-ups (one-at-a-time, **not** filed here)
+
+- Clone `doldecomp/brawl` → `~/Documents/Study/…` (as #614/#616 did) — unlocks the symbol map.
+- Decide a PPC disassembler (dependency **proposal**, human-approved) for `C2` hooks.
+- For #637 charge specifically: pursue the `doldecomp/brawl` fighter/engine source **or** the live
+  RAM read (a #638 child), since the GCT track is a dead end for it.
 
 ## Refs
 
