@@ -8,6 +8,17 @@
   "defaultBase": "origin/main",
   "paths": { "worktreeDir": ".claude/worktrees" },
   "pmtools": { "home": null, "port": "py" },
+  "close": {
+    "verify": {
+      "comment": "Whole-tree ruff gate at merge (#633, from #628). cwd=worktree has no .venv (repo convention), and neither `ruff` nor `python` is on PATH there; `git rev-parse --git-common-dir` resolves the MAIN repo's .venv/bin/ruff depth-independently while `pycats/` stays relative to the worktree cwd (checks the code being merged). Scoped to pycats/ until #540 widens to root scripts.",
+      "commands": [
+        "\"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/ruff\" format --check pycats/",
+        "\"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/ruff\" check pycats/"
+      ],
+      "cwd": "worktree",
+      "enabled": true
+    }
+  },
   "enrichment": {
     "statusCommand": "pmtools status",
     "claimCommand": "pmtools claim",
