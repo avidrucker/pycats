@@ -164,6 +164,21 @@ class LivePresenter(_InputStripMixin):
                     return "quit"
         return None
 
+    @staticmethod
+    def _dwell_interrupt(events):
+        """Classify a batch of pygame events for the timed dwell (#514):
+        ``"skip"`` on **any** KEYDOWN (end the remaining dwell early), ``"quit"``
+        on window-close, else ``None`` (keep counting down). Pure — no window/loop,
+        so it's unit-testable; mirrors ``_consume_advance``. This is the CLI-near-term
+        slice of #507's shared interaction reducer: interruptibility is a property of
+        the dwell itself, so any key — not a designated advance key — ends it."""
+        for ev in events:
+            if ev.type == pygame.QUIT:
+                return "quit"
+            if ev.type == pygame.KEYDOWN:
+                return "skip"
+        return None
+
     def _draw_manual_hint(self):
         """Small ASCII hint (top-centre, clear of bottom captions + the corner
         overlays) shown while a manual pause is held (#393)."""
@@ -198,11 +213,16 @@ class LivePresenter(_InputStripMixin):
             self._wait_for_advance()
             return
         # Timed dwell: keep showing the same frame for `hold` more sim-frame-durations
-        # WITHOUT advancing the sim. Events still pump so the window stays quittable.
+        # WITHOUT advancing the sim. Events still pump so the window stays quittable, and
+        # any key ends the remaining dwell early (#514) — the dwell stays timed (it still
+        # auto-advances after `hold`), a keypress only skips the rest of the wait. Non-
+        # interactive playback gets an empty queue every tick -> full `hold` (golden-safe).
         for _ in range(hold):
-            for ev in pygame.event.get():
-                if ev.type == pygame.QUIT:
-                    raise KeyboardInterrupt
+            action = self._dwell_interrupt(pygame.event.get())
+            if action == "quit":
+                raise KeyboardInterrupt
+            if action == "skip":
+                return
             self._tick()
 
     def show(self, platforms, players, attacks, frame, inputs=None):
