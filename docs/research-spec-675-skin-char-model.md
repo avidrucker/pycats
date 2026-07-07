@@ -1,7 +1,7 @@
 # Design spec — the DDD/hexagonal skin / character / selection model
 
 **Ticket:** #675 (Child 2 of the epic **#672**) · **Role:** ARCHITECT · **Date:** 2026-07-06 (GRAPE)
-**Status:** design/spec — **no code**. Formalizes the #673 findings ([`2026-07-06-skin-char-decomplect.md`](./research/2026-07-06-skin-char-decomplect.md)) into an implementable model + a Phase-1/2/3 child breakdown. DP1/DP2 land **proposed — pending sign-off**.
+**Status:** design/spec — **no code**. Formalizes the #673 findings ([`2026-07-06-skin-char-decomplect.md`](./research/2026-07-06-skin-char-decomplect.md)) into an implementable model + a Phase-1/2/3 child breakdown. DP1/DP2 are **ratified 2026-07-06 (see #672)**.
 
 ## TL;DR
 
@@ -9,7 +9,7 @@
 - **Two independent resolvers** compose in one port: `build_fighter(Selection) -> BuiltFighter(fighter_data, skin)`. Mechanics (`fighter_data_of`) and cosmetics (`palette_of`) never touch each other — skin-cycling stays cost-free on the data side.
 - **`char_name` dies**, split into three prefixed seams — `PlayerNumberSlot` (identity/win-attribution), `PlayerTeamColor` (HUD accent), `PlayerName` (label; absorbs `nickname` #478). Each of its ~8 real consumers repoints to exactly one seam.
 - **The placeholder becomes a normal non-selectable `(Character, Skin)`** — absent from the two registries — deleting both `if key == "testcat"` special-cases *and* the `_NEUTRAL` fallback.
-- **DP1** (placeholder exact gray) and **DP2** (`PlayerSnap` identity field) are surfaced with a recommendation each, pending human sign-off.
+- **DP1** (placeholder exact gray → **flat uniform gray `(128,128,128)` + black feature outlines**) and **DP2** (`PlayerSnap` identity field → **slot row-key + new `character` field**) are **ratified 2026-07-06 (see #672)**.
 - Nine refactor children enumerated across three phases (golden-neutral → golden-flip → cleanup); filed one at a time downstream.
 
 ---
@@ -199,13 +199,13 @@ Each child carries its own acceptance; 2b–2d are gated on DP2, and any placeho
 
 ---
 
-## Decision points — proposed, pending sign-off
+## Decision points — ratified 2026-07-06 (see #672)
 
-### DP1 — PlaceholderSkin exact values (game-designer)
-**Recommendation: keep #636's shipped tri-tone gray** — `color (128,128,128)`, `stripe (96,96,96)`, `eye (64,64,64)`. Rationale: it already ships, is tested, and the achromatic-but-*distinct* eyes/stripes are what make the fixture legible against the dark stage (the #546 outline basis) while still reading as "not a named cat." A single flat uniform gray (all three = `128`) satisfies the "flat pure gray" wording but flattens the stripe/eye separation #636 deliberately added. **This is a cosmetic value → a game-designer call (RULES → Changing values); I propose keep-tri-tone but defer.** The refactor is value-agnostic: `PLACEHOLDER_SKIN` is a single literal, changeable in one line whichever way DP1 rules.
+### DP1 — PlaceholderSkin exact values (game-designer) — **RATIFIED: flat uniform gray**
+**Ruling (2026-07-06, see #672): flat uniform gray** — `color`, `stripe`, and `eye` all `(128,128,128)`, **plus black outlines on all features** (eyes/stripes/mouth) for legibility against the dark stage (the #546 outline basis). This supersedes #675's original recommendation to retain #636's tri-tone gray. Rationale: a single uniform gray reads unambiguously as "not one of the named characters," and the black feature outlines restore the eye/stripe separation the tri-tone shading previously provided. This changes the shipped #636 `_TESTCAT` look — landed as a dedicated render slice (the #672 "R — placeholder render" child), sim-golden-neutral. The refactor is value-agnostic: `PLACEHOLDER_SKIN` is a single literal, changed in one line to the ratified values.
 
-### DP2 — Snapshot identity field (golden-reviewer)
-**Recommendation: row-key stays the slot** — `PlayerNumberSlot` → `"P1"`/`"P2"` remains `PlayerSnap.name`, so `summarize()`'s name-keying and any `p[0] == "P2"` row filters are untouched — **and add a separate `character` field** (holding `Character.key`, e.g. `"nalio"`) to `PlayerSnap` immediately after `name`, in Phase 2a. This makes goldens reflect the real fighter without reshaping the row key. Confirm the exact field position + `summarize()` surface with the golden reviewer before 2a regen.
+### DP2 — Snapshot identity field (golden-reviewer) — **RATIFIED: slot row-key + new `character` field**
+**Ruling (2026-07-06, see #672): row-key stays the slot** — `PlayerNumberSlot` → `"P1"`/`"P2"` remains `PlayerSnap.name`, so `summarize()`'s name-keying and any `p[0] == "P2"` row filters are untouched — **and a separate `character` field** (holding `Character.key`, e.g. `"nalio"`) is added to `PlayerSnap` immediately after `name`, in Phase 2a. This makes goldens reflect the real fighter without reshaping the row key. Ratified as #675 recommended; the exact field position + `summarize()` surface is reviewed with the golden reviewer at 2a regen. Gates Phase 2a–2d.
 
 ---
 
@@ -221,8 +221,8 @@ Each child carries its own acceptance; 2b–2d are gated on DP2, and any placeho
 
 ## The three #673 open questions — answered
 
-1. **PlaceholderSkin exact values** → DP1 (proposed keep-tri-tone, pending game-designer).
-2. **Snapshot identity field** → DP2 (proposed slot row-key + new `character` field, pending golden-reviewer).
+1. **PlaceholderSkin exact values** → DP1 (**ratified 2026-07-06, see #672**: flat uniform gray `(128,128,128)` + black feature outlines).
+2. **Snapshot identity field** → DP2 (**ratified 2026-07-06, see #672**: slot row-key + new `character` field).
 3. **`Character` naming collision** (`CAT_CHARACTERS` *means skins*) → resolved: the domain identity type is `Character`; the skin registry is `SKINS`; `CAT_CHARACTERS` is renamed to `SKINS` and retired in Phase 3a, so the collision never coexists in-tree.
 
 ---
