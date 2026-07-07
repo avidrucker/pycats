@@ -7,6 +7,7 @@ import pygame
 
 from .. import text_utils
 from ..config import BG_COLOR, FPS, HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from ..esc_hold import EscHoldTimer, draw_esc_hold_arc
 from ..input_history import InputHistory
 from ..render_battle import draw_input_history, render_attacks, render_battle
 from .captions import caption_hold_frames, draw_captions
@@ -15,12 +16,6 @@ from .captions import caption_hold_frames, draw_captions
 OVERLAY_FPS_FONT_SIZE = 24  # the FPS readout (top-right)
 OVERLAY_STAT_FONT_SIZE = 22  # each fighter's stocks/damage line
 OVERLAY_STAT_LINE_SPACING = 22  # vertical stride between fighter stat lines
-
-# Manual-advance mode (#393): at a caption's dwell frame the presenter freezes and
-# waits for one of these keys instead of the timed #352 dwell. Esc / window-close quit.
-ADVANCE_KEYS = (pygame.K_SPACE, pygame.K_RIGHT)
-MANUAL_HINT_TEXT = "space / right = advance    esc = quit"
-OVERLAY_HINT_FONT_SIZE = 20  # the small manual-advance hint (top-centre, ASCII-safe)
 
 
 # --- Playback-speed scalar (#351) --------------------------------------------
@@ -106,7 +101,6 @@ class LivePresenter(_InputStripMixin):
         overlay=True,
         captions=(),
         speed=1.0,
-        interactive=None,
         show_inputs=False,
     ):
         import os
@@ -121,9 +115,10 @@ class LivePresenter(_InputStripMixin):
         self.overlay = overlay
         self.captions = list(captions)  # demo captions (#306); presentation overlay
         self.speed = speed  # <1 slow-mo (#351); paces the tick, not the sim
-        # Interactivity (#393): "manual" makes each caption's dwell frame wait for an
-        # advance key (self-paced reading) instead of the timed #352 dwell. None = off.
-        self.interactive = interactive
+        # Hold-Esc-2s to exit the run (#515): the SAME EscHoldTimer the in-game screen
+        # ladder uses (#453/#507 §3b), ticked once per displayed frame from the live
+        # keyboard. A tap does nothing; a full 2s hold raises the quit signal.
+        self._esc_hold = EscHoldTimer()
         self._init_input_strip(show_inputs)  # #434 input strip (default off)
 
     def _draw_overlay(self, players):
@@ -149,29 +144,29 @@ class LivePresenter(_InputStripMixin):
         """Advance the display clock one frame at the current speed (#351)."""
         self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
 
-    @staticmethod
-    def _consume_advance(events):
-        """Classify a batch of pygame events for manual-advance mode (#393):
-        ``"advance"`` on Space/Right, ``"quit"`` on Esc or window-close, else
-        ``None`` (keep waiting). Pure — no window/loop, so it's unit-testable."""
-        for ev in events:
-            if ev.type == pygame.QUIT:
-                return "quit"
-            if ev.type == pygame.KEYDOWN:
-                if ev.key in ADVANCE_KEYS:
-                    return "advance"
-                if ev.key == pygame.K_ESCAPE:
-                    return "quit"
-        return None
+    def _esc_held(self):
+        """Whether Esc is currently held on the live keyboard (#515). Non-interactive
+        playback reads an all-released keyboard, so the hold timer never advances."""
+        return bool(pygame.key.get_pressed()[pygame.K_ESCAPE])
+
+    def _service_esc_hold(self):
+        """Tick the shared hold-Esc timer once per displayed frame; raise
+        KeyboardInterrupt once Esc has been held the full 2s (#515). This mirrors the
+        in-game screen ladder's hold-Esc-to-back-out (#453) via the same EscHoldTimer,
+        so CLI and in-app share one threshold. A tap never accumulates to the threshold
+        (the count resets the frame Esc is released) — replacing #393's tap-Esc-quit."""
+        self._esc_hold.tick(self._esc_held())
+        if self._esc_hold.complete:
+            raise KeyboardInterrupt
 
     @staticmethod
     def _dwell_interrupt(events):
         """Classify a batch of pygame events for the timed dwell (#514):
         ``"skip"`` on **any** KEYDOWN (end the remaining dwell early), ``"quit"``
         on window-close, else ``None`` (keep counting down). Pure — no window/loop,
-        so it's unit-testable; mirrors ``_consume_advance``. This is the CLI-near-term
-        slice of #507's shared interaction reducer: interruptibility is a property of
-        the dwell itself, so any key — not a designated advance key — ends it."""
+        so it's unit-testable. This is the CLI-near-term slice of #507's shared
+        interaction reducer: interruptibility is a property of the dwell itself, so
+        any key — not a designated advance key — ends it."""
         for ev in events:
             if ev.type == pygame.QUIT:
                 return "quit"
@@ -179,38 +174,14 @@ class LivePresenter(_InputStripMixin):
                 return "skip"
         return None
 
-    def _draw_manual_hint(self):
-        """Small ASCII hint (top-centre, clear of bottom captions + the corner
-        overlays) shown while a manual pause is held (#393)."""
-        text_utils.render_text(
-            self.screen, MANUAL_HINT_TEXT, (SCREEN_WIDTH // 2, HUD_PADDING), OVERLAY_HINT_FONT_SIZE, WHITE, center=True
-        )
-
-    def _wait_for_advance(self):
-        """Freeze on the current frame until the viewer presses an advance key
-        (#393). Space/Right resume; Esc or window-close raise KeyboardInterrupt.
-        Draws the hint over the frozen frame and keeps ticking so the window stays
-        responsive. The sim frame never advances — the runner is blocked inside this
-        one show() call, so this is a pure presentation freeze (golden-safe)."""
-        self._draw_manual_hint()
-        pygame.display.flip()
-        while True:
-            action = self._consume_advance(pygame.event.get())
-            if action == "advance":
-                return
-            if action == "quit":
-                raise KeyboardInterrupt
-            self._tick()
-
     def _hold(self, frame):
-        """Freeze on a caption's dwell frame (#352). Manual mode (#393) waits for an
-        advance key instead of the timed hold — the exit condition is generalized
-        from a tick count to a keypress. No hold on a non-dwell frame."""
+        """Freeze on a caption's dwell frame (#352). No hold on a non-dwell frame.
+
+        The dwell stays timed (auto-advances after `hold`), but any key ends the
+        remaining dwell early (#514), and a held Esc keeps counting toward the 2s
+        exit (#515) so a hold that spans a dwell quits instead of stalling."""
         hold = caption_hold_frames(self.captions, frame)
         if not hold:
-            return
-        if self.interactive == "manual":
-            self._wait_for_advance()
             return
         # Timed dwell: keep showing the same frame for `hold` more sim-frame-durations
         # WITHOUT advancing the sim. Events still pump so the window stays quittable, and
@@ -223,12 +194,14 @@ class LivePresenter(_InputStripMixin):
                 raise KeyboardInterrupt
             if action == "skip":
                 return
+            self._service_esc_hold()  # #515: a held Esc across dwell ticks still quits at 2s
             self._tick()
 
     def show(self, platforms, players, attacks, frame, inputs=None):
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 raise KeyboardInterrupt
+        self._service_esc_hold()  # #515: hold Esc ~2s to exit the run
         self.screen.fill(BG_COLOR)
         render_battle(self.screen, players, platforms)
         render_attacks(self.screen, attacks)
@@ -237,6 +210,7 @@ class LivePresenter(_InputStripMixin):
         self._record_input_strip(players, inputs)  # #434
         self._draw_input_strip(self.screen)
         draw_captions(self.screen, self.captions, frame)
+        draw_esc_hold_arc(self.screen, self._esc_hold.progress)  # #515 hold-Esc feedback
         pygame.display.flip()
         self._tick()
         self._hold(frame)

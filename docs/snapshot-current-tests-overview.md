@@ -65,7 +65,7 @@ code writes its JSON there instead of your real `~/.config/pycats/`; the env var
 restored when the test ends. This is why persistence tests never touch your real saved
 settings.
 
-**2. `monkeypatch.setattr` — swap out a function** (`test_demo_manual.py:73`):
+**2. `monkeypatch.setattr` — swap out a function** (`test_dwell_interrupt.py`, `test_cli_hold_esc.py`):
 
 ```python
 monkeypatch.setattr(pr, "render_battle", lambda *a, **k: None)

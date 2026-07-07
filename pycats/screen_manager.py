@@ -7,12 +7,10 @@ This module handles:
 - Input handling for screen transitions
 """
 
-import math
-
 import pygame  # type: ignore
 
 from .char_select import CharacterSelector
-from .config import MAIN_MENU_SELECTED_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from .esc_hold import EscHoldTimer, draw_esc_hold_arc
 from .main_menu import MainMenuManager
 from .options_menu import OptionsMenu
 from .pause_menu import PauseMenuManager
@@ -44,9 +42,10 @@ class ScreenStateManager:
         # Hold-ESC-to-navigate (#113, generalised #453): a 2-second hold on ESC pops
         # one level up the screen ladder (guards read esc_hold_complete()); at
         # main_menu it quits the app. One shared timer, ticked once per frame in
-        # update() regardless of state.
-        self.esc_quit_timer = 0
+        # update() regardless of state. The counter is the shared EscHoldTimer (#515,
+        # #507 §3b) so the CLI demo/sim playback backs out on the same 2s threshold.
         self.esc_quit_hold_frames = 120  # 2 seconds at 60 FPS
+        self._esc_hold = EscHoldTimer(self.esc_quit_hold_frames)
 
         # Screen-flow engine (epic #100): runs on statecharts-py, the sole screen
         # engine (the legacy FSM was retired across slices 4a/4b/4c, ADR-0002). The
@@ -189,12 +188,12 @@ class ScreenStateManager:
     def _on_enter_main_menu(self, ctx):
         """Called when entering main menu state."""
         self.main_menu.reset()
-        self.esc_quit_timer = 0
+        self._esc_hold.reset()
 
     def _on_enter_options(self, ctx):
         """Called when entering the Options sub-menu state."""
         self.options_menu.reset()
-        self.esc_quit_timer = 0
+        self._esc_hold.reset()
 
     def _on_enter_char_select(self, ctx):
         """Called when entering character select state."""
@@ -202,21 +201,21 @@ class ScreenStateManager:
         if hasattr(self.char_selector, "reset"):
             self.char_selector.reset()
         self.back_timer = 0
-        self.esc_quit_timer = 0
+        self._esc_hold.reset()
 
     def _on_enter_playing(self, ctx):
         """Called when entering playing state."""
-        self.esc_quit_timer = 0
+        self._esc_hold.reset()
 
     def _on_enter_pause(self, ctx):
         """Called when entering pause state."""
         # Reset pause menu state
         self.pause_menu.reset()
-        self.esc_quit_timer = 0
+        self._esc_hold.reset()
 
     def _on_enter_win_screen(self, ctx):
         """Called when entering win screen state."""
-        self.esc_quit_timer = 0
+        self._esc_hold.reset()
         if self.winner and self.loser:
             # Normal win condition (playing -> win_screen): winner/loser were set
             # in the playing loop before the transition.
@@ -298,31 +297,11 @@ class ScreenStateManager:
 
     def esc_quit_progress(self):
         """Current ESC-hold progress as a 0..1 ratio for render callers."""
-        if self.esc_quit_hold_frames <= 0:
-            return 0.0
-        return min(1.0, self.esc_quit_timer / self.esc_quit_hold_frames)
+        return self._esc_hold.progress
 
     def render_esc_quit_progress(self, surface):
         """Draw a small circular hold-progress indicator while ESC is held."""
-        progress = self.esc_quit_progress()
-        if progress <= 0:
-            return
-
-        radius = 28
-        width = 6
-        center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 155)
-        rect = pygame.Rect(0, 0, radius * 2, radius * 2)
-        rect.center = center
-
-        pygame.draw.circle(surface, WHITE, center, radius, 2)
-        pygame.draw.arc(
-            surface,
-            MAIN_MENU_SELECTED_COLOR,
-            rect,
-            -math.pi / 2,
-            -math.pi / 2 + math.tau * progress,
-            width,
-        )
+        draw_esc_hold_arc(surface, self._esc_hold.progress)
 
     def _tick_esc_hold(self, frame_input):
         """Hold-ESC-to-navigate (#113, generalised #453): count frames while ESC is
@@ -337,16 +316,13 @@ class ScreenStateManager:
         from .settings import load
 
         if not load().get("esc_hold_to_navigate", True):
-            self.esc_quit_timer = 0
+            self._esc_hold.reset()
             return
-        if pygame.K_ESCAPE in frame_input.held:
-            self.esc_quit_timer += 1
-        else:
-            self.esc_quit_timer = 0
+        self._esc_hold.tick(pygame.K_ESCAPE in frame_input.held)
 
     def esc_hold_complete(self):
         """True once ESC has been held for the full 2-second threshold (#453)."""
-        return self.esc_quit_timer >= self.esc_quit_hold_frames
+        return self._esc_hold.complete
 
     # FSM Guard Functions
     def _guard_menu_to_char_select(self, ctx):

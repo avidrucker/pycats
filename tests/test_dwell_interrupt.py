@@ -5,7 +5,7 @@ after `dwell` frames — but pressing **any key** ends the *remaining* dwell at 
 and playback resumes. "Do nothing -> it advances itself; press anything -> skip the
 rest of the wait." This is the CLI-near-term slice of #507's shared reducer: the
 any-key decision lives in a pure classifier (`LivePresenter._dwell_interrupt`),
-unit-testable with no window/loop, mirroring `_consume_advance`'s style.
+unit-testable with no window/loop.
 
 Golden-safe: non-interactive playback feeds the loop an empty event queue every
 tick -> the dwell always runs its full `caption_hold_frames` -> identical to today.
@@ -18,6 +18,7 @@ import pygame as pg
 import pytest
 
 import pycats.sim.presenters as pr
+from pycats.esc_hold import EscHoldTimer
 from pycats.sim.captions import Caption
 from pycats.sim.presenters import LivePresenter
 
@@ -29,8 +30,8 @@ def _pg():
 
 def _timed_presenter(captions, cap_fps=False):
     """A LivePresenter with just the attributes the timed-dwell loop needs, built via
-    __new__ so no real window opens (mirrors test_demo_manual._manual_presenter).
-    `interactive=None` = the default timed #352 dwell, the surface #514 acts on."""
+    __new__ so no real window opens (mirrors test_cli_hold_esc._presenter). The dwell
+    loop also services the #515 hold-Esc timer each tick, so it needs `_esc_hold`."""
     p = LivePresenter.__new__(LivePresenter)
     p.screen = pg.Surface((320, 180))
     p.clock = pg.time.Clock()
@@ -38,7 +39,7 @@ def _timed_presenter(captions, cap_fps=False):
     p.overlay = False
     p.speed = 1.0
     p.captions = list(captions)
-    p.interactive = None
+    p._esc_hold = EscHoldTimer()
     p._init_input_strip(False)
     return p
 

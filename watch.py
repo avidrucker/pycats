@@ -179,13 +179,6 @@ def main(argv=None, presenter=None):
         "video: duplicates frames (#351/#308).",
     )
     ap.add_argument(
-        "--demo-manual",
-        action="store_true",
-        help="self-paced caption reading (#393): pause on each caption's "
-        "dwell frame and wait for an advance key (space/right; esc "
-        "quits) instead of the timed dwell. Live playback only.",
-    )
-    ap.add_argument(
         "--shots",
         default=None,
         metavar="DIR",
@@ -251,7 +244,6 @@ def main(argv=None, presenter=None):
                 cap_fps=not args.uncapped,
                 overlay=args.overlay,
                 speed=args.demo_speed,
-                interactive="manual" if args.demo_manual else None,
                 show_inputs=args.show_inputs,
             )
     if captions:  # attach; don't clobber an injected list (#306)
