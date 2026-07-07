@@ -10,12 +10,15 @@ crucially *gray eyes*: every real archetype has coloured eyes (nalio green, birk
 narz green), so colourless eyes uniquely mark the fixture. Opaque (not alpha) so it stays
 legible against the dark stage (#546).
 
+Under DP1 (#672 ruling, 2026-07-06) the placeholder is **flat uniform gray** — body,
+stripe and eye are the *same* `(128, 128, 128)`, not the #636 three-tone gray. Features
+then vanish by colour and read via black outlines drawn in render_battle (#694). The
+uniform-value assertion below is able-to-fail against the retired three-tone palette.
+
 Able-to-fail: without the dedicated `testcat` palette it falls back to the generic
 `_NEUTRAL` (light gray 200) shared by any unknown key — which fails the mid-gray band
 below.
 """
-
-
 
 from pycats.characters.roster import ARCHETYPE_ROSTER, palette_for  # noqa: E402
 
@@ -37,6 +40,20 @@ def test_testcat_is_opaque_mid_gray_and_fully_achromatic():
     assert 96 <= body <= 160, f"testcat body should be opaque mid-gray (~128), got {body}"
     # Opaque: if an alpha channel is present it must be full.
     assert len(pal["color"]) < 4 or pal["color"][3] == 255, "testcat body must be opaque (no alpha)"
+
+
+def test_testcat_is_flat_uniform_gray():
+    """DP1 (#672): body, stripe and eye are the SAME gray — not the retired three-tone.
+
+    Able-to-fail against the old palette (stripe 96 / eye 64 both differed from body 128);
+    green only when all three are the uniform (128, 128, 128). The rendered features then
+    vanish by colour and depend on the #694 black outlines for legibility.
+    """
+    pal = palette_for("testcat")
+    body, stripe, eye = pal["color"][:3], pal["stripe_color"][:3], pal["eye_color"][:3]
+    assert body == stripe == eye == (128, 128, 128), (
+        f"placeholder must be flat uniform gray (128,128,128); got body={body} stripe={stripe} eye={eye}"
+    )
 
 
 def test_testcat_distinct_from_every_named_archetype():

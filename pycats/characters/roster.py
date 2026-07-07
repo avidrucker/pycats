@@ -39,11 +39,14 @@ ARCHETYPE_NAME = {
 _NEUTRAL = {"name": "?", "color": (200, 200, 200), "stripe_color": (150, 150, 150), "eye_color": (0, 0, 0)}
 
 # The `testcat` fixture (#591) is a test scaffold, not a playable cat — it must read on
-# screen as clearly non-standard. Give it a deliberate opaque mid-gray ("50% gray")
-# placeholder look: fully achromatic, including the EYES (every real archetype has
-# coloured eyes, so colourless eyes uniquely mark the fixture). Opaque, not alpha, so it
-# stays legible against the dark stage (the #546 outline-legibility basis). #636.
-_TESTCAT = {"name": "Test", "color": (128, 128, 128), "stripe_color": (96, 96, 96), "eye_color": (64, 64, 64)}
+# screen as clearly non-standard. Per DP1 (#672 ruling, 2026-07-06) it renders as **flat
+# uniform gray** — body / stripe / eye all (128, 128, 128) — matching `domain.placeholder`
+# PLACEHOLDER_SKIN. Uniform gray makes the features vanish by colour, so legibility is
+# carried by **black feature outlines** drawn in render_battle (#694), not by colour
+# contrast — the same #546 outline-legibility basis. Opaque, not alpha. Supersedes the
+# #636 three-tone gray. This dict is the shipped cosmetic source until Phase 2/3 wire the
+# domain into the live adapter.
+_TESTCAT = {"name": "Test", "color": (128, 128, 128), "stripe_color": (128, 128, 128), "eye_color": (128, 128, 128)}
 
 
 def palette_for(key):

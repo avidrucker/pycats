@@ -24,6 +24,7 @@ from .combat.data import GETUP_ATTACK
 from .combat.geometry import resolve_circle
 from .config import (
     ATTACK_SIZE,
+    BLACK,
     DODGE_TIME,
     EAR_HEIGHT,
     EAR_PADDING,
@@ -95,6 +96,10 @@ HITBOX_OVERLAY_COLOR = RED  # attack hitbox circles
 HURTBOX_OVERLAY_COLOR = (0, 255, 255)  # cyan — fighter hurtbox circles
 OVERLAY_LINE_WIDTH = 2  # >0 → pygame draws an outline, not a disc
 
+# #694 (DP1 of #672): black-outline stroke width for the flat-gray placeholder's
+# otherwise-invisible eyes + stripes, so they read against the same-gray body.
+PLACEHOLDER_FEATURE_OUTLINE_WIDTH = 2
+
 # Fighter sprite drawing (#415: named from inline literals). Purely-local render
 # geometry/colour — cosmetic, so an identity extraction (values unchanged).
 STRIPE_BACK_OFFSET_X = 10  # stripes sit this far toward the back from center-x
@@ -114,6 +119,9 @@ def draw_eye(surface, p: Player, eye=True):
         x = p.rect.right - EYE_OFFSET_X if p.facing_right else p.rect.left + EYE_OFFSET_X
         y = p.rect.top + EYE_OFFSET_Y
         pygame.draw.circle(surface, p.eye_color, (x, y), EYE_RADIUS)
+        # #694: outline the placeholder's body-coloured (invisible) eye in black so it reads.
+        if getattr(p, "feature_outline", False):
+            pygame.draw.circle(surface, BLACK, (x, y), EYE_RADIUS, PLACEHOLDER_FEATURE_OUTLINE_WIDTH)
     else:  # we will draw a glint instead of an eye
         x = p.rect.right - GLINT_OFFSET_X if p.facing_right else p.rect.left + GLINT_OFFSET_X
         y = p.rect.top + GLINT_OFFSET_Y
@@ -237,6 +245,9 @@ def draw_stripes(surface, p: Player):
 
         # Draw the triangular stripe — tinted with the body flash (#109)
         pygame.draw.polygon(surface, _blend(p.stripe_color, getattr(p, "tint", None)), stripe_points)
+        # #694: outline the placeholder's body-coloured (invisible) stripe in black so it reads.
+        if getattr(p, "feature_outline", False):
+            pygame.draw.polygon(surface, BLACK, stripe_points, PLACEHOLDER_FEATURE_OUTLINE_WIDTH)
 
 
 def slot_accent_color(p: Player):
@@ -311,9 +322,30 @@ class _CatShim:
     """Minimal stand-in exposing the attributes the draw_* helpers read, with a
     virtual rect positioned inside the composite surface."""
 
-    __slots__ = ("rect", "facing_right", "char_color", "eye_color", "stripe_color", "char_name", "nickname", "tint")
+    __slots__ = (
+        "rect",
+        "facing_right",
+        "char_color",
+        "eye_color",
+        "stripe_color",
+        "char_name",
+        "nickname",
+        "tint",
+        "feature_outline",
+    )
 
-    def __init__(self, rect, facing_right, char_color, eye_color, stripe_color, char_name, nickname=None, tint=None):
+    def __init__(
+        self,
+        rect,
+        facing_right,
+        char_color,
+        eye_color,
+        stripe_color,
+        char_name,
+        nickname=None,
+        tint=None,
+        feature_outline=False,
+    ):
         self.rect = rect
         self.facing_right = facing_right
         self.char_color = char_color
@@ -321,6 +353,10 @@ class _CatShim:
         self.stripe_color = stripe_color
         self.char_name = char_name
         self.nickname = nickname  # #478: the name label draws this if set, else char_name
+        # #694: True for the flat-uniform-gray placeholder, whose eyes/stripes are
+        # body-coloured and would vanish. draw_eye / draw_stripes then stroke a black
+        # outline so the features read (the #546 outline-legibility basis, DP1 of #672).
+        self.feature_outline = feature_outline
         # #109: the active flash overlay (RED/YELLOW/WHITE) or None. The draw_*
         # helpers blend it 50% over each part's base colour via `_blend`, so the
         # whole sprite flashes from one source instead of per-part char_color.
@@ -412,6 +448,11 @@ def _draw_body_features(p, face_style):
     feat = pygame.Surface((cw, ch), pygame.SRCALPHA)
     vrect = pygame.Rect(_BODY_PAD_X, _BODY_PAD_TOP, w, h)
     overlay = active_tint(p)
+    # #694 (DP1 of #672): the placeholder is the one fighter whose body, stripe and eye
+    # are the same colour (flat uniform gray) — its features vanish, so draw_eye /
+    # draw_stripes give them a black outline. Named cats have contrasting features (the
+    # #636 distinctness test asserts it), so this never fires for them → byte-identical.
+    feature_outline = tuple(p.char_color) == tuple(p.eye_color) == tuple(p.stripe_color)
     shim = _CatShim(
         vrect,
         p.fighter.facing_right,
@@ -421,6 +462,7 @@ def _draw_body_features(p, face_style):
         p.char_name,
         nickname=getattr(p, "nickname", None),
         tint=overlay,
+        feature_outline=feature_outline,
     )
     body = pygame.Surface((w, h))
     body.fill(_blend(p.char_color, overlay))
