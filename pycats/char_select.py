@@ -54,6 +54,19 @@ PREVIEW_SCALE_X = 0.6  # preview width as a fraction of the tile
 PREVIEW_SCALE_Y = 0.8  # preview height as a fraction of the tile
 PREVIEW_STRIPE_COUNT = 3  # simplified stripes on the preview body
 
+# Per-player selected-character display row — a fixed P1..P4 slot strip (#682), separate
+# from the per-Character selection grid. P1/P2 slots paint the player's Selection (Character
+# in the cycled Skin); P3/P4 are inert stubs (no 4-player support yet).
+PLAYER_SLOT_SIZE = 56  # slot tile edge
+PLAYER_SLOT_SPACING = 24  # gap between slots
+PLAYER_SLOT_ROW_Y = 402  # top edge of the row (below grid + names, above the controls strip)
+PLAYER_SLOT_COUNT = 4  # P1..P4
+PLAYER_SLOT_TAG_FONT = 14  # "P1" tag above the slot
+PLAYER_SLOT_CAPTION_FONT = 13  # "Character · Skin" caption below the slot
+SLOT_STUB_BG_COLOR = (34, 34, 40)  # dim fill for empty/stub slots (distinct from any cat body)
+SLOT_STUB_BORDER_COLOR = (90, 90, 100)  # gray border + label for P3/P4 stubs
+SLOT_EMPTY_BORDER_COLOR = (120, 120, 130)  # unselected P1/P2 placeholder border + label
+
 # Start overlay (dim uses the shared config.OVERLAY_DIM_ALPHA + config.BLACK, #450)
 START_BOX_WIDTH = 400
 START_BOX_HEIGHT = 150
@@ -440,6 +453,9 @@ class CharacterSelector:
             selected_idx = self.characters.index(self.p2_selected)
             self._draw_confirmation(screen, selected_idx, P2_UI_COLOR, "P2", False, self.p2_palette)
 
+        # Per-player selected-character display row (P1..P4 slots, #682)
+        self._draw_player_slots(screen)
+
         # Control instructions at bottom
         self._draw_control_instructions(screen)
 
@@ -515,6 +531,56 @@ class CharacterSelector:
         char_key = self.characters[char_pos]
         px, py, psize = self._confirmation_preview_pos(char_pos, player_name == "P1")
         self._draw_cat_preview(screen, char_key, px, py, psize, palette_key=palette_key)
+
+    def _player_slot_rect(self, slot_index):
+        """Top-left ``(x, y)`` + ``size`` of player slot ``slot_index`` (0=P1 .. 3=P4) in the
+        centered P1..P4 display row (#682)."""
+        total_w = PLAYER_SLOT_COUNT * PLAYER_SLOT_SIZE + (PLAYER_SLOT_COUNT - 1) * PLAYER_SLOT_SPACING
+        start_x = (SCREEN_WIDTH - total_w) // 2
+        x = start_x + slot_index * (PLAYER_SLOT_SIZE + PLAYER_SLOT_SPACING)
+        return x, PLAYER_SLOT_ROW_Y, PLAYER_SLOT_SIZE
+
+    def _draw_player_slots(self, screen):
+        """Render the fixed P1..P4 selected-character display row (#682): each active player's
+        slot paints their selected Character in the currently-cycled Skin (via
+        `_draw_cat_preview`'s ``palette_key``), live; P3/P4 are inert stubs since 4-player
+        support does not exist yet. Separate from the selection grid and from the #662
+        confirmation preview."""
+        # (selected, palette_key, confirmed, accent, tag) per real player; None-padded to P4.
+        players = [
+            (self.p1_selected, self.p1_palette, self.p1_confirmed, P1_UI_COLOR),
+            (self.p2_selected, self.p2_palette, self.p2_confirmed, P2_UI_COLOR),
+        ]
+        for slot in range(PLAYER_SLOT_COUNT):
+            x, y, size = self._player_slot_rect(slot)
+            rect = pygame.Rect(x, y, size, size)
+            tag = f"P{slot + 1}"
+            active = slot < len(players)
+
+            if active and players[slot][2] and players[slot][0]:
+                # confirmed on a Character → paint the cat in the chosen Skin
+                selected, palette, _confirmed, accent = players[slot]
+                pygame.draw.rect(screen, TILE_BG_COLOR, rect)
+                self._draw_cat_preview(screen, selected, x, y, size, palette_key=palette)
+                pygame.draw.rect(screen, accent, rect, 3)
+                skin = palette_for(palette or selected)["name"]
+                caption, cap_color, tag_color = f"{ARCHETYPE_NAME[selected]} - {skin}", WHITE, accent
+            elif active:
+                # real player, not yet locked in
+                accent = players[slot][3]
+                pygame.draw.rect(screen, SLOT_STUB_BG_COLOR, rect)
+                pygame.draw.rect(screen, SLOT_EMPTY_BORDER_COLOR, rect, 2)
+                caption, cap_color, tag_color = "picking", SLOT_EMPTY_BORDER_COLOR, accent
+            else:
+                # P3/P4 stub — 4-player not available yet
+                pygame.draw.rect(screen, SLOT_STUB_BG_COLOR, rect)
+                pygame.draw.rect(screen, SLOT_STUB_BORDER_COLOR, rect, 2)
+                caption, cap_color, tag_color = "N/A", SLOT_STUB_BORDER_COLOR, SLOT_STUB_BORDER_COLOR
+
+            text_utils.render_text(screen, tag, (x + size // 2, y - 12), PLAYER_SLOT_TAG_FONT, tag_color, center=True)
+            text_utils.render_text(
+                screen, caption, (x + size // 2, y + size + 10), PLAYER_SLOT_CAPTION_FONT, cap_color, center=True
+            )
 
     def _draw_control_instructions(self, screen):
         """Draw control instructions at the bottom of the screen."""
