@@ -198,12 +198,12 @@ Spike #538 validated the "ledge invincibility scales with the occupant's percent
   **reduce** ledge intangibility (~1 f under Melee) and **decay it with repeated grabs**
   (anti-plank) — neither is percent-based, and both make high-% recovery *harder*, the opposite
   of "higher % → longer intangibility".
-- **`LEDGE_INVULN_BASE_FRAMES = 23` → FOUND.** Brawl grab-intangibility baseline; PM is
-  Brawl-derived (per-character) — #297 (`docs/research/2026-06-30-ledge-recovery-mechanics.md`) +
-  SmashWiki *Ledge*.
-- **`LEDGE_INVULN_PER_PERCENT = 0.3` + `LEDGE_INVULN_MAX_FRAMES = 60` → DIVERGENCE.** The
-  continuous "higher % → longer" scaling (#311) has no PM source and inverts PM's real high-%
-  effect. Believed FOUND at #311; reclassified DIVERGENCE here.
+- **`LEDGE_INVULN_BASE_FRAMES` → FOUND.** Was 23 (Brawl baseline); **updated to 21 in #683** — PM
+  3.6 `CliffCatch` is fully intangible frames 1–21, flat across every character checked (rukaidata,
+  #671). #297 (`docs/research/2026-06-30-ledge-recovery-mechanics.md`) + SmashWiki *Ledge*.
+- **`LEDGE_INVULN_PER_PERCENT = 0.3` + `LEDGE_INVULN_MAX_FRAMES = 60` → DIVERGENCE, now REMOVED
+  (#683).** The continuous "higher % → longer" scaling (#311) had no PM source and inverted PM's real
+  high-% effect. Reclassified DIVERGENCE (#536); both constants **deleted in #683** for the flat 21f burst.
 
 **Consequences**
 - **#531 bar model:** the true window is a **fixed-per-grab burst that drains to 0**, so divide the

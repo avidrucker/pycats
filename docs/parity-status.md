@@ -5,7 +5,7 @@
 > `pycats/combat/provenance.py` registry (#233): 🟢 FOUND · 🟡 TUNED/GUESS · 🔴 DIVERGENCE.
 > Legend: [docs/parity-labeling-legend.md](parity-labeling-legend.md) (#452). Design: #448 (Pass C of #451).
 
-**Summary:** 22 🟢 / 34 🟡 / 4 🔴  (60 constants)
+**Summary:** 22 🟢 / 32 🟡 / 4 🔴  (58 constants)
 
 ## 🟢 Sourced — FOUND (PM-valid, checked)
 
@@ -21,7 +21,7 @@
 | `HITLAG_DAMAGE_FACTOR` | 0.3846154 | FOUND | 🟢 | SmashWiki:Hitlag (Brawl onward) — d-term coefficient 1/2.6 |
 | `HITSTUN_MULTIPLIER` | 0.4 | FOUND | 🟢 | SmashWiki:Hitstun — 0.4 frames per unit of knockback (Melee; Brawl same; PM = Melee model) |
 | `JUMP_VEL` | -13 | FOUND | 🟢 | calibrated to PM Mario full-hop 30.19 u (SmashWiki:Mario_(PM); #120) via height = JUMP_VEL^2/(2*GRAVITY) = 169 px ~= 31 u @ PX_PER_UNIT |
-| `LEDGE_INVULN_BASE_FRAMES` | 23 | FOUND | 🟢 | Brawl ledge-grab intangibility baseline 23f (SmashWiki:Ledge; #297) |
+| `LEDGE_INVULN_BASE_FRAMES` | 21 | FOUND | 🟢 | PM 3.6 CliffCatch intangibility 1-21, flat across characters (rukaidata; #671) |
 | `MAX_JUMPS` | 2 | FOUND | 🟢 | Mario/PM jump count: 1 ground + 1 midair = 2 (standard 2-jump character; SmashWiki:Mario_(PM)) |
 | `MOVE_SPEED` | 6 | FOUND | 🟢 | PM Mario walk 1.1 u/f (SmashWiki:Mario_(PM); #120) |
 | `PX_PER_UNIT` | 5.4 | FOUND | 🟢 | data-authoring units->px calibration ~=5.4 (docs/research-120-smash-units-and-sources.md; #120/#195); the base every spatial derivation in this registry references |
@@ -57,8 +57,6 @@
 | `LEDGE_CATCH_H` | 64 | TUNED | 🟡 | pycats ledge-grab catch-region height below the lip; pycats geometry, no canon |
 | `LEDGE_CATCH_W` | 24 | TUNED | 🟡 | pycats ledge-grab catch-region width off the edge corner; pycats geometry, no canon |
 | `LEDGE_GETUP_FRAMES` | 16 | TUNED | 🟡 | pycats neutral ledge-getup climb window (edge frees at half); PM getup frames are per-character |
-| `LEDGE_INVULN_MAX_FRAMES` | 60 | TUNED | 🟡 | pycats cap on the ledge-invincibility burst (~1s); no canon value |
-| `LEDGE_INVULN_PER_PERCENT` | 0.3 | TUNED | 🟡 | pycats percent-scaling of ledge invincibility; PM is per-character, no single canon curve |
 | `LEDGE_REGRAB_LOCKOUT_FRAMES` | 30 | TUNED | 🟡 | pycats post-release regrab-suppression window; pycats ledge rule (#14), no canon single value |
 | `PLAYER_ATTACK_DURATION` | 12 | TUNED | 🟡 | pycats default attack duration; deliberate design value, no PM canon |
 | `PLAYER_SIZE` | (40, 60) | TUNED | 🟡 | pycats default fighter collision box (Fighter.__init__ reads stand_size or PLAYER_SIZE); reclassified render->collision per #584, no PM-mapped dimension |

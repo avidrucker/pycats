@@ -133,13 +133,11 @@ LEDGE_CATCH_H = 64  # px downward from the lip the catch box spans
 # auto-release was an unfaithful pycats invention that dropped a hanger off-stage.
 LEDGE_REGRAB_LOCKOUT_FRAMES = 30  # post-release frames grab is suppressed
 # True PM edge-hog (#311, grounded by #297): the ledge-grab intangibility is a
-# short percent-scaled burst (Brawl ~23f baseline, scaling up with the occupant's
-# percent) — replacing #14's flat full-hang intangibility. A hog succeeds once the
-# occupant's burst lapses (percent-gated timing). ⚠ playtest curve (per-char later
-# via #117); registered with #233.
-LEDGE_INVULN_BASE_FRAMES = 23  # intangibility burst at 0% (Brawl baseline)
-LEDGE_INVULN_PER_PERCENT = 0.3  # additional intangibility frames per 1% damage
-LEDGE_INVULN_MAX_FRAMES = 60  # cap on the burst (~1s @60fps)
+# fixed per-grab burst — #543 dropped the old percent-scaling (a #311 divergence,
+# #536) for PM's flat window. A hog succeeds once the occupant's burst lapses. The
+# 21f value is PM 3.6's CliffCatch intangibility (fully intangible frames 1-21, flat
+# across every character checked; rukaidata, #671). Registered with #233.
+LEDGE_INVULN_BASE_FRAMES = 21  # ledge-grab intangibility burst (PM 3.6 CliffCatch 1-21; #683)
 # Neutral ledge-getup climb window (#311): getup is no longer instant — the fighter
 # climbs for this many frames; the edge frees to others at ~half (half-animation
 # regrab), and the climber snaps onto the stage when it closes. ⚠ playtest.
