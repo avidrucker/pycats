@@ -30,23 +30,18 @@ import sys
 
 import pygame  # type: ignore
 
-from . import cat_faces, display, runtime_settings, screen_render, settings, text_utils
+from . import cat_faces, display, runtime_settings, screen_render, settings
 from . import input_poll as inp
 from .battle_screen import BattleScreen
 
 # Explicit config imports — was `from .config import *` (#486 slice 2 / #490), which
 # blinded pyflakes to game.py (the one untested module). Only the names game.py uses;
 # the prior dead EAR_*/WHISKER_*/STRIPE_*/CAT_CHARACTERS block (nothing referenced it,
-# here or elsewhere) was dropped.
-from .config import (
-    FPS,
-    GAME_HUD_FONT_SIZE,
-    HUD_PADDING,
-    SCREEN_HEIGHT,
-    SCREEN_WIDTH,
-    WHITE,
-)
+# here or elsewhere) was dropped. The display constants (SCREEN_*, WHITE, HUD_PADDING)
+# moved with the present path into DisplayManager (#698).
+from .config import FPS, GAME_HUD_FONT_SIZE
 from .core.keymap import Keymap
+from .display_manager import DisplayManager
 from .entities.stages import DEFAULT_PLAYER_STAGE
 from .screen_manager import ScreenStateManager
 
@@ -104,37 +99,13 @@ start_fullscreen = _prefs["fullscreen"]
 
 # Saved windowed-scale preset (1x default; cycle with F10). See pycats.display.
 windowed_scale = _prefs["windowed_scale"]
-# In-fullscreen magnification (#85, #92): F10 cycles the distinct zoom sizes the
-# current monitor can show (display.achievable_zoom_scales). fullscreen_scales is
-# that list (set on entering fullscreen); fullscreen_zoom_index points into it.
-fullscreen_scales = []
-fullscreen_zoom_index = 0
-# Transient toast showing the current scale/zoom after an F10 change (#89).
-zoom_toast = display.Toast()
 
-if start_fullscreen:
-    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    display_surface = screen
-    game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-    # Start at the largest achievable zoom ("Fit"), centred in the window.
-    fullscreen_scales = display.achievable_zoom_scales(screen.get_size())
-    fullscreen_zoom_index = len(fullscreen_scales) - 1
-    scale_factor = fullscreen_scales[fullscreen_zoom_index]
-    scaled_width, scaled_height = display.window_size_for(scale_factor)
-    offset_x = (screen.get_width() - scaled_width) // 2
-    offset_y = (screen.get_height() - scaled_height) // 2
-
-    is_fullscreen = True
-else:
-    # Open the window at the saved scale (offscreen surface + upscale when >1x).
-    screen = pygame.display.set_mode(display.window_size_for(windowed_scale))
-    display_surface = screen
-    game_surface = screen if windowed_scale == 1.0 else pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    scale_factor = windowed_scale
-    offset_x = 0
-    offset_y = 0
-    is_fullscreen = False
+# The display/window shell (#698, C1 of #280): owns the window, surfaces, current
+# scale + letterbox offsets, the fullscreen zoom sizes, and the zoom toast as instance
+# state — what used to be ~11 module globals mutated together via `global`. Compose,
+# not inject: it takes plain values (not `settings`); the change-then-persist composite
+# (save_prefs) stays here in the orchestration layer.
+dm = DisplayManager(windowed_scale, start_fullscreen)
 
 clock = pygame.time.Clock()
 
@@ -178,113 +149,12 @@ font = pygame.font.SysFont(
 # and at the bottom left and right corners of the screen
 #### TODO: implement dev info bool flag that, when True, shows all infos, and when False,
 # only shows what should be shown to players normally
-def toggle_fullscreen():
-    """Toggle between fullscreen and windowed mode."""
-    global screen, is_fullscreen, display_surface, game_surface, scale_factor, offset_x, offset_y
-    global windowed_scale
-
-    if is_fullscreen:
-        # Switch to windowed mode (back to a 1x window)
-        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        display_surface = screen
-        game_surface = screen
-        scale_factor = 1.0
-        windowed_scale = 1.0
-        offset_x = 0
-        offset_y = 0
-        is_fullscreen = False
-        # print("Switched to windowed mode")
-    else:
-        # Switch to fullscreen at the largest "Fit" zoom; F10 cycles it in place.
-        screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-        display_surface = screen
-        game_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        is_fullscreen = True
-        enter_fullscreen_zoom()
-
-
-def set_windowed_scale(scale):
-    """Switch to windowed mode at `scale`x the 960x540 base (e.g. 1x/1.5x/2x/2.5x).
-
-    The sim always renders at 960x540; at >1x we render to an offscreen
-    game_surface and present_frame scales it up to the window. At 1x we render
-    straight to the window (no scaling)."""
-    global screen, display_surface, game_surface, scale_factor
-    global offset_x, offset_y, is_fullscreen, windowed_scale
-
-    windowed_scale = scale
-    screen = pygame.display.set_mode(display.window_size_for(scale))
-    display_surface = screen
-    game_surface = screen if scale == 1.0 else pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    scale_factor = scale
-    offset_x = 0
-    offset_y = 0
-    is_fullscreen = False
-
-
-def enter_fullscreen_zoom():
-    """Compute this monitor's distinct zoom sizes and start at the largest ("Fit").
-    Call right after switching the display to fullscreen (screen must be active)."""
-    global fullscreen_scales, fullscreen_zoom_index
-    fullscreen_scales = display.achievable_zoom_scales(screen.get_size())
-    set_fullscreen_zoom_index(len(fullscreen_scales) - 1)
-
-
-def set_fullscreen_zoom_index(i):
-    """Apply the i-th achievable fullscreen zoom (staying fullscreen): set the
-    magnification of the 960x540 view and recompute the centring offsets. The
-    achievable scales already fit the monitor, so the whole stage stays on-screen
-    (letterboxed). Assumes the fullscreen display surface is active (screen)."""
-    global scale_factor, offset_x, offset_y, fullscreen_zoom_index
-
-    fullscreen_zoom_index = i
-    scale_factor = fullscreen_scales[i]
-    display_w, display_h = screen.get_size()
-    scaled_w, scaled_h = display.window_size_for(scale_factor)
-    offset_x = (display_w - scaled_w) // 2
-    offset_y = (display_h - scaled_h) // 2
-
-
 def save_prefs():
     """Persist the current display preferences (#95): windowed scale + fullscreen.
-    Called after an F10/F11 change. No-op when persistence is disabled."""
-    settings.save({"windowed_scale": windowed_scale, "fullscreen": is_fullscreen})
-
-
-def get_render_surface():
-    """Get the surface to render the game onto (the offscreen 960x540 surface
-    whenever we are scaling; the window itself at windowed 1x)."""
-    return game_surface
-
-
-def present_frame():
-    """Present the rendered frame to the display."""
-    if is_fullscreen:
-        # Letterbox: clear, then draw the magnified 960x540 view centred. The
-        # zoom (scale_factor) is set by set_fullscreen_zoom_index; crisp at whole
-        # multiples, smoothscale at fractional zooms (see display.scale_surface).
-        display_surface.fill((0, 0, 0))
-        display_surface.blit(display.scale_surface(game_surface, scale_factor), (offset_x, offset_y))
-
-    elif game_surface is not screen:
-        # Windowed at >1x: scale the offscreen 960x540 surface up to fill the
-        # window (which is exactly window_size_for(scale), so no letterbox).
-        display_surface.blit(display.scale_surface(game_surface, scale_factor), (0, 0))
-
-    # Zoom toast (#89): drawn on the window surface, above the scene, so it is
-    # crisp and screen-positioned (and never lands in the 960x540 sim/goldens).
-    if zoom_toast.active:
-        text_utils.render_text(
-            display_surface,
-            zoom_toast.text,
-            (display_surface.get_width() - HUD_PADDING, HUD_PADDING),
-            24,
-            WHITE,
-            right_align=True,
-        )
-    zoom_toast.tick()
-
-    pygame.display.flip()
+    Called after an F10/F11 change. No-op when persistence is disabled. The display
+    transitions themselves now live on `dm` (#698); this is the persist half of the
+    change-then-save composite the orchestration layer keeps out of DisplayManager."""
+    settings.save({"windowed_scale": dm.windowed_scale, "fullscreen": dm.is_fullscreen})
 
 
 # ------------------------------------------------ main loop
@@ -293,21 +163,21 @@ running = True
 
 # Display hooks for the Options sub-menu (#121): reuse the F10/F11 machinery so a
 # menu change applies live AND persists (save_prefs), just like the hotkeys. Read
-# the module globals at call time (they're reassigned by the setters).
+# dm's state at call time (it's mutated in place by the transitions).
 def _opt_cycle_windowed_scale():
-    set_windowed_scale(display.cycle_preset(windowed_scale))
+    dm.set_windowed_scale(display.cycle_preset(dm.windowed_scale))
     save_prefs()
 
 
 def _opt_toggle_fullscreen():
-    toggle_fullscreen()
+    dm.toggle_fullscreen()
     save_prefs()
 
 
 _display_hooks = {
-    "get_windowed_scale": lambda: windowed_scale,
+    "get_windowed_scale": lambda: dm.windowed_scale,
     "cycle_windowed_scale": _opt_cycle_windowed_scale,
-    "is_fullscreen": lambda: is_fullscreen,
+    "is_fullscreen": lambda: dm.is_fullscreen,
     "toggle_fullscreen": _opt_toggle_fullscreen,
 }
 
@@ -323,32 +193,32 @@ while running:
             running = False
         elif ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_F11:
-                toggle_fullscreen()
+                dm.toggle_fullscreen()
                 save_prefs()
             elif ev.key == pygame.K_F10:
-                if is_fullscreen:
+                if dm.is_fullscreen:
                     # Advance to the next *distinct* achievable zoom (wraps), so
                     # every press visibly changes the rendered size (#92).
-                    set_fullscreen_zoom_index((fullscreen_zoom_index + 1) % len(fullscreen_scales))
-                    scale = fullscreen_scales[fullscreen_zoom_index]
-                    zoom_toast.show(display.fullscreen_zoom_label(scale, fullscreen_scales))
+                    dm.set_fullscreen_zoom_index((dm.fullscreen_zoom_index + 1) % len(dm.fullscreen_scales))
+                    scale = dm.fullscreen_scales[dm.fullscreen_zoom_index]
+                    dm.zoom_toast.show(display.fullscreen_zoom_label(scale, dm.fullscreen_scales))
                 else:
                     # Windowed: cycle the window-size presets (resizes the window).
-                    set_windowed_scale(display.cycle_preset(windowed_scale))
-                    zoom_toast.show(display.format_scale_label(windowed_scale))
+                    dm.set_windowed_scale(display.cycle_preset(dm.windowed_scale))
+                    dm.zoom_toast.show(display.format_scale_label(dm.windowed_scale))
                     save_prefs()
             elif ev.key == pygame.K_e and battle.player1 is not None:
                 # Debug (#108): cycle P1's cat-face style; toast the new style.
                 battle.player1.face_style = cat_faces.cycle_face_style(
                     getattr(battle.player1, "face_style", cat_faces.PRIMITIVES)
                 )
-                zoom_toast.show("P1 face: " + cat_faces.face_style_label(battle.player1.face_style))
+                dm.zoom_toast.show("P1 face: " + cat_faces.face_style_label(battle.player1.face_style))
             elif ev.key == pygame.K_SEMICOLON and battle.player2 is not None:
                 # Debug (#108): cycle P2's cat-face style; toast the new style.
                 battle.player2.face_style = cat_faces.cycle_face_style(
                     getattr(battle.player2, "face_style", cat_faces.PRIMITIVES)
                 )
-                zoom_toast.show("P2 face: " + cat_faces.face_style_label(battle.player2.face_style))
+                dm.zoom_toast.show("P2 face: " + cat_faces.face_style_label(battle.player2.face_style))
 
     # Update screen state manager. `platforms` is threaded so the playing state's
     # engine action owns the per-frame battle.step + winner-set (#246).
@@ -377,15 +247,15 @@ while running:
     screen_render.render_active_screen(
         current_state,
         screen_manager,
-        get_render_surface(),
+        dm.render_surface(),
         battle=battle,
         platforms=platforms,
-        is_fullscreen=is_fullscreen,
+        is_fullscreen=dm.is_fullscreen,
         frame_input=frame_input,
         fps=clock.get_fps(),
     )
 
-    present_frame()
+    dm.present()
 
 pygame.quit()
 sys.exit()
