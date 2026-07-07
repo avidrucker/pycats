@@ -16,9 +16,22 @@ constant (blank for compound/mechanic rows). `tests/test_tuning_provenance.py` g
 |---|---|---|---|---|---|---|
 | Ledge | Ledge-grab intangibility (fixed burst) | FOUND | `LEDGE_INVULN_BASE_FRAMES` | `LEDGE_INVULN_BASE_FRAMES = 23` | [pm-reference/ledge-mechanics.md](./pm-reference/ledge-mechanics.md) → "Validation (#538)" | [SmashWiki — Ledge](https://www.ssbwiki.com/Ledge) / [Edge recovery](https://www.ssbwiki.com/Edge_recovery) |
 | Ledge | Ledge intangibility **percent-scaling** (magnitude) | DIVERGENCE → aligning (#543) |  | `+0.3/%` cap `60` (#311) | [pm-reference/ledge-mechanics.md](./pm-reference/ledge-mechanics.md) → "Validation (#538)" | none — PM %-dependence is getup **speed** (≥100%) + hang time, not intangibility magnitude |
+| Invuln | Action intangibility (dodge / roll / spot-dodge / air-dodge / ledge-grab / getup) — single mutually-exclusive body-state, overwrite not ORed (**#520** Layer 1) | FOUND |  | single `Fighter.invulnerable` bool — already PM-shaped (one body-state, one collision check) | [research/2026-07-04-invuln-timer-state-model.md](./research/2026-07-04-invuln-timer-state-model.md) → "Correction (2026-07-05)" | **T1** `brawllib_rs`: `self.hurtbox_state_all = state.clone();` (event **overwrites** `=`, one `HurtBoxState`) — [script_runner.rs](https://raw.githubusercontent.com/rukai/brawllib_rs/master/src/script_runner.rs); one-colour debug **T2** [SmashWiki — Intangibility](https://www.ssbwiki.com/Intangibility) |
+| Invuln | Timed invincibility (respawn ~120f; Starman) — separate frame-counted overlay that **composes** with Layer 1 (**#520** Layer 2 · **#537** Correction) | FOUND |  | **unimplemented** — no timed-overlay source today (#506); would be pycats' first genuinely-overlapping intangibility source | [research/2026-07-04-invuln-timer-state-model.md](./research/2026-07-04-invuln-timer-state-model.md) → "The corrected model" | **T2** [SmashWiki — Revival platform](https://www.ssbwiki.com/Revival_platform): post-drop *"a further period of invincibility (2 seconds, or 120 frames)"* keyed to dismount (gap: no verbatim that acting doesn't truncate it) |
+| Respawn | KO → respawn freeze delay (pre-drop) | TUNED | `RESPAWN_DELAY_FRAMES` | `RESPAWN_DELAY_FRAMES = int(2*FPS) = 120` (≈2 s) | [research/2026-07-03-pm-spawn-respawn-mechanics.md](./research/2026-07-03-pm-spawn-respawn-mechanics.md) → "pycats now" | none — pycats **ruleset** value; registry note: *"ruleset value, no canon"* (not a PM-canon frame count) |
+| Respawn | Post-platform-drop respawn invincibility (~120f / ~2 s) | FOUND |  | **unimplemented** (#506; epic #482) — `reset_to_spawn` today even clears leaked `invulnerable` | [research/2026-07-03-pm-spawn-respawn-mechanics.md](./research/2026-07-03-pm-spawn-respawn-mechanics.md) → "PM / Melee model" | **T2** [SmashWiki — Revival platform](https://www.ssbwiki.com/Revival_platform): on-platform *"intangible … disappears as soon as the player moves or attacks"*, then a post-drop *"period of invincibility (2 seconds, or 120 frames)"* |
 
 > **Flagged discrepancy (→ #536):** the percent-scaling row is a compound (`LEDGE_INVULN_PER_PERCENT`
 > `+0.3/%`, cap `LEDGE_INVULN_MAX_FRAMES` `60`), so it carries no single `Constant` key. Note the tag
 > mismatch it would otherwise surface: the registry tags `LEDGE_INVULN_PER_PERCENT` **TUNED**, while this
 > row reads **DIVERGENCE → aligning (#543)**. Reconciling that tag belongs to #536/#543 (content), not the
 > gate — left blank so the gate neither hides nor unilaterally resolves it.
+
+> **Reading the Invuln / Respawn rows:** `Status` records the **canon provenance** of the mechanic
+> (FOUND = sourced from PM), while the `pycats value(s)` column states what pycats does **today** —
+> so a `FOUND` row can still read **unimplemented** there. PM intangibility is a **two-layer** model
+> (**#520** + the **#537** Correction): *Layer 1* action body-state (single, mutually-exclusive —
+> pycats' one `invulnerable` bool already matches it) and *Layer 2* timed overlays (respawn ~120f,
+> Starman) that **compose** with Layer 1. Only Layer 2 is a gap: pycats has no timed-overlay source
+> yet — respawn invincibility is unimplemented (**#506**, epic **#482**), and it is the first
+> genuinely-overlapping source the derive-not-write unify in #520 Q3 is meant to unblock.
