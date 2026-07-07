@@ -18,6 +18,7 @@ import pytest  # noqa: E402
 
 from pycats import text_utils  # noqa: E402
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
+from pycats.domain import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor  # noqa: E402
 from pycats.win_screen import WinScreenManager  # noqa: E402
 
 # Reuse the suite's font-cache isolation so this passes regardless of order (#63).
@@ -27,6 +28,10 @@ pytestmark = pytest.mark.usefixtures("render_isolation")
 class _FakePlayer:
     def __init__(self, char_name, lives, suicides):
         self.char_name = char_name
+        _n = 1 if char_name == "P1" else 2
+        self.identity = PlayerIdentity(
+            PlayerNumberSlot(_n), PlayerTeamColor.RED if _n == 1 else PlayerTeamColor.BLUE, PlayerName(char_name)
+        )
         self.lives = lives
         self.suicides = suicides
         self.hits_landed = 7

@@ -133,7 +133,7 @@ def snapshot(players, attacks, match):
         # byte-identically and lets the oracle/tests read by name.
         parts.append(
             PlayerSnap(
-                p.char_name,
+                p.identity.name,  # #672 Phase 1c: the P1/P2 label from the name seam (byte-identical)
                 p.state,
                 p.rect.x,
                 p.rect.y,
@@ -163,7 +163,7 @@ def snapshot(players, attacks, match):
                 a.rect.x,
                 a.rect.y,
                 a.frames_left,
-                a.owner.char_name,
+                a.owner.identity.name,  # #672 Phase 1c: attack owner id from the name seam
                 a.active,
                 round(a.hit_cx, 6),
                 round(a.hit_cy, 6),

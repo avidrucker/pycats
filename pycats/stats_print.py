@@ -44,8 +44,9 @@ def format_stats_table(winner, loser):
     Returns:
         Dictionary containing the stats data for pixel-perfect rendering
     """
-    # Determine P1 and P2 stats regardless of who won
-    if winner.char_name == "P1":
+    # Determine P1 and P2 stats regardless of who won. #672 Phase 1c: attribute by the
+    # slot-number seam, not the display label (identity.number == 1 iff the P1 seat).
+    if winner.identity.number == 1:
         p1_player = winner
         p2_player = loser
     else:
@@ -138,7 +139,7 @@ def format_winner_announcement(winner, from_pause=False):
     """
     if from_pause:
         return "No Contest"
-    return f"{winner.char_name} Wins!"
+    return f"{winner.identity.name} Wins!"  # #672 Phase 1c: label from the name seam
 
 
 def get_match_summary(winner, loser, from_pause=False):

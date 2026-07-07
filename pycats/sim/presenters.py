@@ -139,7 +139,7 @@ class LivePresenter(_InputStripMixin):
         for i, p in enumerate(players):
             text_utils.render_text(
                 self.screen,
-                f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
+                f"{p.identity.name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
                 (HUD_PADDING, HUD_PADDING + i * OVERLAY_STAT_LINE_SPACING),
                 OVERLAY_STAT_FONT_SIZE,
                 WHITE,
@@ -323,7 +323,7 @@ class ScreenshotPresenter(_InputStripMixin):
         for i, p in enumerate(players):
             text_utils.render_text(
                 self._surface,
-                f"{p.char_name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
+                f"{p.identity.name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
                 (HUD_PADDING, HUD_PADDING + i * 22),
                 22,
                 WHITE,

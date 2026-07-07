@@ -11,19 +11,24 @@ key contracts these tests pin:
 * By construction P1's KOs equal P2's Falls and vice-versa.
 
 The rows are computed by :func:`pycats.stats_print.format_stats_table`, which
-only reads ``char_name``, ``lives``, ``suicides``, ``hits_landed`` and
-``attacks_made`` off each player — so a tiny stand-in avoids constructing a real
-pygame-backed Player.
+reads the player's ``identity`` seam (win-attribution by slot, #672 Phase 1c),
+``lives``, ``suicides``, ``hits_landed`` and ``attacks_made`` — so a tiny stand-in
+avoids constructing a real pygame-backed Player.
 """
 
 from pycats import stats_print
 from pycats.config import INITIAL_LIVES
+from pycats.domain import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
 
 
 class _FakePlayer:
     def __init__(self, char_name, lives, suicides, hits_landed=0, attacks_made=0,
                  damage_given=0.0, damage_taken=0.0):
         self.char_name = char_name
+        _n = 1 if char_name == "P1" else 2
+        self.identity = PlayerIdentity(
+            PlayerNumberSlot(_n), PlayerTeamColor.RED if _n == 1 else PlayerTeamColor.BLUE, PlayerName(char_name)
+        )
         self.lives = lives
         self.suicides = suicides
         self.hits_landed = hits_landed

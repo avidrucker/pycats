@@ -57,6 +57,7 @@ from ..config import (
     PROJECTILE_MAX_BOUNCES,
     PROJECTILE_RESTITUTION,
 )
+from ..domain import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
 from .attack import Attack, Projectile
 from .fighter import Fighter
 from .fighter_input import FighterInput
@@ -127,12 +128,21 @@ class Player(pygame.sprite.Sprite):
         # by render_battle.body_tint(self) from this player's state, so the entity
         # no longer owns a Surface. rect (now Fighter-owned) is the body box.
         self.char_color = color
-        self.char_name = char_name
+        # #672 Phase 1c: the P1/P2 seat splits into 3 independent seams — `number` is
+        # the win-attribution identity (stats_print), `team_color` the HUD accent, and
+        # `name` the label. Built from the legacy char_name arg (number = 1 iff "P1")
+        # so every seat is byte-identical; `char_name` is now a read-only alias of
+        # identity.name (retired in Phase 3).
+        _number = 1 if char_name == "P1" else 2
+        self.identity = PlayerIdentity(
+            PlayerNumberSlot(_number),
+            PlayerTeamColor.RED if _number == 1 else PlayerTeamColor.BLUE,
+            PlayerName(char_name),
+        )
         self.eye_color = eye_color
         # Optional display name (#478): shown above the fighter in place of the
-        # "P1"/"P2" label when set. Separate from char_name, which stays the
-        # win-attribution identity + P1/P2 slot colour selector. None → the label
-        # falls back to char_name (byte-identical default; the render-parity oracle
+        # "P1"/"P2" label when set. Separate from the identity seams; None → the label
+        # falls back to identity.name (byte-identical default; the render-parity oracle
         # stays green). Set by the profile create/select UI (slice 2, #479).
         self.nickname = None
 
@@ -165,6 +175,15 @@ class Player(pygame.sprite.Sprite):
         from .tail import Tail
 
         self.tail = Tail(self)
+
+    @property
+    def char_name(self) -> str:
+        """The P1/P2 label — now a read-only alias of ``identity.name`` (#672 Phase 1c).
+
+        Kept so residual readers (the render label + slot accent, still routed through
+        the ``_CatShim`` render cache) keep working until a render slice repoints them
+        to ``identity.name`` and this alias is deleted (Phase 3)."""
+        return self.identity.name
 
     @property
     def state(self) -> str:
