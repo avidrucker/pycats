@@ -4,7 +4,7 @@
   "frames": 200,
   "players": {
     "P1": {
-      "character": "testcat",
+      "character": "nalio",
       "ko_frames": [],
       "lives_end": 3,
       "lives_min": 3,
@@ -12,9 +12,7 @@
       "percent_max": 0,
       "states": [
         "attack",
-        "dodge",
         "fall",
-        "helpless",
         "idle",
         "jump",
         "shield",
@@ -22,7 +20,7 @@
       ]
     },
     "P2": {
-      "character": "testcat",
+      "character": "nalio",
       "ko_frames": [],
       "lives_end": 3,
       "lives_min": 3,

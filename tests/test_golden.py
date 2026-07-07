@@ -27,8 +27,14 @@ TWO_NPC_FRAMES = 600
 
 
 def test_golden_default():
-    """200-frame default timeline produces a stable golden snapshot."""
-    snaps = run_battle(frames=DEFAULT_FRAMES)
+    """200-frame default timeline produces a stable golden snapshot.
+
+    Phase 2b (#696): runs Nalio vs Nalio — the first named-cat mechanics flip. The
+    scenario passes chars explicitly here (not via the global no-char default, which
+    stays the placeholder cat until a later golden-neutral slice); the `character`
+    field in the digest reads nalio/nalio.
+    """
+    snaps = run_battle(frames=DEFAULT_FRAMES, p1_char="nalio", p2_char="nalio")
     assert len(snaps) == DEFAULT_FRAMES
     check_or_update("default", snaps)
 
