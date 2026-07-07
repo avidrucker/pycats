@@ -429,11 +429,24 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    clean session and a forgotten log stop looking identical.
 
 **Never `git push` to `main` directly, and never manually `git merge` your feature
-branch into `main`.** `pmtools close` exists to make the close atomic and
-race-safe: a hand-typed push-then-teardown can tear down a worktree *after* a
-race-rejected push, destroying work that is still only local (the lccjs "#200
-incident"). Hand-closing also leaves a dangling `refs/claims/issue-N` that
+branch into `main`** — **unless a human explicitly authorizes a direct merge + push
+for a specific change in the current session.** `pmtools close` exists to make the
+close atomic and race-safe: a hand-typed push-then-teardown can tear down a worktree
+*after* a race-rejected push, destroying work that is still only local (the lccjs
+"#200 incident"). Hand-closing also leaves a dangling `refs/claims/issue-N` that
 `pmtools close` would otherwise sweep.
+
+**The explicit-authorization carve-out.** When a human, in the current session,
+explicitly authorizes a direct merge + push for a specific change, a direct `git
+merge` + `git push origin main` is permitted — the authorizing human owns the race
+and accepts it. This is for **attended, in-session** work only; for
+unattended / fleet / ticket-close work the default stands (route through `pmtools
+close`). The go-ahead permits the *push route*, **not** skipping the gate: the change
+still ships with the suite green and the pre-close error self-audit done, and a
+hand-close should still clean up its `refs/claims/issue-N` (via `pmtools release` or
+by deleting the ref). Absent an explicit in-session go-ahead, always route through the
+tool. (Basis: error id=74 — an agent refused a direct commit+push and invented a PR
+flow; #600.)
 
 **pycats specifics (differences from lccjs):**
 

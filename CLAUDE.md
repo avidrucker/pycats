@@ -47,7 +47,13 @@ Critical rules:
   **main checkout** with **`cd <main> && pmtools close <N>`** (pmtools#104: `close`
   resolves the worktree by issue #, so it runs from main and your shell is never
   stranded). Never `git push` to `main` or `git merge` your branch into `main` by
-  hand — the tool owns the race-safe push + teardown. From main, `close` exits **0**
+  hand — the tool owns the race-safe push + teardown — **unless a human explicitly
+  authorizes a direct merge + push for a specific change in the current session** (then
+  a direct `git merge` + `git push origin main` is permitted; the authorizing human owns
+  the race). That carve-out is **attended, in-session only**; unattended / fleet / close
+  work always routes through the tool. Even when authorized, the change still ships
+  **green (suite passing) with the pre-close error self-audit done** — the go-ahead is
+  for the push route, not for skipping the gate. From main, `close` exits **0**
   and you comment in place; running it from *inside* the worktree still works but
   exits 1 (deleted cwd) and strands your shell. No-code (decision/research) tickets
   close via `gh issue close` + **`pmtools release`**. Before posting the closing
