@@ -16,6 +16,7 @@ import pygame  # noqa: E402
 if not pygame.get_init():
     pygame.init()
 
+from ..characters.roster import palette_for  # noqa: E402
 from ..config import (  # noqa: E402
     CAT_CHARACTERS,
     PLAYER1_START_X,
@@ -94,16 +95,27 @@ def build_stage():
     ]
 
 
+def _skin_for(char_key, default_skin_key):
+    # #648: colour the sim player from the char key so the CLI can visually render a
+    # chosen character's real cosmetic palette (via `palette_for`, matching battle_screen)
+    # — this is what makes `testcat`'s #636 gray placeholder inspectable. Golden-safe:
+    # a `None` key keeps today's exact hardcoded skin, so the no-arg build_players() path
+    # stays byte-identical (the #244 sim-golden contract).
+    if char_key is None:
+        return Skin.from_palette_dict(default_skin_key, CAT_CHARACTERS[default_skin_key])
+    return Skin.from_palette_dict(char_key, palette_for(char_key))
+
+
 def build_players(p1_char=None, p2_char=None):
     # #244: an optional per-player character loads that archetype's FighterData
     # (e.g. "nalio" → Nalio's moveset); unknown/None → the default cat. char_name
-    # stays "P1"/"P2". Colour skins (calico/tabby) are unchanged.
-    # Phase 1b (#672): construct through the domain build_fighter port. Selections
-    # are still resolved the legacy way — calico/tabby skins for cosmetics, the
-    # per-player char key for mechanics (unknown/None → the default cat) — so every
-    # Player stays byte-identical; Phase 2 migrates the selection sources.
-    sel1 = Selection(character_for(p1_char), Skin.from_palette_dict("calico", CAT_CHARACTERS["calico"]))
-    sel2 = Selection(character_for(p2_char), Skin.from_palette_dict("tabby", CAT_CHARACTERS["tabby"]))
+    # stays "P1"/"P2".
+    # Phase 1b (#672): construct through the domain build_fighter port.
+    # #648: cosmetics now follow the char key via `palette_for` (dev/debug visual) when a
+    # key is given; a `None` key keeps the legacy calico/tabby default so goldens are
+    # byte-identical. Mechanics still resolve the per-player key (unknown/None → default cat).
+    sel1 = Selection(character_for(p1_char), _skin_for(p1_char, "calico"))
+    sel2 = Selection(character_for(p2_char), _skin_for(p2_char, "tabby"))
     built1 = build_fighter(sel1)
     built2 = build_fighter(sel2)
     p1 = Player(

@@ -58,7 +58,10 @@ REPLAY_FRAMES = 300  # ...the scripted replay default (~5s).
 # Characters selectable per player (#244) — sourced from the single roster source of
 # truth (#272) so it can't drift as #117 archetypes land. None = the default cat.
 # (load_fighter_data falls through to the default for any other key.)
-CHARACTERS = list(ARCHETYPE_ROSTER)
+# #648: the sim CLI is a dev/debug surface, so it also accepts the `testcat` fixture
+# (its #636 gray placeholder is otherwise unviewable) — added here ONLY, never to
+# ARCHETYPE_ROSTER, so char-select's player-facing grid stays nalio/birky/narz.
+CHARACTERS = list(ARCHETYPE_ROSTER) + ["testcat"]
 
 
 def cpu_controllers(p1_level, p2_level, rng):
