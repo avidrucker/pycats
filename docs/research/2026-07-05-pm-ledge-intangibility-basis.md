@@ -95,8 +95,9 @@ this audit **reclassifies it as a divergence** with no primary PM basis. #543 (r
    primary-sourced (§1) but is a **new sim mechanic**, so it needs a game-designer ruling to
    have a basis. A "yes" is the decision **#656** cites; a "no" drops #656–#658.
 2. **If yes — post-cutoff behavior:** after the 5th regrab, grant **zero** grab-invuln, or model
-   PMDT's residual **"few frames during the initial ledge snap"**? (The primary keeps a small
-   snap window.)
+   PMDT's residual **"few frames during the initial ledge snap"**? **→ RESOLVED by #671** — the
+   primary keeps a **non-zero** residual (the CliffCatch snap intangibility); exact count is
+   engine-hardcoded. See `2026-07-06-pm-post-ledge-cutoff-frames.md`.
 
 Everything else (the exact fixed-burst frame value, edge-hog/AI blast radius) is already owned by
 the #552 spike — not a decision for here.
