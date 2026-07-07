@@ -18,7 +18,8 @@
 - **Getup options have fast (<100%) and slow (≥100%) variants** — a core pre-Smash-4
   rule. pycats neutral getup is **instant** (no frame window) and has only neutral.
 - **Occupied edge:** **one fighter per ledge.** **PM = edge-hogging** (grab denied;
-  hog timing gated by the occupant's percent-scaled invincibility); **auto-ledge-trump
+  hog timing gated by the occupant's invincibility timer — a **fixed per-grab burst**, not
+  percent-scaled: #536 reclassified the percent-scaling a divergence); **auto-ledge-trump
   is Smash-4+, NOT in PM** (confirmed). **pycats' one-occupant lockout already models
   PM edge-hogging** — so **#267's "ledge-trump" slice is removed** (not a PM mechanic).
 - **The "2-frame":** exactly **2 frames** of vulnerability at grab before intangibility
@@ -76,15 +77,22 @@ Smashboards thread (not all captured here) → pull Mario's at implementation; t
     PM mechanic. **pycats' one-occupant lockout already IS PM-faithful edge-hogging.**
 
     **How PM edge-hogging actually works** (the fidelity detail #267 should target):
-    - **Ledge invincibility scales with the occupant's percent** (higher % → longer
-      invincibility). Whether a hog succeeds is governed by the **occupant's
-      invincibility timer**, so hog timing is **percent-dependent** — too early and the
-      recovering fighter takes the ledge from you.
+    > ⚠ **CORRECTION (#536, 2026-07-05):** the "invincibility **scales with percent**" claim
+    > below is a **DIVERGENCE, not PM.** No primary source scales ledge-intangibility *duration*
+    > with damage (SmashWiki *Edge recovery*'s ≥100% effect is climb *speed*, and makes recovery
+    > *harder* — the opposite). PM's real anti-stall rule is a **5-regrab count cutoff** (PMDT
+    > dev-blog #6). Home-of-record: `docs/research/2026-07-05-pm-ledge-intangibility-basis.md`.
+    - **Ledge invincibility is a fixed per-grab burst** (~23f Brawl-derived; exact PM 3.6 value
+      = #552, ratified fixed by #543). Whether a hog succeeds is governed by the **occupant's
+      invincibility timer**, so hog timing depends on **how recently the occupant grabbed** —
+      too early and the recovering fighter takes the ledge from you. *(pycats #311's continuous
+      "higher % → longer" is the reclassified divergence, not this.)*
     - A fighter **can act out of the grab sooner** than in Brawl, and while performing
       **any** getup (climb/jump/roll/attack) the ledge is **re-grabbable by others only
       after the animation is ~half done** — making edge-hopping/regrab faster.
     - **Tether** recoveries **ignore** edge-hoggers (latch on regardless, auto getup).
-    None of this is auto-trump; it is hog-with-percent-scaled-invincibility.
+    None of this is auto-trump; it is hog-with-a-fixed-per-grab-invincibility-window
+    (the percent-scaling is reclassified a divergence — #536).
 - **Climbing up into an opponent standing at the lip** (the asked case): no source
   gives a *special* ledge rule for this. Mechanically it resolves as **normal**: the
   getup carries its own **intangibility** (early frames) and, for **ledge attack**, a
@@ -110,7 +118,7 @@ after the specials work; no new numbers needed until then.
 | Mechanic | PM/Brawl source value | pycats today | Recommendation |
 |---|---|---|---|
 | Grab intangibility | ~23f burst (Brawl) | **whole 120f hang** | shorten to a ~23f burst (over-generous now) |
-| Intangibility decay | PM curbs planking (schedule = gap) | none | add decay; PM numbers = playtest |
+| Repeated-grab anti-stall | **5-regrab count cutoff** (PMDT primary) | none | add the count cutoff (#656). Per-grab *decay* is Smash-4/Ult, NOT PM — see #536 |
 | Hang auto-release | ~360/300f (Brawl) | 120f | playtest (lengthen vs keep snappy) |
 | Neutral getup | fast<100% / slow≥100%, real window | **instant, neutral only** | add a frame window + the %-variant |
 | Ledge attack | ~55f/69f, intang 1–20/1–36, hit ~24/40 (Mario) | absent | implementable now (use Mario ref) |
@@ -129,13 +137,19 @@ after the specials work; no new numbers needed until then.
 5. **Up-B sweetspot** — after specials exist.
 
 ## Caveats & gaps
-- **PM-exact decay schedule and the trump-vulnerability frame count are gaps** (no
-  primary source found); flagged as playtest/patch-note items.
+> ⚠ **#536 correction:** this section originally framed the anti-stall rule as a percent/decay
+> *schedule*. That is wrong — PM's rule is a **5-regrab count cutoff** (PMDT primary), and the
+> exact fixed per-grab frame value is #552, not a percent schedule. See
+> `docs/research/2026-07-05-pm-ledge-intangibility-basis.md`.
+- **The trump-vulnerability frame count is a gap** (no primary source found); flagged as a
+  playtest/patch-note item. (The "decay schedule" gap is retired — the mechanic is the count
+  cutoff above.)
 - Getup frame data is **per-character**; Mario is used as the Nalio reference — other
   cats want their own archetype's numbers (#117).
 - The **trump-vs-edge-hog attribution is confirmed** (PM = edge-hog, no trump) via
-  SmashWiki + PM community sources; what remains a `gap` is PM's **exact** percent→
-  invincibility-frames schedule (per-character; pull at implementation).
+  SmashWiki + PM community sources; what remains a `gap` is PM's **exact fixed per-grab
+  intangibility frame value** (#552) — **not** a percent→frames schedule, which #536
+  reclassified as a divergence.
 
 ## Sources
 | Source | Quality | Gives |
@@ -143,5 +157,5 @@ after the specials work; no new numbers needed until then.
 | [SmashWiki — Ledge](https://www.ssbwiki.com/Ledge) | secondary | intangibility frames (Melee 30/Brawl 23), hang times, fast/slow ≥100%, one-occupant, 2-frame |
 | [SmashWiki — Ledge trump](https://www.ssbwiki.com/Ledge_trump) | secondary | trump = Smash-4+; trumped = brief can't-act; buffer to escape |
 | Smashboards — "Ledge Option Frame Data" (PM 3.6) | secondary (community data) | per-char ledge-attack frames (Mario/Ness/Olimar) |
-| Smashboards — "Ledge Grab Limit for PM" + "ledge hogging or ledge trumping" + PM ledge-rework threads | secondary (PM community) | PM = edge-hogging (NOT trump); percent-scaled ledge invincibility; act-out-sooner; ~half-animation regrab; tethers ignore hoggers |
+| Smashboards — "Ledge Grab Limit for PM" + "ledge hogging or ledge trumping" + PM ledge-rework threads | secondary (PM community) | PM = edge-hogging (NOT trump); act-out-sooner; ~half-animation regrab; tethers ignore hoggers. ⚠ the "percent-scaled ledge invincibility" these threads implied is **reclassified a divergence** — #536 (primary = fixed burst + 5-regrab cutoff) |
 | `docs/pm-reference/ledge-mechanics.md`, `pycats/config.py`, #14 spec/plan | primary (repo) | current pycats values + the trump mis-attribution this corrects |
