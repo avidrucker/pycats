@@ -18,7 +18,7 @@ the Ultimate-exclusivity fact is labelled **[inference]** where PM's own page is
 
 ### Q1 — Is a fully-charged smash holdable? → **No, not in PM.**
 
-SmashWiki *Smash attack* (primary), verbatim:
+SmashWiki *Smash attack* (secondary), verbatim:
 - "A smash attack may be charged for up to 60 frames, or 1 second."
 - Ultimate adds the hold: charged smashes "can also be held for an additional 2 seconds after
   that, not increasing their power any further."
@@ -71,8 +71,10 @@ and regenerated the #588 combat golden.
   a "hold at full charge" state; that would import an Ultimate-only mechanic PM never had. No DEV
   ticket for the hold question.
 - **Charge values:** two concrete, sourced discrepancies (ramp 60→**59**, multiplier
-  1.4→**1.3671**) were corrected in DEV **#599** — both now `FOUND` values (primary-sourced from
-  `SmashWiki:Project_M`), superseding #581's base-game/Brawl rows. Not game-feel guesses.
+  1.4→**1.3671**) were corrected in DEV **#599** — both now `FOUND` values, superseding #581's
+  base-game/Brawl rows. Not game-feel guesses. Sourcing tier (per #626/#637): `SMASH_CHARGE_SCALE`
+  carries a **primary** (meleelight, clone #616) plus the `SmashWiki:Project_M` secondary;
+  `SMASH_CHARGE_FRAMES` rests on a **single secondary** (`SmashWiki:Project_M`), primary-unconfirmed.
 
 ## Sources
 
