@@ -10,7 +10,7 @@ This module handles:
 
 import pygame
 
-from . import text_utils
+from . import runtime_settings, text_utils
 from .characters.palettes import load_palettes
 from .characters.roster import ARCHETYPE_DEFAULT_SKIN, ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
 from .config import (
@@ -399,22 +399,23 @@ class CharacterSelector:
             center=True,
         )
 
-        # Instructions
-        instructions = [
-            "Use arrow keys to move cursor",
-            "Press A to confirm, B to cancel — after confirming, ←/→ changes your cat's skin",
-            "When both players are ready, either can press A to start",
-        ]
+        # Instructions — gated by the non-battle show_screen_hints toggle (#681).
+        if runtime_settings.show_screen_hints():
+            instructions = [
+                "Use arrow keys to move cursor",
+                "Press A to confirm, B to cancel — after confirming, ←/→ changes your cat's skin",
+                "When both players are ready, either can press A to start",
+            ]
 
-        for i, instruction in enumerate(instructions):
-            text_utils.render_text(
-                screen,
-                instruction,
-                (SCREEN_WIDTH // 2, 90 + i * 20),
-                CHAR_SELECT_INSTRUCTION_SIZE,
-                CHAR_SELECT_TITLE_COLOR,
-                center=True,
-            )
+            for i, instruction in enumerate(instructions):
+                text_utils.render_text(
+                    screen,
+                    instruction,
+                    (SCREEN_WIDTH // 2, 90 + i * 20),
+                    CHAR_SELECT_INSTRUCTION_SIZE,
+                    CHAR_SELECT_TITLE_COLOR,
+                    center=True,
+                )
 
         # Character grid
         for i, char_key in enumerate(self.characters):

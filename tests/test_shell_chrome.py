@@ -10,9 +10,10 @@ Byte-parity oracle (render isn't golden-covered): the helper must paint a surfac
 byte-for-byte identical to the old inline block, for windowed/fullscreen and
 input-present cases.
 """
+
 import pygame
 
-from pycats import text_utils
+from pycats import runtime_settings, text_utils
 from pycats.config import HUD_PADDING, HUD_SPACING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 from pycats.core.input import InputFrame
 from pycats.render_battle import draw_shell_chrome
@@ -28,12 +29,18 @@ def _expected(fps, is_fullscreen, frame_input):
     s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     if frame_input:
         text_utils.render_text(
-            s, frame_input.__str__(),
-            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), 24, WHITE,
+            s,
+            frame_input.__str__(),
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+            24,
+            WHITE,
         )
     text_utils.render_text(
-        s, f"FPS: {fps:.2f}",
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING), 24, WHITE,
+        s,
+        f"FPS: {fps:.2f}",
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+        24,
+        WHITE,
         right_align=True,
     )
     fs_text = (
@@ -42,10 +49,23 @@ def _expected(fps, is_fullscreen, frame_input):
         + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
     )
     text_utils.render_text(
-        s, fs_text,
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2), 24, WHITE,
+        s,
+        fs_text,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+        24,
+        WHITE,
         right_align=True,
     )
+    # #681: the in-battle ESC-hold leave-match hint, gated by the same toggles the
+    # helper reads. Mirrors draw_shell_chrome so this stays a faithful parity oracle.
+    if runtime_settings.show_controls() and runtime_settings.esc_hold_to_navigate():
+        text_utils.render_text(
+            s,
+            "Hold ESC to leave match",
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+            24,
+            WHITE,
+        )
     return s
 
 

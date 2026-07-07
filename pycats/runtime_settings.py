@@ -49,8 +49,22 @@ def show_input_history():
 
 
 def show_controls():
-    """Live toggle the in-battle fighter-controls display honours (#284)."""
+    """Live toggle the in-battle fighter-controls display honours (#284). BATTLE
+    ONLY — non-battle screens read show_screen_hints instead (#681)."""
     return bool(get("show_controls"))
+
+
+def show_screen_hints():
+    """Live toggle the non-battle screens' per-screen action hints honour (#681):
+    the menu / character-select / win screens' key→action hints, incl. the hold-ESC
+    affordance. The battle counterpart is show_controls."""
+    return bool(get("show_screen_hints"))
+
+
+def esc_hold_to_navigate():
+    """Live value of the hold-ESC-to-navigate affordance (#113/#453). An ESC-hold
+    resting hint is only drawn while this is on (a disabled ESC would mislead, #681)."""
+    return bool(get("esc_hold_to_navigate"))
 
 
 def show_dev_info():

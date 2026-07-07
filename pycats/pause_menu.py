@@ -10,6 +10,7 @@ This module handles:
 
 import pygame  # type: ignore
 
+from . import runtime_settings
 from .config import (
     BLACK,
     MAIN_MENU_BG_COLOR,
@@ -150,8 +151,11 @@ class PauseMenuManager:
                 pressed=(i == self.selected_option and self.press_pulse > 0),
             )
 
-        # Instructions
-        instructions = ["Use W/S or ↑/↓ to navigate", "Press V or / to select"]
+        # Instructions — pause is a BATTLE state, so its hints obey the show_controls
+        # toggle (#681), not the non-battle show_screen_hints one.
+        instructions = (
+            ["Use W/S or ↑/↓ to navigate", "Press V or / to select"] if runtime_settings.show_controls() else []
+        )
 
         instruction_start_y = SCREEN_HEIGHT // 2 + PAUSE_INSTRUCTIONS_OFFSET_Y
 

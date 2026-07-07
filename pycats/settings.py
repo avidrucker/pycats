@@ -36,8 +36,14 @@ _DEFAULTS = {
     # toggleable from the Options sub-menu (mirrors show_status_timer_bars).
     "show_input_history": True,
     # In-battle fighter-controls display (#284): the per-fighter control-scheme
-    # readout below the HUD, now toggleable + persisted (was always-on).
+    # readout below the HUD, now toggleable + persisted (was always-on). BATTLE
+    # ONLY — the non-battle screens use show_screen_hints below (#681).
     "show_controls": True,
+    # Non-battle screen action-hints (#681): when True, the menu / character-select /
+    # win screens show their per-screen "which key does what" hints (incl. the
+    # hold-ESC affordance the #549 audit found hidden). This is the NON-battle
+    # counterpart of show_controls (battle only). Toggleable in Options; ON by default.
+    "show_screen_hints": True,
     # Hold-ESC-to-navigate (#113, generalised #453): when True, holding ESC for 2s
     # pops one level up the screen ladder (sub-menu/battle → its parent) and quits
     # the app from main_menu. When False, ESC is inert (use B / the menus).
@@ -89,6 +95,7 @@ def _validated(raw):
     out["show_hitbox_overlay"] = bool(raw.get("show_hitbox_overlay", out["show_hitbox_overlay"]))
     out["show_input_history"] = bool(raw.get("show_input_history", out["show_input_history"]))
     out["show_controls"] = bool(raw.get("show_controls", out["show_controls"]))
+    out["show_screen_hints"] = bool(raw.get("show_screen_hints", out["show_screen_hints"]))
     out["esc_hold_to_navigate"] = bool(raw.get("esc_hold_to_navigate", out["esc_hold_to_navigate"]))
     out["show_dev_info"] = bool(raw.get("show_dev_info", out["show_dev_info"]))
     fs = raw.get("font_scale")

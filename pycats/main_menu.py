@@ -138,21 +138,26 @@ class MainMenuManager:
                 pressed=(i == self.selected_option and self.press_pulse > 0),
             )
 
-        # Instructions - use mixed rendering for the arrow symbols
-        instructions = ["Use W/S or ↑/↓ to navigate", "Press A (/ or V) to select"]
+        # Per-screen action hints (#681) — gated by the non-battle show_screen_hints
+        # toggle. The hold-ESC-to-quit line (the #549 hidden affordance) only appears
+        # while that affordance is enabled, so a disabled ESC never mis-advertises.
+        if runtime_settings.show_screen_hints():
+            instructions = ["Use W/S or ↑/↓ to navigate", "Press A (/ or V) to select"]
+            if runtime_settings.esc_hold_to_navigate():
+                instructions.append("Hold ESC to quit")
 
-        instruction_start_y = SCREEN_HEIGHT - len(instructions) * INSTRUCTION_LINE_SPACING - MAIN_MENU_PADDING
+            instruction_start_y = SCREEN_HEIGHT - len(instructions) * INSTRUCTION_LINE_SPACING - MAIN_MENU_PADDING
 
-        for i, instruction in enumerate(instructions):
-            instruction_y = instruction_start_y + i * INSTRUCTION_LINE_SPACING
-            text_renderer.render_text_mixed(
-                instruction,
-                INSTRUCTION_FONT_SIZE,
-                WHITE,
-                surface,
-                (SCREEN_WIDTH // 2, instruction_y),
-                center=True,
-            )
+            for i, instruction in enumerate(instructions):
+                instruction_y = instruction_start_y + i * INSTRUCTION_LINE_SPACING
+                text_renderer.render_text_mixed(
+                    instruction,
+                    INSTRUCTION_FONT_SIZE,
+                    WHITE,
+                    surface,
+                    (SCREEN_WIDTH // 2, instruction_y),
+                    center=True,
+                )
 
         # Draw fullscreen instructions
         fs_text = "F11: Toggle Fullscreen"

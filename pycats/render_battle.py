@@ -1214,3 +1214,15 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
         WHITE,
         right_align=True,
     )
+    # In-battle ESC-hold leave-match hint (#681, from the #549 audit) — gated by the
+    # BATTLE show_controls toggle, and only while the ESC-hold affordance is enabled.
+    # Worded "hold" + "leave match" so it does not read as the ESC-tap "Exit Fullscreen"
+    # above (the #549 disambiguation).
+    if runtime_settings.show_controls() and runtime_settings.esc_hold_to_navigate():
+        text_utils.render_text(
+            surface,
+            "Hold ESC to leave match",
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+            HUD_FONT_SIZE,
+            WHITE,
+        )

@@ -57,7 +57,8 @@ ROW_DESCRIPTIONS = {
     "status_bars": "Show the HUD stun / shield timer bars above each fighter.",
     "hitbox_overlay": "Draw debug hit / hurtbox outlines during battle.",
     "input_history": "Show your recent inputs in Project M notation, in-battle.",
-    "controls": "Show the on-screen control hints during battle.",
+    "controls": "Show the on-screen control hints during battle only.",
+    "screen_hints": "Show the key hints on the menu / select / win screens (not battle).",
     "font_scale": "Resize all menu / HUD text: Small / Standard / Large.",
     "window_scale": "Cycle the windowed zoom (also F10).",
     "fullscreen": "Toggle fullscreen (also F11).",
@@ -83,6 +84,7 @@ class OptionsMenu:
             "hitbox_overlay",
             "input_history",
             "controls",
+            "screen_hints",
             "font_scale",
             "window_scale",
             "fullscreen",
@@ -285,6 +287,10 @@ class OptionsMenu:
             new = not runtime_settings.show_controls()
             runtime_settings.set("show_controls", new)
             settings.save({"show_controls": new})
+        elif row == "screen_hints":
+            new = not runtime_settings.show_screen_hints()
+            runtime_settings.set("show_screen_hints", new)
+            settings.save({"show_screen_hints": new})
         elif row == "font_scale":
             # Cycle Small -> Standard -> Large (#345); live + persisted.
             cur = runtime_settings.get("font_scale")
@@ -324,6 +330,8 @@ class OptionsMenu:
             return "Input History: " + ("ON" if runtime_settings.show_input_history() else "OFF")
         if row == "controls":
             return "Controls: " + ("ON" if runtime_settings.show_controls() else "OFF")
+        if row == "screen_hints":
+            return "Screen Hints: " + ("ON" if runtime_settings.show_screen_hints() else "OFF")
         if row == "font_scale":
             return "Font Size: " + FONT_SCALE_NAMES.get(runtime_settings.get("font_scale"), "Standard")
         if row == "window_scale":
@@ -496,7 +504,11 @@ class OptionsMenu:
                 caption_text, CAPTION_SIZE, CAPTION_COLOR, surface, meta["caption_center"], center=True
             )
 
-        instructions = ["Use WASD or arrows to navigate", "A to toggle, B to go back"]
+        instructions = (
+            ["Use WASD or arrows to navigate", "A to toggle, B to go back"]
+            if runtime_settings.show_screen_hints()
+            else []
+        )
         for i, instruction in enumerate(instructions):
             cy = meta["instr_top"] + i * meta["instr_line"] + meta["instr_line"] // 2
             text_renderer.render_text_mixed(

@@ -10,7 +10,7 @@ This module handles:
 
 import pygame  # type: ignore
 
-from . import stats_print, text_utils
+from . import runtime_settings, stats_print, text_utils
 from .config import (
     FPS,
     P1_UI_COLOR,
@@ -181,15 +181,18 @@ class WinScreenManager:
 
         # Show different instructions based on confirmation status
         if not self.both_confirmed():
-            text_utils.render_text(
-                screen,
-                "Press A to confirm viewing stats, B to cancel",
-                (SCREEN_WIDTH // 2, y_offset),
-                WIN_SCREEN_INSTRUCTION_SIZE,
-                WIN_SCREEN_TEXT_COLOR,
-                center=True,
-            )
-            y_offset += WIN_SCREEN_LINE_SPACING * 0.8
+            # Action hint gated by the non-battle show_screen_hints toggle (#681); the
+            # P1/P2 confirmation status below is state, not a key hint, so it stays.
+            if runtime_settings.show_screen_hints():
+                text_utils.render_text(
+                    screen,
+                    "Press A to confirm viewing stats, B to cancel",
+                    (SCREEN_WIDTH // 2, y_offset),
+                    WIN_SCREEN_INSTRUCTION_SIZE,
+                    WIN_SCREEN_TEXT_COLOR,
+                    center=True,
+                )
+                y_offset += WIN_SCREEN_LINE_SPACING * 0.8
 
             # Show individual player confirmation status with Unicode/ASCII fallback
             p1_status = "✓" if self.p1_confirmed else "..."
