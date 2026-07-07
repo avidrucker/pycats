@@ -273,6 +273,29 @@ THIN_PLAT_DICT_R = {
     "h": THIN_PLAT_HEIGHT,
 }
 
+# ---------------- Starting Point (v1 Final Destination) ----------------
+# pycats' single player-facing stage (#660): a flat Final Destination whose thematic
+# name inverts "Final Destination" -> "Starting Point". One solid main platform, NO side
+# platforms. Sized from the PM FD measurements in
+# docs/research/2026-07-06-pm-final-destination-measurements.md (#659): the Melee FD
+# ground half-width (85.5657 units, libmelee EDGE_GROUND_POSITION) x 2 x PX_PER_UNIT.
+# ⚠ best-guess (Melee-proportioned; PM 3.6 floats live in-.pac, unsourceable). Kept a bare
+# literal per ADR-0003 C1 (like DODGE_AIR_SPEED = round(3.1 x PX_PER_UNIT)); the derivation
+# is re-evaluated by tests/test_starting_point_stage.py.
+#   width = round(2 x 85.5656967163 x 5.4) = 924 px  (fits 960 with ~18px margins).
+# Height + surface-y reuse the thick-platform convention so live-game spawns land at today's
+# floor height. Blast zones stay on the existing BLAST_PADDING model — the FD blast-zone vs
+# fixed-camera reconciliation is a deferred decision: per #659, NOT built here.
+FD_EDGE_GROUND_UNITS = 85.5656967163  # Melee FD teeter/ground edge x (libmelee), #659
+STARTING_POINT_WIDTH = 924  # round(2 * FD_EDGE_GROUND_UNITS * PX_PER_UNIT)
+STARTING_POINT_HEIGHT = THICK_PLAT_HEIGHT  # reuse the thick-platform thickness (80)
+STARTING_POINT_DICT = {
+    "x": SCREEN_WIDTH // 2 - STARTING_POINT_WIDTH // 2,
+    "y": SCREEN_HEIGHT - THICK_PLAT_Y_OFF - GLOBAL_Y_OFF,  # same surface y as today's main plat
+    "w": STARTING_POINT_WIDTH,
+    "h": STARTING_POINT_HEIGHT,
+}
+
 # ---------------- player size, position, color ---------------
 PLAYER_SIZE = (40, 60)  # width, height
 PLAYER1_START_X = SCREEN_WIDTH // 2 + THIN_PLAT_LEFT_X_OFF

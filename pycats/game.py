@@ -44,48 +44,19 @@ from .config import (
     HUD_PADDING,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
-    THICK_PLAT_DICT,
-    THIN_PLAT_DICT_L,
-    THIN_PLAT_DICT_R,
     WHITE,
 )
 from .core.keymap import Keymap
-from .entities import Platform
+from .entities.stages import DEFAULT_PLAYER_STAGE
 from .screen_manager import ScreenStateManager
 
 pygame.init()
 pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
 
-# Rect: (x, y, width, height)
-platforms = [
-    Platform(
-        pygame.Rect(
-            THICK_PLAT_DICT["x"],
-            THICK_PLAT_DICT["y"],
-            THICK_PLAT_DICT["w"],
-            THICK_PLAT_DICT["h"],
-        ),
-        thin=False,
-    ),
-    Platform(
-        pygame.Rect(
-            THIN_PLAT_DICT_L["x"],
-            THIN_PLAT_DICT_L["y"],
-            THIN_PLAT_DICT_L["w"],
-            THIN_PLAT_DICT_L["h"],
-        ),
-        thin=True,
-    ),
-    Platform(
-        pygame.Rect(
-            THIN_PLAT_DICT_R["x"],
-            THIN_PLAT_DICT_R["y"],
-            THIN_PLAT_DICT_R["w"],
-            THIN_PLAT_DICT_R["h"],
-        ),
-        thin=True,
-    ),
-]
+# Players get a single stage for v1: "Starting Point", pycats' flat Final Destination
+# (#660). Stage selection is post-v1, so this is the fixed player-facing layout. The
+# demos/sims keep the Battlefield-like arena (see sim/runner.build_stage) — unchanged.
+platforms = DEFAULT_PLAYER_STAGE.build()
 
 # Rebindable per-player keymaps (#439/#447): the same `Keymap` instance is shared
 # by the battle and the Options screen, so a rebind there takes effect live. A
