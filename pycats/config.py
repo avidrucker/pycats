@@ -465,6 +465,7 @@ MENU_SELECT_COOLDOWN = 20
 STATUS_BAR_SECONDS_SIZE = 16  # above-head timer-bar seconds / percent readout (#111/#334)
 STATUS_BAR_LABEL_SIZE = 12  # above-head timer-bar word label (#334)
 GAME_HUD_FONT_SIZE = 24  # the shared in-game HUD font (game.py)
+HUD_EMPHASIS_SIZE = 36  # the emphasized Damage %/Lives rows in the bottom corners (#550)
 TEXT_PROBE_SIZE = 16  # glyph-support probe / measurement fonts (text_utils)
 
 # Font-scale scalar (#345): a global multiplier over every font size above, chosen

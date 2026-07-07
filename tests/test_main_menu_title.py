@@ -47,9 +47,19 @@ def test_start_screen_renders_cat_fight_title(monkeypatch):
 
     # render() does not read the controls, so empty dicts suffice.
     menu = MainMenuManager({}, {})
-    menu.render(pygame.Surface((800, 600)))
+    try:
+        menu.render(pygame.Surface((800, 600)))
 
-    assert "Cat Fight" in simple_calls, (
-        f"start screen must render the working title 'Cat Fight'; "
-        f"render_text_simple got {simple_calls!r}"
-    )
+        assert "Cat Fight" in simple_calls, (
+            f"start screen must render the working title 'Cat Fight'; "
+            f"render_text_simple got {simple_calls!r}"
+        )
+    finally:
+        # This test injects a fake SysFont (_DummyFont). _get_font / sys_font cache
+        # whatever SysFont returns in the *shared* text_renderer, and that fake object
+        # outlives monkeypatch's SysFont revert (the cache holds the object, not the
+        # patched fn). Flush the shared caches so the fake can't leak into a later
+        # render test's mixed-font path (unicode_font=_DummyFont -> no get_ascent),
+        # keeping this test order-independent as its docstring promises.
+        main_menu.text_renderer.font_cache.clear()
+        main_menu.text_renderer._mixed_surface_cache.clear()

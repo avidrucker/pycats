@@ -40,6 +40,7 @@ from .config import (
     GLINT_OFFSET_X,
     GLINT_OFFSET_Y,
     GLINT_RADIUS,
+    HUD_EMPHASIS_SIZE,
     HUD_PADDING,
     HUD_SPACING,
     KNOCKDOWN_PRONE_FRAMES,
@@ -1078,15 +1079,19 @@ def render_hitbox_overlay(surface, players, attacks):
 # size was repeated at ~10 call sites; the line counts + block gap couple the
 # controls / input-history blocks' start-y to the HUD's row count.
 HUD_FONT_SIZE = 24  # shared size for HUD / controls / input-history / chrome text
-# draw_hud rows split by audience (#545): the player-facing rows always render;
-# the two implementation-jargon rows (FSM state, Shield Attempting bool) render
-# only when the dev-info flag is on. HUD_LINE_COUNT is the all-rows total kept
-# for back-compat; layout below anchors on the live hud_line_count() instead.
-HUD_PLAYER_LINE_COUNT = 5  # label + jumps + Shield HP + Lives + Damage (always on)
+# draw_hud rows split by audience (#545) AND by emphasis (#550). The top-anchored
+# "secondary" group holds the player-facing label/jumps/Shield HP rows (always on)
+# plus the two implementation-jargon rows (FSM state, Shield Attempting bool) that
+# render only when the dev-info flag is on. The two numbers players read constantly
+# — Damage % and Lives — are split OUT of this group and drawn larger in the bottom
+# corners (see hud_emphasis_rows / draw_hud). HUD_LINE_COUNT is the all-secondary-rows
+# total kept for back-compat; layout below anchors on the live hud_line_count().
+HUD_PLAYER_LINE_COUNT = 3  # label + jumps + Shield HP (always on; #550 moved Lives/Damage out)
 HUD_DEV_LINE_COUNT = 2  # FSM: + Shield Attempting: (dev-info-gated)
-HUD_LINE_COUNT = HUD_PLAYER_LINE_COUNT + HUD_DEV_LINE_COUNT  # 7, all rows (dev-info on)
+HUD_LINE_COUNT = HUD_PLAYER_LINE_COUNT + HUD_DEV_LINE_COUNT  # 5, all secondary rows (dev-info on)
 CONTROLS_LINE_COUNT = 7  # rows drawn by draw_controls (header + 6 controls)
 HUD_BLOCK_GAP = 20  # vertical gap between stacked text blocks
+HUD_EMPHASIS_SPACING = 34  # row pitch for the larger emphasized rows (cf. HUD_SPACING for the size 24 rows)
 
 
 def hud_line_count():
@@ -1097,10 +1102,12 @@ def hud_line_count():
 
 
 def hud_rows(label, p: Player):
-    """The ordered HUD row strings for player `p`, honouring the live dev-info
-    flag (#545): the FSM / Shield Attempting jargon rows are included only when
-    show_dev_info() is on; the player-facing rows always are. Row order matches
-    the pre-gate layout so the flag-on render is unchanged."""
+    """The ordered *secondary* HUD row strings for player `p` — the top-anchored,
+    standard-size group. Honours the live dev-info flag (#545): the FSM / Shield
+    Attempting jargon rows are included only when show_dev_info() is on; the label /
+    jumps / Shield HP rows always are. Damage % and Lives are NOT here — they are the
+    emphasized bottom-corner rows (see hud_emphasis_rows, #550). Row order matches the
+    pre-gate layout so the flag-on secondary render is unchanged."""
     dev = runtime_settings.show_dev_info()
     rows = [label]
     if dev:
@@ -1109,19 +1116,51 @@ def hud_rows(label, p: Player):
     rows.append(f"Shield HP: {p.fighter.shield_hp}")
     if dev:
         rows.append(f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}")
-    rows.append(f"Lives: {p.fighter.lives}")
-    rows.append(f"Damage: {int(p.fighter.percent)}%")
     return rows
 
 
+def hud_emphasis_rows(p: Player):
+    """The two numbers players read constantly — Lives then Damage % — split out of
+    the secondary group (#550) to render larger in the bottom corners. Ordered
+    top->bottom, so Damage (the most-glanced value) sits closest to the corner."""
+    return [f"Lives: {p.fighter.lives}", f"Damage: {int(p.fighter.percent)}%"]
+
+
+def emphasis_row_y(i, n):
+    """Top-y of emphasized row `i` of `n`, bottom-anchored (#550). The block is
+    lifted to sit just above the 'P: Pause Game' hint line (draw_pause_hint, at
+    SCREEN_HEIGHT - HUD_SPACING*3) so the P2 (bottom-right) rows never overlap it,
+    and grows UPWARD as the font scale enlarges the rows. Pure geometry — the
+    testable seam for the emphasized-row placement."""
+    baseline = SCREEN_HEIGHT - HUD_SPACING * 3 - HUD_BLOCK_GAP
+    return baseline - (n - i) * HUD_EMPHASIS_SPACING
+
+
+def draw_hud_emphasis(surface, p: Player, topright=False):
+    """Draws the emphasized Damage %/Lives rows larger in the bottom corner (#550).
+    Split from the secondary rows so the two concerns — glanceable stats vs. the
+    top-grouped detail — render independently. The size routes through
+    text_utils.render_text -> scaled_font_size, so it honours the live font_scale."""
+    emphasis = hud_emphasis_rows(p)
+    for i, txt in enumerate(emphasis):
+        x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
+        y_pos = emphasis_row_y(i, len(emphasis))
+
+        text_utils.render_text(surface, txt, (x_pos, y_pos), HUD_EMPHASIS_SIZE, WHITE, right_align=topright)
+
+
 def draw_hud(surface, p: Player, label, topright=False):
-    """Draws the HUD for a player: jumps left, shield HP, lives, and damage percent,
-    plus the dev-info rows (FSM state, Shield Attempting) when the flag is on (#545)."""
+    """Draws the HUD for a player in two groups (#550): the secondary rows (label,
+    jumps, Shield HP, plus the dev-info rows FSM/Shield Attempting when the flag is
+    on, #545) top-anchored at the standard size, and the emphasized Damage %/Lives
+    rows larger in the bottom corner."""
     for i, txt in enumerate(hud_rows(label, p)):
         x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
         y_pos = HUD_PADDING + i * HUD_SPACING
 
         text_utils.render_text(surface, txt, (x_pos, y_pos), HUD_FONT_SIZE, WHITE, right_align=topright)
+
+    draw_hud_emphasis(surface, p, topright=topright)
 
 
 def draw_controls(surface, p: Player, label, topright=False):

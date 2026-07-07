@@ -12,6 +12,7 @@ from pycats.battle_screen import BattleScreen
 from pycats.render_battle import (
     HUD_DEV_LINE_COUNT,
     HUD_PLAYER_LINE_COUNT,
+    hud_emphasis_rows,
     hud_line_count,
     hud_rows,
 )
@@ -22,7 +23,13 @@ _P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame
            attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
 
 _DEV_SUBSTRINGS = ("FSM:", "Shield Attempting:")
-_PLAYER_SUBSTRINGS = ("Damage:", "Lives:", "Shield HP:")
+_PLAYER_SUBSTRINGS = ("Damage:", "Lives:", "Shield HP:")  # Damage/Lives now the emphasized rows (#550)
+
+
+def _all_hud_text(p):
+    """The full player-facing HUD text across both seams: the secondary rows
+    (hud_rows) plus the emphasized bottom-corner rows (hud_emphasis_rows, #550)."""
+    return "\n".join(hud_rows("P1", p) + hud_emphasis_rows(p))
 
 
 def _player():
@@ -37,9 +44,11 @@ def test_default_off_omits_dev_jargon_but_keeps_player_stats():
     runtime_settings.seed(settings.defaults())
     assert not runtime_settings.show_dev_info()  # default off
 
-    joined = "\n".join(hud_rows("P1", _player()))
+    p = _player()
+    secondary = "\n".join(hud_rows("P1", p))
     for jargon in _DEV_SUBSTRINGS:
-        assert jargon not in joined, f"dev jargon {jargon!r} leaked with flag off"
+        assert jargon not in secondary, f"dev jargon {jargon!r} leaked with flag off"
+    joined = _all_hud_text(p)
     for stat in _PLAYER_SUBSTRINGS:
         assert stat in joined, f"player stat {stat!r} missing with flag off"
 
@@ -49,9 +58,11 @@ def test_flag_on_restores_all_lines():
     runtime_settings.seed(settings.defaults())
     runtime_settings.set("show_dev_info", True)
 
-    joined = "\n".join(hud_rows("P1", _player()))
+    p = _player()
+    secondary = "\n".join(hud_rows("P1", p))
     for jargon in _DEV_SUBSTRINGS:
-        assert jargon in joined, f"dev jargon {jargon!r} missing with flag on"
+        assert jargon in secondary, f"dev jargon {jargon!r} missing with flag on"
+    joined = _all_hud_text(p)
     for stat in _PLAYER_SUBSTRINGS:
         assert stat in joined, f"player stat {stat!r} missing with flag on"
 
