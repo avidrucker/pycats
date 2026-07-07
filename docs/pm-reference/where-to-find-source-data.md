@@ -45,7 +45,7 @@ multiplier, …) are **not** in the per-move scripts. Route the question by orig
 | Move/hitbox data (damage, BKB, KBG, angle, size, positions, scripted self-vel) | rukaidata.com / brawllib_rs | ⭐ primary for moves | rukaidata.com (HTML/bincode) ⚠ | ✅ `~/Documents/Study/Rust/brawllib_rs/` (#614) |
 | Melee-inherited engine literals (air-dodge, L-cancel, smash multiplier…) | meleelight (JS reimpl), doldecomp/melee | primary literal / model | github (schmooblidon/meleelight) ⚠ | ✅ `~/Documents/Study/JavaScript/meleelight/` (#616) |
 | Brawl engine actions/states | OpenSA / dantarion, SmashWiki Brawl | engine/state ref | opensa.dantarion.com ⚠ | — |
-| PM-specific overrides / changes | PMDT changelogs, PM codeset, Project+ | authoritative for *what changed* | pmunofficial.com / Smashboards / Project+ repos ⚠ | — |
+| PM-specific overrides / changes | PMDT changelogs, PM codeset, Project+ | authoritative for *what changed* | pmunofficial.com / Smashboards / Project+ repos ⚠ | ✅ PM codesets (text) `~/Documents/Study/reference/Project-M-CC/` (#664) |
 | Mechanics prose / cross-checks | SmashWiki (Smash attack, Charge, Project M pages) | secondary, citable | ssbwiki.com | — |
 
 ⚠ = URL/mirror status **to-verify** (see "To-verify" below). Confidence, not
@@ -84,6 +84,7 @@ path, and what it is authoritative for. Clone tickets flip a row from ⏳ pendin
 |---|---|---|---|
 | brawllib_rs | `~/Documents/Study/Rust/brawllib_rs/` | Brawl-base scripted per-move data (hitbox BKB/KBG/angle/size, scripted self-vel) | ✅ available (#614) |
 | meleelight | `~/Documents/Study/JavaScript/meleelight/` | Melee-inherited engine literals (air-dodge, L-cancel, smash multiplier) as a faithful JS reimpl | ✅ available (#616) |
+| Project-M-CC | `~/Documents/Study/reference/Project-M-CC/` (sparse: `[Dev Resources]` + `[Text Codesets]`) | PM codesets in **text** form — `[Dev Resources]/codes-3_6.txt` is the nameless 1:1 text mirror of vanilla `RSBE01.gct` (both **8,044** codes → GCT cross-check); `[Text Codesets]/codes-cc-3_6.txt` is the **named** CC codeset (8,525 lines) for reading Gecko codes by name | ✅ available (#664) |
 
 ## To-verify
 
@@ -101,6 +102,6 @@ URL**, so the ⚠ marks have an owner and don't rot as permanent unknowns):
 
 - Tiered sourcing worked out: #595 / #599.
 - Engine-global limit (`DODGE_AIR_SPEED`, why rukaidata can't answer): #215 / #222.
-- Clone tickets tracked above: #614 (brawllib_rs), #616 (meleelight).
+- Clone tickets tracked above: #614 (brawllib_rs), #616 (meleelight), #664 (Project-M-CC codesets).
 - Deep sources list: [`../research-120-smash-units-and-sources.md`](../research-120-smash-units-and-sources.md) (#120).
 - Memory: [[rukaidata-engine-hardcoded-limit]], [[pm36-canonical-reference]].
