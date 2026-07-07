@@ -23,6 +23,20 @@ def ledge_invuln_frames() -> int:
     return config.LEDGE_INVULN_BASE_FRAMES
 
 
+def ledge_regrab_invuln_frames(regrab_count: int) -> int:
+    """Intangibility granted for the `regrab_count`-th consecutive ledge grab without
+    touching the ground (#656, PM's 5-regrab anti-plank cutoff ratified #670).
+
+    Grabs 1..LEDGE_REGRAB_INVULN_CUTOFF (5) grant the full fixed burst; grab 6+ grants
+    only LEDGE_POST_CUTOFF_RESIDUAL_FRAMES — a small non-zero residual whose exact frame
+    count is a PLACEHOLDER (see config; unsourced gap, no Provenance entry). The count
+    resets on landing on the stage or getting hit — the caller (`Fighter`) owns that.
+    """
+    if regrab_count > config.LEDGE_REGRAB_INVULN_CUTOFF:
+        return config.LEDGE_POST_CUTOFF_RESIDUAL_FRAMES
+    return ledge_invuln_frames()
+
+
 class Ledge:
     """One grabbable stage edge.
 

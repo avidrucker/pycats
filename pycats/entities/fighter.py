@@ -156,6 +156,9 @@ class Fighter:
         self.ledge_invuln_timer = 0  # percent-scaled ledge-grab intangibility burst (#311)
         self.ledge_invuln_granted = 0  # the burst's granted length at grab; INVULN bar denominator (#531)
         self.ledge_getup_timer = 0  # neutral ledge-getup climb window; edge frees at half (#311)
+        self.ledge_regrab_count = 0  # consecutive ledge grabs w/o touching ground (#656);
+        # drives the 5-regrab anti-plank cutoff. Resets on landing (_handle_landing) or
+        # getting hit (receive_hit). Grab 6+ grants only the placeholder residual burst.
         self.land_impact_vy = 0.0  # downward speed at last ground contact (#145)
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
         self.shieldstun_timer = 0  # locked-in-shield frames after a block (#140)
@@ -318,6 +321,7 @@ class Fighter:
         False so the "no `.state` ⇒ not crouching" contract holds for minimal
         combat stand-ins and non-crouch callers."""
         self.record_hit_received()  # Track that this player was hit
+        self.ledge_regrab_count = 0  # getting hit resets the anti-plank regrab count (#656)
         # A connecting hit reaches receive_hit only past the ledge-grab intangibility
         # burst (combat skips `invulnerable` defenders), so any hit that lands while
         # hanging knocks the fighter OFF the ledge (#475). Release the hang before the
@@ -397,6 +401,7 @@ class Fighter:
         (the caller, via step_physics -> Player.update, applies force_prone — the
         domain no longer reaches the Player engine, #298/S5)."""
         if self.on_ground and was_airborne:
+            self.ledge_regrab_count = 0  # touching the stage resets the anti-plank count (#656)
             self.jumps_remaining = self.max_jumps  # reset jumps when landing
             self.air_dodge_ok = True  # reset air dodge availability
             self.air_dodge_active = False  # landing ends helpless/special-fall (#184)
@@ -511,6 +516,7 @@ class Fighter:
             self.grabbed_ledge.occupied_by = None
         self.grabbed_ledge = None
         self.ledge_regrab_lockout_timer = 0
+        self.ledge_regrab_count = 0  # a KO/respawn starts the anti-plank count fresh (#656)
         self.hitlag_timer = 0  # don't carry a freeze across a KO/respawn (#138)
         self.shieldstun_timer = 0  # nor a block-stun (#140)
         self.invulnerable_timer = 0

@@ -62,7 +62,7 @@ from .attack import Attack, Projectile
 from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
-from .ledge import ledge_invuln_frames
+from .ledge import ledge_regrab_invuln_frames
 
 # Angled f-smash (#327/4): map the captured direction to a launch angle.
 _FSMASH_ANGLE = {"up": FSMASH_ANGLE_UP, "down": FSMASH_ANGLE_DOWN}
@@ -455,7 +455,8 @@ class Player(pygame.sprite.Sprite):
                     self.rect.topleft = ledge.hang_topleft(self.rect.size)
                     self.fighter.vel.x = 0
                     self.fighter.vel.y = 0
-                    granted = ledge_invuln_frames()
+                    self.fighter.ledge_regrab_count += 1  # #656: consecutive regrab (reset on land/hit)
+                    granted = ledge_regrab_invuln_frames(self.fighter.ledge_regrab_count)
                     self.fighter.ledge_invuln_timer = granted
                     self.fighter.ledge_invuln_granted = granted  # #531: INVULN bar denominator
                     self.fighter.invulnerable = True
