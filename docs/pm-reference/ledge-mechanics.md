@@ -216,6 +216,13 @@ Spike #538 validated the "ledge invincibility scales with the occupant's percent
   #543 is the game-designer basis (RULES "Changing values") the implementing DEV cites to change
   `23 / 0.3 / 60`. Scoping of the code change + the exact PM 3.6 value is a follow-up ARCH spike →
   DEV (see #543). A rukaidata PM 3.6 dump would lift the "fixed" finding from inferred-strong to explicit.
+- **Decision — RATIFIED (#670, 2026-07-06): adopt PM's 5-regrab count cutoff (anti-plank).** After a
+  fighter regrabs the ledge **5 times without touching the ground**, further grabs grant no
+  ledge-invulnerability until the fighter **lands on the stage or gets hit**. Primary basis: PMDT
+  dev-blog #6 (audit #536, `docs/research/2026-07-05-pm-ledge-intangibility-basis.md`). This is a
+  **new sim mechanic** pycats lacks today — #670 is the basis the implementing DEV (**#656**) cites.
+  The **exact post-cutoff residual** — grab 6+ gives zero invuln, or PMDT's "few frames during the
+  initial ledge snap" — is deferred to research **#671** (the mechanic's only open sub-question).
 
 Sources: [SmashWiki — Edge recovery](https://www.ssbwiki.com/Edge_recovery),
 [SmashWiki — Ledgestall](https://www.ssbwiki.com/Ledgestall) (CliffCatch 7 f + ~30 f intangibility,
