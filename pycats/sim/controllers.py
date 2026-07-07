@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 
 from ..combat.geometry import move_reach
 from ..core.input import InputFrame
@@ -204,13 +205,55 @@ LEVEL_PARAMS: dict[int, LevelParams] = {
 }
 
 
+# Continuous knobs — linearly interpolated between the bracketing anchors (#703).
+# Integer knobs (frame/px counts) round HALF-UP; probability knobs round to 2 dp.
+_INTERP_INT = ("reaction_delay", "attack_period", "standoff")
+_INTERP_FLOAT = ("follow_through_p", "shield_chance", "evade_chance")
+# Discrete capability flags — NOT interpolated; an even level inherits the LOWER odd
+# anchor's kit so a capability unlocks on its odd rung, not a half-step early (#703).
+_DISCRETE_FLAGS = (
+    "reactive_shield",
+    "whiff_punish",
+    "enabled_moves",
+    "reach_aware",
+    "reactive_spacing",
+    "edge_hog",
+    "recover",
+    "edge_guard",
+)
+
+
+def _round_half_up(x: float, ndigits: int) -> float:
+    """Half-up rounding (NOT Python's banker's `round`), so `standoff` Lv2 = 42.5 → 43,
+    not 42. Deterministic → goldens/tests are reproducible. `Decimal(str(x))` reads the
+    value as authored, sidestepping binary-float half-to-even surprises."""
+    quantum = Decimal(1).scaleb(-ndigits)
+    return float(Decimal(str(x)).quantize(quantum, rounding=ROUND_HALF_UP))
+
+
 def level_params(level: int) -> LevelParams:
-    """Knobs for `level` (1-9). Intermediate levels reuse the nearest filled anchor;
-    a tie (even levels are equidistant between odd anchors) resolves to the HIGHER
-    anchor. Out-of-range clamps to the nearest end."""
+    """Knobs for `level` (1-9). The 5 sourced anchors (Lv 1/3/5/7/9, #148 Q5) return
+    unchanged; intermediate (even) levels **linearly interpolate** the continuous knobs
+    between the bracketing anchors — every level 1-9 is distinct (#703). Discrete
+    capability flags inherit the lower odd anchor (a rung, not a half-step). Out-of-range
+    clamps to the nearest end."""
     anchors = sorted(LEVEL_PARAMS)
-    nearest = min(anchors, key=lambda a: (abs(a - level), -a))
-    return LEVEL_PARAMS[nearest]
+    level = max(anchors[0], min(anchors[-1], level))
+    if level in LEVEL_PARAMS:
+        return LEVEL_PARAMS[level]
+    lo = max(a for a in anchors if a < level)
+    hi = min(a for a in anchors if a > level)
+    plo, phi = LEVEL_PARAMS[lo], LEVEL_PARAMS[hi]
+    t = (level - lo) / (hi - lo)
+
+    def _lerp(attr: str, ndigits: int) -> float:
+        a, b = getattr(plo, attr), getattr(phi, attr)
+        return _round_half_up(a + (b - a) * t, ndigits)
+
+    knobs = {attr: int(_lerp(attr, 0)) for attr in _INTERP_INT}
+    knobs.update({attr: _lerp(attr, 2) for attr in _INTERP_FLOAT})
+    knobs.update({attr: getattr(plo, attr) for attr in _DISCRETE_FLAGS})
+    return LevelParams(**knobs)
 
 
 DEFAULT_CONTROLLER_SEED = 0
