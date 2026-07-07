@@ -57,9 +57,10 @@ def summarize(snaps: list) -> dict:
     not every pixel.
 
     Snapshot shape (see sim/runner.snapshot): ``(parts, attacks, phase, winner)``
-    where each part is ``(name, state, x, y, vx, vy, on_ground, percent,
-    shield_hp, lives, is_alive, ...)`` — we read name(0)/state(1)/percent(7)/
-    lives(9).
+    where each part is ``(name, character, state, x, y, vx, vy, on_ground, percent,
+    shield_hp, lives, is_alive, ...)`` — read here by NAME via ``PlayerSnap(*row)``,
+    so field order can grow (e.g. #672 Phase 2a inserted ``character`` after ``name``)
+    without touching this code.
     """
     snaps = _to_list(snaps)  # normalise tuples → lists for uniform indexing
     n = len(snaps)
@@ -78,6 +79,7 @@ def summarize(snaps: list) -> dict:
         percents = [r.percent for r in rows]
         ko_frames = [f for f in range(1, n) if lives[f] < lives[f - 1]]
         players[name] = {
+            "character": rows[0].character,  # #672 Phase 2a (DP2): which fighter this slot played
             "states": states,
             "lives_start": lives[0],
             "lives_end": lives[-1],

@@ -4,6 +4,7 @@
   "frames": 600,
   "players": {
     "P1": {
+      "character": "testcat",
       "ko_frames": [],
       "lives_end": 3,
       "lives_min": 3,
@@ -18,6 +19,7 @@
       ]
     },
     "P2": {
+      "character": "testcat",
       "ko_frames": [],
       "lives_end": 3,
       "lives_min": 3,

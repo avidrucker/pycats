@@ -8,10 +8,11 @@ accepting a `PYCATS_UPDATE_GOLDENS=1` regen — see tests/golden/REGEN_PROTOCOL.
 from tests.golden_util import summarize
 
 
-def _player(name, state, percent=0, lives=3):
-    # Real per-player snapshot tuples are wide; summarize only reads indices
-    # 0 (name), 1 (state), 7 (percent), 9 (lives). Pad the rest.
-    return tuple([name, state, 0, 0, 0.0, 0.0, True, percent, 50, lives, True] + [0] * 10)
+def _player(name, state, percent=0, lives=3, character="testcat"):
+    # Real per-player snapshot tuples are wide; summarize reads indices 0 (name),
+    # 1 (state), 7 (percent), 9 (lives) + the trailing `character` (#672 Phase 2a,
+    # appended last). Pad the middle.
+    return tuple([name, state, 0, 0, 0.0, 0.0, True, percent, 50, lives, True] + [0] * 10 + [character])
 
 
 def _snap(players, atk=(), phase="in_play", winner=0):

@@ -103,6 +103,7 @@ class Player(pygame.sprite.Sprite):
         char_name,
         facing_right=True,
         fighter_data=None,
+        character=None,
     ):
         super().__init__()
 
@@ -139,6 +140,11 @@ class Player(pygame.sprite.Sprite):
             PlayerTeamColor.RED if _number == 1 else PlayerTeamColor.BLUE,
             PlayerName(char_name),
         )
+        # #672 Phase 2a (DP2): the domain Character this seat is playing (from the
+        # Selection the constructors build). Recorded in the golden snapshot so the
+        # digest names the fighter. None when a Player is built without a Selection
+        # (some unit tests); snapshot() falls back to "" then.
+        self.character = character
         self.eye_color = eye_color
         # Optional display name (#478): shown above the fighter in place of the
         # "P1"/"P2" label when set. Separate from the identity seams; None → the label

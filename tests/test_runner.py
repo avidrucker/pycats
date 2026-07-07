@@ -1,5 +1,5 @@
 # tests/test_runner.py
-from pycats.sim.runner import run_battle
+from pycats.sim.runner import PlayerSnap, run_battle
 
 
 def test_runner_is_deterministic():
@@ -15,22 +15,25 @@ def test_runner_produces_one_snapshot_per_frame():
 
 # --- Task 6: new snapshot field tests ---
 
-def test_snapshot_player_tuple_ends_with_defensive_status_and_move_frame():
-    """Per-player tuple must end with defensive_status (str) and move_frame (int)."""
+def test_snapshot_player_tuple_carries_defensive_status_move_frame_and_character():
+    """PlayerSnap carries defensive_status (str), move_frame (int), and the appended
+    character (str, #672 Phase 2a). Read BY NAME so a later field append can't silently
+    shift these (the reason the old tail-index form broke when `character` was added)."""
     snaps = run_battle(frames=10)
     players, _atk, _phase, _winner = snaps[0]
     for p in players:
-        # last two fields: defensive_status (str), move_frame (int)
-        defensive_status = p[-2]
-        move_frame = p[-1]
-        assert isinstance(defensive_status, str), (
-            f"expected str for defensive_status, got {type(defensive_status)}: {defensive_status!r}"
+        ps = PlayerSnap(*p)
+        assert isinstance(ps.defensive_status, str), (
+            f"expected str for defensive_status, got {type(ps.defensive_status)}: {ps.defensive_status!r}"
         )
-        assert defensive_status in ("vulnerable", "intangible"), (
-            f"unexpected defensive_status value: {defensive_status!r}"
+        assert ps.defensive_status in ("vulnerable", "intangible"), (
+            f"unexpected defensive_status value: {ps.defensive_status!r}"
         )
-        assert isinstance(move_frame, int), (
-            f"expected int for move_frame, got {type(move_frame)}: {move_frame!r}"
+        assert isinstance(ps.move_frame, int), (
+            f"expected int for move_frame, got {type(ps.move_frame)}: {ps.move_frame!r}"
+        )
+        assert isinstance(ps.character, str), (
+            f"expected str for character, got {type(ps.character)}: {ps.character!r}"
         )
 
 

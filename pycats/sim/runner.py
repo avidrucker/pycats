@@ -43,9 +43,14 @@ from .input_script import default_timeline  # noqa: E402
 PlayerSnap = namedtuple(
     "PlayerSnap",
     (
+        # #672 Phase 2a (DP2): `character` (the fighter's Character.key) is APPENDED at
+        # the end so it names the fighter without shifting any existing field index —
+        # the golden layout + every positional reader (incl. production sim/battle_log,
+        # which reads name/state/percent/lives by index) stay valid. The slot stays the
+        # row-key (`name`); `character` rides alongside.
         "name state rect_x rect_y vel_x vel_y on_ground percent shield_hp lives is_alive "
         "jumps_remaining dodge_timer hurt_timer stun_timer attack_timer invulnerable_timer "
-        "facing_right invulnerable defensive_status move_frame"
+        "facing_right invulnerable defensive_status move_frame character"
     ),
 )
 
@@ -110,6 +115,7 @@ def build_players(p1_char=None, p2_char=None):
         char_name="P1",
         facing_right=True,
         fighter_data=built1.fighter_data,
+        character=sel1.character,
     )
     p2 = Player(
         PLAYER2_START_X,
@@ -120,6 +126,7 @@ def build_players(p1_char=None, p2_char=None):
         char_name="P2",
         facing_right=False,
         fighter_data=built2.fighter_data,
+        character=sel2.character,
     )
     p1.stripe_color = built1.skin.stripe_color
     p2.stripe_color = built2.skin.stripe_color
@@ -155,6 +162,9 @@ def snapshot(players, attacks, match):
                 # Task 6: new observable state fields (appended to preserve existing indices)
                 p.defensive_status,
                 p.move_frame,
+                # #672 Phase 2a (DP2): the fighter's Character.key, appended last so no
+                # existing field index shifts (production battle_log + tests read by index).
+                p.character.key if p.character else "",
             )
         )
     atk = tuple(

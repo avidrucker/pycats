@@ -21,6 +21,7 @@ def test_playersnap_names_map_to_real_snapshot_field_positions():
     # reordered in snapshot(), one of these names would read the wrong slot (e.g.
     # `state` would be an int, or `lives` would be a state string) and red.
     assert ps.name == "P1"
+    assert ps.character == "testcat"  # #672 Phase 2a: default sim runs the placeholder cat's kit
     assert isinstance(ps.state, str)
     assert ps.lives == INITIAL_LIVES
     assert ps.is_alive is True

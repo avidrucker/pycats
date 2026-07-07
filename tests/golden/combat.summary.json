@@ -4,6 +4,7 @@
   "frames": 754,
   "players": {
     "P1": {
+      "character": "nalio",
       "ko_frames": [],
       "lives_end": 3,
       "lives_min": 3,
@@ -20,6 +21,7 @@
       ]
     },
     "P2": {
+      "character": "birky",
       "ko_frames": [
         601
       ],

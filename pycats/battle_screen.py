@@ -93,6 +93,7 @@ class BattleScreen:
             char_name="P1",
             facing_right=True,
             fighter_data=built1.fighter_data,
+            character=sel1.character,
         )
         self.player2 = Player(
             PLAYER2_START_X,
@@ -103,6 +104,7 @@ class BattleScreen:
             char_name="P2",
             facing_right=False,
             fighter_data=built2.fighter_data,
+            character=sel2.character,
         )
         self.player1.stripe_color = built1.skin.stripe_color
         self.player2.stripe_color = built2.skin.stripe_color
