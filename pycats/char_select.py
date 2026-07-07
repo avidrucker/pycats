@@ -46,6 +46,7 @@ TILE_BG_COLOR = (50, 50, 60)  # per-tile background fill
 TILE_NAME_FONT_SIZE = 18  # archetype name under each tile
 CURSOR_LABEL_FONT_SIZE = 16  # "P1"/"P2" tag above a cursor
 CONFIRM_FONT_SIZE = 20  # "P1 ✓" confirmation label
+CONFIRM_PREVIEW_SIZE = 48  # per-player recolored skin-preview cat under the confirmation label (#662)
 CONTROLS_FONT_SIZE = 16  # bottom control-scheme strip
 
 # Preview cat drawn inside each tile
@@ -472,9 +473,24 @@ class CharacterSelector:
             center=True,
         )
 
+    def _confirmation_preview_pos(self, char_pos, is_p1):
+        """Top-left ``(px, py)`` + ``size`` of a confirmed player's recolored skin-preview
+        cat (#662). P1 sits left of the tile centre, P2 right, so two players who picked the
+        **same** character each get their own preview side-by-side instead of overlapping —
+        the two-players-same-character case #650 deferred."""
+        x, y = self._grid_pos_to_screen_pos(char_pos)
+        cx = x + CHAR_SELECT_TILE_SIZE // 2
+        cy = y + CHAR_SELECT_TILE_SIZE + 30
+        size = CONFIRM_PREVIEW_SIZE
+        gap = size // 2 + 4
+        side = -1 if is_p1 else 1
+        px = cx + side * gap - size // 2
+        py = cy + CONFIRM_FONT_SIZE + 6
+        return px, py, size
+
     def _draw_confirmation(self, screen, char_pos, color, player_name, use_unicode=True, palette_key=None):
-        """Draw a confirmation checkmark on a selected character, plus the chosen skin
-        name + colour swatch as a live preview of the palette cycler (#650)."""
+        """Draw a confirmation checkmark on a selected character, plus a live per-player
+        preview cat recolored to the chosen skin (#662, folding in #650's swatch)."""
         x, y = self._grid_pos_to_screen_pos(char_pos)
 
         # Draw thick border to show selection
@@ -492,11 +508,13 @@ class CharacterSelector:
             label = f"{player_name} OK {skin_name}".rstrip()
             text_utils.render_text(screen, label, (cx, cy), CONFIRM_FONT_SIZE, color, center=True)
 
-        # A small swatch of the chosen skin's body colour, beside the label (live preview).
-        if palette_key:
-            swatch = pygame.Rect(cx - 10, cy + CONFIRM_FONT_SIZE, 20, 8)
-            pygame.draw.rect(screen, palette_for(palette_key)["color"], swatch)
-            pygame.draw.rect(screen, WHITE, swatch, 1)
+        # Live preview of the player's *actual cat* wearing the cycled skin (#662): recolor
+        # `_draw_cat_preview` via its `palette_key` override, drawn per-player (see
+        # `_confirmation_preview_pos`) so same-character picks each keep their own skin. This
+        # replaces #650's flat swatch — the recolored cat itself is the skin preview.
+        char_key = self.characters[char_pos]
+        px, py, psize = self._confirmation_preview_pos(char_pos, player_name == "P1")
+        self._draw_cat_preview(screen, char_key, px, py, psize, palette_key=palette_key)
 
     def _draw_control_instructions(self, screen):
         """Draw control instructions at the bottom of the screen."""
