@@ -12,7 +12,7 @@ from .build_fighter import build_fighter
 from .character import Character
 from .placeholder import PLACEHOLDER_CHARACTER, PLACEHOLDER_SKIN
 from .player_identity import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
-from .registry import CHARACTERS, SKINS, resolve_selection
+from .registry import CHARACTERS, SKINS, character_for, resolve_selection
 from .resolvers import fighter_data_of, palette_of
 from .selection import BuiltFighter, Selection
 from .skin import RGB, Skin
@@ -31,6 +31,7 @@ __all__ = [
     "PLACEHOLDER_SKIN",
     "CHARACTERS",
     "SKINS",
+    "character_for",
     "resolve_selection",
     "fighter_data_of",
     "palette_of",

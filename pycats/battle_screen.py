@@ -16,7 +16,6 @@ import pygame
 
 from . import runtime_settings
 from .characters.roster import palette_for
-from .combat.data import load_fighter_data
 from .config import (
     BG_COLOR,
     INITIAL_LIVES,
@@ -28,6 +27,7 @@ from .config import (
     SCREEN_WIDTH,
 )
 from .core.physics import resolve_player_push
+from .domain import Selection, Skin, build_fighter, character_for
 from .entities import Player
 from .entities.ledge import ledges_from_platforms
 from .input_history import InputHistory
@@ -69,31 +69,43 @@ class BattleScreen:
         p1_palette/p2_palette are chosen OG-skin keys from the char-select skin cycler;
         None → the archetype's own default palette, so the no-cycle path is byte-identical
         to before (golden/parity-safe)."""
-        p1_pal = palette_for(p1_palette or p1_char)
-        p2_pal = palette_for(p2_palette or p2_char)
+        # Phase 1b (#672): build through the domain build_fighter port. Cosmetics
+        # still resolve via palette_for (the chosen OG-skin, else the archetype's
+        # default) and mechanics via the char key, wrapped as a Selection, so every
+        # Player is byte-identical; Phase 2 migrates to resolve_selection + named cats.
+        sel1 = Selection(
+            character_for(p1_char),
+            Skin.from_palette_dict(p1_palette or p1_char or "", palette_for(p1_palette or p1_char)),
+        )
+        sel2 = Selection(
+            character_for(p2_char),
+            Skin.from_palette_dict(p2_palette or p2_char or "", palette_for(p2_palette or p2_char)),
+        )
+        built1 = build_fighter(sel1)
+        built2 = build_fighter(sel2)
 
         self.player1 = Player(
             PLAYER1_START_X,
             PLAYER1_START_Y,
             self.p1_keys,
-            p1_pal["color"],
-            eye_color=p1_pal["eye_color"],
+            built1.skin.color,
+            eye_color=built1.skin.eye_color,
             char_name="P1",
             facing_right=True,
-            fighter_data=load_fighter_data(p1_char),
+            fighter_data=built1.fighter_data,
         )
         self.player2 = Player(
             PLAYER2_START_X,
             PLAYER2_START_Y,
             self.p2_keys,
-            p2_pal["color"],
-            eye_color=p2_pal["eye_color"],
+            built2.skin.color,
+            eye_color=built2.skin.eye_color,
             char_name="P2",
             facing_right=False,
-            fighter_data=load_fighter_data(p2_char),
+            fighter_data=built2.fighter_data,
         )
-        self.player1.stripe_color = p1_pal["stripe_color"]
-        self.player2.stripe_color = p2_pal["stripe_color"]
+        self.player1.stripe_color = built1.skin.stripe_color
+        self.player2.stripe_color = built2.skin.stripe_color
         self.players = pygame.sprite.Group(self.player1, self.player2)
 
     def reset(self):

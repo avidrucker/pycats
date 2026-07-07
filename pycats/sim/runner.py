@@ -16,7 +16,6 @@ import pygame  # noqa: E402
 if not pygame.get_init():
     pygame.init()
 
-from ..combat.data import load_fighter_data  # noqa: E402
 from ..config import (  # noqa: E402
     CAT_CHARACTERS,
     PLAYER1_START_X,
@@ -29,6 +28,7 @@ from ..config import (  # noqa: E402
 )
 from ..core.input import merge_frames  # noqa: E402
 from ..core.physics import resolve_player_push  # noqa: E402
+from ..domain import Selection, Skin, build_fighter, character_for  # noqa: E402
 from ..entities import Platform, Player  # noqa: E402
 from ..entities.ledge import ledges_from_platforms  # noqa: E402
 from ..systems import combat  # noqa: E402
@@ -91,35 +91,38 @@ def build_stage():
 
 def build_players(p1_char=None, p2_char=None):
     # #244: an optional per-player character loads that archetype's FighterData
-    # (e.g. "nalio" → Nalio's moveset). None keeps the default cat — char_name
-    # "P1"/"P2" resolves to the shared default in Player, so the no-arg call is
-    # byte-identical to before (golden-safe). Colour skins are unchanged.
-    c1 = CAT_CHARACTERS["calico"]
-    c2 = CAT_CHARACTERS["tabby"]
-    fd1 = load_fighter_data(p1_char) if p1_char else None
-    fd2 = load_fighter_data(p2_char) if p2_char else None
+    # (e.g. "nalio" → Nalio's moveset); unknown/None → the default cat. char_name
+    # stays "P1"/"P2". Colour skins (calico/tabby) are unchanged.
+    # Phase 1b (#672): construct through the domain build_fighter port. Selections
+    # are still resolved the legacy way — calico/tabby skins for cosmetics, the
+    # per-player char key for mechanics (unknown/None → the default cat) — so every
+    # Player stays byte-identical; Phase 2 migrates the selection sources.
+    sel1 = Selection(character_for(p1_char), Skin.from_palette_dict("calico", CAT_CHARACTERS["calico"]))
+    sel2 = Selection(character_for(p2_char), Skin.from_palette_dict("tabby", CAT_CHARACTERS["tabby"]))
+    built1 = build_fighter(sel1)
+    built2 = build_fighter(sel2)
     p1 = Player(
         PLAYER1_START_X,
         PLAYER1_START_Y,
         P1_KEYS,
-        c1["color"],
-        eye_color=c1["eye_color"],
+        built1.skin.color,
+        eye_color=built1.skin.eye_color,
         char_name="P1",
         facing_right=True,
-        fighter_data=fd1,
+        fighter_data=built1.fighter_data,
     )
     p2 = Player(
         PLAYER2_START_X,
         PLAYER2_START_Y,
         P2_KEYS,
-        c2["color"],
-        eye_color=c2["eye_color"],
+        built2.skin.color,
+        eye_color=built2.skin.eye_color,
         char_name="P2",
         facing_right=False,
-        fighter_data=fd2,
+        fighter_data=built2.fighter_data,
     )
-    p1.stripe_color = c1["stripe_color"]
-    p2.stripe_color = c2["stripe_color"]
+    p1.stripe_color = built1.skin.stripe_color
+    p2.stripe_color = built2.skin.stripe_color
     return p1, p2, pygame.sprite.Group(p1, p2)
 
 

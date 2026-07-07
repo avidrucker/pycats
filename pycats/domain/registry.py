@@ -30,6 +30,18 @@ CHARACTERS: dict[str, Character] = {
 }
 
 
+def character_for(char_key) -> Character:
+    """The Character for a key, or the placeholder for an unknown / None key.
+
+    Reproduces ``combat.data.load_fighter_data``'s mechanics resolution (a known
+    archetype → that cat; anything else → the default, via the placeholder's
+    ``"testcat"`` key), so an adapter can build a Selection with an *explicit* skin
+    without re-implementing that fallback. Used by the sim / live constructors in
+    Phase 1b, where cosmetics are still resolved separately (#672).
+    """
+    return CHARACTERS.get(char_key, PLACEHOLDER_CHARACTER)
+
+
 def resolve_selection(char_key, skin_key=None) -> Selection:
     """Resolve a (character-key, optional skin-key) pair to a Selection.
 
