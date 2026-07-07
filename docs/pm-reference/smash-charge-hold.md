@@ -43,7 +43,8 @@ for 30 frames. PM has a single global charge rule (below) — no per-character c
 
 ### Q4 — Charge ramp (context). → **PM = 59 frames; multiplier 1.3671×.**
 
-SmashWiki *Project M* (primary), verbatim:
+SmashWiki *Project M* (secondary — a wiki is a citable secondary, not a primary; see
+[`smash-charge-ramp-provenance.md`](./smash-charge-ramp-provenance.md)), verbatim:
 > "Though a barely noticeable change, smash attacks are now chargable for **59 frames** as opposed
 > to 60, and a fully charged smash deals **x1.3671** of the uncharged amount."
 

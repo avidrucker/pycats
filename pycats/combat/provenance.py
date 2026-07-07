@@ -96,14 +96,14 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "SMASH_CHARGE_FRAMES": Provenance(
         59,
         "frames",
-        'PM smash charge ramp = 59 frames (SmashWiki:Project_M, "chargable for 59 frames as opposed to 60"); supersedes the base-game 60 #581 registered',  # noqa: E501
+        'PM smash charge ramp = 59 frames. ⚠ primary-unconfirmed: single secondary (SmashWiki:Project_M "59 frames as opposed to 60"), contradicted by SmashWiki:Smash_attack (60, all games); cap is engine-hardcoded so brawllib_rs has none — a PM DOL/RAM dump is the only primary (see #626). Supersedes the base-game 60 #581 registered.',  # noqa: E501
         "FOUND",
         599,
     ),
     "SMASH_CHARGE_SCALE": Provenance(
         1.3671,
         "factor",
-        'PM full-charge damage multiplier = 1.3671, Melee value restored in PM (SmashWiki:Project_M, "deals x1.3671 of the uncharged amount"); supersedes #581 Brawl-era 1.4',  # noqa: E501
+        'PM full-charge damage multiplier = 1.3671, Melee value restored in PM. [primary] meleelight (Melee reimpl, clone #616) hardcodes 1 + chargeFrames*(0.3671/60) → 1.3671 at cap; [secondary] SmashWiki:Project_M "deals x1.3671". Supersedes #581 Brawl-era 1.4.',  # noqa: E501
         "FOUND",
         599,
     ),
@@ -111,9 +111,7 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "DODGE_FRAMES": Provenance(
         15, "frames", "roll intangibility window; playtest starting point (tracked #65)", "GUESS", 65
     ),
-    "DODGE_TIME": Provenance(
-        14, "frames", "roll duration; playtest starting point (tracked #65)", "GUESS", 65
-    ),
+    "DODGE_TIME": Provenance(14, "frames", "roll duration; playtest starting point (tracked #65)", "GUESS", 65),
     "DODGE_SPEED": Provenance(
         14,
         "px/frame",

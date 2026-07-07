@@ -29,8 +29,8 @@
 | `SHIELDSTUN_FACTOR` | 0.345 | FOUND | 🟢 | SmashWiki:Shieldstun — Brawl/PM factor 0.345 |
 | `SHIELD_BREAK_STUN_MAX` | 490 | FOUND | 🟢 | Melee/PM shield-break stun = (400 - percent) + 90; max at 0% |
 | `SHIELD_BREAK_STUN_MIN` | 90 | FOUND | 🟢 | Melee/PM shield-break stun = (400 - percent) + 90; min at >=400% |
-| `SMASH_CHARGE_FRAMES` | 59 | FOUND | 🟢 | PM smash charge ramp = 59 frames (SmashWiki:Project_M, "chargable for 59 frames as opposed to 60"); supersedes the base-game 60 #581 registered |
-| `SMASH_CHARGE_SCALE` | 1.3671 | FOUND | 🟢 | PM full-charge damage multiplier = 1.3671, Melee value restored in PM (SmashWiki:Project_M, "deals x1.3671 of the uncharged amount"); supersedes #581 Brawl-era 1.4 |
+| `SMASH_CHARGE_FRAMES` | 59 | FOUND | 🟢 | PM smash charge ramp = 59 frames. ⚠ primary-unconfirmed: single secondary (SmashWiki:Project_M "59 frames as opposed to 60"), contradicted by SmashWiki:Smash_attack (60, all games); cap is engine-hardcoded so brawllib_rs has none — a PM DOL/RAM dump is the only primary (see #626). Supersedes the base-game 60 #581 registered. |
+| `SMASH_CHARGE_SCALE` | 1.3671 | FOUND | 🟢 | PM full-charge damage multiplier = 1.3671, Melee value restored in PM. [primary] meleelight (Melee reimpl, clone #616) hardcodes 1 + chargeFrames*(0.3671/60) → 1.3671 at cap; [secondary] SmashWiki:Project_M "deals x1.3671". Supersedes #581 Brawl-era 1.4. |
 | `WAVEDASH_ANGLE_DEG` | 17.1 | FOUND | 🟢 | SmashWiki:Wavedash — optimal angle 17.1 deg below horizontal (Melee/PM) |
 | `WAVEDASH_LANDING_LAG` | 10 | FOUND | 🟢 | SmashWiki:Wavedash — Melee/PM landing lag ~10 frames (60 FPS maps 1:1) |
 
