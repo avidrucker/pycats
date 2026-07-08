@@ -217,8 +217,33 @@
   fixture (or `try/finally`).** A manual restore is skipped if the test throws before
   its last line, leaking the stub into every later test. **Diagnostic:** a change that
   reddens tests in *files the diff never touched* = a leaked global from an earlier
-  failing test. Bit twice: `os.environ` at module top (#345, ~15 tests), hand-restored
-  `settings.load` (#453, ~19 tests).
+  failing test. Bit **thrice**: `os.environ` at module top (#345, ~15 tests), hand-restored
+  `settings.load` (#453, ~19 tests), and a **cached-fake variant** (#550→#709): a test
+  used `monkeypatch` *correctly*, but the fake `SysFont` product it created was cached in
+  the **shared `text_renderer.font_cache`** singleton and outlived the patch (the cache
+  holds the object, not the patched fn), reddening unrelated menu-render tests on reorder.
+  **`monkeypatch` alone isn't enough when the fake lands in a shared cache — a test that
+  injects a fake font/factory MUST flush the downstream cache in its own teardown**
+  (`text_renderer.font_cache.clear()`). The autouse `_no_fake_fonts_leaked` guard in
+  `tests/conftest.py` (#709) backstops this — it fails the *polluting* test by name (and
+  evicts the fake so victims stay green) if a non-`pygame.font.Font` object is left in the
+  shared cache.
+
+- **A refactor/feature that EXPOSES a pre-existing, *unrelated* test failure — root-fix,
+  never hide (ratified 2026-07-07, #550/#709).** When your reorder/cache-warming surfaces
+  a latent test bug that isn't about your change's target, the *red gate* is not a `@todo`
+  puzzle to defer — merge-gate/zero-tolerance (never merge red) outrank PDD. Resolve it to
+  green via the cheapest **legitimate** rung, never a hidden one:
+  - **Never** skip/quarantine the victim tests, and never dodge the trigger with a
+    feature-local hack — both are fake green.
+  - **A — trivial root-fix (default for a ≤~10-line, obviously-correct fix):** land it in
+    the feature commit **with a documented note in the commit/close + a follow-up tracking
+    ticket** (e.g. #550's inline `text_renderer` flush + this #709).
+  - **B — non-trivial / risky fix:** **stop** — file the bug (its independent repro is the
+    complaint), fix it first as its own reviewed unit (author ≠ reviewer), then rebase the
+    feature. Available whenever the bug reproduces without the feature.
+  - *Mechanical* test edits from a refactor (a renamed symbol, a moved seam) ride along
+    freely; *behaviour/oracle* flips still go through the golden-regen author ≠ reviewer path.
 
 ## Referencing code & docs
 

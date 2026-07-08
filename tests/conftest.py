@@ -46,3 +46,32 @@ def _reset_runtime_settings():
 
     runtime_settings.seed(settings.defaults())
     yield
+
+
+@pytest.fixture(autouse=True)
+def _no_fake_fonts_leaked():
+    """Guard against the cached-fake-in-a-shared-singleton leak (#709; precedent #550).
+
+    A test that monkeypatches a font factory (``pygame.font.SysFont`` / ``Font``) can
+    leave the *fake it produced* in the **shared** ``text_renderer.font_cache``. The
+    object outlives ``monkeypatch``'s revert — the cache holds the object, not the
+    patched fn — so a later render reads it and crashes (``unicode_font=_DummyFont``
+    -> no ``get_ascent``), reddening tests in files the diff never touched. See
+    RULES.md "Never restore a monkeypatched global by hand" (the cached-fake variant).
+
+    Assert on teardown that the shared font cache holds only real ``pygame.font.Font``
+    objects, so a leak fails the **polluting** test by name instead of a mystified
+    later victim. A test that legitimately injects a fake font MUST flush the shared
+    caches in its own teardown (``text_renderer.font_cache.clear()``), as
+    ``test_main_menu_title`` does."""
+    yield
+    cache = text_utils.text_renderer.font_cache
+    leaked = [(key, type(val).__name__) for key, val in cache.items() if not isinstance(val, pygame.font.Font)]
+    if leaked:
+        cache.clear()  # evict the fake so it can't poison later tests (fail at the source, not a victim)
+    assert not leaked, (
+        "a non-pygame.font.Font object leaked into the shared text_renderer.font_cache "
+        f"(a monkeypatched-font fake that outlived its patch?): {leaked}. Flush the "
+        "shared caches in the offending test's teardown — see RULES.md 'Never restore a "
+        "monkeypatched global by hand' (the cached-fake variant, #709)."
+    )
