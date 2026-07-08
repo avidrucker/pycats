@@ -90,7 +90,7 @@ PM-override) and the ⏳→✅ availability tracker.
 
 ## Index — sub-domain docs
 
-Status: ✅ written. **All 13 sub-domain docs are complete** ([epic #147](https://github.com/avidrucker/pycats/issues/147) — each was filed and written as its own ticket).
+Status: ✅ written. The original **13 sub-domain docs** are complete ([epic #147](https://github.com/avidrucker/pycats/issues/147) — each filed and written as its own ticket); [`cpu-ai.md`](./cpu-ai.md) was added later ([#710](https://github.com/avidrucker/pycats/issues/710), off decision #704).
 
 > Looking up a single term? See the [**glossary**](../glossary.md) — one-line definitions of every mechanics + project term, each linking back to the sub-domain doc below that owns it.
 
@@ -109,6 +109,7 @@ Status: ✅ written. **All 13 sub-domain docs are complete** ([epic #147](https:
 | [`stages-and-environment.md`](./stages-and-environment.md) | Stages, platform types, blast zones, ledges, camera | ✅ |
 | [`menus-and-game-flow.md`](./menus-and-game-flow.md) | CSS, stage select, ruleset/match settings, results, options | ✅ |
 | [`items.md`](./items.md) | PM item set + behaviour (low priority; pycats has no items) | ✅ |
+| [`cpu-ai.md`](./cpu-ai.md) | Computer-player AI: how Brawl/PM CPUs play by level + parity-vs-pycats-custom classification | ✅ |
 
 ## pycats status
 
