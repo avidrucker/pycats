@@ -227,7 +227,8 @@
   (`text_renderer.font_cache.clear()`). The autouse `_no_fake_fonts_leaked` guard in
   `tests/conftest.py` (#709) backstops this — it fails the *polluting* test by name (and
   evicts the fake so victims stay green) if a non-`pygame.font.Font` object is left in the
-  shared cache.
+  shared cache. Font-stack usage + gotchas are written up in
+  [docs/pygame-fonts.md](./docs/pygame-fonts.md) (§7).
 
 - **A refactor/feature that EXPOSES a pre-existing, *unrelated* test failure — root-fix,
   never hide (ratified 2026-07-07, #550/#709).** When your reorder/cache-warming surfaces

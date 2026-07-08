@@ -171,4 +171,5 @@ New here (human or agent)? Start with these:
 - [docs/glossary.md](./docs/glossary.md) — one-line definitions of every PM/Smash mechanic + project term, linked to the authoritative doc.
 - [docs/adr/](./docs/adr/) — architecture decision records (the *why* behind design calls).
 - [docs/project-m-parity.md](./docs/project-m-parity.md) — where pycats deliberately diverges from Project M.
+- [docs/pygame-fonts.md](./docs/pygame-fonts.md) — working with the font/text stack: sizes, scaling, mixed text, per-frame `SysFont` and test-isolation gotchas.
 - [RULES.md](./RULES.md) — project conventions (labels, filing, closing work).
