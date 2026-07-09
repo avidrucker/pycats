@@ -290,11 +290,16 @@ def test_ledge_invuln_bar_ratio_seconds_label_colour():
     assert bar.readout == f"{math.ceil(14 / FPS)}s"
 
 
-def test_ledge_invuln_bar_suppressed_while_ledge_hanging():
-    # While actually hanging the burst ticks but shows no duplicate INVULN bar — the
-    # hang owns that clock (matches the _invuln_remaining_max ledge-hang suppression).
-    p = _fake(state="ledge_hang", ledge_invuln_timer=14, ledge_invuln_granted=23)
-    assert rb.timer_bar_specs(p) == []
+def test_ledge_invuln_bar_shows_while_ledge_hanging():
+    # #658 (revives #531): the ledge-grab INVULN bar now renders DURING the hang — the
+    # ONE state its timer is live, so the old `state != "ledge_hang"` gate made it a dead
+    # render. The dodge/getup INVULN bar (via _invuln_remaining_max) KEEPS its hang
+    # suppression, so no duplicate appears. Spec:
+    # docs/pm-reference/ledge-regrab-invuln-and-display.md.
+    p = _fake(state="ledge_hang", ledge_invuln_timer=14, ledge_invuln_granted=21)
+    (bar,) = rb.timer_bar_specs(p)  # exactly one INVULN bar, not zero and not two
+    assert bar.label == "INVULN"
+    assert bar.ratio == 14 / 21  # normalized against the granted length
 
 
 def test_no_ledge_invuln_bar_when_timer_zero():

@@ -711,20 +711,22 @@ STATUS_SOURCES = [
         recency=lambda f, p: SHIELD_BREAK_STUN_MAX - f.stun_timer,
     ),
     StatusSource("dodge", 3, kind="COUNTDOWN", tint=WHITE, active=lambda f, p: f.dodge_timer > 0),
-    # LEDGE-INVULN (#531) — the percent-scaled ledge-grab intangibility burst (#311),
-    # its own INVULN bar closing the #513 drift. Occupies the slot freed when the
-    # ledge_hang COUNTDOWN bar was removed with the hang timeout (#475). Ratio is
-    # against the *granted* length stored at grab (#538 decision: per-grab denominator,
-    # not the cap — a low-% burst still drains a truthful 100%->0), and the bar is
-    # suppressed while actually ledge-hanging (the hang owns that clock; matches the
-    # _invuln_remaining_max ledge-hang suppression). No body tint — ledge-invuln has
-    # never flashed the body. Disjoint from the "invuln" source below: the ledge burst
-    # sets none of dodge/getup-roll/getup-attack, so _invuln_remaining_max is None then.
+    # LEDGE-INVULN (#531, revived #658) — the fixed ledge-grab intangibility burst
+    # (21f full for grabs 1-5, 5f residual for grab 6+ past the cutoff; #656/#683). Its
+    # own INVULN overlay bar. #531 suppressed it while `state == "ledge_hang"` — the ONE
+    # state in which the timer is ever live — so the bar never rendered (the #531
+    # dead-render defect). #658 drops that gate so it shows DURING the hang, stacked
+    # above the grabs-left dots (#657; the #720 stack). Ratio is against the *granted*
+    # length stored at grab (#538), so a 5f residual grab drains a truthful 5/5->0
+    # (normalized per-grant — #720 chose this over a proportional stub). No body tint.
+    # The reversal is scoped to THIS bar only: _invuln_remaining_max KEEPS its ledge-hang
+    # suppression for the dodge/getup/respawn INVULN bar, so the two never double up
+    # during a hang. Spec: docs/pm-reference/ledge-regrab-invuln-and-display.md.
     StatusSource(
         "ledge_invuln",
         4,
         kind="COUNTDOWN",
-        active=lambda f, p: f.ledge_invuln_timer > 0 and p.state != "ledge_hang",
+        active=lambda f, p: f.ledge_invuln_timer > 0,
         bar_color=INVULN_BAR_COLOR,
         bar_label="INVULN",
         bar_class="overlay",
