@@ -20,13 +20,22 @@ from pycats.config import (
     THICK_PLAT_Y_OFF,
 )
 from pycats.entities.ledge import LEFT, RIGHT, ledges_from_platforms
-from pycats.entities.stages import DEFAULT_PLAYER_STAGE, STAGES, STARTING_POINT
+from pycats.entities.stages import BATTLEFIELD, DEFAULT_PLAYER_STAGE, STAGES, STARTING_POINT
 
 
-def test_starting_point_is_the_default_player_stage():
-    assert DEFAULT_PLAYER_STAGE is STARTING_POINT
+def test_battlefield_is_the_default_player_stage():
+    # #715: reverted #660's flat-FD default — "Starting Point" felt cramped, so players get
+    # the roomier Battlefield-like arena back as the v1 default.
+    assert DEFAULT_PLAYER_STAGE is BATTLEFIELD
+    assert DEFAULT_PLAYER_STAGE.name == "Battlefield"
+
+
+def test_starting_point_kept_and_registered():
+    # #715: the switch must NOT delete Starting Point — it stays defined and in the
+    # registry for the future stage-select epic ("we'll use it later").
     assert STARTING_POINT.name == "Starting Point"
     assert "Starting Point" in STAGES
+    assert STAGES["Starting Point"] is STARTING_POINT
 
 
 def test_starting_point_is_a_single_flat_platform_no_side_platforms():

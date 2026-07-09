@@ -59,5 +59,7 @@ BATTLEFIELD = StageLayout(
 
 STAGES = {s.name: s for s in (STARTING_POINT, BATTLEFIELD)}
 
-# What human players get for v1 (stage selection is post-v1).
-DEFAULT_PLAYER_STAGE = STARTING_POINT
+# What human players get for v1 (stage selection is post-v1). #715: reverted from the flat
+# "Starting Point" (#660) back to the roomier Battlefield-like arena — Starting Point read as
+# visually cramped. STARTING_POINT is KEPT (still defined + in STAGES) for the stage-select epic.
+DEFAULT_PLAYER_STAGE = BATTLEFIELD
