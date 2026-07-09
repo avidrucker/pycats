@@ -45,9 +45,12 @@ Holding the ledge puts the fighter in **ledge-hang** (a hang state — see
   [combat-hitboxes-priority](./combat-hitboxes-priority.md)) — in Melee, **~7f
   CliffCatch + ~30f = ~37f** total (per-character; ⚠ pull PM numbers at authoring).
   This is a burst **that expires**, *not* a cap on how long you may hang.
-- That intangibility **scales DOWN with repeated grabs** — each regrab in quick
-  succession gives less, to curb stalling/​infinite ledge-camping. This *decay*, not
-  a hang clock, is the lineage's anti-planking tool.
+- That intangibility is **cut off after repeated grabs**, to curb stalling/​infinite
+  ledge-camping — the lineage's anti-planking tool. In **PM** this is a **hard
+  5-regrab count cutoff** (grabs 1–5 give the full burst; grab 6+ give only a few
+  snap frames), **not** the gradual per-grab decay of Smash-4/Ultimate. Full spec +
+  the HUD that shows it: [ledge-regrab-invuln-and-display.md](./ledge-regrab-invuln-and-display.md)
+  (mechanic ratified [#670](https://github.com/avidrucker/pycats/issues/670), shipped #656).
 - **How long can you hang? ⚠ undocumented for Melee/PM.** No hard single-hang
   auto-release timer is documented in Melee/PM — you sit in **CliffWait** until you
   choose an option, and only the *intangibility burst* above expires. (A Brawl
