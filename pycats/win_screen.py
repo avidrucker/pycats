@@ -136,13 +136,15 @@ class WinScreenManager:
 
         y_offset = WIN_SCREEN_PADDING
 
-        # Winner announcement
+        # Winner announcement — painted in the winning player's slot color (#726). The
+        # winner's seat is the identity number seam (1 == P1 seat), matching stats_print.
+        winner_color = P1_UI_COLOR if self.winner.identity.number == 1 else P2_UI_COLOR
         text_utils.render_text(
             screen,
             match_summary["winner_announcement"],
             (SCREEN_WIDTH // 2, y_offset),
             WIN_SCREEN_TITLE_SIZE,
-            WIN_SCREEN_TEXT_COLOR,
+            winner_color,
             center=True,
         )
         y_offset += WIN_SCREEN_LINE_SPACING  # title → final stocks
@@ -261,23 +263,23 @@ class WinScreenManager:
             right_align=True,
         )
 
-        # P1 label (center-aligned)
+        # P1 label (center-aligned) — P1's slot color (#726).
         text_utils.render_text(
             screen,
             header["p1_label"],
             (p1_col_x + player_col_width // 2, current_y),
             WIN_SCREEN_STATS_SIZE,
-            WIN_SCREEN_TEXT_COLOR,
+            P1_UI_COLOR,
             center=True,
         )
 
-        # P2 label (center-aligned)
+        # P2 label (center-aligned) — P2's slot color (#726).
         text_utils.render_text(
             screen,
             header["p2_label"],
             (p2_col_x + player_col_width // 2, current_y),
             WIN_SCREEN_STATS_SIZE,
-            WIN_SCREEN_TEXT_COLOR,
+            P2_UI_COLOR,
             center=True,
         )
 
@@ -321,23 +323,23 @@ class WinScreenManager:
                 right_align=True,
             )
 
-            # P1 value (center-aligned)
+            # P1 value (center-aligned) — P1's slot color (#726).
             text_utils.render_text(
                 screen,
                 row["p1_value"],
                 (p1_col_x + player_col_width // 2, current_y),
                 WIN_SCREEN_STATS_SIZE,
-                WIN_SCREEN_TEXT_COLOR,
+                P1_UI_COLOR,
                 center=True,
             )
 
-            # P2 value (center-aligned)
+            # P2 value (center-aligned) — P2's slot color (#726).
             text_utils.render_text(
                 screen,
                 row["p2_value"],
                 (p2_col_x + player_col_width // 2, current_y),
                 WIN_SCREEN_STATS_SIZE,
-                WIN_SCREEN_TEXT_COLOR,
+                P2_UI_COLOR,
                 center=True,
             )
 
