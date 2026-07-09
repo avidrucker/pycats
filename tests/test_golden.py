@@ -4,7 +4,7 @@
 Three deterministic scenarios are recorded:
 - default:     200 frames with the default timeline
 - combat:      COMBAT_SCRIPT inputs + 240-frame tail
-- full_match:  ChaseController inputs captured once then frozen
+- full_match:  level-9 AttackerController inputs captured once then frozen
 
 Each test calls check_or_update(name, snaps) which compares the serialized
 snapshots against tests/golden/<name>.json AND a small reviewable semantic digest
@@ -15,7 +15,7 @@ tests/golden/REGEN_PROTOCOL.md (S4).
 
 import random
 
-from pycats.sim.controllers import AttackerController, ChaseController, FollowerController
+from pycats.sim.controllers import AttackerController, FollowerController
 from pycats.sim.input_script import COMBAT_SCRIPT, compile_timeline
 from pycats.sim.runner import KEYMAPS, run_battle
 from tests.golden_util import check_or_update
@@ -24,6 +24,12 @@ from tests.golden_util import check_or_update
 DEFAULT_FRAMES = 200
 COMBAT_TAIL = 240
 TWO_NPC_FRAMES = 600
+# #706: full_match capture window. Capped just past the 2nd KO (~frame 800) rather than
+# run to a full match — beyond ~frame 994 the idle P2 grabs the ledge and hangs forever
+# (no auto-getup) while the bot can't finish it (onstage-only edge-guard); that degenerate
+# stalemate has no regression value. 900f holds the whole hurt->ko->stock-loss arc with
+# zero ledge_hang. The ledge-getup / edge-finish mechanics are researched in #722.
+FULL_MATCH_FRAMES = 900
 
 
 def test_golden_default():
@@ -63,25 +69,40 @@ def test_golden_combat():
 
 
 def _capture_full_match_inputs():
-    """Run once with ChaseController; freeze its emitted inputs."""
+    """Run once with a level-9 AttackerController; freeze its emitted inputs."""
     # #166: pin a fixed seed at this live-controller site so the captured inputs
-    # stay reproducible (Chase doesn't draw rng today, but make the seam explicit
-    # — this is the most RNG-exposed golden).
-    ctrl = ChaseController(attacker_num=1, rng=random.Random(0))
-    run_battle(frames=6000, controller=ctrl, stop_on_match_over=True)
+    # stay reproducible. Unlike the old ChaseController (rng-free), a leveled
+    # AttackerController DOES roll self.rng for its reactive knobs, so the seed is
+    # load-bearing here.
+    # #706 (Phase 2c): capture AND replay on Nalio vs Nalio — the SAME chars. The
+    # bot's emitted inputs are position-derived, valid only for the physics they were
+    # captured under; capturing on the default cat and replaying on Nalio would desync.
+    # Controller: the plain ChaseController racks idle Nalio to only ~18% and never KOs
+    # (Nalio's PM-faithful jab/d-tilt are low-knockback), which would break this golden's
+    # emergent hurt->ko->stock-loss invariant. A level-9 AttackerController restores it
+    # (KOs idle Nalio twice via its aggressive tilts/aerials/specials). Bots can't yet
+    # commit smashes — that AI gap is tracked in #714; when it lands this golden regens.
+    ctrl = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
+    run_battle(frames=FULL_MATCH_FRAMES, controller=ctrl, stop_on_match_over=True, p1_char="nalio", p2_char="nalio")
     return ctrl.emitted
 
 
 def test_golden_full_match():
-    """Long chase battle (golden-compared) that exercises the hurt/KO arc.
+    """Long leveled-bot battle (golden-compared) that exercises the hurt/KO arc.
 
-    #44: realistic knockback decay means the scripted chase bot no longer 3-stocks
-    the target in this window (the full-defeat scenario is deferred to #46). The
-    golden snapshot + the KO-arc assertion remain the regression value.
+    #44: realistic knockback decay means the bot no longer 3-stocks the target in
+    this window (the full-defeat scenario is deferred to #46). The golden snapshot +
+    the KO-arc assertion remain the regression value.
+
+    #706 (Phase 2c): Nalio vs Nalio, driven by a level-9 AttackerController (see
+    `_capture_full_match_inputs`). Both the capture and this replay pass the same
+    chars, so the frozen inputs match the replay physics. The emergent
+    hurt/ko/stock-loss assertions hold on Nalio's kit — the L9 bot KOs the idle
+    target where the old rng-free ChaseController could not.
     """
     frame_inputs = _capture_full_match_inputs()
     n = len(frame_inputs)
-    snaps = run_battle(frames=n, frame_inputs=frame_inputs)
+    snaps = run_battle(frames=n, frame_inputs=frame_inputs, p1_char="nalio", p2_char="nalio")
 
     # emergent assertion: the hurt -> ko arc is exercised and P2 loses a stock
     # (full 3-stock drain deferred to #46 — see docstring).

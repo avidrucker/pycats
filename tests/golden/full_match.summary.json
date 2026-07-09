@@ -1,10 +1,10 @@
 {
-  "attack_active_frames": 32,
-  "final_phase": "match_over",
-  "frames": 752,
+  "attack_active_frames": 156,
+  "final_phase": "in_play",
+  "frames": 900,
   "players": {
     "P1": {
-      "character": "testcat",
+      "character": "nalio",
       "ko_frames": [],
       "lives_end": 3,
       "lives_min": 3,
@@ -12,7 +12,6 @@
       "percent_max": 0,
       "states": [
         "attack",
-        "crouch",
         "fall",
         "idle",
         "jump",
@@ -20,26 +19,24 @@
       ]
     },
     "P2": {
-      "character": "testcat",
+      "character": "nalio",
       "ko_frames": [
-        133,
-        470,
-        751
+        185,
+        680
       ],
-      "lives_end": 0,
-      "lives_min": 0,
+      "lives_end": 1,
+      "lives_min": 1,
       "lives_start": 3,
-      "percent_max": 40.0,
+      "percent_max": 60.0,
       "states": [
         "fall",
         "hurt",
         "idle",
+        "jump",
         "ko",
-        "ledge_hang",
-        "prone",
         "walk"
       ]
     }
   },
-  "winner": 1
+  "winner": 0
 }
