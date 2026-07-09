@@ -506,7 +506,17 @@ flow; #600.)
       gh issue comment <N> --body "Closed in <sha>. <summary>
       error self-audit: no loggable errors this session"
 - **No-code tickets close differently.** `pmtools close` needs a `Closes #N`
-  *commit* to land and verify; a **decision / research / comment-only** ticket has
+  *commit* to land and verify; a **research / comment-only** ticket has
   none. Close those with `gh issue close <N>` (after posting the ruling/finding as
   a comment), then **`pmtools release <N>`** to drop the claim ref + worktree. Do
   **not** fabricate a no-op commit just to satisfy `pmtools close`.
+- **Closing a `decision:` ticket appends a Decision Log row.** When you close a
+  ratified `decision:` ticket, append one row to `docs/decisions-ledger.md`
+  (`date · issue # · area · one-line ruling · record`) — the append-only index of
+  game-design rulings ([ADR-0007](adr/0007-decision-ledger.md); complements ADRs and
+  `combat/provenance.py`, does not replace them). **Append-only:** a reversal is a new
+  row citing the superseded issue, never an in-place edit. Because that row is a
+  committed artifact, a `decision:` ticket closes via the **normal `Closes #N` +
+  `pmtools close`** path — *not* the commit-less `gh issue close` + `pmtools release`
+  path above (which stays for research / comment-only tickets). Convention basis:
+  #705 / ADR-0007.
