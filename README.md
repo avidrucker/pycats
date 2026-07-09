@@ -34,7 +34,7 @@ git clone https://github.com/avidrucker/pycats.git
 cd pycats
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt   # pygame-ce + the statechart engine
-.venv/bin/python -m pycats.game                       # play
+make run                                               # play (see `make help` for all dev commands)
 ```
 
 `requirements.txt` pulls both runtime dependencies: **pygame-ce**, and **statecharts**
@@ -94,18 +94,22 @@ run-to-run; pass an int for a reproducible one.
 
 ## For contributors
 
+Common dev commands run through the root `Makefile` — the command SSOT (#724). `make help`
+lists them, and each resolves the project `.venv` automatically (including from a `git`
+worktree, which has no local `.venv`).
+
 ### Running the tests
 
-The suite runs headless (no display) and is the regression oracle. One canonical
-command, run from the repo root:
+The suite runs headless (no display) and is the regression oracle:
 
 ```bash
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=. .venv/bin/python -m pytest -q
+make test                          # full suite, headless
+make test ARGS="-m 'not slow'"     # skip the benchmark tests
+make test ARGS="-k dodge"          # run a subset (any pytest args pass through)
 ```
 
-A green run with some skips is expected. Add `-m "not slow"` to skip the benchmark
-tests. Golden snapshots live in `tests/golden/`; regenerate them intentionally with
-`PYCATS_UPDATE_GOLDENS=1`.
+A green run with some skips is expected. Golden snapshots live in `tests/golden/`;
+regenerate them intentionally with `PYCATS_UPDATE_GOLDENS=1`.
 
 ### Development setup
 
@@ -129,9 +133,9 @@ git clone https://github.com/avidrucker/statecharts-py.git   # ../statecharts-py
 Lint + format (ruff; config in `ruff.toml` and `.pre-commit-config.yaml`):
 
 ```bash
-.venv/bin/ruff check --select F,I,E722,E702,E402,UP pycats/   # lint (some findings: add --fix)
-.venv/bin/ruff format --check pycats/                         # formatting
-.venv/bin/pre-commit install                                  # one-time: run both on each commit
+make lint                          # ruff format --check + ruff check on pycats/ (the close-gate)
+make format                        # apply ruff formatting (write-twin of lint's --check)
+.venv/bin/pre-commit install       # one-time: run both on each commit
 ```
 
 The lint hook is ruff-only so it stays fast; `pytest` remains the on-demand source of
@@ -141,8 +145,8 @@ live in `scripts/`, so a bare `pytest` collects only real assert-based tests.
 ### Benchmark
 
 ```bash
-SDL_VIDEODRIVER=dummy .venv/bin/python bench.py                                   # quick run
-SDL_VIDEODRIVER=dummy .venv/bin/python bench.py --frames 20000 --json bench_results/run.json
+make bench                                                       # quick run
+make bench ARGS="--frames 20000 --json bench_results/run.json"   # longer, with JSON output
 ```
 
 ### Project layout
