@@ -44,6 +44,7 @@ from .config import (
     HUD_PADDING,
     HUD_SPACING,
     KNOCKDOWN_PRONE_FRAMES,
+    LEDGE_REGRAB_INVULN_CUTOFF,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
     MAX_SHIELD_RADIUS,
     MIN_SHIELD_RADIUS,
@@ -593,6 +594,17 @@ INVULN_BAR_COLOR = (95, 225, 120)  # green — intangibility window (#358)
 CHARGE_BAR_COLOR = (255, 205, 40)  # gold — smash charge, the one FILL bar (#380)
 RECHARGE_BAR_COLOR = (60, 200, 140)  # teal — shield HP regen after release (#597)
 
+# Grabs-left dots (#657): a discrete above-head budget of remaining full-invuln ledge
+# grabs (of LEDGE_REGRAB_INVULN_CUTOFF) before PM's anti-plank cutoff. They sit BELOW
+# the timer bars — the #720 stack is (A) invuln bar / (B) these dots / (C) the cat —
+# and are a separate render pass, so they never suppress a bar (or vice versa). Spec:
+# docs/pm-reference/ledge-regrab-invuln-and-display.md.
+GRABS_LEFT_DOT_COLOR = INVULN_BAR_COLOR  # green — same family as the invuln window
+GRABS_LEFT_DOT_RADIUS = 4
+GRABS_LEFT_DOT_SPACING = 12  # dot centre-to-centre
+GRABS_LEFT_DOT_LIFT = 12  # dot-row centre above the ear tops (below the bar stack)
+GRABS_LEFT_LABEL = "grabs left"
+
 # The getup-attack (#225) intangibility window = the whole swing, so its bar's
 # max is the move's total frames (kept in sync with the move data, not hardcoded).
 _GETUP_ATTACK_FRAMES = GETUP_ATTACK.startup + GETUP_ATTACK.active + GETUP_ATTACK.recovery
@@ -897,6 +909,53 @@ def draw_timer_bars(surface, p, specs):
             )
 
 
+def grabs_left_dots(p):
+    """How many grabs-left dots to show above fighter `p` — 0 for none (#657).
+
+    Each dot is one remaining ledge grab (of `LEDGE_REGRAB_INVULN_CUTOFF`) that still
+    grants the full intangibility burst before PM's anti-plank cutoff. Pinned to the
+    shipped #656 counter, which is **1 on the first grab**:
+    `dots = LEDGE_REGRAB_INVULN_CUTOFF + 1 - ledge_regrab_count`, shown only while the
+    fighter is in an active regrab chain (count in `1..CUTOFF`). At count 0 (no chain /
+    just reset) or past the cutoff (6+), no dots — so the first grab shows 5, the fifth
+    shows 1, and the sixth shows none. Honours the shared status-bars toggle. Spec:
+    docs/pm-reference/ledge-regrab-invuln-and-display.md.
+    """
+    if not runtime_settings.show_status_timer_bars():
+        return 0
+    count = p.fighter.ledge_regrab_count
+    if count < 1 or count > LEDGE_REGRAB_INVULN_CUTOFF:
+        return 0
+    return LEDGE_REGRAB_INVULN_CUTOFF + 1 - count
+
+
+def draw_grabs_left_dots(surface, p, n):
+    """Draw `n` grabs-left dots + the "grabs left" label above p's head (#657).
+
+    A row of `n` filled circles centred over the head, with the label right-aligned
+    just left of the row (matching the timer-bar label convention). Sits below the
+    timer bars and is a separate pass, so it composes with them without suppression
+    (the #720 stack). No-op when `n <= 0`."""
+    if n <= 0:
+        return
+    cx = p.rect.centerx
+    row_y = p.rect.top - EAR_HEIGHT - GRABS_LEFT_DOT_LIFT
+    x0 = cx - ((n - 1) * GRABS_LEFT_DOT_SPACING) // 2
+    for i in range(n):
+        pygame.draw.circle(
+            surface, GRABS_LEFT_DOT_COLOR, (x0 + i * GRABS_LEFT_DOT_SPACING, row_y), GRABS_LEFT_DOT_RADIUS
+        )
+    text_utils.render_text(
+        surface,
+        GRABS_LEFT_LABEL,
+        (x0 - GRABS_LEFT_DOT_RADIUS - STATUS_BAR_LABEL_GAP, row_y),
+        STATUS_BAR_LABEL_SIZE,
+        GRABS_LEFT_DOT_COLOR,
+        center=True,
+        right_align=True,
+    )
+
+
 # (width, deg°, color) -> rotated SRCALPHA segment surface. Module-level (#330/H-b,
 # was Tail._seg_cache): the key is position-independent so it's shareable across
 # tails; cleared by the render_isolation fixture (surfaces go stale after a
@@ -1014,6 +1073,9 @@ def render_battle(surface, players, platforms):
         # Above-head timer bars (#111 -> #340) — drawn last so they sit above the
         # dizzy stars; the spec list is empty when SHOW_STATUS_TIMER_BARS is off.
         draw_timer_bars(surface, p, timer_bar_specs(p))
+        # Grabs-left dots (#657) — the ledge anti-plank budget, below the bars (#720
+        # stack). Separate pass so it composes with the bars; 0 = nothing drawn.
+        draw_grabs_left_dots(surface, p, grabs_left_dots(p))
 
 
 def _attack_surface(a):
