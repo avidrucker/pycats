@@ -9,10 +9,10 @@ Destination, sized to the PM FD measurements researched in #659
 only this stage for now (``DEFAULT_PLAYER_STAGE``).
 
 The Battlefield-like arena the demos/sims still run on is defined by ``config``'s
-``THICK_``/``THIN_PLAT`` dicts and built by ``sim.runner.build_stage`` — unchanged by
-this ticket. It is mirrored here as a named layout (``BATTLEFIELD``, single-sourced from
-the same config dicts, so it can't drift) purely so the future stage-select epic has a
-second registry entry; it is **not** a player stage yet.
+``THICK_``/``THIN_PLAT`` dicts and built by ``BATTLEFIELD.build()``, which
+``sim.runner.build_stage`` delegates to (#731) — one builder, so it can't drift. It is a
+named layout here (``BATTLEFIELD``, single-sourced from those config dicts) so the future
+stage-select epic has a second registry entry; it is **not** a player stage yet.
 """
 
 from dataclasses import dataclass

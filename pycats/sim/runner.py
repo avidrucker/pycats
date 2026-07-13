@@ -23,15 +23,13 @@ from ..config import (  # noqa: E402
     PLAYER1_START_Y,
     PLAYER2_START_X,
     PLAYER2_START_Y,
-    THICK_PLAT_DICT,
-    THIN_PLAT_DICT_L,
-    THIN_PLAT_DICT_R,
 )
 from ..core.input import merge_frames  # noqa: E402
 from ..core.physics import resolve_player_push  # noqa: E402
 from ..domain import Selection, Skin, build_fighter, character_for  # noqa: E402
-from ..entities import Platform, Player  # noqa: E402
+from ..entities import Player  # noqa: E402
 from ..entities.ledge import ledges_from_platforms  # noqa: E402
+from ..entities.stages import BATTLEFIELD  # noqa: E402
 from ..systems import combat  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
 from .input_script import default_timeline  # noqa: E402
@@ -79,20 +77,9 @@ KEYMAPS = [P1_KEYS, P2_KEYS]
 
 
 def build_stage():
-    return [
-        Platform(
-            pygame.Rect(THICK_PLAT_DICT["x"], THICK_PLAT_DICT["y"], THICK_PLAT_DICT["w"], THICK_PLAT_DICT["h"]),
-            thin=False,
-        ),
-        Platform(
-            pygame.Rect(THIN_PLAT_DICT_L["x"], THIN_PLAT_DICT_L["y"], THIN_PLAT_DICT_L["w"], THIN_PLAT_DICT_L["h"]),
-            thin=True,
-        ),
-        Platform(
-            pygame.Rect(THIN_PLAT_DICT_R["x"], THIN_PLAT_DICT_R["y"], THIN_PLAT_DICT_R["w"], THIN_PLAT_DICT_R["h"]),
-            thin=True,
-        ),
-    ]
+    # Delegate to the single Battlefield builder (#731) — the sims and the player
+    # game now run the same arena, so it must be built exactly one way.
+    return BATTLEFIELD.build()
 
 
 def _skin_for(char_key, default_skin_key):
