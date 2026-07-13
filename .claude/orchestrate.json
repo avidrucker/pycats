@@ -32,7 +32,7 @@
   },
   "storage": {
     "dbPath": null,
-    "velocity": { "enabled": false },
+    "velocity": { "enabled": true, "csvMirror": null, "logCommand": "pmtools velocity log" },
     "errors": { "enabled": true, "csvMirror": null, "logCommand": "pmtools error log" }
   }
 }
