@@ -10,12 +10,14 @@ This module handles:
 
 import pygame  # type: ignore
 
-from . import runtime_settings, stats_print, text_utils
+from . import render_battle, runtime_settings, stats_print, text_utils
 from .config import (
     FPS,
     P1_UI_COLOR,
     P2_UI_COLOR,
     SCREEN_WIDTH,
+    TAIL_SEGMENT_LENGTH,
+    TAIL_SEGMENTS,
     WIN_SCREEN_BG_COLOR,
     WIN_SCREEN_INSTRUCTION_SIZE,
     WIN_SCREEN_LINE_SPACING,
@@ -23,11 +25,31 @@ from .config import (
     WIN_SCREEN_STATS_SIZE,
     WIN_SCREEN_TEXT_COLOR,
     WIN_SCREEN_TITLE_SIZE,
+    YELLOW,
 )
 
 # Win-screen input timing (frames) — #446: named from inline literals.
 WIN_INPUT_COOLDOWN = 15  # ignore repeat confirm/cancel presses for this long
 WIN_RETURN_DELAY = 30  # after both players confirm, wait this long, then return
+
+# --- fighter portraits (#728, design ruled in #738; research #736) -----------
+# Both fighters are drawn on the win screen: seat-fixed (P1 left / P2 right by
+# identity.number, NOT winner/loser), the winner raised, crowned in yellow; the
+# loser dimmed. The body reuses render_battle's position-independent composite
+# (_cat_body_surface via _cat_body_layers); the live tail is composed with the
+# body on a 1x scratch surface, then the whole surface is scaled — so body and
+# tail scale together (render_tail has no scale of its own).
+#
+# These are VISUAL as-of values — the #738 ruling flagged scale / raise / dim as
+# adjustable ("see how we like it"); tune freely.
+_PORTRAIT_SCALE = 2  # #738 Q4
+_WINNER_RAISE = 50  # px the winner's body-top is drawn above the loser's (#738 Q3)
+_LOSER_DIM_ALPHA = 64  # 25%-opacity black overlay over the loser (~64/255)
+_LOSER_BODY_TOP_Y = 150  # screen y of the loser's body top; winner sits _WINNER_RAISE above
+# Seat body-center x: P1 in the left margin, P2 in the right margin of the ~420px
+# centered stats table (SCREEN_WIDTH 960 -> ~270px margins). Keyed off the seat,
+# never winner/loser — this is the #728 invariant the render test guards.
+_SEAT_CENTER_X = {1: 135, 2: SCREEN_WIDTH - 135}
 
 
 class WinScreenManager:
@@ -65,6 +87,11 @@ class WinScreenManager:
         self.winner = winner
         self.loser = loser
         self.from_pause = from_pause  # Track if we came from pause menu
+        # Fighter-portrait state (#728): on-screen body rects per seat (the render
+        # test's seam) and which seats have had their live tail laid out at the
+        # win-screen anchor (reset once, then animated per frame — see _draw_fighter).
+        self.cat_portraits = {}
+        self._tail_laid_out = set()
         # Reset confirmation status for new match
         self.p1_confirmed = False
         self.p2_confirmed = False
@@ -130,6 +157,10 @@ class WinScreenManager:
         """Render the win screen with confirmation indicators."""
         # Clear screen
         screen.fill(WIN_SCREEN_BG_COLOR)
+
+        # Both fighters as portraits (#728) — behind the centered stats overlay;
+        # they live in the left/right margins so they never collide with the text.
+        self._render_fighters(screen)
 
         # Get formatted statistics
         match_summary = stats_print.get_match_summary(self.winner, self.loser, self.from_pause)
@@ -220,6 +251,112 @@ class WinScreenManager:
                 WIN_SCREEN_TEXT_COLOR,
                 center=True,
             )
+
+    @staticmethod
+    def _has_render_surface(p):
+        """True when `p` exposes the appearance surface the portrait needs. The
+        minimal fakes in older win-screen tests (colors/layout/stats) don't, so
+        those keep rendering text-only instead of crashing on missing state."""
+        f = getattr(p, "fighter", None)
+        return (
+            p is not None
+            and hasattr(p, "tail")
+            and hasattr(p, "char_color")
+            and getattr(f, "stand_size", None) is not None
+        )
+
+    def _render_fighters(self, screen):
+        """Draw both fighters as 2x portraits with live tails (#728).
+
+        Seat-fixed: P1 left, P2 right by `identity.number` (never winner/loser).
+        The winner is raised `_WINNER_RAISE`, crowned yellow; the loser is dimmed.
+        Records each seat's on-screen body rect in `self.cat_portraits` (the test
+        seam). No-op for players lacking the appearance surface (see above)."""
+        self.cat_portraits = {}
+        if self.winner is None or self.loser is None:
+            return
+        for p in (self.winner, self.loser):
+            if not self._has_render_surface(p):
+                continue
+            seat = int(p.identity.number)
+            is_winner = p is self.winner
+            rect = self._draw_fighter(screen, p, seat, is_winner)
+            self.cat_portraits[seat] = {"rect": rect, "is_winner": is_winner}
+
+    def _draw_fighter(self, screen, p, seat, is_winner):
+        """Compose one fighter's calm body + live tail on a 1x scratch surface,
+        scale it `_PORTRAIT_SCALE`x, and blit it at its seat. Returns the visible
+        body's on-screen Rect. Mutated fighter state (facing / tint timers / rect)
+        is saved and restored so the live battle players aren't corrupted (the
+        from-pause path reuses them); the tail segments persist so it animates."""
+        rb = render_battle
+        fighter = p.fighter
+        w, h = fighter.stand_size
+        comp_w = w + 2 * rb._BODY_PAD_X
+        comp_h = rb._BODY_PAD_TOP + h + rb._BODY_PAD_BOT
+        tail_reach = TAIL_SEGMENTS * TAIL_SEGMENT_LENGTH  # room for the tail's swing
+        scratch = pygame.Surface((comp_w + 2 * tail_reach, comp_h + tail_reach), pygame.SRCALPHA)
+        comp_x = (scratch.get_width() - comp_w) // 2
+        comp_y = 0
+        # The body's visible sub-rect inside the padded composite → also the tail's
+        # scratch-local hip anchor.
+        body_local_x = comp_x + rb._BODY_PAD_X
+        body_local_y = comp_y + rb._BODY_PAD_TOP
+
+        facing_right = seat == 1  # inward: P1 (left) faces right, P2 (right) faces left
+        saved = (p.rect, fighter.facing_right, fighter.hurt_timer, fighter.stun_timer, fighter.dodge_timer)
+        try:
+            # Force a calm, inward-facing render anchored inside the scratch surface.
+            fighter.facing_right = facing_right
+            fighter.hurt_timer = fighter.stun_timer = fighter.dodge_timer = 0
+            p.rect = pygame.Rect(body_local_x, body_local_y, w, h)
+            # Lay the tail out at the win-screen anchor once (avoids a first-frame
+            # whip from the frozen battle position), then step it live each frame.
+            if seat not in self._tail_laid_out:
+                p.tail.reset()
+                self._tail_laid_out.add(seat)
+            p.tail.update(None)
+            ring, body = rb._cat_body_layers(p)
+            pos = (comp_x, comp_y)
+            scratch.blit(ring, pos)  # silhouette ring behind
+            rb.render_tail(scratch, p.tail, rb.tinted(p.char_color, p), rb.slot_accent_color(p))
+            scratch.blit(body, pos)  # body + features + name in front
+        finally:
+            p.rect, fighter.facing_right, fighter.hurt_timer, fighter.stun_timer, fighter.dodge_timer = saved
+
+        scaled = pygame.transform.scale(
+            scratch, (scratch.get_width() * _PORTRAIT_SCALE, scratch.get_height() * _PORTRAIT_SCALE)
+        )
+        body_w, body_h = w * _PORTRAIT_SCALE, h * _PORTRAIT_SCALE
+        body_top = _LOSER_BODY_TOP_Y - (_WINNER_RAISE if is_winner else 0)
+        body_left = _SEAT_CENTER_X[seat] - body_w // 2
+        # Position the scaled scratch so its (scaled) body sub-rect lands at the seat.
+        screen.blit(scaled, (body_left - body_local_x * _PORTRAIT_SCALE, body_top - body_local_y * _PORTRAIT_SCALE))
+
+        body_rect = pygame.Rect(body_left, body_top, body_w, body_h)
+        if is_winner:
+            self._draw_crown(screen, body_rect)
+        else:
+            overlay = pygame.Surface((body_w, body_h), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, _LOSER_DIM_ALPHA))  # 25% black — reads as defeated
+            screen.blit(overlay, body_rect.topleft)
+        return body_rect
+
+    @staticmethod
+    def _draw_crown(screen, body_rect):
+        """A yellow crown (three triangle points on a rectangular band) above the
+        winner's head — #728's win marker."""
+        band_h, crown_h, gap = 8, 22, 8
+        cw = int(body_rect.width * 0.7)
+        left = body_rect.centerx - cw // 2
+        band_top = body_rect.top - gap - band_h
+        pygame.draw.rect(screen, YELLOW, (left, band_top, cw, band_h))
+        points_top = band_top - (crown_h - band_h)
+        n = 3
+        for i in range(n):
+            x0 = left + cw * i // n
+            x1 = left + cw * (i + 1) // n
+            pygame.draw.polygon(screen, YELLOW, [(x0, band_top), ((x0 + x1) // 2, points_top), (x1, band_top)])
 
     def _render_stats_table(self, screen, stats_table, start_y):
         """Render the stats table with pixel-perfect column alignment."""
