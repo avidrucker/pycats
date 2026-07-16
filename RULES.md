@@ -476,8 +476,17 @@ flow; #600.)
 
 **pycats specifics (differences from lccjs):**
 
-- **Velocity is off** (`storage.velocity.enabled = false`) — no velocity CSV row
-  rides in the close commit.
+- **Velocity is on** (`storage.velocity.enabled = true`, enabled 2026-07-13) — closing a
+  code ticket requires a **velocity row first**, or `pmtools close` blocks with a
+  velocity-row guard (`no velocity row for #N … Log your session first`). Log it before
+  closing:
+
+      pmtools velocity log '{"ticket":N,"role":"DEV","agent":"<fruit>",
+        "started_iso":"<ISO>","finished_iso":"<ISO>","actual_min":<A>}'
+
+  then re-run `pmtools close <N>`. This mirrors the `puzzle-velocity` / write-til flow.
+  (History: velocity was off at repo setup — a deliberate choice, not an oversight — and
+  turned on 2026-07-13; every pycats velocity row is dated 2026-07-13+.)
 - **No code markers** — pycats does not use `@todo`/`@inprogress #N` markers, so
   there is nothing to delete in the close commit; just include `Closes #N`.
 - **The errors store is live** (`storage.errors.enabled = true`) — `pmtools error
