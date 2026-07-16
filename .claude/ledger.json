@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "dir": "claims-data",
+  "prefix": "PYC",
+  "agentScoped": null,
+  "evidenceDir": "claims-data/evidence",
+  "overloadedTerms": [
+    "claim",
+    "close",
+    "status",
+    "release",
+    "velocity",
+    "error",
+    "ice",
+    "preflight",
+    "sweep",
+    "file"
+  ]
+}
