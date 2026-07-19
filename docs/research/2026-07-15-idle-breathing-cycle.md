@@ -16,6 +16,14 @@
 > (extraction tracked in the dump ticket — see Downstream). Everything else below — the web-search
 > dead-ends (rukaidata's HTML shows no length), Q1–Q3, the framerate bridge — **remains accurate.**
 
+> ## ✅ Result (2026-07-19, #753) — FOUND
+> The brawllib_rs dump was run against the PM 3.6 `.pac` (vanilla Brawl `-d` + PM 3.6 overlay `-m`).
+> **Mario `Wait1` = 51 frames** (`subaction.frames.len()`, `iasa=None`). At the 1:1 framerate bridge
+> that is **`IDLE_BREATH_PERIOD_FRAMES = 51`** (≈0.85 s @ 60fps) for #567 — a **`FOUND`** value.
+> The dump also confirms the mechanic split — `Wait1` 51 (the breathing loop) vs the fidget variants
+> `Wait2` 150 / `Wait3` 95. Evidence + provenance in **Datamine result (#753)** below. This
+> **supersedes** the interim author-chosen 120f (2.0 s) guess in Q4 — the real loop is ~2.4× faster.
+
 **Verdict in one line (original — superseded by the Correction above):** The idle-wait mechanic and
 its *existence* are web-datamineable, and the **precise `Wait1` loop length is not on the web
 frame-data sites** pycats uses (rukaidata's HTML never prints it) — but it **is** readable from the
@@ -88,22 +96,18 @@ the only path to a sourced number, and nobody has run it yet.
 
 ## Q4 — Recommendation for #567 (framed, not decided)
 
-**Period provenance: `FOUND`-pending a brawllib_rs run (see the Correction at top).** The `Wait1`
-length is not on the *web* sites, but it **is** datamineable from the `.pac` via `brawllib_rs`
-(`subaction.frames.len()`). Until that dump lands, #567 may ship the **interim author-chosen** period
-below (`PLACEHOLDER`), to be **replaced by the `FOUND` value** once dumped — it is not a permanent
-author-choice.
+**Period provenance: `FOUND` = 51 frames (datamined #753).** Mario `Wait1` = **51 frames**
+(`subaction.frames.len()` via brawllib_rs against the PM 3.6 `.pac`). At the 1:1 framerate bridge:
 
-**Framerate bridge (the mandatory sub-step):** Brawl 60fps ↔ pycats 60fps = **1:1**. Once the `Wait1`
-`frames.len()` of `N` is dumped, it maps directly to `IDLE_BREATH_PERIOD_FRAMES = N` with no scaling.
-We do **not** have `N` yet — it comes from the dump ticket (Downstream).
+    IDLE_BREATH_PERIOD_FRAMES = 51    # ≈0.85 s @ 60fps — FOUND (Mario Wait1, brawllib_rs #753)
 
-**Recommended author-chosen default (owner ratifies by eye):**
-- Start at **`IDLE_BREATH_PERIOD_FRAMES = 120`** (2.0 s @ 60fps) — one full slow breath per ~2 s.
-- Acceptable range **90–180 frames (1.5–3.0 s)**; slower reads calmer, faster reads more alive.
-- Rationale is **game-feel, not sourced**: subtle idle breathing loops read best slow; ~2 s is a
-  common, unobtrusive resting cadence. Tune by eye against the ±1px amplitude and bump if
-  imperceptible. *(This range is a starting point for playtest, explicitly `PLACEHOLDER`.)*
+**Framerate bridge:** Brawl 60fps ↔ pycats 60fps = **1:1**, so the dumped `frames.len()` maps directly
+with no scaling.
+
+**Superseded — the earlier author-chosen guess.** The pre-dump draft recommended `120` (2.0 s) as an
+interim `PLACEHOLDER`. The datamined loop is **51f (0.85 s)** — ~2.4× faster — so **use 51**, not 120.
+(#567 remains free to deviate for game-feel, but that would be an owner decision *away from* the
+faithful value, recorded as `TUNED`, not the default.)
 
 **Amplitude — out of scope here, one open question surfaced for #567:**
 - Amplitude in px stays #567's author-chosen render constant (±1px, fallback ±2px). This spike does
@@ -116,6 +120,36 @@ We do **not** have `N` yet — it comes from the dump ticket (Downstream).
 
 ---
 
+## Datamine result (#753)
+
+Run 2026-07-19 (CHERRY) via a throwaway `examples/wait_lengths.rs` in the brawllib_rs clone
+(`~/Documents/Study/Rust/brawllib_rs/`, #614), which prints each subaction's `frames.len()`:
+
+    cargo run --release --example wait_lengths -- \
+      -d ~/Documents/Study/Rust/pm-data/brawl-dump/DATA/files \   # vanilla Brawl (extracted ISO)
+      -m ~/Documents/Study/Rust/pm-data/pm36-sd \                 # PM 3.6 overlay (#640 staged)
+      -f Mario
+
+Mario `Wait*` subaction lengths (the idle family):
+
+| Subaction | Frames | Role |
+|---|---|---|
+| **`Wait1`** | **51** | **the base standing/breathing loop → the #567 value** |
+| `Wait2` | 150 | fidget variant (random idle pose) |
+| `Wait3` | 95 | fidget variant (random idle pose) |
+| `SquatWait` | 131 | crouch idle (not #567 — idle only) |
+| `CliffWait` | 101 | ledge-hang idle |
+| `DownWaitU` / `DownWaitD` | 71 / 71 | downed idle |
+
+**Provenance:** source = `brawllib_rs` (clone #614) reading PM 3.6 `.pac` (`FitMario*` under the
+`-m` overlay over the `-d` vanilla dump); field = `HighLevelSubaction.frames.len()` for `Wait1`;
+value = **51 frames**; tier = **`FOUND`**.
+
+**Loop-semantics caveat:** 51 is the `Wait1` animation's full frame count (`iasa=None` → it plays to
+the end, then the idle system loops it / occasionally swaps to `Wait2`/`Wait3`). For #567's `sin`
+bob, one `Wait1` = one period = 51f is the right mapping; whether the CHR0 contains exactly one visual
+breath vs a sub-cycle wasn't eyeballed frame-by-frame, but 51f is the canonical loop length to use.
+
 ## Sources
 - SmashWiki — *Idle pose*: https://www.ssbwiki.com/Idle_pose
 - OpenSA (Dantarion) — *Subactions (Brawl)* (Wait1/2/3 = codes 2/3/4): http://opensa.dantarion.com/wiki/Subactions_(Brawl)
@@ -125,19 +159,15 @@ We do **not** have `N` yet — it comes from the dump ticket (Downstream).
 - In-repo: `pycats/config.py` (`FPS = 60`); `pycats/combat/data.py` (`FighterData`, no idle-anim field).
 
 ## Provenance tier
-- **Wait1 loop length:** `FOUND`-pending — **datamineable via `brawllib_rs`**
-  (`subaction.frames.len()` on the `Wait1` subaction; clone #614), **NOT** engine-locked. Not on the
-  web frame-data sites, but readable from the PM 3.6 `.pac`; becomes `FOUND` when the dump ticket runs.
+- **Wait1 loop length:** **`FOUND` = 51 frames** (Mario `Wait1`, `subaction.frames.len()` via
+  brawllib_rs against the PM 3.6 `.pac`, #753). Datamined, NOT engine-locked, NOT web-only. → `IDLE_BREATH_PERIOD_FRAMES = 51`.
 - **Framerate bridge:** `FOUND` — Brawl 60fps (SmashWiki *Frame*) ↔ pycats `FPS = 60` (`config.py`),
   1:1.
-- **Recommended `IDLE_BREATH_PERIOD_FRAMES = 120` (range 90–180):** `PLACEHOLDER` author-choice for
-  playtest, not sourced.
+- **`IDLE_BREATH_PERIOD_FRAMES` for #567:** **`FOUND` = 51** (Mario `Wait1`, #753). The earlier
+  `120` (range 90–180) was an interim author guess — **superseded** by the datamined 51.
 
 ## Downstream (file one-at-a-time, not in this ticket)
-1. Edit #567 to pin `IDLE_BREATH_PERIOD_FRAMES = 120` (PLACEHOLDER) with a comment pointing here.
-2. **Dump ticket (filed next, one-at-a-time):** run the `brawllib_rs` `high_level_frame_data`
-   example against the PM 3.6 `.pac` (recipe: `docs/tooling-brawllib-rs-datamine-recipe.md`) to read
-   the `Wait1` subaction `frames.len()`, record it `FOUND`, and replace the interim period in #567.
-   This is a brawllib_rs move/animation datamine — **not** the air-dodge engine-global path; the
-   #215/#192 comparison is retracted (see the Correction).
+1. Edit #567 to pin `IDLE_BREATH_PERIOD_FRAMES = 51` (**`FOUND`** — Mario `Wait1`, brawllib_rs #753)
+   with a comment pointing here; add the matching `Provenance` entry when the constant lands.
+2. ✅ **Done (#753):** the brawllib_rs dump — Mario `Wait1` = 51 frames. See **Datamine result (#753)**.
 3. #567 owner-decision: amplitude-scales-with-height (OPEN).
