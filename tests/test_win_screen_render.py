@@ -103,3 +103,17 @@ def test_render_is_calm_no_crash_with_live_hurt_tint():
     # timers restored (render must not leave the live fighters mutated)
     assert loser.fighter.hurt_timer == 30
     assert winner.fighter.stun_timer == 20
+
+
+def test_loser_half_scrim_is_keyed_to_the_losing_seat(monkeypatch):
+    # #746: the loser's WHOLE half is scrimmed in the bg colour. The scrim itself
+    # is bg-coloured, so it's invisible over bare bg (a pixel probe would be
+    # flaky) — the load-bearing logic is *which seat's half* gets it. Spy the call
+    # and assert it follows the LOSER's seat, never the winner's.
+    calls = []
+    monkeypatch.setattr(WinScreenManager, "_draw_loser_scrim", staticmethod(lambda screen, seat: calls.append(seat)))
+    _render(winner=_player("P2", False), loser=_player("P1", True))  # P1 loses -> left half (seat 1)
+    assert calls == [1]
+    calls.clear()
+    _render(winner=_player("P1", True), loser=_player("P2", False))  # P2 loses -> right half (seat 2)
+    assert calls == [2]

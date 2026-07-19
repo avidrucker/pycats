@@ -44,8 +44,12 @@ WIN_RETURN_DELAY = 30  # after both players confirm, wait this long, then return
 # adjustable ("see how we like it"); tune freely.
 _PORTRAIT_SCALE = 2  # #738 Q4
 _WINNER_RAISE = 50  # px the winner's body-top is drawn above the loser's (#738 Q3)
-_LOSER_DIM_ALPHA = 64  # 25%-opacity black overlay over the loser (~64/255)
-_LOSER_BODY_TOP_Y = 150  # screen y of the loser's body top; winner sits _WINNER_RAISE above
+# #746: the loser's WHOLE half is scrimmed in the background colour (not a black
+# body box) so the entire loser cat — body + ears + tail — fades toward the bg,
+# under the stats. ~50% alpha.
+_LOSER_SCRIM_ALPHA = 128
+_CROWN_SCALE = 1.5  # #746: crown ~1.5x the original #728 size
+_LOSER_BODY_TOP_Y = 200  # #746: both cats lowered 50px (was 150); winner sits _WINNER_RAISE above
 # Seat body-center x: P1 in the left margin, P2 in the right margin of the ~420px
 # centered stats table (SCREEN_WIDTH 960 -> ~270px margins). Keyed off the seat,
 # never winner/loser — this is the #728 invariant the render test guards.
@@ -269,7 +273,8 @@ class WinScreenManager:
         """Draw both fighters as 2x portraits with live tails (#728).
 
         Seat-fixed: P1 left, P2 right by `identity.number` (never winner/loser).
-        The winner is raised `_WINNER_RAISE`, crowned yellow; the loser is dimmed.
+        The winner is raised `_WINNER_RAISE`, crowned yellow; the loser's whole
+        half is then scrimmed in the background colour so its cat fades out.
         Records each seat's on-screen body rect in `self.cat_portraits` (the test
         seam). No-op for players lacking the appearance surface (see above)."""
         self.cat_portraits = {}
@@ -282,6 +287,23 @@ class WinScreenManager:
             is_winner = p is self.winner
             rect = self._draw_fighter(screen, p, seat, is_winner)
             self.cat_portraits[seat] = {"rect": rect, "is_winner": is_winner}
+        # Fade the whole loser side (body + ears + tail) into the background (#746).
+        # Drawn after both cats but before the stats (render() paints stats next),
+        # so the stats stay fully legible on top. Keyed off the loser's SEAT: P1
+        # loses -> left half, P2 loses -> right half.
+        if self._has_render_surface(self.loser):
+            self._draw_loser_scrim(screen, int(self.loser.identity.number))
+
+    @staticmethod
+    def _draw_loser_scrim(screen, loser_seat):
+        """A background-coloured, ~50%-alpha scrim over the loser's entire half of
+        the screen — fades the loser cat toward the bg. P1 (seat 1) is the left
+        half, P2 (seat 2) the right."""
+        half_w = SCREEN_WIDTH // 2
+        x = 0 if loser_seat == 1 else half_w
+        scrim = pygame.Surface((half_w, screen.get_height()), pygame.SRCALPHA)
+        scrim.fill((*WIN_SCREEN_BG_COLOR, _LOSER_SCRIM_ALPHA))
+        screen.blit(scrim, (x, 0))
 
     def _draw_fighter(self, screen, p, seat, is_winner):
         """Compose one fighter's calm body + live tail on a 1x scratch surface,
@@ -336,18 +358,17 @@ class WinScreenManager:
         body_rect = pygame.Rect(body_left, body_top, body_w, body_h)
         if is_winner:
             self._draw_crown(screen, body_rect)
-        else:
-            overlay = pygame.Surface((body_w, body_h), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, _LOSER_DIM_ALPHA))  # 25% black — reads as defeated
-            screen.blit(overlay, body_rect.topleft)
+        # The loser is faded by a half-screen background scrim drawn in
+        # _render_fighters after both cats — so its ears + tail fade too (#746),
+        # not just a body box.
         return body_rect
 
     @staticmethod
     def _draw_crown(screen, body_rect):
         """A yellow crown (three triangle points on a rectangular band) above the
-        winner's head — #728's win marker."""
-        band_h, crown_h, gap = 8, 22, 8
-        cw = int(body_rect.width * 0.7)
+        winner's head — #728's win marker, scaled `_CROWN_SCALE` (#746)."""
+        band_h, crown_h, gap = int(8 * _CROWN_SCALE), int(22 * _CROWN_SCALE), 8
+        cw = int(body_rect.width * 0.7 * _CROWN_SCALE)
         left = body_rect.centerx - cw // 2
         band_top = body_rect.top - gap - band_h
         pygame.draw.rect(screen, YELLOW, (left, band_top, cw, band_h))
