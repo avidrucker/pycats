@@ -2,6 +2,18 @@
 
 Full conventions: **[RULES.md](./RULES.md)** — read it before filing or labeling work.
 
+## Start here
+
+New to the repo? These are the authoritative homes — link them, don't duplicate them:
+
+- **Commands** (test / run / lint / format / bench) → run `make help`; the
+  [Makefile](./Makefile) is the command SSOT. Use the targets, never a hand-copied
+  command list.
+- **Where is X?** (a mechanic, a value, a landmark) → [`docs/mechanics-index.md`](./docs/mechanics-index.md) — the router.
+- **Conventions** (filing / closing / labeling work) → [RULES.md](./RULES.md).
+- **Run / test / dev setup / layout** → [README.md](./README.md) → *For contributors*.
+- **Project M parity** → [`docs/project-m-parity.md`](./docs/project-m-parity.md) — the parity front door + its doc map.
+
 Critical rules:
 
 - **Work tracking is GitHub issues** (single source of truth), not markdown TODO files.
@@ -78,5 +90,3 @@ Critical rules:
   code and a **section heading** for markdown; line numbers drift and misdirect. A line
   number may ride along as a secondary as-of hint; commit-pinned permalinks and quoted
   tool output are exempt. See [RULES.md](./RULES.md) → "Referencing code & docs".
-
-Run & test: see [README.md](./README.md).
