@@ -1,10 +1,26 @@
 # Idle "breathing" cycle duration — is PM/Brawl's Wait1 loop length datamineable?
 
 **Ticket:** #741 (RESEARCH, informs DEV #567) · **Date:** 2026-07-15 · **Agent:** CHERRY
-**Verdict in one line:** The idle-wait mechanic and its *existence* are web-datamineable, but the
-**precise Wait1 loop length is NOT** obtainable from the web frame-data sites pycats uses — it lives
-in the character model motion file (CHR0 `FrameCount`) and needs a BrawlBox/brawllib_rs asset dump.
-So #567's period is an **author-chosen `TUNED`/`PLACEHOLDER`** value, not a `FOUND` citation.
+> ## ⚠ Correction (2026-07-19, #752)
+> **The original verdict below was wrong on one point and is retracted here.** It framed the `Wait1`
+> loop length as "NOT obtainable" and lumped it with the air-dodge velocity (#215/#192) as "the same
+> wall." **That comparison is withdrawn:** the air-dodge force is an *engine global* genuinely absent
+> from the `.pac`, whereas an animation's frame-count is **scripted CHR0 data inside the `.pac`** —
+> the category `brawllib_rs` is built to read.
+> **Corrected status:** the `Wait1` length **is datamineable via `brawllib_rs`**, which exposes
+> `subaction.frames.len()` per subaction (verified in the local clone
+> `~/Documents/Study/Rust/brawllib_rs/`, #614: `HighLevelSubaction { frames: Vec<HighLevelFrame> }`
+> in `high_level_fighter.rs`; `examples/first_active_frames.rs` records `length: subaction.frames.len()`).
+> So #567's period is **`FOUND`-pending a brawllib_rs run**, NOT a forever-`PLACEHOLDER`/engine-locked
+> value. The only gate is the usual datamine gate: run the Rust tool + supply the PM 3.6 `.pac` files
+> (extraction tracked in the dump ticket — see Downstream). Everything else below — the web-search
+> dead-ends (rukaidata's HTML shows no length), Q1–Q3, the framerate bridge — **remains accurate.**
+
+**Verdict in one line (original — superseded by the Correction above):** The idle-wait mechanic and
+its *existence* are web-datamineable, and the **precise `Wait1` loop length is not on the web
+frame-data sites** pycats uses (rukaidata's HTML never prints it) — but it **is** readable from the
+`.pac` via `brawllib_rs` (`subaction.frames.len()`), so #567's period is **`FOUND`-pending a
+brawllib_rs run**, not an author-chosen PLACEHOLDER.
 
 ---
 
@@ -48,11 +64,13 @@ those exact words.]*
   reading the game's own files. BrawlBox supports the CHR0 animation format; extracting Mario's
   Wait1 `FrameCount` requires opening that `.pac`, which is a **local asset dump, not a web lookup**.
 
-**Precedent match:** this is the same wall hit by the air-dodge velocity research
-(#215: "confirmed NOT web-datamineable; needs an engine/DOL dump or playtest"; tracker #192). A
-value that lives in the engine/asset files rather than on the frame-data sites is not obtainable by
-web research alone. Wait1's length is a *stronger* dump candidate than an engine constant (it's a
-plain animation `FrameCount`), but it is **still a tool-dump, not a web citation**.
+**NOT the air-dodge wall (retraction — this paragraph is corrected by #752).** The original draft
+compared this to the air-dodge velocity (#215/#192) as "the same wall." **That is wrong and is
+withdrawn.** Air-dodge force is an *engine global* genuinely absent from the `.pac`, so no `.pac`
+reader can ever get it. Wait1's length is the opposite case: it is a **plain animation frame-count
+inside the `.pac`'s CHR0**, which `brawllib_rs` reads directly. It is a **web** gap (rukaidata's HTML
+doesn't print it), not a *datamining* gap — it is on the datamineable side of the line, alongside
+move/hitbox data.
 
 **To upgrade `PLACEHOLDER`/`TUNED` → `FOUND` later:** open `FitMotionEtc.pac` for the Mario
 archetype in BrawlBox (or brawllib_rs), read the **Wait1 CHR0 `FrameCount`**, and cite it. That is
@@ -70,13 +88,15 @@ the only path to a sourced number, and nobody has run it yet.
 
 ## Q4 — Recommendation for #567 (framed, not decided)
 
-**Period provenance: `PLACEHOLDER` (→ `TUNED` once playtested), NOT `FOUND`.** The precise Wait1
-length is not web-sourceable, so #567 must use an author-chosen game-feel period, not a citation.
-This holds #567's original "author-chosen render constant" stance for the *timing* too.
+**Period provenance: `FOUND`-pending a brawllib_rs run (see the Correction at top).** The `Wait1`
+length is not on the *web* sites, but it **is** datamineable from the `.pac` via `brawllib_rs`
+(`subaction.frames.len()`). Until that dump lands, #567 may ship the **interim author-chosen** period
+below (`PLACEHOLDER`), to be **replaced by the `FOUND` value** once dumped — it is not a permanent
+author-choice.
 
-**Framerate bridge (the mandatory sub-step):** Brawl 60fps ↔ pycats 60fps = **1:1**. *If* a Wait1
-`FrameCount` of `N` is ever dumped, it maps directly to `IDLE_BREATH_PERIOD_FRAMES = N` with no
-scaling. We do **not** have `N`.
+**Framerate bridge (the mandatory sub-step):** Brawl 60fps ↔ pycats 60fps = **1:1**. Once the `Wait1`
+`frames.len()` of `N` is dumped, it maps directly to `IDLE_BREATH_PERIOD_FRAMES = N` with no scaling.
+We do **not** have `N` yet — it comes from the dump ticket (Downstream).
 
 **Recommended author-chosen default (owner ratifies by eye):**
 - Start at **`IDLE_BREATH_PERIOD_FRAMES = 120`** (2.0 s @ 60fps) — one full slow breath per ~2 s.
@@ -105,8 +125,9 @@ scaling. We do **not** have `N`.
 - In-repo: `pycats/config.py` (`FPS = 60`); `pycats/combat/data.py` (`FighterData`, no idle-anim field).
 
 ## Provenance tier
-- **Wait1 loop length:** `PLACEHOLDER` — not web-datamineable; needs a BrawlBox/brawllib_rs
-  `FitMotionEtc.pac` CHR0 `FrameCount` dump to become `FOUND`.
+- **Wait1 loop length:** `FOUND`-pending — **datamineable via `brawllib_rs`**
+  (`subaction.frames.len()` on the `Wait1` subaction; clone #614), **NOT** engine-locked. Not on the
+  web frame-data sites, but readable from the PM 3.6 `.pac`; becomes `FOUND` when the dump ticket runs.
 - **Framerate bridge:** `FOUND` — Brawl 60fps (SmashWiki *Frame*) ↔ pycats `FPS = 60` (`config.py`),
   1:1.
 - **Recommended `IDLE_BREATH_PERIOD_FRAMES = 120` (range 90–180):** `PLACEHOLDER` author-choice for
@@ -114,6 +135,9 @@ scaling. We do **not** have `N`.
 
 ## Downstream (file one-at-a-time, not in this ticket)
 1. Edit #567 to pin `IDLE_BREATH_PERIOD_FRAMES = 120` (PLACEHOLDER) with a comment pointing here.
-2. Optional DEV/chore: run the BrawlBox/brawllib_rs Wait1 `FrameCount` dump to upgrade the period
-   to `FOUND` (mirrors the air-dodge dump path, #215/#192).
+2. **Dump ticket (filed next, one-at-a-time):** run the `brawllib_rs` `high_level_frame_data`
+   example against the PM 3.6 `.pac` (recipe: `docs/tooling-brawllib-rs-datamine-recipe.md`) to read
+   the `Wait1` subaction `frames.len()`, record it `FOUND`, and replace the interim period in #567.
+   This is a brawllib_rs move/animation datamine — **not** the air-dodge engine-global path; the
+   #215/#192 comparison is retracted (see the Correction).
 3. #567 owner-decision: amplitude-scales-with-height (OPEN).
