@@ -20,9 +20,9 @@ ARCHETYPE_ROSTER = ("nalio", "birky", "narz")
 # Default OG-skin KEY per archetype — the single source (#650): the skin a character
 # wears until a player cycles it on the char-select screen (Part 3 of #127).
 ARCHETYPE_DEFAULT_SKIN = {
-    "nalio": "calico",  # balanced all-rounder → warm orange
-    "birky": "ghost",  # floaty featherweight → light/round
-    "narz": "void",  # disjointed swordfighter → sleek/dark
+    "nalio": "red-blue",  # base theme (#677): red body, blue accents
+    "birky": "pink-red",  # base theme (#677): pink body, red accents
+    "narz": "blue-black",  # base theme (#677): blue body, black accents
 }
 
 # Default cosmetic palette per archetype (derived from ARCHETYPE_DEFAULT_SKIN, cosmetic-only).

@@ -76,7 +76,7 @@ def test_cycling_is_independent_per_player():
     sel = _sel()
     _confirm_p1(sel, 0)  # p1 confirms, p2 untouched
     p1p, p2p = sel.get_selected_palettes()
-    assert p1p == "calico"
+    assert p1p == "red-blue"  # nalio's base-theme default (#677)
     assert p2p is None
 
 

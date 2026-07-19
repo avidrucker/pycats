@@ -23,7 +23,9 @@ _EXPECTED = {
 
 def test_shipped_palettes_load_with_exact_rgb_tuples():
     pals = load_palettes()
-    assert set(pals) == set(_EXPECTED)
+    # The original six survive with their exact RGBs (a fidelity pin, not a frozen
+    # census — the live set is free to grow with new skins, e.g. #677 base themes).
+    assert set(_EXPECTED) <= set(pals)
     for key, exp in _EXPECTED.items():
         for field, want in exp.items():
             got = pals[key][field]
@@ -33,14 +35,16 @@ def test_shipped_palettes_load_with_exact_rgb_tuples():
 
 def test_missing_file_falls_back_to_builtin_defaults(tmp_path):
     pals = load_palettes(path=tmp_path / "nope.json")  # file does not exist
-    assert set(pals) == set(_EXPECTED)
+    assert set(_EXPECTED) <= set(pals)  # builtins include the original six…
+    assert pals["calico"]["color"] == (255, 160, 64)  # …with correct tuple values
 
 
 def test_corrupt_file_never_raises_and_defaults(tmp_path):
     bad = tmp_path / "palettes.json"
     bad.write_text("{ not valid json ::::")
     pals = load_palettes(path=bad)  # must not raise
-    assert set(pals) == set(_EXPECTED)
+    assert set(_EXPECTED) <= set(pals)
+    assert pals["void"]["color"] == (20, 20, 20)
 
 
 def test_out_of_range_colour_is_snapped(tmp_path):
@@ -62,3 +66,23 @@ def test_unrepairable_entry_is_skipped(tmp_path):
     pals = load_palettes(path=f)
     assert "good" in pals and "bad" not in pals  # malformed colour -> entry skipped
     assert pals["good"]["color"] == (1, 2, 3)
+
+
+# Per-Character base colour-theme Skins (#677) — normal members of the growable
+# live skin set, distinct from the OG six. Provisional RGBs (legible on the dark
+# stage per the #546 outline basis), tweakable later.
+_BASE_THEMES = {
+    "red-blue":   {"color": (210, 55, 50),  "stripe_color": (60, 100, 210)},   # Nalio
+    "blue-black": {"color": (60, 105, 205), "stripe_color": (18, 18, 22)},      # Narz
+    "pink-red":   {"color": (240, 130, 175), "stripe_color": (205, 55, 50)},    # Birky
+}
+
+
+def test_base_theme_skins_load_with_their_theme_rgbs():
+    pals = load_palettes()
+    for key, exp in _BASE_THEMES.items():
+        assert key in pals, f"base theme {key!r} missing from the skin set"
+        for field, want in exp.items():
+            got = pals[key][field]
+            assert got == want, f"{key}.{field}: {got} != {want}"
+            assert isinstance(got, tuple), f"{key}.{field} should be a tuple"

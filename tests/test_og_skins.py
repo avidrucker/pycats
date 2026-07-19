@@ -27,8 +27,11 @@ EXPECTED = {
 }
 
 
-def test_archive_holds_exactly_the_six_skins():
-    assert set(OG_SKINS.keys()) == set(EXPECTED.keys())
+def test_archive_still_holds_the_original_six():
+    # The original six must survive verbatim; the set may grow with new skins
+    # (e.g. #677 base themes) — fidelity, not a frozen census. Exact RGBs are
+    # pinned by test_each_skin_resolves_to_its_exact_rgb below.
+    assert set(EXPECTED.keys()) <= set(OG_SKINS.keys())
 
 
 def test_each_skin_resolves_to_its_exact_rgb():

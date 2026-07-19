@@ -62,7 +62,10 @@ def test_player_identity_for_slot_defaults():
 def test_registries_hold_the_real_roster_only():
     assert set(CHARACTERS) == {"nalio", "birky", "narz"}
     assert CHARACTERS["nalio"].name == "Nalio"
-    assert CHARACTERS["nalio"].default_skin_key == "calico"
+    # Each Character defaults to its own base colour-theme Skin (#677).
+    assert CHARACTERS["nalio"].default_skin_key == "red-blue"
+    assert CHARACTERS["birky"].default_skin_key == "pink-red"
+    assert CHARACTERS["narz"].default_skin_key == "blue-black"
     assert "calico" in SKINS and "ghost" in SKINS and "void" in SKINS
 
 
@@ -86,7 +89,7 @@ def test_build_fighter_named_character():
     bf = build_fighter(resolve_selection("nalio"))
     assert isinstance(bf, BuiltFighter)
     assert bf.fighter_data is load_fighter_data("nalio")
-    assert bf.skin is SKINS["calico"]  # nalio's default skin
+    assert bf.skin is SKINS["red-blue"]  # nalio's base-theme default skin (#677)
 
 
 def test_resolve_selection_explicit_skin():

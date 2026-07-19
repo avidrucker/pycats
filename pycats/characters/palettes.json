@@ -40,5 +40,26 @@
     "stripe_color": [139, 69, 19],
     "eye_color": [0, 191, 255],
     "description": "Bengal spotted cat"
+  },
+  "red-blue": {
+    "name": "Red-Blue",
+    "color": [210, 55, 50],
+    "stripe_color": [60, 100, 210],
+    "eye_color": [255, 215, 0],
+    "description": "Nalio base theme — red body, blue accents"
+  },
+  "blue-black": {
+    "name": "Blue-Black",
+    "color": [60, 105, 205],
+    "stripe_color": [18, 18, 22],
+    "eye_color": [255, 215, 0],
+    "description": "Narz base theme — blue body, black accents"
+  },
+  "pink-red": {
+    "name": "Pink-Red",
+    "color": [240, 130, 175],
+    "stripe_color": [205, 55, 50],
+    "eye_color": [90, 200, 220],
+    "description": "Birky base theme — pink body, red accents"
   }
 }
