@@ -7,6 +7,8 @@ PM canon = **Project M 3.6**. Status per ADR-0003 provenance (FOUND / GUESS / TU
 > Complements `docs/pm-reference/00-overview.md` (prose overview); this file is the greppable
 > by-category pointer table. One line per entry; detail lives in the linked doc. Append a row when
 > a mechanic is researched/validated (spikes #538, #539, …).
+>
+> Part of the parity doc set — front door: [`docs/project-m-parity.md`](./project-m-parity.md).
 
 The **`Constant`** column names the bare `combat/provenance.py` key for rows that map 1:1 to a single
 constant (blank for compound/mechanic rows). `tests/test_tuning_provenance.py` gates it: a keyed row's

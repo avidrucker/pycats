@@ -9,6 +9,20 @@ re-investigated from scratch (cf. the #7 / #10 churn). This file is that home.
 documents the Project M *baseline* — how PM behaves. **This** doc records where pycats
 *departs* from that baseline. The reference docs' "pycats status" footers link here.
 
+## Parity docs map
+
+**Start here.** This file is the front door for "where does pycats stand vs Project M?"
+Each of the other parity docs answers one narrower question — go to it directly:
+
+| I want… | Go to | Its role |
+|---|---|---|
+| the **at-a-glance status light** (🟢🟡🔴 per tuning constant) | [`parity-status.md`](parity-status.md) | generated from `pycats/combat/provenance.py` — **do not hand-edit** |
+| to know **what a `⚠`/`🔬`/`❓`, a `FOUND`/`GUESS`/`TUNED`/`DIVERGENCE`, or a 🟢/🟡/🔴 means** | [`parity-labeling-legend.md`](parity-labeling-legend.md) | the 3-axis labeling **key** (open-work · provenance · parity light) |
+| a **greppable index** of every researched PM mechanic → its local doc + primary source | [`project-m-rules-by-category.md`](project-m-rules-by-category.md) | the by-category **map** into `pm-reference/` |
+| why **hitbox/hurtbox positions can't reach pixel-parity** | [`research/parity-notes-regarding-hurtbox-values.md`](research/parity-notes-regarding-hurtbox-values.md) | the position **fidelity-ceiling** finding (#310) |
+
+This doc itself is the **rationale** home: where pycats deliberately diverges, and *why*.
+
 ## How to add an entry
 
 Append a `###` entry in the same shape — keep it short, link the deciding issue, and

@@ -116,6 +116,6 @@ grep -nE 'FOUND|GUESS|TUNED|DIVERGENCE' pycats/combat/provenance.py   # Axis B: 
 
 - [`docs/research/analysis-brainstorming-research-233.md`](./research/analysis-brainstorming-research-233.md) — design-of-record (#448): the reasoning, de-confliction, pre-mortem.
 - [RULES.md](../RULES.md) → "PM-parity markers" and "Changing values" — the enforced conventions.
-- [`docs/project-m-parity.md`](./project-m-parity.md) — where pycats deliberately diverges from Project M.
-- [`docs/current-parity-progress-report.md`](./current-parity-progress-report.md) — the standing parity progress narrative.
+- [`docs/project-m-parity.md`](./project-m-parity.md) — the parity **front door** (where pycats deliberately diverges, plus the map to every other parity doc).
+- [`docs/parity-status.md`](./parity-status.md) — the generated Axis-C parity light (live status).
 - Umbrella **#451** (rollout), Axis A **#408**, Axis B **#233** (registry + ADR-0003).

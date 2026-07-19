@@ -118,7 +118,7 @@ unchecked.**
 | `docs/research/air-dodge-vertical-momentum-findings.md` | #23 findings; air dodge is Brawl-style, PM is Melee-style → filed #184 |
 | `pycats/combat`/`entities/fighter.py` + `tests/test_crouch_cancel.py` | #135 crouch-cancel 0.67× + able-to-fail regression test |
 | `docs/research/2026-06-29-pm-cpu-difficulty-levels-1-9.md` | #148 deterministic Lv 1/3/5/7/9 mapping; #166 seam resolves #48's RNG-free tension |
-| `docs/current-parity-progress-report.md` | #189 codebase-wide parity report (6 parallel auditors) + #194 correction |
+| `docs/current-parity-progress-report.md` *(removed #744 — perishable snapshot went stale; see git history)* | #189 codebase-wide parity report (6 parallel auditors) + #194 correction |
 | #191 comment | banned-words candidate table + ~10-word shortlist |
 | `RULES.md` (this commit) | verify-delegated-findings-before-filing bullet |
 

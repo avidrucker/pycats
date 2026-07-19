@@ -5,7 +5,7 @@
 > author `FighterData` with confidence. Read-only research → this spec. Mirrors the Nalio
 > spec (#119, `research-spec-119-mario-cat-pm.md`) and Birky's scope (#229).
 >
-> **Name:** `Narz` (canonical, per `docs/current-parity-progress-report.md`). "Marth" =
+> **Name:** `Narz` (canonical, per `pycats/characters/roster.py` `ARCHETYPE_NAME`). "Marth" =
 > the *archetype emulated*; internal ids use `narz`. Unit convention (#120): combat numbers
 > transfer raw; spatial values scale by `PX_PER_UNIT ≈ 5.4`, anchored on Mario/Nalio.
 > Primary source: [rukaidata PM3.6 Marth](https://rukaidata.com/PM3.6/Marth/) +
