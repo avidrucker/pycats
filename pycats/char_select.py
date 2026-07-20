@@ -13,7 +13,6 @@ import pygame
 from . import runtime_settings, text_utils
 from .characters.roster import ARCHETYPE_DEFAULT_SKIN, ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
 from .config import (
-    BLACK,
     CHAR_SELECT_BG_COLOR,
     CHAR_SELECT_CURSOR_WIDTH,
     CHAR_SELECT_GRID_COLS,
@@ -22,7 +21,6 @@ from .config import (
     CHAR_SELECT_TILE_SPACING,
     CHAR_SELECT_TITLE_COLOR,
     CHAR_SELECT_TITLE_SIZE,
-    OVERLAY_DIM_ALPHA,
     P1_UI_COLOR,
     P2_UI_COLOR,
     SCREEN_HEIGHT,
@@ -73,13 +71,14 @@ SLOT_STUB_BG_COLOR = (34, 34, 40)  # dim fill for empty/stub slots (distinct fro
 SLOT_STUB_BORDER_COLOR = (90, 90, 100)  # gray border + label for P3/P4 stubs
 SLOT_EMPTY_BORDER_COLOR = (120, 120, 130)  # unselected P1/P2 placeholder border + label
 
-# Start overlay (dim uses the shared config.OVERLAY_DIM_ALPHA + config.BLACK, #450)
-START_BOX_WIDTH = 400
-START_BOX_HEIGHT = 150
-START_BOX_BG_COLOR = (40, 40, 50)
-START_ACCENT_COLOR = (100, 255, 100)  # green — box border + "START" title
-START_TITLE_FONT_SIZE = 48
-START_HINT_FONT_SIZE = 24
+# Start prompt (#663): a non-obscuring message strip in the band BELOW the grid (below the
+# last tile row, above the Player Choice Slot row) — replaces the old full-screen dim +
+# modal box so the grid + live skin previews stay visible and cycling stays interactive.
+START_PROMPT_Y = 322  # "START" line — sits in the gap under the grid names
+START_PROMPT_HINT_GAP = 28  # vertical step to each hint line below "START"
+START_ACCENT_COLOR = (100, 255, 100)  # green — the "START" word
+START_TITLE_FONT_SIZE = 30
+START_HINT_FONT_SIZE = 22
 
 
 class CharacterSelector:
@@ -188,7 +187,10 @@ class CharacterSelector:
         if self.start_screen_delay > 0:
             self.start_screen_delay -= 1
 
-        # Handle start screen input
+        # Handle start-prompt input (#663). The prompt is now a non-obscuring strip, not a
+        # modal, so left/right still cycles each confirmed player's skin here (the #650
+        # behaviour that the old early-return killed). B (special) unconfirms / goes back;
+        # A (attack) is handled by the main loop via ready_to_start.
         if self.show_start_screen:
             if self.p1_input_cooldown == 0:
                 if self.p1_controls["special"] in pressed_keys:
@@ -198,6 +200,16 @@ class CharacterSelector:
                     self.show_start_screen = False
                     self.start_screen_delay = 0
                     self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
+                elif self.p1_controls["left"] in pressed_keys:
+                    self.p1_palette = self._cycle_palette(
+                        self.p1_selected, self.p1_palette, -1, self._skins_locked_against(1)
+                    )
+                    self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
+                elif self.p1_controls["right"] in pressed_keys:
+                    self.p1_palette = self._cycle_palette(
+                        self.p1_selected, self.p1_palette, +1, self._skins_locked_against(1)
+                    )
+                    self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
 
             if self.p2_input_cooldown == 0:
                 if self.p2_controls["special"] in pressed_keys:
@@ -207,7 +219,17 @@ class CharacterSelector:
                     self.show_start_screen = False
                     self.start_screen_delay = 0
                     self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
-            # Don't return here - let the main game loop handle A presses for starting
+                elif self.p2_controls["left"] in pressed_keys:
+                    self.p2_palette = self._cycle_palette(
+                        self.p2_selected, self.p2_palette, -1, self._skins_locked_against(2)
+                    )
+                    self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
+                elif self.p2_controls["right"] in pressed_keys:
+                    self.p2_palette = self._cycle_palette(
+                        self.p2_selected, self.p2_palette, +1, self._skins_locked_against(2)
+                    )
+                    self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
+            # Don't fall through to grid movement; the main loop handles A (start).
             return
 
         # Handle P1 input (character selection)
@@ -560,9 +582,10 @@ class CharacterSelector:
         # Control instructions at bottom
         self._draw_control_instructions(screen)
 
-        # Start overlay (if both players are confirmed)
+        # Start prompt (if both players are confirmed) — a message strip below the grid,
+        # not a modal, so the grid + live skin previews stay visible (#663).
         if self.show_start_screen:
-            self._draw_start_overlay(screen)
+            self._draw_start_prompt(screen)
 
     def _draw_cursor(self, screen, cursor_pos, color, label, large=True):
         """Draw a player's cursor around a tile."""
@@ -716,50 +739,29 @@ class CharacterSelector:
             center=True,
         )
 
-    def _draw_start_overlay(self, screen):
-        """Draw the start overlay that partially obscures the grid when both players are confirmed."""
-        # Create a semi-transparent overlay
-        overlay_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-        overlay_surface.set_alpha(OVERLAY_DIM_ALPHA)
-        overlay_surface.fill(BLACK)
-        screen.blit(overlay_surface, (0, 0))
+    def _draw_start_prompt(self, screen):
+        """Draw the start prompt as a non-obscuring message strip below the grid (#663).
 
-        # Calculate center position for the start box
-        box_width = START_BOX_WIDTH
-        box_height = START_BOX_HEIGHT
-        box_x = (SCREEN_WIDTH - box_width) // 2
-        box_y = (SCREEN_HEIGHT - box_height) // 2
-
-        # Draw the start box background
-        start_box = pygame.Rect(box_x, box_y, box_width, box_height)
-        pygame.draw.rect(screen, START_BOX_BG_COLOR, start_box)
-        pygame.draw.rect(screen, START_ACCENT_COLOR, start_box, 3)
-
-        # Draw "START" text
+        Replaces the old full-screen dim + modal box: same text ("START", "Press A to start
+        the match", "Press B to go back"), but drawn in the empty band under the tile row and
+        above the Player Choice Slots, so the grid + live skin previews stay fully visible and
+        players can keep cycling skins (left/right) before starting."""
+        cx = SCREEN_WIDTH // 2
         text_utils.render_text(
-            screen,
-            "START",
-            (SCREEN_WIDTH // 2, box_y + 40),
-            START_TITLE_FONT_SIZE,
-            START_ACCENT_COLOR,
-            center=True,
+            screen, "START", (cx, START_PROMPT_Y), START_TITLE_FONT_SIZE, START_ACCENT_COLOR, center=True
         )
-
-        # Draw instruction text
         text_utils.render_text(
             screen,
             "Press A to start the match",
-            (SCREEN_WIDTH // 2, box_y + 80),
+            (cx, START_PROMPT_Y + START_PROMPT_HINT_GAP),
             START_HINT_FONT_SIZE,
             WHITE,
             center=True,
         )
-
-        # Draw cancel instruction
         text_utils.render_text(
             screen,
             "Press B to go back",
-            (SCREEN_WIDTH // 2, box_y + 110),
+            (cx, START_PROMPT_Y + 2 * START_PROMPT_HINT_GAP),
             START_HINT_FONT_SIZE,
             WHITE,
             center=True,
