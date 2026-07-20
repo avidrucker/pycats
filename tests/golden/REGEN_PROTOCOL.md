@@ -1,11 +1,22 @@
 # Golden regen-review protocol (S4)
 
-The golden tests (`tests/test_golden.py`) compare a deterministic battle's
-per-frame snapshots against a committed baseline in `tests/golden/<name>.json`.
-They catch **any** divergence — but the raw `.json` is a large, opaque blob, and
-`PYCATS_UPDATE_GOLDENS=1` re-records it with **zero scrutiny**. That makes it easy
-to launder a regression into a new baseline ("tests failed → regen → green").
-This protocol exists so a regen is **reviewed, not rubber-stamped**.
+Three test modules honor `PYCATS_UPDATE_GOLDENS=1` and record a committed
+baseline under `tests/golden/`:
+
+| Module | Golden(s) | Sidecar? |
+|---|---|---|
+| `tests/test_golden.py` | sim per-frame snapshots — `combat`, `default`, `full_match`, `two_npc` (`<name>.json`) | yes — `<name>.summary.json` |
+| `tests/test_golden_summary.py` | asserts those `.summary.json` sidecars stay in lock-step with the run | (the sidecars themselves) |
+| `tests/test_screen_parity.py` | statechart screen-flow trace — `screen_parity.json` | no (single FSM-trace blob) |
+
+The `test_golden.py` goldens compare a deterministic battle's per-frame snapshots
+against `tests/golden/<name>.json`. They catch **any** divergence — but the raw
+`.json` is a large, opaque blob, and `PYCATS_UPDATE_GOLDENS=1` re-records it with
+**zero scrutiny**. That makes it easy to launder a regression into a new baseline
+("tests failed → regen → green"). This protocol exists so a regen is **reviewed,
+not rubber-stamped**. The reviewable sidecar layer below applies to the sim
+goldens; `screen_parity.json` has no sidecar, so review its diff directly (the
+transition sequence must change only where a screen/statechart change explains it).
 
 ## Two artifacts per golden
 
@@ -59,9 +70,20 @@ silent regen.
 ## How to regen
 
 ```
-PYCATS_UPDATE_GOLDENS=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
-  PYTHONPATH=. .venv/bin/python -m pytest tests/test_golden.py -q
+make goldens
 ```
 
-This rewrites both `<name>.json` and `<name>.summary.json`. Commit them together
-with the code change that justifies them.
+This runs the three flag-honoring modules above with `PYCATS_UPDATE_GOLDENS=1`
+(headless env supplied by the Makefile) and prints a review reminder. It rewrites
+every `<name>.json`, its `.summary.json` sidecar (sim goldens), and
+`screen_parity.json` in one command. Commit them together with the code change
+that justifies them.
+
+Equivalent raw invocation (if you can't use `make` — e.g. a partial regen of one
+module):
+
+```
+PYCATS_UPDATE_GOLDENS=1 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
+  PYTHONPATH=. .venv/bin/python -m pytest -q \
+  tests/test_golden.py tests/test_golden_summary.py tests/test_screen_parity.py
+```
