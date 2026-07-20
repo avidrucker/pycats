@@ -436,6 +436,18 @@ Study tree do not inherit this rule.
   you never attribute a pre-existing failure to your change, or ship on top of a
   broken baseline. (#177; fleet merge race.)
 
+- **Move the session into the worktree right after `pmtools claim` — call the
+  `EnterWorktree` tool with the worktree path.** `claim` runs `git worktree add` (an
+  external command): it creates the worktree directory on disk but does **not** change
+  the session's working directory, so the shell stays pinned to the main checkout.
+  Leaving it there forces a `cd <worktree>` prefix on every command and hides the real
+  cwd from the human — the footgun behind editing or running against `main` instead of
+  the worktree (#763; error rows id=150 wrong-checkout, id=158 wrong run-command).
+  `EnterWorktree` with the claimed path changes cwd for real: bare commands run in the
+  worktree, `CLAUDE.md`/memory reload for that directory, `pwd` is accurate, and the
+  #769 run/sim `cd` becomes implicit. Do this before the suite run above so pytest
+  imports the worktree's package. (Return to main at close time — see "Closing work".)
+
 ## Closing work
 
 The fleet closes via **`pmtools close`**, which owns the racy push to `main` and
@@ -454,15 +466,20 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    MUST carry the `Closes #N` keyword: it is both the GitHub auto-close trigger
    *and* exactly what `pmtools close` scans for (and recovers on). `git log
    --oneline` only shows the subject — put the keyword in the body, not the title.
-3. **Land + tear down with `cd <main> && pmtools close <N>`, run from the main
-   checkout.** `close` resolves the worktree + branch from the issue number
-   (pmtools#104, `008cb2a`), so run it from the main repo root — **not** from inside
-   the worktree it deletes. It loops fetch → rebase `origin/main` → push `HEAD:main`
-   until it lands, then — only after confirming the commit reached `origin/main` —
-   deletes the claim ref, closes the issue, and removes the worktree + branch.
-   Because your shell stayed in the main checkout the whole time, it is never
-   stranded in a deleted directory. (Running from *inside* the worktree still works
-   but strands your shell — prefer from-main.)
+3. **Return the session to main with `ExitWorktree keep`, then land + tear down with
+   `pmtools close <N>` from the main checkout.** Because you entered the worktree at
+   claim time (see "Claiming work"), the session is now *inside* the worktree — call
+   the `ExitWorktree` tool with `action: keep` to move it back to the main checkout
+   first. Use **`keep`**, never `remove`: `pmtools close` owns the actual teardown, so
+   your job is only to leave the directory, not delete it. Then run `close` from the
+   main repo root — it resolves the worktree + branch from the issue number
+   (pmtools#104, `008cb2a`), so it must run from main, **not** from inside the worktree
+   it deletes. It loops fetch → rebase `origin/main` → push `HEAD:main` until it lands,
+   then — only after confirming the commit reached `origin/main` — deletes the claim
+   ref, closes the issue, and removes the worktree + branch. Exiting to main first
+   keeps your shell from being stranded in the deleted directory. (No-code
+   decision/research tickets close via `gh issue close` + `pmtools release`; the same
+   `ExitWorktree keep` applies before running them from main.)
 4. **Run the pre-close error self-audit.** Before posting the closing comment,
    re-read the session from claim → now, enumerate every log-error trigger event
    (including resolved ones), log any missing rows (`pmtools error log`), and include
