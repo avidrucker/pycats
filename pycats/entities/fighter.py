@@ -43,6 +43,7 @@ from ..combat.knockback import (
 from ..combat.shield import shield_break_stun_frames, shieldstun_frames
 from ..config import (
     BLAST_PADDING,
+    BLAST_PADDING_X,
     CROUCH_CANCEL_FACTOR,
     DASH_DURATION,
     DODGE_AIR_SPEED,
@@ -448,9 +449,12 @@ class Fighter:
 
     # ============================================================= KO / respawn
     def _outside_blast_zone(self) -> bool:
+        # Horizontal (left/right) uses the wider BLAST_PADDING_X (#733, temporary
+        # game-feel experiment — see config.py); vertical (top/bottom) stays on
+        # BLAST_PADDING.
         return (
-            self.rect.right < -BLAST_PADDING
-            or self.rect.left > SCREEN_WIDTH + BLAST_PADDING
+            self.rect.right < -BLAST_PADDING_X
+            or self.rect.left > SCREEN_WIDTH + BLAST_PADDING_X
             or self.rect.bottom < -BLAST_PADDING
             or self.rect.top > SCREEN_HEIGHT + BLAST_PADDING
         )

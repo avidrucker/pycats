@@ -1,5 +1,5 @@
 {
-  "attack_active_frames": 156,
+  "attack_active_frames": 170,
   "final_phase": "in_play",
   "frames": 900,
   "players": {
@@ -22,7 +22,7 @@
       "character": "nalio",
       "ko_frames": [
         185,
-        680
+        692
       ],
       "lives_end": 1,
       "lives_min": 1,

@@ -410,7 +410,16 @@ SHIELD_COLOR = (80, 180, 255)
 
 # ---------------- stocks / blast zone --------
 INITIAL_LIVES = 3
-BLAST_PADDING = 50  # px beyond screen = KO
+BLAST_PADDING = 50  # px beyond screen = KO (vertical, top/bottom)
+# TEMPORARY game-feel experiment (#733, owner-requested 2026-07-20): a *horizontal*
+# KO boundary widened so a fighter may travel ~100px off the left/right screen edge
+# before being KO'd — more sideways recovery room. This is NOT a Project M-faithful /
+# ratified value; it is an experimental playtest knob, deliberately unregistered in the
+# tuning-provenance registry (it is not a settled TUNED design value). If a PM-canon
+# horizontal blast-zone width later surfaces, it supersedes this — see the FD blast-zone
+# note above ("Blast zones stay on the existing BLAST_PADDING model"). The vertical
+# (top/bottom) KO boundary stays on BLAST_PADDING (50).
+BLAST_PADDING_X = 100  # px beyond L/R screen edge = KO (temporary; see note above)
 RESPAWN_DELAY_FRAMES = int(2 * FPS)  # 2 s freeze before respawn
 
 # ---------------- win screen ----------------
