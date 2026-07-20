@@ -26,7 +26,13 @@ from ..config import (  # noqa: E402
 )
 from ..core.input import merge_frames  # noqa: E402
 from ..core.physics import resolve_player_push  # noqa: E402
-from ..domain import Selection, Skin, build_fighter, character_for  # noqa: E402
+from ..domain import (  # noqa: E402
+    Selection,
+    Skin,
+    assign_distinct_skins,
+    build_fighter,
+    character_for,
+)
 from ..entities import Player  # noqa: E402
 from ..entities.ledge import ledges_from_platforms  # noqa: E402
 from ..entities.stages import BATTLEFIELD  # noqa: E402
@@ -103,6 +109,12 @@ def build_players(p1_char=None, p2_char=None):
     # byte-identical. Mechanics still resolve the per-player key (unknown/None → default cat).
     sel1 = Selection(character_for(p1_char), _skin_for(p1_char, "calico"))
     sel2 = Selection(character_for(p2_char), _skin_for(p2_char, "tabby"))
+    # #718: two players on the SAME Character would otherwise render identically (both
+    # skins come from `palette_for(char_key)`). De-collide through the #755 domain layer:
+    # P2 falls to the next available skin in that Character's pool. Different-Character and
+    # the `None`/no-key legacy path (distinct calico/tabby) pass through untouched, so the
+    # sim goldens (#244) stay byte-identical.
+    sel1, sel2 = assign_distinct_skins((sel1, sel2))
     built1 = build_fighter(sel1)
     built2 = build_fighter(sel2)
     p1 = Player(

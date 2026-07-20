@@ -37,6 +37,14 @@ def test_named_archetype_colours_from_its_own_palette():
     assert p1.char_color == tuple(palette_for("narz")["color"])
 
 
+def test_same_character_mirror_defaults_to_distinct_skins():
+    # #718: a Nalio-vs-Nalio mirror must NOT render two identical cats. P2's skin, when it
+    # would collide with P1's, defaults to the next available skin in Nalio's pool
+    # (via the #755 domain layer). Able-to-fail: today both resolve to palette_for("nalio").
+    p1, p2, _ = build_players("nalio", "nalio")
+    assert p1.char_color != p2.char_color
+
+
 def test_testcat_is_not_in_player_facing_roster():
     # #648 out-of-scope guard: testcat stays a dev fixture, never in the char-select grid.
     assert "testcat" not in ARCHETYPE_ROSTER
