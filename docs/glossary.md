@@ -39,7 +39,8 @@ doc or ticket, it carries the meaning recorded below.
 | **hitbox** | Damaging collision shape on a swung limb, active only during a move's active frames. | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#the-hitbox--hurtbox-model) |
 | **hurtbox** | The vulnerable body region where a hit can connect. | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#the-hitbox--hurtbox-model) |
 | **capsule** (swept hitbox) | Stretched swept-circle hitbox so fast limbs don't tunnel between frames. | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#the-hitbox--hurtbox-model) |
-| **intangibility** | A state with no hurtbox interaction (dodges, ledge/respawn invincibility). | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#the-hitbox--hurtbox-model) |
+| **intangibility** | A state where hitboxes pass through with no contact — no damage, knockback, hitstun, or attacker hitlag (dodges, ledge grab/getup). Distinct from *invincibility*. | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#the-hitbox--hurtbox-model) |
+| **invincibility** | A state where a hit **connects** (attacker takes hitlag) but the defender's damage / knockback / hitstun are zeroed — e.g. the respawn descent window (#506). Distinct from *intangibility* (pass-through); see [ADR-0009](./adr/0009-respawn-immunity-tangibility-enum.md). | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#the-hitbox--hurtbox-model) |
 | **sweetspot / sourspot** | The strong tip hitbox vs the weaker near-body hitbox on one move. | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#multi-hitbox-moves--hitbox-id-priority) |
 | **one-connect rule** | A move hits a given fighter only once per use. | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#multi-hitbox-moves--hitbox-id-priority) |
 | **hitbox-id priority** | Among a move's overlapping boxes, the lowest id (highest priority) applies. | [hitboxes-priority](./pm-reference/combat-hitboxes-priority.md#multi-hitbox-moves--hitbox-id-priority) |
@@ -103,7 +104,7 @@ doc or ticket, it carries the meaning recorded below.
 |---|---|---|
 | **action state** | One enumerated action a fighter occupies at a time (with an orthogonal tangibility flag). | [fighter-states](./pm-reference/fighter-states.md#the-model) |
 | **subaction** | The animation driven by an action, in a separate ID namespace. | [fighter-states](./pm-reference/fighter-states.md#the-model) |
-| **tangibility** | The vulnerable / intangible / armored flag set by the current state. | [fighter-states](./pm-reference/fighter-states.md#the-model) |
+| **tangibility** | A fighter's per-frame protective state — `TANGIBLE` / `INTANGIBLE` / `INVINCIBLE` — derived as the most-protective active immunity timer, with **intangible outranking invincible**. (ARMOR is a separate, deferred knockback-resistance axis.) | [ADR-0009](./adr/0009-respawn-immunity-tangibility-enum.md) |
 | **helpless / special-fall** | An actionless airborne state after up-B/airdodge, until landing. | [fighter-states](./pm-reference/fighter-states.md#state-categories) |
 | **tumble** | A high-knockback flailing state; can be teched or DI'd. | [fighter-states](./pm-reference/fighter-states.md#state-categories) |
 | **knockdown / prone** | Lying on the ground after a hard launch. | [fighter-states](./pm-reference/fighter-states.md#state-categories) |
@@ -117,7 +118,7 @@ doc or ticket, it carries the meaning recorded below.
 |---|---|---|
 | **ledge sweetspot** | The catch region where a fighter snaps onto a grabbable edge. | [ledge-mechanics](./pm-reference/ledge-mechanics.md#grabbing-the-ledge) |
 | **ledge-hang** | The hang state holding the ledge, with ledge intangibility. | [ledge-mechanics](./pm-reference/ledge-mechanics.md#ledge-hang--intangibility) |
-| **ledge intangibility** | The invincibility burst on grab that decays with repeated grabs (curbs stalling). | [ledge-mechanics](./pm-reference/ledge-mechanics.md#ledge-hang--intangibility) |
+| **ledge intangibility** | The intangibility burst on ledge grab that decays with repeated grabs (curbs stalling). | [ledge-mechanics](./pm-reference/ledge-mechanics.md#ledge-hang--intangibility) |
 | **neutral getup** | Climb onto the stage from the ledge; slow and punishable at high percent. | [ledge-mechanics](./pm-reference/ledge-mechanics.md#getup-options) |
 | **ledge roll** | Roll onto the stage past the edge; vulnerable during the roll. | [ledge-mechanics](./pm-reference/ledge-mechanics.md#getup-options) |
 | **ledge attack** | Climb with a hitbox to clear the close-edge space. | [ledge-mechanics](./pm-reference/ledge-mechanics.md#getup-options) |
