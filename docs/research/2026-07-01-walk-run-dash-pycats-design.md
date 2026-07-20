@@ -1,5 +1,16 @@
 # Walk / dash / run — pycats parity design (digital input) (#374)
 
+> ⚠️ **SUPERSEDED IN PART (2026-07-20, #801).** D2/D3 below ratified double-tap-dash
+> **AND** mod-key-run as *complementary, both permanently on, with no flag*. That
+> additive model is **superseded** by the #801 ruling (child of umbrella #799): the
+> dash/run trigger is now **exactly one of {shift-mod, double-tap} at a time —
+> mutually exclusive (XOR), mode-selected, never both**, with **shift-mod the default**
+> and double-tap the opt-in alternate. The `dash_trigger_mode` selector lives in the
+> **control/keybind layer** (an explicit sim input), not `runtime_settings`. The rest of
+> this doc (the walk/dash/run *state* model, speeds, the `run`→`walk` rename, golden-safety
+> reasoning) still stands. See #801 and `docs/research/2026-07-20-shift-mod-dash-run-findings.md`
+> (#800). Implementers of #388 slice 4 must follow #801's XOR model, **not** D2's both-on.
+
 > Design/architect ratification (#374, the design half of the movement-parity work;
 > the PM facts are #373's `docs/research/2026-07-01-pm-walk-run-dash-mechanics.md`).
 > Records the reporter-ratified scheme for adding PM's grounded-movement layer to a
@@ -15,6 +26,10 @@ ticket (does a keyboard port even need it for "full PM parity"?), because it map
 poorly to digital input and is not a basic movement.
 
 **D2 — Input scheme: double-tap-dash (B) + mod-key-run (C), with hold = walk.**
+> ⚠️ **SUPERSEDED by #801 (2026-07-20):** the two triggers are NOT both-on/complementary.
+> They are **mutually exclusive (XOR), mode-selected** (default shift-mod). The table below
+> describes the *retired* additive scheme — read it as history, not the current design.
+
 PM's walk↔dash split is analog stick magnitude, which a keyboard lacks, so the split is
 invented as:
 
@@ -25,6 +40,10 @@ invented as:
 | **Mod-key + direction** | **Run** (direct) | the modifier route straight into sustained run, skipping the dash burst |
 
 **D3 — Full basic parity, and it stays golden-safe *without* a flag.**
+> ⚠️ **PARTLY SUPERSEDED by #801:** a `dash_trigger_mode` selector now DOES exist (the
+> XOR mode-switch). Golden-safety is unchanged and still needs no *golden* flag — the sim
+> emits neither trigger under either mode — but the "no flag at all" framing is retired.
+
 The reporter wants walking + running + dashing (not a reduced/gated model). Because the
 faster states are reached **only** through *new* inputs (double-tap / mod-key) that the
 scripted goldens and the default controller never emit, plain-hold stays walk = today's
