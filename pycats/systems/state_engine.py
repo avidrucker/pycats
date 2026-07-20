@@ -17,7 +17,7 @@ class StateEngine(Protocol):
     # Defensive-status region label ("vulnerable" | "intangible"). The
     # statechart backend mirrors this in an orthogonal region; the
     # authoritative value used elsewhere is Player.defensive_status, computed
-    # directly from Player.invulnerable.
+    # directly from Player.intangible.
     defensive_status: str
 
     def tick(self, ctx: Any) -> None: ...

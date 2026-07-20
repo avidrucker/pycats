@@ -1,11 +1,11 @@
 """Grabs-left dots above the head (#657) — visualise PM's 5-regrab ledge cutoff.
 
 The dot count is a pure function of the shipped #656 counter, `render_battle.grabs_left_dots`:
-each dot = one remaining grab (of LEDGE_REGRAB_INVULN_CUTOFF) that still grants the full
+each dot = one remaining grab (of LEDGE_REGRAB_INTANGIBLE_CUTOFF) that still grants the full
 intangibility burst. Pinned to `ledge_regrab_count` (1 on the first grab): first grab → 5
 dots, fifth → 1, sixth (past cutoff) → none; count 0 → none. Honours the status-bars toggle
 and never suppresses (nor is suppressed by) the above-head timer bars. Spec:
-docs/pm-reference/ledge-regrab-invuln-and-display.md. Harness mirrors test_status_timer_bar.py.
+docs/pm-reference/ledge-regrab-intangible-and-display.md. Harness mirrors test_status_timer_bar.py.
 """
 
 import types
@@ -15,7 +15,7 @@ import pytest
 
 from pycats import render_battle as rb
 from pycats.config import (
-    LEDGE_REGRAB_INVULN_CUTOFF,
+    LEDGE_REGRAB_INTANGIBLE_CUTOFF,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
     SHIELD_MAX_HP,
 )
@@ -31,13 +31,13 @@ def _fake(ledge_regrab_count=0, ledge_regrab_lockout_timer=0, state="idle", cx=1
         stun_timer=0,
         prone_timer=0,
         ledge_regrab_lockout_timer=ledge_regrab_lockout_timer,
-        invulnerable=False,
+        intangible=False,
         dodge_timer=0,
         getup_roll_timer=0,
         getup_attack_timer=0,
         smash_charge_timer=0,
-        ledge_invuln_timer=0,
-        ledge_invuln_granted=0,
+        ledge_intangible_timer=0,
+        ledge_intangible_granted=0,
         rect=pygame.Rect(cx - 20, top, 40, 60),
     )
     ns.fighter = ns
@@ -63,12 +63,12 @@ def test_dots_decrement_across_the_five_grab_chain():
 
 def test_no_dots_before_a_chain_or_past_the_cutoff():
     assert rb.grabs_left_dots(_fake(ledge_regrab_count=0)) == 0  # no chain / just reset
-    assert rb.grabs_left_dots(_fake(ledge_regrab_count=LEDGE_REGRAB_INVULN_CUTOFF + 1)) == 0  # 6th, cut off
+    assert rb.grabs_left_dots(_fake(ledge_regrab_count=LEDGE_REGRAB_INTANGIBLE_CUTOFF + 1)) == 0  # 6th, cut off
     assert rb.grabs_left_dots(_fake(ledge_regrab_count=9)) == 0  # deep past cutoff
 
 
 def test_fifth_grab_is_one_dot_and_sixth_is_none():
-    # The readability contract: 1 dot on the 5th (last invuln) grab, 0 on the 6th.
+    # The readability contract: 1 dot on the 5th (last intangible) grab, 0 on the 6th.
     assert rb.grabs_left_dots(_fake(ledge_regrab_count=5)) == 1
     assert rb.grabs_left_dots(_fake(ledge_regrab_count=6)) == 0
 

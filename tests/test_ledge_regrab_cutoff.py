@@ -14,8 +14,8 @@ from pycats import config
 from pycats.core.input import InputFrame
 from pycats.entities import Player
 from pycats.entities.ledge import (
-    ledge_invuln_frames,
-    ledge_regrab_invuln_frames,
+    ledge_intangible_frames,
+    ledge_regrab_intangible_frames,
     ledges_from_platforms,
 )
 from pycats.entities.platform import Platform
@@ -70,17 +70,17 @@ def _regrab(p, plats, ledges):
 
 
 def test_grabs_1_through_5_grant_the_full_burst():
-    full = ledge_invuln_frames()
-    for n in range(1, config.LEDGE_REGRAB_INVULN_CUTOFF + 1):  # 1..5
-        assert ledge_regrab_invuln_frames(n) == full
+    full = ledge_intangible_frames()
+    for n in range(1, config.LEDGE_REGRAB_INTANGIBLE_CUTOFF + 1):  # 1..5
+        assert ledge_regrab_intangible_frames(n) == full
 
 
 def test_grab_6_and_beyond_grant_only_the_residual():
     residual = config.LEDGE_POST_CUTOFF_RESIDUAL_FRAMES
-    assert ledge_regrab_invuln_frames(6) == residual
-    assert ledge_regrab_invuln_frames(9) == residual
+    assert ledge_regrab_intangible_frames(6) == residual
+    assert ledge_regrab_intangible_frames(9) == residual
     # able-to-fail guard: the residual is a real cut, not accidentally equal to the burst
-    assert residual < ledge_invuln_frames()
+    assert residual < ledge_intangible_frames()
     assert residual > 0  # non-zero: PM's "a few frames" snap residual, not zero
 
 
@@ -91,15 +91,15 @@ def test_first_five_regrabs_grant_full_burst_sixth_is_residual():
     plats = _stage()
     ledges = ledges_from_platforms(plats)
     p = _player()
-    full = config.LEDGE_INVULN_BASE_FRAMES
+    full = config.LEDGE_INTANGIBLE_BASE_FRAMES
     for n in range(1, 6):  # grabs 1..5
         _regrab(p, plats, ledges)
         assert p.fighter.ledge_regrab_count == n
-        assert p.fighter.ledge_invuln_granted == full  # full burst
+        assert p.fighter.ledge_intangible_granted == full  # full burst
     _regrab(p, plats, ledges)  # 6th consecutive grab
     assert p.fighter.ledge_regrab_count == 6
-    assert p.fighter.ledge_invuln_granted == config.LEDGE_POST_CUTOFF_RESIDUAL_FRAMES  # cut
-    assert p.fighter.ledge_invuln_granted < full
+    assert p.fighter.ledge_intangible_granted == config.LEDGE_POST_CUTOFF_RESIDUAL_FRAMES  # cut
+    assert p.fighter.ledge_intangible_granted < full
 
 
 # --- reset: landing on the stage ---------------------------------------------
@@ -124,7 +124,7 @@ def test_landing_on_the_stage_resets_the_regrab_count():
     assert p.fighter.ledge_regrab_count == 0  # touching the stage reset the count
     _regrab(p, plats, ledges)
     assert p.fighter.ledge_regrab_count == 1  # counting starts over
-    assert p.fighter.ledge_invuln_granted == config.LEDGE_INVULN_BASE_FRAMES  # full again
+    assert p.fighter.ledge_intangible_granted == config.LEDGE_INTANGIBLE_BASE_FRAMES  # full again
 
 
 # --- reset: getting hit ------------------------------------------------------
@@ -142,7 +142,7 @@ def test_getting_hit_resets_the_regrab_count():
     assert p.fighter.ledge_regrab_count == 4
     # let the burst lapse so the hit connects (combat skips intangible defenders),
     # then a connecting hit knocks the hanger off AND resets the count.
-    for _ in range(config.LEDGE_INVULN_BASE_FRAMES + 1):
+    for _ in range(config.LEDGE_INTANGIBLE_BASE_FRAMES + 1):
         p.update(_empty_frame(), plats, _attacks(), ledges)
     attacker = _player()
     hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=10, angle=0, base_knockback=30.0, knockback_growth=100.0)

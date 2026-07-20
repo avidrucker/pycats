@@ -39,14 +39,14 @@ def test_reset_clears_transient_state_and_position():
     p.fighter.is_alive = False
     p.fighter.dodge_timer = p.fighter.hurt_timer = p.fighter.stun_timer = 9
     p._clock.start(p.fighter_data.moves["attack"])  # dirty the move clock -> attack_timer > 0
-    p.fighter.invulnerable = True
+    p.fighter.intangible = True
     p.fighter.percent = 80
     p.fighter.vel.update(7, -7)
     p.rect.center = (9999, 9999)
     p.reset_to_spawn()
     assert p.fighter.is_alive
     assert (p.fighter.dodge_timer, p.fighter.hurt_timer, p.fighter.stun_timer, p.attack_timer) == (0, 0, 0, 0)
-    assert p.fighter.invulnerable is False
+    assert p.fighter.intangible is False
     assert p.fighter.percent == 0
     assert (p.fighter.vel.x, p.fighter.vel.y) == (0, 0)
     assert p.rect.midbottom == (int(p.fighter.spawn_point.x), int(p.fighter.spawn_point.y))

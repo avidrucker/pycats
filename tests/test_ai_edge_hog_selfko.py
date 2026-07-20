@@ -83,7 +83,7 @@ def _run_a_full_hold_to_deny(*, jumps):
     p1.fighter.on_ground = False
     p1.fighter.vel.x = 0
     p1.fighter.vel.y = 0
-    p1.fighter.ledge_invuln_timer = 0
+    p1.fighter.ledge_intangible_timer = 0
     p1.fighter.jumps_remaining = jumps
     c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))  # edge_hog on @ lv9
     attacks = pg.sprite.Group()

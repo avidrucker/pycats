@@ -154,8 +154,8 @@ class Fighter:
         # is the authoritative "am I hanging" signal the statechart reads. No hang
         # timeout (#475: PM has no hang timer) — hang persists until the fighter acts.
         self.ledge_regrab_lockout_timer = 0  # post-release regrab suppression (#14)
-        self.ledge_invuln_timer = 0  # percent-scaled ledge-grab intangibility burst (#311)
-        self.ledge_invuln_granted = 0  # the burst's granted length at grab; INVULN bar denominator (#531)
+        self.ledge_intangible_timer = 0  # percent-scaled ledge-grab intangibility burst (#311)
+        self.ledge_intangible_granted = 0  # the burst's granted length at grab; INTANG bar denominator (#531)
         self.ledge_getup_timer = 0  # neutral ledge-getup climb window; edge frees at half (#311)
         self.ledge_regrab_count = 0  # consecutive ledge grabs w/o touching ground (#656);
         # drives the 5-regrab anti-plank cutoff. Resets on landing (_handle_landing) or
@@ -175,10 +175,10 @@ class Fighter:
         # Angled f-smash (#327 slice 4): None / "up" / "down", captured at the smash
         # press and applied (then cleared) at the fsmash's Attack spawn.
         self.smash_angle_dir = None
-        self.invulnerable_timer = 0  # invulnerability mid-dodge, post-respawn, or while ledge grabbing
+        self.intangible_timer = 0  # intangibility mid-dodge, post-respawn, or while ledge grabbing
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True  # players can only air dodge once per sustained jump/fall, until they land
-        self.invulnerable = False  # dodging / post-hit / respawn / ledge-grab invulnerability
+        self.intangible = False  # dodging / post-hit / respawn / ledge-grab intangibility
         # (#321/F3: done_attacking is a derived Player property now — no field here.)
 
         # ---------- shield / dodge flags ----------
@@ -308,8 +308,8 @@ class Fighter:
         if self.grabbed_ledge is not None:
             self.grabbed_ledge.occupied_by = None
         self.grabbed_ledge = None
-        self.ledge_invuln_timer = 0
-        self.invulnerable = False
+        self.ledge_intangible_timer = 0
+        self.intangible = False
         self.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
         self.on_ground = False
 
@@ -324,7 +324,7 @@ class Fighter:
         self.record_hit_received()  # Track that this player was hit
         self.ledge_regrab_count = 0  # getting hit resets the anti-plank regrab count (#656)
         # A connecting hit reaches receive_hit only past the ledge-grab intangibility
-        # burst (combat skips `invulnerable` defenders), so any hit that lands while
+        # burst (combat skips `intangible` defenders), so any hit that lands while
         # hanging knocks the fighter OFF the ledge (#475). Release the hang before the
         # knockback below so the launch actually carries — while grabbed_ledge is set,
         # Player.update pins the body and discards velocity. This is what lets a hanger
@@ -419,7 +419,7 @@ class Fighter:
                 self.wavedash_armed = False
                 self.landing_lag_timer = WAVEDASH_LANDING_LAG
                 self.dodge_timer = 0
-                self.invulnerable = False
+                self.intangible = False
             # Auto landing-velocity knockdown (#145): landing hard while still in
             # hitstun (tumble) without teching forces `prone` (#13). The hurt-timer
             # gate is what separates this from a normal jump landing (same impact
@@ -508,7 +508,7 @@ class Fighter:
         # update(), so these never tick down during death; clearing them here is
         # what keeps a player KO'd mid-hurt/stun (#9) or mid-dodge/attack (#31)
         # from carrying that state into its next life (a frozen dodge_timer, a
-        # leaked invulnerable=True, etc.).
+        # leaked intangible=True, etc.).
         self.respawn_timer = 0
         self.dodge_timer = 0
         self.hurt_timer = 0
@@ -523,8 +523,8 @@ class Fighter:
         self.ledge_regrab_count = 0  # a KO/respawn starts the anti-plank count fresh (#656)
         self.hitlag_timer = 0  # don't carry a freeze across a KO/respawn (#138)
         self.shieldstun_timer = 0  # nor a block-stun (#140)
-        self.invulnerable_timer = 0
-        self.invulnerable = False
+        self.intangible_timer = 0
+        self.intangible = False
         self.spot_dodge_shield_held = False
         self.cancel_smash_charge()  # don't carry a pending charge across KO/respawn (#327/3a)
         self.smash_angle_dir = None  # nor a pending aimed-fsmash angle (#327/4)
@@ -575,11 +575,11 @@ class Fighter:
         Holding left/right as the getup window ends rolls that way instead of a
         neutral stand. Grants intangibility for the roll and sets an initial
         horizontal velocity that decays under friction. ``direction`` is -1 (left)
-        or +1 (right). Reuses the same invulnerable/timer machinery as the dodge.
+        or +1 (right). Reuses the same intangible/timer machinery as the dodge.
         """
         self.getup_roll_timer = GETUP_ROLL_FRAMES
-        self.invulnerable = True
-        self.invulnerable_timer = GETUP_ROLL_FRAMES
+        self.intangible = True
+        self.intangible_timer = GETUP_ROLL_FRAMES
         self.vel.update(direction * GETUP_ROLL_SPEED, 0)
 
     def _start_dash(self, direction: int) -> None:
@@ -594,7 +594,7 @@ class Fighter:
 
     def _start_dodge(self, dir_x: int, dir_y: int = 0) -> None:
         self.dodge_timer = DODGE_TIME
-        self.invulnerable = True
+        self.intangible = True
         self.dodge_blocked_by_edge = False  # Reset edge blocking flag
         self.wavedash_armed = False  # only a diagonal-down air dodge re-arms it (below)
 

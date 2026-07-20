@@ -16,7 +16,7 @@ from pycats.systems.combat import process_hits
 
 def _player(rect, *, hurtbox_circles, facing_right=True):
     p = types.SimpleNamespace(
-        rect=rect, facing_right=facing_right, invulnerable=False, is_alive=True,
+        rect=rect, facing_right=facing_right, intangible=False, is_alive=True,
         fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)), moves={}),
         hits_received=0, hits_landed=0, last_damage=None, last_angle=None,
     )

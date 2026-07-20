@@ -5,7 +5,7 @@ Unit tests for circle-based hit detection in process_hits (Task 5).
 Test strategy:
   - Use lightweight synthetic player/attack stubs so we don't need pygame or a
     full game loop.  The combat system only reads these attributes:
-      player: invulnerable, is_alive, rect (for hurtbox origin), facing_right,
+      player: intangible, is_alive, rect (for hurtbox origin), facing_right,
               fighter_data.hurtbox.circles, receive_hit(), record_hit_landed()
       attack: active, owner, disappear_on_hit, hit_cx, hit_cy, hit_r,
               damage, angle, base_knockback, knockback_growth
@@ -40,12 +40,12 @@ def _make_fighter_data(hurtbox_circles):
 
 
 def _make_player(rect, *, hurtbox_circles, facing_right=True,
-                 invulnerable=False, is_alive=True):
+                 intangible=False, is_alive=True):
     """Return a lightweight namespace that satisfies combat's player contract."""
     p = types.SimpleNamespace(
         rect=rect,
         facing_right=facing_right,
-        invulnerable=invulnerable,
+        intangible=intangible,
         is_alive=is_alive,
         fighter_data=_make_fighter_data(hurtbox_circles),
         state="idle",            # combat reads .state for the crouch hurtbox (#124)
@@ -145,19 +145,19 @@ def test_no_hit_when_circles_do_not_overlap():
     assert atk.active is True, "attack should remain active when no hit occurred"
 
 
-def test_invulnerable_defender_is_skipped():
-    """An intangible (invulnerable) defender is not hit even when circles overlap."""
+def test_intangible_defender_is_skipped():
+    """An intangible (intangible) defender is not hit even when circles overlap."""
     pygame.init()
     owner = _make_player(_make_rect(0, 0), hurtbox_circles=HURTBOX_CIRCLES)
     defender = _make_player(PLAYER_RECT, hurtbox_circles=HURTBOX_CIRCLES,
-                            invulnerable=True)
+                            intangible=True)
     atk = _make_attack(owner, hit_cx=HIT_ATK_CX, hit_cy=HIT_ATK_CY, hit_r=HIT_ATK_R)
 
     process_hits([owner, defender], [atk])
 
-    assert defender.hits_received == 0, "invulnerable defender should not be hit"
+    assert defender.hits_received == 0, "intangible defender should not be hit"
     # attack should stay active since nothing was hit
-    assert atk.active is True, "attack should remain active when defender is invulnerable"
+    assert atk.active is True, "attack should remain active when defender is intangible"
 
 
 def test_self_hit_is_excluded():

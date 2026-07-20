@@ -49,7 +49,7 @@ Holding the ledge puts the fighter in **ledge-hang** (a hang state — see
   ledge-camping — the lineage's anti-planking tool. In **PM** this is a **hard
   5-regrab count cutoff** (grabs 1–5 give the full burst; grab 6+ give only a few
   snap frames), **not** the gradual per-grab decay of Smash-4/Ultimate. Full spec +
-  the HUD that shows it: [ledge-regrab-invuln-and-display.md](./ledge-regrab-invuln-and-display.md)
+  the HUD that shows it: [ledge-regrab-intangible-and-display.md](./ledge-regrab-intangible-and-display.md)
   (mechanic ratified [#670](https://github.com/avidrucker/pycats/issues/670), shipped #656).
 - **How long can you hang? ⚠ undocumented for Melee/PM.** No hard single-hang
   auto-release timer is documented in Melee/PM — you sit in **CliffWait** until you
@@ -152,7 +152,7 @@ PM deliberately **reworked Brawl's ledge mechanics** — this is a defining chan
 
 **v1 implemented** ([#14](https://github.com/avidrucker/pycats/issues/14)): automatic
 grab at a **solid** stage edge (thin platforms are NOT grabbable — owner ruling),
-**ledge-hang** with a short percent-scaled intangibility **burst** (`ledge_invuln_frames`,
+**ledge-hang** with a short percent-scaled intangibility **burst** (`ledge_intangible_frames`,
 #311), and exits — **neutral getup** (up, climb on) and **drop** (down or away → fall
 with a regrab lockout). There is **no hang timeout** (removed in
 [#475](https://github.com/avidrucker/pycats/issues/475) per #458 — no lineage game
@@ -201,7 +201,7 @@ Spike #538 validated the "ledge invincibility scales with the occupant's percent
   **reduce** ledge intangibility (~1 f under Melee) and **decay it with repeated grabs**
   (anti-plank) — neither is percent-based, and both make high-% recovery *harder*, the opposite
   of "higher % → longer intangibility".
-- **`LEDGE_INVULN_BASE_FRAMES` → FOUND.** Was 23 (Brawl baseline); **updated to 21 in #683** — PM
+- **`LEDGE_INTANGIBLE_BASE_FRAMES` → FOUND.** Was 23 (Brawl baseline); **updated to 21 in #683** — PM
   3.6 `CliffCatch` is fully intangible frames 1–21, flat across every character checked (rukaidata,
   #671). #297 (`docs/research/2026-06-30-ledge-recovery-mechanics.md`) + SmashWiki *Ledge*.
 - **`LEDGE_INVULN_PER_PERCENT = 0.3` + `LEDGE_INVULN_MAX_FRAMES = 60` → DIVERGENCE, now REMOVED
@@ -210,8 +210,8 @@ Spike #538 validated the "ledge invincibility scales with the occupant's percent
 
 **Consequences**
 - **#531 bar model:** the true window is a **fixed-per-grab burst that drains to 0**, so divide the
-  bar fill by the **value granted at that grab** — store `ledge_invuln_granted` at grab and use
-  `ratio = ledge_invuln_timer / ledge_invuln_granted` (a truthful 100%→0 drain). Robust whether
+  bar fill by the **value granted at that grab** — store `ledge_intangible_granted` at grab and use
+  `ratio = ledge_intangible_timer / ledge_intangible_granted` (a truthful 100%→0 drain). Robust whether
   pycats keeps its divergent scaling *or* later aligns to a fixed burst; a cap-denominator would
   misrender a short low-% burst.
 - **Decision — RATIFIED (#543, 2026-07-05): align to PM's fixed burst.** Drop the continuous
@@ -221,10 +221,10 @@ Spike #538 validated the "ledge invincibility scales with the occupant's percent
   DEV (see #543). A rukaidata PM 3.6 dump would lift the "fixed" finding from inferred-strong to explicit.
 - **Decision — RATIFIED (#670, 2026-07-06): adopt PM's 5-regrab count cutoff (anti-plank).** After a
   fighter regrabs the ledge **5 times without touching the ground**, further grabs grant no
-  ledge-invulnerability until the fighter **lands on the stage or gets hit**. Primary basis: PMDT
+  ledge-intangibility until the fighter **lands on the stage or gets hit**. Primary basis: PMDT
   dev-blog #6 (audit #536, `docs/research/2026-07-05-pm-ledge-intangibility-basis.md`). This is a
   **new sim mechanic** pycats lacks today — #670 is the basis the implementing DEV (**#656**) cites.
-  The **exact post-cutoff residual** — grab 6+ gives zero invuln, or PMDT's "few frames during the
+  The **exact post-cutoff residual** — grab 6+ gives zero intangibility, or PMDT's "few frames during the
   initial ledge snap" — is deferred to research **#671** (the mechanic's only open sub-question).
 
 Sources: [SmashWiki — Edge recovery](https://www.ssbwiki.com/Edge_recovery),

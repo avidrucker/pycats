@@ -71,19 +71,19 @@ def test_both_regions_active_simultaneously():
     assert p.engine._session.in_state("defensive_status")
 
 
-def test_defensive_status_tracks_invulnerable():
+def test_defensive_status_tracks_intangible():
     p = _mk_player()
     assert p.engine.defensive_status == "vulnerable"
     assert p.defensive_status == "vulnerable"
-    # vulnerable -> intangible when p.invulnerable, on tick.
-    p.fighter.invulnerable = True
+    # vulnerable -> intangible when p.intangible, on tick.
+    p.fighter.intangible = True
     p.engine.tick(None)
     assert p.engine.defensive_status == "intangible"
     assert p.engine._session.in_state("intangible")
     # action region unaffected by the defensive tick (orthogonal).
     assert p.state == "idle"
-    # intangible -> vulnerable when no longer invulnerable.
-    p.fighter.invulnerable = False
+    # intangible -> vulnerable when no longer intangible.
+    p.fighter.intangible = False
     p.engine.tick(None)
     assert p.engine.defensive_status == "vulnerable"
 
@@ -93,7 +93,7 @@ def test_player_defensive_status_is_direct_from_flag():
     # without ticking.
     p = _mk_player()
     assert p.defensive_status == "vulnerable"
-    p.fighter.invulnerable = True
+    p.fighter.intangible = True
     assert p.defensive_status == "intangible"
 
 

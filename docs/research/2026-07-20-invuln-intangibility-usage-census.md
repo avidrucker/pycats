@@ -162,7 +162,7 @@ The statechart / engines expose a string region label derived from the shared fl
 Per the ticket, doc/test usages are recorded as an aggregate, not row-by-row:
 
 - **Docs:** 49 files under `docs/` mention `invuln`/`intangib`. Primary homes are
-  `docs/glossary.md`, `docs/pm-reference/ledge-regrab-invuln-and-display.md`,
+  `docs/glossary.md`, `docs/pm-reference/ledge-regrab-intangible-and-display.md`,
   `docs/pm-reference/ledge-mechanics.md`, `docs/pm-reference/defense-shield-dodge.md`,
   `docs/research/2026-07-04-invuln-timer-state-model.md`,
   `docs/research/2026-07-05-pm-ledge-intangibility-basis.md`, and

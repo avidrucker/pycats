@@ -289,7 +289,7 @@ def build_fighter_chart(p):
 
     # Getup-roll (#146): a directional, intangible getup out of prone. The roll's
     # velocity (set in start_getup_roll) decays under friction; input stays locked
-    # until the roll window closes -> idle. Intangibility (invulnerable) is dropped
+    # until the roll window closes -> idle. Intangibility (intangible) is dropped
     # by player.update when getup_roll_timer hits 0.
     getup_roll = state(
         {"id": "getup_roll"},
@@ -334,7 +334,7 @@ def build_fighter_chart(p):
     # grab and sends it, mirroring force_prone). The hang holds while grabbed_ledge
     # is set; player.update releases it — neutral getup repositions onto the stage
     # (-> idle), while drop/timeout leaves the fighter airborne (-> fall).
-    # Intangibility reuses `invulnerable`, so the defensive_status region flips to
+    # Intangibility reuses `intangible`, so the defensive_status region flips to
     # intangible for free.
     ledge_hang = state(
         {"id": "ledge_hang"},
@@ -403,11 +403,11 @@ def build_fighter_chart(p):
         {"id": "defensive_status", "initial": "vulnerable"},
         state(
             {"id": "vulnerable"},
-            _tick(lambda e, d: p.fighter.invulnerable, "intangible"),
+            _tick(lambda e, d: p.fighter.intangible, "intangible"),
         ),
         state(
             {"id": "intangible"},
-            _tick(lambda e, d: not p.fighter.invulnerable, "vulnerable"),
+            _tick(lambda e, d: not p.fighter.intangible, "vulnerable"),
         ),
     )
 

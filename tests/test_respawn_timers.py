@@ -2,7 +2,7 @@
 
 #9 made ``Player._respawn`` clear hurt_timer/stun_timer. #31 is the mirror for the
 remaining transient action state: a player KO'd mid-dodge or mid-attack must not
-carry dodge/attack/invulnerable timers (or the dodge/attack flags) into its next
+carry dodge/attack/intangible timers (or the dodge/attack flags) into its next
 life. ``_ko`` early-returns, so these never tick down during death — only the
 respawn can clear them. Guards the behaviour through the real per-frame
 ``update`` loop.
@@ -49,8 +49,8 @@ def test_respawn_clears_transient_action_state():
     # until _respawn runs. A live move clock (advanced a few frames) stands in
     # for mid-attack: current_move set, move_frame > 0, attack_timer > 0.
     p.fighter.dodge_timer = 20
-    p.fighter.invulnerable_timer = 10
-    p.fighter.invulnerable = True
+    p.fighter.intangible_timer = 10
+    p.fighter.intangible = True
     p.fighter.spot_dodge_shield_held = True
     p.fighter.dodge_blocked_by_edge = True
     p._clock.start(p.fighter_data.moves["attack"])
@@ -69,8 +69,8 @@ def test_respawn_clears_transient_action_state():
 
     assert p.fighter.dodge_timer == 0
     assert p.attack_timer == 0
-    assert p.fighter.invulnerable_timer == 0
-    assert p.fighter.invulnerable is False, "respawned permanently intangible (mid-dodge leak)"
+    assert p.fighter.intangible_timer == 0
+    assert p.fighter.intangible is False, "respawned permanently intangible (mid-dodge leak)"
     assert p.fighter.spot_dodge_shield_held is False
     assert p.fighter.dodge_blocked_by_edge is False
     assert p.current_move is None

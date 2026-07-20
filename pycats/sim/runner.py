@@ -54,8 +54,8 @@ PlayerSnap = namedtuple(
         # which reads name/state/percent/lives by index) stay valid. The slot stays the
         # row-key (`name`); `character` rides alongside.
         "name state rect_x rect_y vel_x vel_y on_ground percent shield_hp lives is_alive "
-        "jumps_remaining dodge_timer hurt_timer stun_timer attack_timer invulnerable_timer "
-        "facing_right invulnerable defensive_status move_frame character"
+        "jumps_remaining dodge_timer hurt_timer stun_timer attack_timer intangible_timer "
+        "facing_right intangible defensive_status move_frame character"
     ),
 )
 
@@ -167,9 +167,9 @@ def snapshot(players, attacks, match):
                 p.fighter.hurt_timer,
                 p.fighter.stun_timer,
                 p.attack_timer,
-                p.fighter.invulnerable_timer,
+                p.fighter.intangible_timer,
                 p.fighter.facing_right,
-                p.fighter.invulnerable,
+                p.fighter.intangible,
                 # Task 6: new observable state fields (appended to preserve existing indices)
                 p.defensive_status,
                 p.move_frame,

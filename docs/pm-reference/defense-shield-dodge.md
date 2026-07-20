@@ -110,7 +110,7 @@ Implemented:
 - **Shield** — `SHIELD_MAX_HP = 50` (config); held/regen tick in `pycats/entities/player.py`. ⚠ **Divergence:** pycats drains **0.2/frame and regens 0.2/frame** (symmetric, `SHIELD_DRAIN_PER_FRAME = 0.2`) vs PM's **0.28 drain / 0.07 regen** — a deliberate simplification to log at [#99](https://github.com/avidrucker/pycats/issues/99).
 - **Shieldstun** — `pycats/combat/shield.py::shieldstun_frames` = `floor(damage × SHIELDSTUN_FACTOR)`, `SHIELDSTUN_FACTOR = 0.345`; locks the defender in shield via `Player.update`. ([#140](https://github.com/avidrucker/pycats/issues/140))
 - **Shield break → dizzy** — `shield.py::shield_break_stun_frames` = `(400 − p) + 90` clamped `[SHIELD_BREAK_STUN_MIN = 90, MAX = 490]`. ([#12](https://github.com/avidrucker/pycats/issues/12))
-- **Dodges** — spot / roll / air dodge in `pycats/entities/fighter_input.py`; `DODGE_TIME = 14`, `DODGE_SPEED = 14` (config), intangibility via the `invulnerable` flag.
+- **Dodges** — spot / roll / air dodge in `pycats/entities/fighter_input.py`; `DODGE_TIME = 14`, `DODGE_SPEED = 14` (config), intangibility via the `intangible` flag.
 
 **Deferred / divergent / open:**
 - **Powershield / parry** — not implemented (deferred research, [#24](https://github.com/avidrucker/pycats/issues/24) thread c).

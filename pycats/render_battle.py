@@ -44,7 +44,7 @@ from .config import (
     HUD_PADDING,
     HUD_SPACING,
     KNOCKDOWN_PRONE_FRAMES,
-    LEDGE_REGRAB_INVULN_CUTOFF,
+    LEDGE_REGRAB_INTANGIBLE_CUTOFF,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
     MAX_SHIELD_RADIUS,
     MIN_SHIELD_RADIUS,
@@ -633,16 +633,16 @@ DIZZY_BAR_COLOR = (210, 90, 220)  # magenta — shield-break stun (#364)
 # (HANG_BAR_COLOR removed with the ledge-hang timeout — #475)
 DOWN_BAR_COLOR = (255, 140, 45)  # orange — knockdown/getup window (#350)
 LOCKOUT_BAR_COLOR = (230, 70, 70)  # red — post-drop regrab lockout (#357)
-INVULN_BAR_COLOR = (95, 225, 120)  # green — intangibility window (#358)
+INTANGIBLE_BAR_COLOR = (95, 225, 120)  # green — intangibility window (#358)
 CHARGE_BAR_COLOR = (255, 205, 40)  # gold — smash charge, the one FILL bar (#380)
 RECHARGE_BAR_COLOR = (60, 200, 140)  # teal — shield HP regen after release (#597)
 
-# Grabs-left dots (#657): a discrete above-head budget of remaining full-invuln ledge
-# grabs (of LEDGE_REGRAB_INVULN_CUTOFF) before PM's anti-plank cutoff. They sit BELOW
-# the timer bars — the #720 stack is (A) invuln bar / (B) these dots / (C) the cat —
+# Grabs-left dots (#657): a discrete above-head budget of remaining full-intangible ledge
+# grabs (of LEDGE_REGRAB_INTANGIBLE_CUTOFF) before PM's anti-plank cutoff. They sit BELOW
+# the timer bars — the #720 stack is (A) intangible bar / (B) these dots / (C) the cat —
 # and are a separate render pass, so they never suppress a bar (or vice versa). Spec:
-# docs/pm-reference/ledge-regrab-invuln-and-display.md.
-GRABS_LEFT_DOT_COLOR = INVULN_BAR_COLOR  # green — same family as the invuln window
+# docs/pm-reference/ledge-regrab-intangible-and-display.md.
+GRABS_LEFT_DOT_COLOR = INTANGIBLE_BAR_COLOR  # green — same family as the intangible window
 GRABS_LEFT_DOT_RADIUS = 4
 GRABS_LEFT_DOT_SPACING = 12  # dot centre-to-centre
 GRABS_LEFT_DOT_LIFT = 12  # dot-row centre above the ear tops (below the bar stack)
@@ -669,20 +669,20 @@ class TimerBar(NamedTuple):
     label: str | None = None
 
 
-def _invuln_remaining_max(p):
+def _intangible_remaining_max(p):
     """The active intangibility window as `(remaining, max)` frames, or None.
 
-    Per-source resolve (#358, option 1): `fighter.invulnerable` is a bool driven
+    Per-source resolve (#358, option 1): `fighter.intangible` is a bool driven
     by several actions, each with its own timer and constant max — dodge
     (DODGE_TIME), getup-roll (GETUP_ROLL_FRAMES), getup-attack (the whole swing).
-    Gated on the `invulnerable` bool so the bar shows only while actually
+    Gated on the `intangible` bool so the bar shows only while actually
     intangible, and **suppressed while ledge-hanging** — the ledge-grab burst gets
     its own dedicated bar in #531; until then the hang shows no intangibility bar
     (the HANG timeout bar it used to defer to is gone, #475). Returns None when not
     intangible or the source has no tracked frame window (e.g. respawn grants none).
     """
     f = p.fighter
-    if not f.invulnerable or p.state == "ledge_hang":
+    if not f.intangible or p.state == "ledge_hang":
         return None
     if f.dodge_timer > 0:
         return (f.dodge_timer, DODGE_TIME)
@@ -701,7 +701,7 @@ def _secs(frames):
 class StatusSource(NamedTuple):
     """One declarative status feedback source (#522) — the single description that
     both `active_tint` and `timer_bar_specs` derive from, so a status is defined in
-    ONE place and adding one (e.g. #531 ledge-invuln, #506 respawn) is a single record
+    ONE place and adding one (e.g. #531 ledge-intangible, #506 respawn) is a single record
     with no new branches. Callables take `(f, p)` (fighter, player).
 
     `kind` documents the value-shape (COUNTDOWN / RESOURCE / FILL); the per-source
@@ -754,28 +754,28 @@ STATUS_SOURCES = [
         recency=lambda f, p: SHIELD_BREAK_STUN_MAX - f.stun_timer,
     ),
     StatusSource("dodge", 3, kind="COUNTDOWN", tint=WHITE, active=lambda f, p: f.dodge_timer > 0),
-    # LEDGE-INVULN (#531, revived #658) — the fixed ledge-grab intangibility burst
+    # LEDGE-INTANG (#531, revived #658) — the fixed ledge-grab intangibility burst
     # (21f full for grabs 1-5, 5f residual for grab 6+ past the cutoff; #656/#683). Its
-    # own INVULN overlay bar. #531 suppressed it while `state == "ledge_hang"` — the ONE
+    # own INTANG overlay bar. #531 suppressed it while `state == "ledge_hang"` — the ONE
     # state in which the timer is ever live — so the bar never rendered (the #531
     # dead-render defect). #658 drops that gate so it shows DURING the hang, stacked
     # above the grabs-left dots (#657; the #720 stack). Ratio is against the *granted*
     # length stored at grab (#538), so a 5f residual grab drains a truthful 5/5->0
     # (normalized per-grant — #720 chose this over a proportional stub). No body tint.
-    # The reversal is scoped to THIS bar only: _invuln_remaining_max KEEPS its ledge-hang
-    # suppression for the dodge/getup/respawn INVULN bar, so the two never double up
-    # during a hang. Spec: docs/pm-reference/ledge-regrab-invuln-and-display.md.
+    # The reversal is scoped to THIS bar only: _intangible_remaining_max KEEPS its ledge-hang
+    # suppression for the dodge/getup/respawn INTANG bar, so the two never double up
+    # during a hang. Spec: docs/pm-reference/ledge-regrab-intangible-and-display.md.
     StatusSource(
-        "ledge_invuln",
+        "ledge_intangible",
         4,
         kind="COUNTDOWN",
-        active=lambda f, p: f.ledge_invuln_timer > 0,
-        bar_color=INVULN_BAR_COLOR,
-        bar_label="INVULN",
+        active=lambda f, p: f.ledge_intangible_timer > 0,
+        bar_color=INTANGIBLE_BAR_COLOR,
+        bar_label="INTANG",
         bar_class="overlay",
-        ratio=lambda f, p: f.ledge_invuln_timer / max(1, f.ledge_invuln_granted),
-        readout=lambda f, p: _secs(f.ledge_invuln_timer),
-        recency=lambda f, p: f.ledge_invuln_granted - f.ledge_invuln_timer,
+        ratio=lambda f, p: f.ledge_intangible_timer / max(1, f.ledge_intangible_granted),
+        readout=lambda f, p: _secs(f.ledge_intangible_timer),
+        recency=lambda f, p: f.ledge_intangible_granted - f.ledge_intangible_timer,
     ),
     StatusSource(
         "prone",
@@ -801,21 +801,21 @@ STATUS_SOURCES = [
         readout=lambda f, p: _secs(f.ledge_regrab_lockout_timer),
         recency=lambda f, p: LEDGE_REGRAB_LOCKOUT_FRAMES - f.ledge_regrab_lockout_timer,
     ),
-    # INVULN — the dodge / getup-roll / getup-attack intangibility window, resolved
-    # (with its `invulnerable`-bool gate + ledge-hang suppression) by
-    # _invuln_remaining_max. One overlay bar; #531 (ledge-invuln) and #506 (respawn)
+    # INTANG — the dodge / getup-roll / getup-attack intangibility window, resolved
+    # (with its `intangible`-bool gate + ledge-hang suppression) by
+    # _intangible_remaining_max. One overlay bar; #531 (ledge-intangible) and #506 (respawn)
     # each add their OWN separate source rather than extend this resolver.
     StatusSource(
-        "invuln",
+        "intangible",
         7,
         kind="COUNTDOWN",
-        active=lambda f, p: _invuln_remaining_max(p) is not None,
-        bar_color=INVULN_BAR_COLOR,
-        bar_label="INVULN",
+        active=lambda f, p: _intangible_remaining_max(p) is not None,
+        bar_color=INTANGIBLE_BAR_COLOR,
+        bar_label="INTANG",
         bar_class="overlay",
-        ratio=lambda f, p: _invuln_remaining_max(p)[0] / _invuln_remaining_max(p)[1],
-        readout=lambda f, p: _secs(_invuln_remaining_max(p)[0]),
-        recency=lambda f, p: _invuln_remaining_max(p)[1] - _invuln_remaining_max(p)[0],
+        ratio=lambda f, p: _intangible_remaining_max(p)[0] / _intangible_remaining_max(p)[1],
+        readout=lambda f, p: _secs(_intangible_remaining_max(p)[0]),
+        recency=lambda f, p: _intangible_remaining_max(p)[1] - _intangible_remaining_max(p)[0],
     ),
     # CHARGE (#380) — the one FILL bar: grows 0->100% as smash_charge_timer accumulates
     # rather than draining; recency = the up-count (frames elapsed since charge began).
@@ -876,8 +876,8 @@ def timer_bar_specs(p):
       states, so at most one is added (shield takes precedence, via the elif
       chain: a shielding fighter is never simultaneously stunned).
     - **Overlay** timers — state-independent, so they co-activate with the above:
-      LOCKOUT (post-drop regrab suppression, #357) and INVULN (intangibility
-      window, #358; per-source resolve via _invuln_remaining_max).
+      LOCKOUT (post-drop regrab suppression, #357) and INTANG (intangibility
+      window, #358; per-source resolve via _intangible_remaining_max).
 
     Bars are returned **newest-on-top**: sorted by recency = frames elapsed since
     the timer started (`max - remaining`), ascending, so the most recently started
@@ -957,21 +957,21 @@ def draw_timer_bars(surface, p, specs):
 def grabs_left_dots(p):
     """How many grabs-left dots to show above fighter `p` — 0 for none (#657).
 
-    Each dot is one remaining ledge grab (of `LEDGE_REGRAB_INVULN_CUTOFF`) that still
+    Each dot is one remaining ledge grab (of `LEDGE_REGRAB_INTANGIBLE_CUTOFF`) that still
     grants the full intangibility burst before PM's anti-plank cutoff. Pinned to the
     shipped #656 counter, which is **1 on the first grab**:
-    `dots = LEDGE_REGRAB_INVULN_CUTOFF + 1 - ledge_regrab_count`, shown only while the
+    `dots = LEDGE_REGRAB_INTANGIBLE_CUTOFF + 1 - ledge_regrab_count`, shown only while the
     fighter is in an active regrab chain (count in `1..CUTOFF`). At count 0 (no chain /
     just reset) or past the cutoff (6+), no dots — so the first grab shows 5, the fifth
     shows 1, and the sixth shows none. Honours the shared status-bars toggle. Spec:
-    docs/pm-reference/ledge-regrab-invuln-and-display.md.
+    docs/pm-reference/ledge-regrab-intangible-and-display.md.
     """
     if not runtime_settings.show_status_timer_bars():
         return 0
     count = p.fighter.ledge_regrab_count
-    if count < 1 or count > LEDGE_REGRAB_INVULN_CUTOFF:
+    if count < 1 or count > LEDGE_REGRAB_INTANGIBLE_CUTOFF:
         return 0
-    return LEDGE_REGRAB_INVULN_CUTOFF + 1 - count
+    return LEDGE_REGRAB_INTANGIBLE_CUTOFF + 1 - count
 
 
 def draw_grabs_left_dots(surface, p, n):

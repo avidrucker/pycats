@@ -62,7 +62,7 @@ from .attack import Attack, Projectile
 from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
-from .ledge import ledge_regrab_invuln_frames
+from .ledge import ledge_regrab_intangible_frames
 
 # Angled f-smash (#327/4): map the captured direction to a launch angle.
 _FSMASH_ANGLE = {"up": FSMASH_ANGLE_UP, "down": FSMASH_ANGLE_DOWN}
@@ -199,9 +199,9 @@ class Player(pygame.sprite.Sprite):
     @property
     def defensive_status(self) -> str:
         """Defensive-status label, computed directly from the authoritative
-        invulnerability flag (computed without the engine; the statechart engine
+        intangibility flag (computed without the engine; the statechart engine
         mirrors this same flag in its orthogonal defensive_status region)."""
-        return "intangible" if self.fighter.invulnerable else "vulnerable"
+        return "intangible" if self.fighter.intangible else "vulnerable"
 
     def _evict_from_ledge(self, occupant) -> None:
         """Knock a mistimed edge-hog occupant off the ledge (#311). Its intangibility
@@ -209,8 +209,8 @@ class Player(pygame.sprite.Sprite):
         drops into fall (regrab briefly locked out). The occupant's statechart routes
         ledge_hang -> fall on its next tick (grabbed_ledge is None while airborne)."""
         f = occupant.fighter
-        f.invulnerable = False
-        f.ledge_invuln_timer = 0
+        f.intangible = False
+        f.ledge_intangible_timer = 0
         f.ledge_getup_timer = 0
         f.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
         f.grabbed_ledge = None
@@ -387,7 +387,7 @@ class Player(pygame.sprite.Sprite):
         # While on the edge (hang or getup climb): pin position (skip gravity).
         #  - Hanging: tick the percent-scaled intangibility burst (#311). There is
         #    NO hang timeout (#475: PM has no hang timer) — the fighter hangs until
-        #    it acts. Intangibility is `ledge_invuln_timer > 0` (a short burst), NOT
+        #    it acts. Intangibility is `ledge_intangible_timer > 0` (a short burst), NOT
         #    the whole hang. Up = neutral getup, down/away = drop.
         #  - Getup climb (#311): a LEDGE_GETUP_FRAMES action-lock on the stage; the
         #    edge frees to others at the halfway frame (half-animation regrab), and
@@ -404,20 +404,20 @@ class Player(pygame.sprite.Sprite):
                     ledge.occupied_by = None
                     self.fighter.grabbed_ledge = None
             else:
-                if self.fighter.ledge_invuln_timer > 0:
-                    self.fighter.ledge_invuln_timer -= 1
-                self.fighter.invulnerable = self.fighter.ledge_invuln_timer > 0
+                if self.fighter.ledge_intangible_timer > 0:
+                    self.fighter.ledge_intangible_timer -= 1
+                self.fighter.intangible = self.fighter.ledge_intangible_timer > 0
                 up = self._pressed(held, "up")
                 down = self._pressed(held, "down")
                 away = ledge.away_held(self._pressed(held, "left"), self._pressed(held, "right"))
                 if up:  # neutral getup -> climb window
                     self.rect.topleft = ledge.getup_topleft(self.rect.size)
-                    self.fighter.invulnerable = False
-                    self.fighter.ledge_invuln_timer = 0
+                    self.fighter.intangible = False
+                    self.fighter.ledge_intangible_timer = 0
                     self.fighter.ledge_getup_timer = LEDGE_GETUP_FRAMES
                 elif down or away:  # drop (no timeout auto-release — #475)
-                    self.fighter.invulnerable = False
-                    self.fighter.ledge_invuln_timer = 0
+                    self.fighter.intangible = False
+                    self.fighter.ledge_intangible_timer = 0
                     self.fighter.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
                     ledge.occupied_by = None
                     self.fighter.grabbed_ledge = None
@@ -436,7 +436,7 @@ class Player(pygame.sprite.Sprite):
         # After physics so on_ground/vel/pos are final. Grab when airborne +
         # descending + the body overlaps the catch box + not locked out. Edge-hog
         # timing (#311): an OCCUPIED edge is grabbable only once the occupant's
-        # intangibility burst has lapsed (ledge_invuln_timer == 0) — grab too early
+        # intangibility burst has lapsed (ledge_intangible_timer == 0) — grab too early
         # and the hog holds. A grab that lands on an occupied edge EVICTS the
         # occupant (mistimed hog loses the ledge; the incoming fighter takes it).
         if (
@@ -447,7 +447,7 @@ class Player(pygame.sprite.Sprite):
         ):
             for ledge in ledges:
                 occupant = ledge.occupied_by
-                if occupant is not None and occupant.fighter.ledge_invuln_timer > 0:
+                if occupant is not None and occupant.fighter.ledge_intangible_timer > 0:
                     continue  # hog denied: occupant still intangible
                 if self.rect.colliderect(ledge.catch_rect()):
                     if occupant is not None and occupant is not self:
@@ -456,10 +456,10 @@ class Player(pygame.sprite.Sprite):
                     self.fighter.vel.x = 0
                     self.fighter.vel.y = 0
                     self.fighter.ledge_regrab_count += 1  # #656: consecutive regrab (reset on land/hit)
-                    granted = ledge_regrab_invuln_frames(self.fighter.ledge_regrab_count)
-                    self.fighter.ledge_invuln_timer = granted
-                    self.fighter.ledge_invuln_granted = granted  # #531: INVULN bar denominator
-                    self.fighter.invulnerable = True
+                    granted = ledge_regrab_intangible_frames(self.fighter.ledge_regrab_count)
+                    self.fighter.ledge_intangible_timer = granted
+                    self.fighter.ledge_intangible_granted = granted  # #531: INTANG bar denominator
+                    self.fighter.intangible = True
                     self.fighter.facing_right = ledge.facing_right()
                     self.fighter.grabbed_ledge = ledge
                     ledge.occupied_by = self
@@ -491,20 +491,20 @@ class Player(pygame.sprite.Sprite):
                 # state exit + intangibility (decremented below like getup_roll).
                 self._clock.start(GETUP_ATTACK)
                 self.fighter.getup_attack_timer = GETUP_ATTACK.startup + GETUP_ATTACK.active + GETUP_ATTACK.recovery
-                self.fighter.invulnerable = True  # getup intangibility (⚠ playtest:
+                self.fighter.intangible = True  # getup intangibility (⚠ playtest:
                 # held for the whole swing for v1; tighten to startup+active later)
         if self.fighter.getup_roll_timer > 0:
             self.fighter.getup_roll_timer -= 1  # roll + intangibility window (#146)
             if self.fighter.getup_roll_timer == 0 and self.state == "getup_roll":
-                self.fighter.invulnerable = False  # intangibility ends with the roll
+                self.fighter.intangible = False  # intangibility ends with the roll
         if self.fighter.getup_attack_timer > 0:
             self.fighter.getup_attack_timer -= 1  # wake-up attack duration (#225)
             if self.fighter.getup_attack_timer == 0 and self.state == "getup_attack":
-                self.fighter.invulnerable = False  # intangibility ends with the swing
+                self.fighter.intangible = False  # intangibility ends with the swing
         # (landing_lag / ledge_regrab_lockout / shieldstun via tick_timers #273;
         #  prone / dodge via tick_action_timers #289 — dodge-end reads the value)
         if self.fighter.dodge_timer == 0 and self.state == "dodge":
-            self.fighter.invulnerable = False  # reset invulnerability after dodge ends
+            self.fighter.intangible = False  # reset intangibility after dodge ends
             # A waveland (#202) ends the dodge with a live slide — the landing-lag
             # window owns that momentum, so DON'T zero it here; a normal dodge end
             # still stops dead.

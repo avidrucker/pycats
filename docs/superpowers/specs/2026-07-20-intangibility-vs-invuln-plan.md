@@ -175,4 +175,4 @@ plan. #776 does **not** touch it; #506 is gated on the #784 ruling.
 
 Epic **#772**; census **#773**; canon **#774**; DEV **#776**; respawn-immunity mechanic **#506**.
 Origin **#754** / **#771**. Parity docs: `docs/pm-reference/defense-shield-dodge.md`,
-`docs/pm-reference/ledge-regrab-invuln-and-display.md`.
+`docs/pm-reference/ledge-regrab-intangible-and-display.md`.

@@ -12,7 +12,7 @@ LEFT = "left"
 RIGHT = "right"
 
 
-def ledge_invuln_frames() -> int:
+def ledge_intangible_frames() -> int:
     """Ledge-grab intangibility burst: a fixed per-grab window (#543 / #683).
 
     A flat constant, no longer percent-scaled — PM's ledge intangibility does not
@@ -20,21 +20,21 @@ def ledge_invuln_frames() -> int:
     3.6's CliffCatch intangibility (fully intangible frames 1-21, flat across every
     character checked; rukaidata, #671). Replaces #14's flat full-hang intangibility.
     """
-    return config.LEDGE_INVULN_BASE_FRAMES
+    return config.LEDGE_INTANGIBLE_BASE_FRAMES
 
 
-def ledge_regrab_invuln_frames(regrab_count: int) -> int:
+def ledge_regrab_intangible_frames(regrab_count: int) -> int:
     """Intangibility granted for the `regrab_count`-th consecutive ledge grab without
     touching the ground (#656, PM's 5-regrab anti-plank cutoff ratified #670).
 
-    Grabs 1..LEDGE_REGRAB_INVULN_CUTOFF (5) grant the full fixed burst; grab 6+ grants
+    Grabs 1..LEDGE_REGRAB_INTANGIBLE_CUTOFF (5) grant the full fixed burst; grab 6+ grants
     only LEDGE_POST_CUTOFF_RESIDUAL_FRAMES — a small non-zero residual whose exact frame
     count is a PLACEHOLDER (see config; unsourced gap, no Provenance entry). The count
     resets on landing on the stage or getting hit — the caller (`Fighter`) owns that.
     """
-    if regrab_count > config.LEDGE_REGRAB_INVULN_CUTOFF:
+    if regrab_count > config.LEDGE_REGRAB_INTANGIBLE_CUTOFF:
         return config.LEDGE_POST_CUTOFF_RESIDUAL_FRAMES
-    return ledge_invuln_frames()
+    return ledge_intangible_frames()
 
 
 class Ledge:

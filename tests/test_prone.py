@@ -121,14 +121,14 @@ def test_getup_roll_when_direction_held_rolls_out_intangible():
     for _ in range(3):                      # hold 'right' through the prone window
         _run(p, plats, _frame("right"))
     assert p.state == "getup_roll", "a held direction at getup should roll, not stand"
-    assert p.fighter.invulnerable, "getup-roll grants intangibility"
+    assert p.fighter.intangible, "getup-roll grants intangibility"
     for _ in range(30):                     # roll plays out -> recovers to idle
         _run(p, plats, _frame())
         if p.state == "idle":
             break
     assert p.state == "idle"
     assert p.fighter.rect.x > x0, "the roll displaced the fighter forward"
-    assert not p.fighter.invulnerable, "intangibility ends when the roll ends"
+    assert not p.fighter.intangible, "intangibility ends when the roll ends"
 
 
 def test_neutral_getup_still_stands_without_direction():
@@ -155,7 +155,7 @@ def test_getup_attack_when_attack_held_swings_intangible_and_spawns_hitbox():
     for _ in range(3):                       # hold attack through the prone window
         p.update(_frame("attack"), plats, grp)
     assert p.state == "getup_attack", "attack held at getup should swing, not stand"
-    assert p.fighter.invulnerable, "getup-attack has getup intangibility"
+    assert p.fighter.intangible, "getup-attack has getup intangibility"
     spawned = len(grp) > 0
     for _ in range(30):                      # the swing spawns a hitbox, then recovers
         p.update(_frame(), plats, grp)
@@ -164,7 +164,7 @@ def test_getup_attack_when_attack_held_swings_intangible_and_spawns_hitbox():
             break
     assert spawned, "getup-attack should spawn a hitbox"
     assert p.state == "idle"
-    assert not p.fighter.invulnerable, "intangibility ends with the getup-attack"
+    assert not p.fighter.intangible, "intangibility ends with the getup-attack"
 
 
 def test_getup_roll_beats_getup_attack_when_both_held():

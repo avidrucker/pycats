@@ -21,7 +21,7 @@
 | `HITLAG_DAMAGE_FACTOR` | 0.3846154 | FOUND | 🟢 | SmashWiki:Hitlag (Brawl onward) — d-term coefficient 1/2.6 |
 | `HITSTUN_MULTIPLIER` | 0.4 | FOUND | 🟢 | SmashWiki:Hitstun — 0.4 frames per unit of knockback (Melee; Brawl same; PM = Melee model) |
 | `JUMP_VEL` | -13 | FOUND | 🟢 | calibrated to PM Mario full-hop 30.19 u (SmashWiki:Mario_(PM); #120) via height = JUMP_VEL^2/(2*GRAVITY) = 169 px ~= 31 u @ PX_PER_UNIT |
-| `LEDGE_INVULN_BASE_FRAMES` | 21 | FOUND | 🟢 | PM 3.6 CliffCatch intangibility 1-21, flat across characters (rukaidata; #671) |
+| `LEDGE_INTANGIBLE_BASE_FRAMES` | 21 | FOUND | 🟢 | PM 3.6 CliffCatch intangibility 1-21, flat across characters (rukaidata; #671) |
 | `MAX_JUMPS` | 2 | FOUND | 🟢 | Mario/PM jump count: 1 ground + 1 midair = 2 (standard 2-jump character; SmashWiki:Mario_(PM)) |
 | `MOVE_SPEED` | 6 | FOUND | 🟢 | PM Mario walk 1.1 u/f (SmashWiki:Mario_(PM); #120) |
 | `PX_PER_UNIT` | 5.4 | FOUND | 🟢 | data-authoring units->px calibration ~=5.4 (docs/research-120-smash-units-and-sources.md; #120/#195); the base every spatial derivation in this registry references |

@@ -135,7 +135,7 @@ WAVEDASH_LANDING_LAG = 10
 LEDGE_CATCH_W = 24  # px outward from the edge corner the catch box spans
 LEDGE_CATCH_H = 64  # px downward from the lip the catch box spans
 # No ledge-hang timeout (#475): PM/Melee impose none — you hang until you act, only
-# the intangibility burst (ledge_invuln_frames) expires over time. The old 120f
+# the intangibility burst (ledge_intangible_frames) expires over time. The old 120f
 # auto-release was an unfaithful pycats invention that dropped a hanger off-stage.
 LEDGE_REGRAB_LOCKOUT_FRAMES = 30  # post-release frames grab is suppressed
 # True PM edge-hog (#311, grounded by #297): the ledge-grab intangibility is a
@@ -143,13 +143,13 @@ LEDGE_REGRAB_LOCKOUT_FRAMES = 30  # post-release frames grab is suppressed
 # #536) for PM's flat window. A hog succeeds once the occupant's burst lapses. The
 # 21f value is PM 3.6's CliffCatch intangibility (fully intangible frames 1-21, flat
 # across every character checked; rukaidata, #671). Registered with #233.
-LEDGE_INVULN_BASE_FRAMES = 21  # ledge-grab intangibility burst (PM 3.6 CliffCatch 1-21; #683)
+LEDGE_INTANGIBLE_BASE_FRAMES = 21  # ledge-grab intangibility burst (PM 3.6 CliffCatch 1-21; #683)
 # PM's 5-regrab ledge-intangibility count cutoff (#656, ratified #670). PMDT 3.5:
 # "After a character regrabs the ledge five times without touching the ground, that
-# character no longer receives invulnerability for grabbing the ledge again (except
+# character no longer receives intangibility for grabbing the ledge again (except
 # for a few frames during the initial ledge snap) until he or she either lands on the
 # stage or gets hit." The count (5) is primary-sourced; the post-cutoff residual is NOT.
-LEDGE_REGRAB_INVULN_CUTOFF = 5  # grabs 1..5 grant the full burst; grab 6+ grant only the residual
+LEDGE_REGRAB_INTANGIBLE_CUTOFF = 5  # grabs 1..5 grant the full burst; grab 6+ grant only the residual
 LEDGE_POST_CUTOFF_RESIDUAL_FRAMES = 5  # PLACEHOLDER_VALUE_PLS_RESEARCH_ACTUAL
 # ^ No grounded basis: PM primary says only "a few frames" (qualitative, no number).
 # Needs a datamined engine/DOL dump of the ledge-snap intangibility window — NOT an

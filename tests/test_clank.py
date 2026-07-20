@@ -29,7 +29,7 @@ _HURT = [Circle(dx=20, dy=30, r=14)]
 
 def _player(rect, *, facing_right=True, hurtbox=_HURT):
     p = types.SimpleNamespace(
-        rect=rect, facing_right=facing_right, invulnerable=False, is_alive=True,
+        rect=rect, facing_right=facing_right, intangible=False, is_alive=True,
         fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox)), moves={}),
         hits_received=0, hits_landed=0,
     )

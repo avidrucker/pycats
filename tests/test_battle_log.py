@@ -6,8 +6,8 @@ pinned fast and deterministically; one integration test drives a real seeded run
 
 snapshot() shapes (runner.snapshot): part = (0 name, 1 state, 2 x, 3 y, 4 vx, 5 vy,
 6 on_ground, 7 percent, 8 shield_hp, 9 lives, 10 is_alive, 11 jumps_remaining, 12
-dodge_timer, 13 hurt_timer, 14 stun_timer, 15 attack_timer, 16 invuln_timer, 17 facing,
-18 invuln, 19 defensive_status, 20 move_frame); attack = (x, y, frames_left, owner,
+dodge_timer, 13 hurt_timer, 14 stun_timer, 15 attack_timer, 16 intangible_timer, 17 facing,
+18 intangible, 19 defensive_status, 20 move_frame); attack = (x, y, frames_left, owner,
 active, hit_cx, hit_cy, hit_r); snap = (parts, attacks, phase, winner).
 """
 from pycats.sim.battle_log import (

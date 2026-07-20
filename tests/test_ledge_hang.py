@@ -155,7 +155,7 @@ def test_descending_into_left_catch_region_grabs():
     p.fighter.on_ground = False
     p.update(_empty_frame(), plats, p_attack_group(), ledges)
     assert p.state == "ledge_hang"
-    assert p.fighter.invulnerable is True
+    assert p.fighter.intangible is True
     assert (p.rect.left, p.rect.top) == (40, 410)  # snapped to hang_topleft
     assert any(l.occupied_by is p for l in ledges)
 
@@ -202,7 +202,7 @@ def test_getup_climbs_onto_stage_and_idles():
             break
     assert p.fighter.grabbed_ledge is None
     assert all(l.occupied_by is None for l in ledges)
-    assert p.fighter.invulnerable is False
+    assert p.fighter.intangible is False
     assert p.state == "idle"
 
 
@@ -256,9 +256,9 @@ def test_a_connecting_hit_knocks_a_hanger_off_the_ledge():
     ledges = ledges_from_platforms(plats)
     p = _player()
     _grab_left(p, plats, ledges)
-    for _ in range(config.LEDGE_INVULN_BASE_FRAMES + 1):  # let the fixed intangibility burst lapse
+    for _ in range(config.LEDGE_INTANGIBLE_BASE_FRAMES + 1):  # let the fixed intangibility burst lapse
         p.update(_empty_frame(), plats, p_attack_group(), ledges)
-    assert p.fighter.invulnerable is False  # vulnerable now (burst gone)
+    assert p.fighter.intangible is False  # vulnerable now (burst gone)
     assert p.fighter.grabbed_ledge is not None  # still hanging (no timeout)
 
     attacker = _player()

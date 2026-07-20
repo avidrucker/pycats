@@ -38,13 +38,13 @@ def _fake(
     stun_timer=0,
     prone_timer=0,
     ledge_regrab_lockout_timer=0,
-    invulnerable=False,
+    intangible=False,
     dodge_timer=0,
     getup_roll_timer=0,
     getup_attack_timer=0,
     smash_charge_timer=0,
-    ledge_invuln_timer=0,
-    ledge_invuln_granted=0,
+    ledge_intangible_timer=0,
+    ledge_intangible_granted=0,
     cx=120,
     top=200,
 ):
@@ -56,13 +56,13 @@ def _fake(
         stun_timer=stun_timer,
         prone_timer=prone_timer,
         ledge_regrab_lockout_timer=ledge_regrab_lockout_timer,
-        invulnerable=invulnerable,
+        intangible=intangible,
         dodge_timer=dodge_timer,
         getup_roll_timer=getup_roll_timer,
         getup_attack_timer=getup_attack_timer,
         smash_charge_timer=smash_charge_timer,
-        ledge_invuln_timer=ledge_invuln_timer,
-        ledge_invuln_granted=ledge_invuln_granted,
+        ledge_intangible_timer=ledge_intangible_timer,
+        ledge_intangible_granted=ledge_intangible_granted,
         rect=pygame.Rect(cx - 20, top, 40, 60),
     )
     ns.fighter = ns
@@ -209,106 +209,106 @@ def test_shield_sorts_last_under_a_lockout_overlay():
     assert labels == ["LOCKOUT", "SHIELD"]  # LOCKOUT nearest head, shield last
 
 
-# --- INVULN bar (#358, slice 5 of #334; option 1 = per-source resolve) --------
-# `invulnerable` is a bool driven by several actions, each with its own timer/max.
+# --- INTANG bar (#358, slice 5 of #334; option 1 = per-source resolve) --------
+# `intangible` is a bool driven by several actions, each with its own timer/max.
 # The bar resolves the current source to (remaining, max); it is suppressed while
-# ledge-hanging (the dedicated ledge-invuln bar is #531; #475 removed the old HANG).
+# ledge-hanging (the dedicated ledge-intangible bar is #531; #475 removed the old HANG).
 
 
-def test_invuln_bar_dodge_source():
-    p = _fake(state="dodge", invulnerable=True, dodge_timer=10)
+def test_intangible_bar_dodge_source():
+    p = _fake(state="dodge", intangible=True, dodge_timer=10)
     (bar,) = rb.timer_bar_specs(p)
-    assert bar.label == "INVULN"
-    assert bar.color == rb.INVULN_BAR_COLOR
+    assert bar.label == "INTANG"
+    assert bar.color == rb.INTANGIBLE_BAR_COLOR
     assert bar.ratio == 10 / DODGE_TIME
     assert bar.readout == f"{math.ceil(10 / FPS)}s"
 
 
-def test_invuln_bar_getup_roll_source():
-    p = _fake(state="getup_roll", invulnerable=True, getup_roll_timer=8)
+def test_intangible_bar_getup_roll_source():
+    p = _fake(state="getup_roll", intangible=True, getup_roll_timer=8)
     (bar,) = rb.timer_bar_specs(p)
-    assert bar.label == "INVULN"
+    assert bar.label == "INTANG"
     assert bar.ratio == 8 / GETUP_ROLL_FRAMES
 
 
-def test_invuln_bar_getup_attack_source():
-    p = _fake(state="getup_attack", invulnerable=True, getup_attack_timer=12)
+def test_intangible_bar_getup_attack_source():
+    p = _fake(state="getup_attack", intangible=True, getup_attack_timer=12)
     (bar,) = rb.timer_bar_specs(p)
-    assert bar.label == "INVULN"
+    assert bar.label == "INTANG"
     assert bar.ratio == 12 / rb._GETUP_ATTACK_FRAMES
 
 
-def test_no_invuln_bar_when_not_invulnerable():
-    # The bool gates it: a lingering dodge_timer with invulnerable already cleared
-    # shows no INVULN bar.
-    assert rb.timer_bar_specs(_fake(state="dodge", invulnerable=False, dodge_timer=10)) == []
+def test_no_intangible_bar_when_not_intangible():
+    # The bool gates it: a lingering dodge_timer with intangible already cleared
+    # shows no INTANG bar.
+    assert rb.timer_bar_specs(_fake(state="dodge", intangible=False, dodge_timer=10)) == []
 
 
-def test_invuln_suppressed_while_ledge_hanging():
-    # Ledge-grab sets invulnerable=True, but the INVULN bar stays suppressed during
+def test_intangible_suppressed_while_ledge_hanging():
+    # Ledge-grab sets intangible=True, but the INTANG bar stays suppressed during
     # ledge_hang: no bar renders while hanging (#475 removed HANG; the dedicated
-    # ledge-invuln bar is the follow-up #531). Able-to-fail if the suppression drops.
-    p = _fake(state="ledge_hang", invulnerable=True)
+    # ledge-intangible bar is the follow-up #531). Able-to-fail if the suppression drops.
+    p = _fake(state="ledge_hang", intangible=True)
     labels = [b.label for b in rb.timer_bar_specs(p)]
     assert labels == []
 
 
-def test_invuln_bar_suppressed_by_toggle(monkeypatch):
+def test_intangible_bar_suppressed_by_toggle(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
-    assert rb.timer_bar_specs(_fake(state="dodge", invulnerable=True, dodge_timer=10)) == []
+    assert rb.timer_bar_specs(_fake(state="dodge", intangible=True, dodge_timer=10)) == []
 
 
-def test_invuln_and_lockout_coactivate_ordered_by_recency():
-    # Dodge INVULN just started (elapsed 4 of 14), LOCKOUT older (elapsed 25 of
-    # 30) -> INVULN nearer the head.
+def test_intangible_and_lockout_coactivate_ordered_by_recency():
+    # Dodge INTANG just started (elapsed 4 of 14), LOCKOUT older (elapsed 25 of
+    # 30) -> INTANG nearer the head.
     p = _fake(
         state="dodge",
-        invulnerable=True,
+        intangible=True,
         dodge_timer=10,  # elapsed 4
         ledge_regrab_lockout_timer=5,
     )  # elapsed 25
     labels = [b.label for b in rb.timer_bar_specs(p)]
-    assert labels == ["INVULN", "LOCKOUT"]
+    assert labels == ["INTANG", "LOCKOUT"]
 
 
-# --- LEDGE-INVULN bar (#531) — the percent-scaled ledge-grab intangibility burst
-# (#311) gets its OWN green INVULN bar, closing the #513 drift. Its own source
-# (precedence 4), disjoint from the dodge/getup "invuln" source (which needs one of
+# --- LEDGE-INTANG bar (#531) — the percent-scaled ledge-grab intangibility burst
+# (#311) gets its OWN green INTANG bar, closing the #513 drift. Its own source
+# (precedence 4), disjoint from the dodge/getup "intangible" source (which needs one of
 # those timers, none set by a ledge grab). Ratio is against the granted length stored
 # at grab (#538: per-grab denominator, not the cap). Suppressed while ledge-hanging.
 
 
-def test_ledge_invuln_bar_ratio_seconds_label_colour():
-    # A ledge-invuln burst mid-drain (14 of a granted 23) and NOT hanging -> green
-    # INVULN bar ratioed against the granted value. Red before the registry entry
-    # (no ledge_invuln source existed), green after.
-    p = _fake(ledge_invuln_timer=14, ledge_invuln_granted=23)
+def test_ledge_intangible_bar_ratio_seconds_label_colour():
+    # A ledge-intangible burst mid-drain (14 of a granted 23) and NOT hanging -> green
+    # INTANG bar ratioed against the granted value. Red before the registry entry
+    # (no ledge_intangible source existed), green after.
+    p = _fake(ledge_intangible_timer=14, ledge_intangible_granted=23)
     (bar,) = rb.timer_bar_specs(p)
-    assert bar.label == "INVULN"
-    assert bar.color == rb.INVULN_BAR_COLOR
+    assert bar.label == "INTANG"
+    assert bar.color == rb.INTANGIBLE_BAR_COLOR
     assert bar.ratio == 14 / 23  # per-grab denominator, a truthful 100%->0 drain
     assert bar.readout == f"{math.ceil(14 / FPS)}s"
 
 
-def test_ledge_invuln_bar_shows_while_ledge_hanging():
-    # #658 (revives #531): the ledge-grab INVULN bar now renders DURING the hang — the
+def test_ledge_intangible_bar_shows_while_ledge_hanging():
+    # #658 (revives #531): the ledge-grab INTANG bar now renders DURING the hang — the
     # ONE state its timer is live, so the old `state != "ledge_hang"` gate made it a dead
-    # render. The dodge/getup INVULN bar (via _invuln_remaining_max) KEEPS its hang
+    # render. The dodge/getup INTANG bar (via _intangible_remaining_max) KEEPS its hang
     # suppression, so no duplicate appears. Spec:
-    # docs/pm-reference/ledge-regrab-invuln-and-display.md.
-    p = _fake(state="ledge_hang", ledge_invuln_timer=14, ledge_invuln_granted=21)
-    (bar,) = rb.timer_bar_specs(p)  # exactly one INVULN bar, not zero and not two
-    assert bar.label == "INVULN"
+    # docs/pm-reference/ledge-regrab-intangible-and-display.md.
+    p = _fake(state="ledge_hang", ledge_intangible_timer=14, ledge_intangible_granted=21)
+    (bar,) = rb.timer_bar_specs(p)  # exactly one INTANG bar, not zero and not two
+    assert bar.label == "INTANG"
     assert bar.ratio == 14 / 21  # normalized against the granted length
 
 
-def test_no_ledge_invuln_bar_when_timer_zero():
-    assert rb.timer_bar_specs(_fake(ledge_invuln_timer=0, ledge_invuln_granted=23)) == []
+def test_no_ledge_intangible_bar_when_timer_zero():
+    assert rb.timer_bar_specs(_fake(ledge_intangible_timer=0, ledge_intangible_granted=23)) == []
 
 
-def test_ledge_invuln_bar_suppressed_by_toggle(monkeypatch):
+def test_ledge_intangible_bar_suppressed_by_toggle(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
-    assert rb.timer_bar_specs(_fake(ledge_invuln_timer=14, ledge_invuln_granted=23)) == []
+    assert rb.timer_bar_specs(_fake(ledge_intangible_timer=14, ledge_intangible_granted=23)) == []
 
 
 # --- CHARGE bar (#380, final slice of #334) — the one FILL bar -----------------

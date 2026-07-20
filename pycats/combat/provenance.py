@@ -267,7 +267,7 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     # ---- clank / priority (#38 4c) ----
     "CLANK_PRIORITY_RANGE": Provenance(9, "%", "SmashWiki:Priority — 9% across the Melee/Brawl/PM family", "FOUND", 38),
     # ---- ledge edge-hog (#311, grounded by #297) ----
-    "LEDGE_INVULN_BASE_FRAMES": Provenance(
+    "LEDGE_INTANGIBLE_BASE_FRAMES": Provenance(
         21, "frames", "PM 3.6 CliffCatch intangibility 1-21, flat across characters (rukaidata; #671)", "FOUND", 683
     ),
     "LEDGE_GETUP_FRAMES": Provenance(
@@ -415,7 +415,7 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "GETUP_ROLL_FRAMES",
         "GETUP_ROLL_SPEED",
         "CLANK_PRIORITY_RANGE",
-        "LEDGE_INVULN_BASE_FRAMES",
+        "LEDGE_INTANGIBLE_BASE_FRAMES",
         "LEDGE_GETUP_FRAMES",
         # Pass B guessed/tuned scalars (#582)
         "PROJECTILE_GRAVITY",

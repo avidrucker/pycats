@@ -28,11 +28,11 @@ from pycats.systems.combat import process_hits
 
 
 def _player(rect, *, hurtbox_circles, facing_right=True,
-            invulnerable=False, is_alive=True):
+            intangible=False, is_alive=True):
     p = types.SimpleNamespace(
         rect=rect,
         facing_right=facing_right,
-        invulnerable=invulnerable,
+        intangible=intangible,
         is_alive=is_alive,
         fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)),
                                  moves={}),

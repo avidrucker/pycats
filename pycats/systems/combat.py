@@ -8,7 +8,7 @@ Task 5: hit detection uses circle geometry.
     resolve_circle() using the defender's rect top-left as origin and their
     facing direction.
   - circles_overlap() tests the hitbox circle against all resolved hurtbox
-    circles.  All other guards (invulnerable, is_alive, self-hit) are unchanged.
+    circles.  All other guards (intangible, is_alive, self-hit) are unchanged.
 """
 
 from pycats.combat.geometry import circle_overlap, circles_overlap, resolve_circle
@@ -109,8 +109,8 @@ def process_hits(players, attacks):
             boxes = [(atk.hit_cx, atk.hit_cy, atk.hit_r, atk)]
 
         for defender in players:
-            # Skip if defender is invulnerable, is dead, or is the owner of the attack
-            if defender.fighter.invulnerable or not defender.fighter.is_alive or defender is atk.owner:  # no self-hit
+            # Skip if defender is intangible, is dead, or is the owner of the attack
+            if defender.fighter.intangible or not defender.fighter.is_alive or defender is atk.owner:  # no self-hit
                 continue
 
             # Resolve defender hurtbox circles to absolute coordinates.

@@ -106,7 +106,7 @@ knockback), which discourages spamming one kill move and rewards varied combos.
 ## pycats status
 
 Implemented (Phase 1 [#38](https://github.com/avidrucker/pycats/issues/38) + Phase 2 [#142](https://github.com/avidrucker/pycats/issues/142)):
-- **Hit/hurtbox geometry** — circle-vs-circle overlap, facing-relative, per frame, in `pycats/systems/combat.py::process_hits` + `pycats/combat/geometry.py` (`resolve_circle`, `circle_overlap`). Crouch swaps to a lower hurtbox ([#124](https://github.com/avidrucker/pycats/issues/124)); intangibility via the dodge/respawn `invulnerable` flag. Hurtboxes are circles, **not capsules** (approximation).
+- **Hit/hurtbox geometry** — circle-vs-circle overlap, facing-relative, per frame, in `pycats/systems/combat.py::process_hits` + `pycats/combat/geometry.py` (`resolve_circle`, `circle_overlap`). Crouch swaps to a lower hurtbox ([#124](https://github.com/avidrucker/pycats/issues/124)); intangibility via the dodge/respawn `intangible` flag. Hurtboxes are circles, **not capsules** (approximation).
 - **Multi-hitbox + id-priority + one-connect** — a `MoveData` carries a hitbox tuple; `process_hits` walks them in **priority order (tuple order)** and applies the **first** overlap, once per target. `Attack.resolved` holds the resolved circles. ([#130](https://github.com/avidrucker/pycats/issues/130))
 - **Clank / 9% priority** — opposing active **ground** hitboxes within `CLANK_PRIORITY_RANGE = 9`% both end, else the stronger continues; aerials are exempt via `Attack.in_air`. In `process_hits`'s clank pass. ([#133](https://github.com/avidrucker/pycats/issues/133))
 - **Move selection** (which hitbox set a press produces) — `pycats/combat/move_select.py` ([#143](https://github.com/avidrucker/pycats/issues/143)).
