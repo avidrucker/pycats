@@ -174,9 +174,36 @@ to one `sin` period. See **🔎 Refinement (2026-07-19, #567)** at the top.
 - SmashWiki — *Frame* (Brawl = 60fps, 1 frame = 1/60 s): https://www.ssbwiki.com/Frame
 - In-repo: `pycats/config.py` (`FPS = 60`); `pycats/combat/data.py` (`FighterData`, no idle-anim field).
 
+## Amplitude measurement (#760) — bob vs squash
+
+The #753 GIF (`repros/idle-breathing/mario_wait1.gif`) was analysed frame-by-frame for the
+*amplitude* of the motion, not just its period. Fixed-camera confirmed: the silhouette height
+stays ~270 render-px across the loop while its position swings, and the extremes touch both
+canvas edges — so the motion is real, not per-frame reframing. Per-frame head-top and
+feet-bottom rows give (body height ≈ 270 render-px):
+
+| component | peak-to-peak | as % of body height | amplitude |
+| --- | --- | --- | --- |
+| whole-body **bob** (silhouette centre) | 28 px | 10.5% | **±5.3%** |
+| head-top | 33 px | 12.2% | ±6.1% |
+| **squash** (silhouette *height* change) | 13 px | 4.8% | ±2.4% |
+
+**Reading:** the idle is **mostly a whole-body vertical bob (translation ±5.3%) — the feet
+lift too** — with only a minor squash (±2.4%). The GIF is in arbitrary render-units, so the
+transferable quantity is the *fraction of body height*, not an absolute px. Applied to Nalio's
+**60px** body box (`PLAYER_SIZE[1]`): bob ±5.3% ≈ **±3px**, squash ±2.4% ≈ **±1px**. (Mild
+underestimate: the head clips the top of the frame for ~3 frames at the peak.)
+
+This retires the #567 placeholder amplitude (`±1px`, squash-only) and its *motion*: #760 ships a
+bob + in-phase squash (`IDLE_BREATH_BOB_PX = 3`, `IDLE_BREATH_SQUASH_PX = 1` in `render_battle.py`).
+Chest-**width** breathing (lateral) is a distinct motion, deferred to its own follow-up (arms
+confound width in a hurtbox render — needs a careful measure).
+
 ## Provenance tier
 - **Wait1 loop length:** **`FOUND` = 51 frames** (Mario `Wait1`, `subaction.frames.len()` via
   brawllib_rs against the PM 3.6 `.pac`, #753). Datamined, NOT engine-locked, NOT web-only.
+- **Bob / squash amplitude:** **`FOUND`** — GIF frame-analysis (#760): bob ±5.3% of body height,
+  squash ±2.4% → Nalio ±3px / ±1px on the 60px body box.
 - **Breaths per loop:** **`FOUND` = 2** (GIF frame-analysis of the same `Wait1`, #567). → breath period
   = loop ÷ breaths = **51 / 2 = 25.5 f/breath**.
 - **Framerate bridge:** `FOUND` — Brawl 60fps (SmashWiki *Frame*) ↔ pycats `FPS = 60` (`config.py`),
@@ -189,4 +216,8 @@ to one `sin` period. See **🔎 Refinement (2026-07-19, #567)** at the top.
 1. ✅ **Done (#567):** the per-archetype `_IDLE_BREATH_PERIOD_FRAMES` map in `render_battle.py` pins
    Nalio at `51 / 2` (loop ÷ breaths), with a comment pointing here.
 2. ✅ **Done (#753):** the brawllib_rs dump — Mario `Wait1` = 51 frames. See **Datamine result (#753)**.
-3. #567 owner-decision: amplitude-scales-with-height (OPEN).
+3. ✅ **Done (#760):** GIF-measured bob/squash amplitude → Nalio bob ±3px + squash ±1px. See
+   **Amplitude measurement (#760)**.
+4. **Queued:** chest-**width** (lateral) breathing — a distinct motion; needs its own GIF measure
+   (arm-swing confounds width). File one-at-a-time when tackled.
+5. #567 owner-decision: amplitude-scales-with-height across archetypes (OPEN).

@@ -296,9 +296,14 @@ _CROUCH_ANIM_RATE = 0.34
 # only in the idle FSM state, feet planted, so a resting cat reads as alive.
 # Render-only — driven by the per-player `_breath_phase` accumulator, never the sim.
 #
-# Amplitude: peak body-height delta in px (author game-feel, #567). ±1px is
-# deliberately subtle; bump to 2 if imperceptible.
-IDLE_BREATH_AMPLITUDE_PX = 1
+# Motion (#760): GIF frame-analysis of Mario `Wait1` shows the idle is mostly a
+# whole-body vertical BOB (translation, ±5.3% of body height — the feet lift too),
+# with only a minor SQUASH (body-height change, ±2.4%). So the effect is a bob plus
+# a small in-phase squash, NOT the feet-planted squash-only of the first #567 pass.
+# Amplitudes = the GIF fraction × Nalio's 60px body box (`repros/idle-breathing/
+# mario_wait1.gif`; measurement in docs/research/2026-07-15-idle-breathing-cycle.md).
+IDLE_BREATH_BOB_PX = 3  # whole-body translation amplitude (GIF ±5.3% × 60px ≈ ±3.2px, #760)
+IDLE_BREATH_SQUASH_PX = 1  # in-phase body-height squash amplitude (GIF ±2.4% × 60px ≈ ±1.4px, #760)
 # Period, PER ARCHETYPE, in render-frames for ONE breath. Sourced, not guessed:
 # the PM `Wait1` idle subaction LOOP length is datamined from the .pac via
 # brawllib_rs (#753), and the number of breaths per loop is read off the rendered
@@ -313,20 +318,20 @@ _IDLE_BREATH_PERIOD_FRAMES = {
 }
 
 
-def idle_breath_offset_px(character_key, state, phase, *, enabled=True):
-    """Render-only vertical body-height delta (px) for the idle breathing loop (#567).
+def idle_breath_wave(character_key, state, phase, *, enabled=True):
+    """Gated unit breathing waveform in [-1, 1] for the idle loop (#567/#760).
 
     Returns 0.0 unless breathing is `enabled`, the fighter is in the `idle` state, and
     `character_key` names an archetype with a datamined period (`_IDLE_BREATH_PERIOD_FRAMES`).
-    Otherwise returns `A * sin(2π * phase / period)`. Pure — no pygame, no player state —
-    so the gate + waveform are unit-testable in isolation. The caller adds this delta to
-    the rendered body height with the feet (`p.rect.bottom`) planted."""
+    Otherwise returns `sin(2π * phase / period)` — the raw waveform the caller scales into
+    a bob (`IDLE_BREATH_BOB_PX`) and a squash (`IDLE_BREATH_SQUASH_PX`). Pure — no pygame,
+    no player state — so the gate + waveform are unit-testable in isolation."""
     if not enabled or state != "idle":
         return 0.0
     period = _IDLE_BREATH_PERIOD_FRAMES.get(character_key)
     if not period:
         return 0.0
-    return IDLE_BREATH_AMPLITUDE_PX * math.sin(2 * math.pi * phase / period)
+    return math.sin(2 * math.pi * phase / period)
 
 
 _body_cache: dict = {}  # key -> merged composite (ring + body + name), one surface
@@ -1095,21 +1100,26 @@ def render_battle(surface, players, platforms):
         breath_on = runtime_settings.show_idle_breathing()
         if breath_on and p.state == "idle" and breath_key in _IDLE_BREATH_PERIOD_FRAMES:
             p._breath_phase = getattr(p, "_breath_phase", 0.0) + 1.0
-        breath_px = idle_breath_offset_px(breath_key, p.state, getattr(p, "_breath_phase", 0.0), enabled=breath_on)
+        breath_w = idle_breath_wave(breath_key, p.state, getattr(p, "_breath_phase", 0.0), enabled=breath_on)
         if anim > 0.0 and low_h != stand_h:
             s = (stand_h + (low_h - stand_h) * anim) / stand_h
             size = (ring_layer.get_width(), max(1, round(ring_layer.get_height() * s)))
             ring_layer = pygame.transform.scale(ring_layer, size)
             body_layer = pygame.transform.scale(body_layer, size)
             blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s)
-        elif breath_px:
-            # Same feet-anchored scale as the crouch path: p.rect.bottom (the feet)
-            # stays put while the body height moves by ±IDLE_BREATH_AMPLITUDE_PX.
-            s = (stand_h + breath_px) / stand_h
+        elif breath_w:
+            # Idle breathing (#567/#760): a whole-body BOB (translation) plus a small
+            # in-phase SQUASH, driven by the same waveform. At the top of the breath
+            # (w > 0) the body lifts by `bob_px` AND stretches a touch taller (inhale);
+            # at the bottom it settles and shortens. GIF-measured on Nalio's 60px body.
+            squash_px = IDLE_BREATH_SQUASH_PX * breath_w
+            bob_px = IDLE_BREATH_BOB_PX * breath_w
+            s = (stand_h + squash_px) / stand_h
             size = (ring_layer.get_width(), max(1, round(ring_layer.get_height() * s)))
             ring_layer = pygame.transform.scale(ring_layer, size)
             body_layer = pygame.transform.scale(body_layer, size)
-            blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s)
+            # feet-anchored squash, then lift the whole composite by the bob (feet lift too)
+            blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s - bob_px)
         else:
             blit_y = p.rect.y - _BODY_PAD_TOP
         pos = (p.rect.x - _BODY_PAD_X, blit_y)
