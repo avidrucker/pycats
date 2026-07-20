@@ -1,11 +1,12 @@
-"""Char-select live skin preview — the Character **grid tile itself** recolors to the
-cycled Skin (#676, revisiting #662/#650).
+"""Char-select skin rendering — the **Character Roster Tile** stays at the Character's
+default Skin; a player's cycled Skin shows only in their **Player Choice Slot** (#761).
 
-#662 drew a separate recolored preview cat *outside* the grid (`_confirmation_preview_pos`).
-#676 retires that: the grid tile paints in the selecting player's cycled Skin in place, and
-the FCFS per-Character Skin lock (#755) keeps two players on one Character distinct — so a
-single shared tile can show the most-recently-active player's Skin without a clash. Each
-player's own held Skin is also surfaced by their P1..P4 slot (#682, tested separately).
+#676 made the roster tile itself recolor to the confirmed player's cycled Skin. #761
+reverses that: two players can pick the same Character and each cycle their own Skin, so a
+shared roster tile must NOT try to represent either player's Skin — it always paints the
+Character default. Player presence on a tile is the P1-red / P2-blue selection outline
+(nested when both share a Character); the cycled Skin lives only in the Player Choice Slot
+(#682, tested in test_char_select_player_slots.py). Vocabulary: #673.
 """
 
 import os
@@ -17,6 +18,7 @@ import pygame  # noqa: E402
 
 from pycats.char_select import CharacterSelector  # noqa: E402
 from pycats.characters.roster import palette_for  # noqa: E402
+from pycats.config import CHAR_SELECT_TILE_SIZE  # noqa: E402
 
 _P1 = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6}
 _P2 = {"left": 11, "right": 12, "up": 13, "down": 14, "attack": 15, "special": 16}
@@ -57,17 +59,15 @@ def _color(skin_key):
 
 
 def _tile_body(sel, screen, char_pos):
-    """RGB at the body centre of the grid tile at ``char_pos``."""
-    from pycats.config import CHAR_SELECT_TILE_SIZE
-
+    """RGB at the body centre of the roster tile at ``char_pos``."""
     x, y = sel._grid_pos_to_screen_pos(char_pos)
     return screen.get_at((x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE // 2))[:3]
 
 
-def test_confirmed_grid_tile_recolors_to_the_cycled_skin():
-    # Confirm P1 on nalio, cycle to void (20,20,20) — a colour nothing else on the tile
-    # shares — and the grid TILE itself must paint in the chosen Skin. Able-to-fail: red if
-    # the grid loop draws the Character default instead of the player's cycled Skin.
+def test_roster_tile_keeps_default_skin_after_a_player_cycles():
+    # THE #761 regression: P1 confirms nalio and cycles to void (20,20,20). Nalio's ROSTER
+    # TILE must stay its default (red-blue), NOT repaint in P1's cycled Skin. Able-to-fail:
+    # red on the #676 code that painted the tile from `_active_skin_by_char`.
     sel = _sel()
     _confirm_p1(sel, 0)  # nalio
     _cycle_p1_to(sel, "void")
@@ -77,8 +77,8 @@ def test_confirmed_grid_tile_recolors_to_the_cycled_skin():
 
     char_pos = sel.characters.index("nalio")
     body = _tile_body(sel, screen, char_pos)
-    assert body == _color("void"), body
-    assert body != _color("nalio")  # not the Character default
+    assert body == _color("nalio"), body  # stays the Character default
+    assert body != _color("void")  # NOT the player's cycled Skin
 
 
 def test_unconfirmed_tile_keeps_the_character_default_skin():
@@ -90,30 +90,95 @@ def test_unconfirmed_tile_keeps_the_character_default_skin():
     assert _tile_body(sel, screen, char_pos) == _color("narz")
 
 
-def test_shared_grid_tile_follows_the_last_active_player():
-    # Two players on nalio (FCFS keeps them distinct). The shared tile paints the last
-    # player to act on it — asserted on `_active_skin_by_char`, the state the grid loop
-    # reads. (A pixel read is confounded once both confirm, when the start overlay opens.)
+def test_tile_skin_cache_and_helpers_are_gone():
+    # #761 removed the per-Character tile-skin cache and its two helpers — their sole reader
+    # was the tile paint, now removed. Able-to-fail: red if any is reintroduced.
     sel = _sel()
-    _confirm_p1(sel, 0)  # only P1 on nalio → tile shows P1's Skin
-    assert sel._active_skin_by_char["nalio"] == sel.p1_palette
-    _confirm_p2(sel, 0)  # P2 joins nalio, de-collided → tile now shows the last confirmer, P2
-    assert sel._active_skin_by_char["nalio"] == sel.p2_palette
-    assert sel.p1_palette != sel.p2_palette  # FCFS: distinct Skins
-
-
-def test_releasing_a_shared_tile_hands_it_back_to_the_remaining_player():
-    # Both on nalio (tile → P2). P2 backs out of the start overlay → the tile reverts to the
-    # still-confirmed P1's Skin rather than keeping P2's stale entry (#676).
-    sel = _sel()
-    _confirm_p1(sel, 0)
-    _confirm_p2(sel, 0)  # both confirmed → start overlay opens
-    sel.p2_input_cooldown = 0
-    sel.update(set(), {_P2["special"]})  # P2 presses back
-    assert sel._active_skin_by_char["nalio"] == sel.p1_palette
+    assert not hasattr(sel, "_active_skin_by_char")
+    assert not hasattr(sel, "_tile_owner_skin")
+    assert not hasattr(sel, "_release_tile")
 
 
 def test_external_preview_cat_is_retired():
-    # #676: the separate recolored preview cat drawn outside the grid is gone.
+    # #676: the separate recolored preview cat drawn outside the grid is gone (still true).
     sel = _sel()
     assert not hasattr(sel, "_confirmation_preview_pos")
+
+
+def test_no_skin_readout_under_the_roster_tile(monkeypatch):
+    # #761 deliverable 2: the `P1 ✓ {skin}` readout is dropped from the roster tile — the
+    # skin NAME belongs only to the Player Choice Slot. Able-to-fail: red on #676's code,
+    # which renders "P1 ✓ Void" in the grid band under the tile.
+    from pycats import text_utils
+
+    sel = _sel()
+    _confirm_p1(sel, 0)  # nalio
+    _cycle_p1_to(sel, "void")
+
+    calls = []  # (text, pos)
+    orig = text_utils.render_text
+
+    def spy(screen, text, pos, *a, **k):
+        calls.append((str(text), pos))
+        return orig(screen, text, pos, *a, **k)
+
+    monkeypatch.setattr(text_utils, "render_text", spy)
+
+    orig_mixed = text_utils.text_renderer.render_text_mixed
+
+    def spy_mixed(text, size, color, screen, pos, *a, **k):
+        calls.append((str(text), pos))
+        return orig_mixed(text, size, color, screen, pos, *a, **k)
+
+    monkeypatch.setattr(text_utils.text_renderer, "render_text_mixed", spy_mixed)
+
+    screen = pygame.Surface((960, 540))
+    sel.render(screen)
+
+    x, y = sel._grid_pos_to_screen_pos(0)
+    skin_name = palette_for("void")["name"].lower()  # "void"
+    # The grid band spans from just above the tile to below where #676 drew its skin label;
+    # the Player Choice Slot row sits well below this band.
+    band = range(y - 20, y + CHAR_SELECT_TILE_SIZE + 40)
+    leaked = [(t, p) for (t, p) in calls if skin_name in t.lower() and p[1] in band]
+    assert leaked == [], f"skin name leaked onto the roster tile: {leaked}"
+
+
+def test_sole_occupant_outline_is_normal_geometry():
+    # One player alone on a Character → normal outline, no nesting.
+    sel = _sel()
+    _confirm_p1(sel, 0)  # nalio, alone
+    assert sel._confirm_rank(1) is None
+    normal = sel._confirm_outline_rect(0, None)
+    assert sel._confirm_outline_rect(0, sel._confirm_rank(1)) == normal
+
+
+def test_shared_character_nests_outlines_first_inner_second_outer():
+    # Both players confirm nalio. The FIRST confirmer (P1) nests INNER (smaller rect); the
+    # SECOND (P2) nests OUTER (bigger rect). Able-to-fail: red if both draw the same rect
+    # (no nesting) or the order is reversed.
+    sel = _sel()
+    _confirm_p1(sel, 0)  # nalio first
+    _confirm_p2(sel, 0)  # nalio second
+
+    assert sel._confirm_rank(1) == "inner"
+    assert sel._confirm_rank(2) == "outer"
+
+    inner = sel._confirm_outline_rect(0, "inner")
+    normal = sel._confirm_outline_rect(0, None)
+    outer = sel._confirm_outline_rect(0, "outer")
+    # strictly nested: inner ⊂ normal ⊂ outer
+    assert inner.width < normal.width < outer.width
+    assert inner.height < normal.height < outer.height
+    assert normal.contains(inner) and outer.contains(normal)
+
+
+def test_cancel_clears_confirm_order_so_nesting_reverts():
+    # P1 then P2 confirm nalio (P1 inner, P2 outer). P1 cancels; P2 is now alone → normal.
+    sel = _sel()
+    _confirm_p1(sel, 0)
+    _confirm_p2(sel, 0)
+    sel.p1_input_cooldown = 0
+    sel.update(set(), {_P1["special"]})  # P1 cancels
+    assert sel.p1_confirm_seq is None
+    assert sel._confirm_rank(2) is None  # P2 alone → normal geometry
