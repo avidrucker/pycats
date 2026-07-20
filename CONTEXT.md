@@ -21,6 +21,7 @@ dizzy, ledge-hang, KO, startup/active/recovery, …) are defined once in the
 - **fighter states** — the FSM labels the statechart emits (`idle`/`run`/`jump`/`fall`/`shield`/`dodge`/`hurt`/`prone`/`ledge_hang`/…); each mechanic is in the glossary, the state graph in [`pm-reference/fighter-states.md`](./docs/pm-reference/fighter-states.md).
 - **MoveClock** — the single source of "where are we in the current move" (replaced the old triple representation).
 - **golden** — a recorded deterministic snapshot used as the regression oracle (`tests/golden/`).
+- **archetype cat** — a roster fighter that mechanically emulates a Project M 3.6 character while staying feline in look: the mechanics are the archetype, the skin stays a cat. Current cats — **Nalio** (Mario), **Birky** (Kirby, floaty featherweight), **Narz** (Marth, disjoint swordfighter), **Gnok** (Donkey Kong, fast super-heavyweight bruiser — heaviest yet a giant, easy-to-combo body).
 
 ## Determinism / headless contract
 
