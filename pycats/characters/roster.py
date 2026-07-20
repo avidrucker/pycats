@@ -28,6 +28,16 @@ ARCHETYPE_DEFAULT_SKIN = {
 # Default cosmetic palette per archetype (derived from ARCHETYPE_DEFAULT_SKIN, cosmetic-only).
 ARCHETYPE_PALETTE = {archetype: _PAL[skin] for archetype, skin in ARCHETYPE_DEFAULT_SKIN.items()}
 
+# Skin keys each archetype OWNS beyond the shared OG pool (domain.SHARED_SKIN_KEYS) —
+# representation (ii), ratified on #748. Its base theme now (#677), plus any future
+# character-specific skins (e.g. a Nalio-only "red-white" would be appended here). The
+# shared OG six stay available to every character; these never leak to other characters.
+ARCHETYPE_EXTRA_SKINS = {
+    "nalio": ("red-blue",),
+    "birky": ("pink-red",),
+    "narz": ("blue-black",),
+}
+
 # Display name shown on the char-select tile (the archetype, not the palette).
 ARCHETYPE_NAME = {
     "nalio": "Nalio",

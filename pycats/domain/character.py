@@ -19,3 +19,7 @@ class Character:
     key: str  # mechanics key load_fighter_data knows: "nalio"/"birky"/"narz"/"testcat"
     name: str  # display name, e.g. "Nalio"
     default_skin_key: str  # a Skin.key — the skin worn until a player cycles it (#650)
+    # Skin keys THIS Character owns beyond the shared OG pool (its base theme now,
+    # future character-specific skins). `default_skin_key` points into shared ∪ own.
+    # Representation (ii), ratified on #748.
+    extra_skin_keys: tuple[str, ...] = ()

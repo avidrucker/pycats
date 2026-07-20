@@ -16,6 +16,7 @@ from .registry import CHARACTERS, SKINS, character_for, resolve_selection
 from .resolvers import fighter_data_of, palette_of
 from .selection import BuiltFighter, Selection
 from .skin import RGB, Skin
+from .skin_assignment import SHARED_SKIN_KEYS, assign_distinct_skins, available_skins
 
 __all__ = [
     "RGB",
@@ -31,6 +32,9 @@ __all__ = [
     "PLACEHOLDER_SKIN",
     "CHARACTERS",
     "SKINS",
+    "SHARED_SKIN_KEYS",
+    "available_skins",
+    "assign_distinct_skins",
     "character_for",
     "resolve_selection",
     "fighter_data_of",

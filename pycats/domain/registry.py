@@ -16,7 +16,12 @@ Pure: imports no pygame / sim / UI.
 from __future__ import annotations
 
 from ..characters.palettes import load_palettes
-from ..characters.roster import ARCHETYPE_DEFAULT_SKIN, ARCHETYPE_NAME, ARCHETYPE_ROSTER
+from ..characters.roster import (
+    ARCHETYPE_DEFAULT_SKIN,
+    ARCHETYPE_EXTRA_SKINS,
+    ARCHETYPE_NAME,
+    ARCHETYPE_ROSTER,
+)
 from .character import Character
 from .placeholder import PLACEHOLDER_CHARACTER, PLACEHOLDER_SKIN
 from .selection import Selection
@@ -25,7 +30,12 @@ from .skin import Skin
 SKINS: dict[str, Skin] = {key: Skin.from_palette_dict(key, d) for key, d in load_palettes().items()}
 
 CHARACTERS: dict[str, Character] = {
-    key: Character(key=key, name=ARCHETYPE_NAME[key], default_skin_key=ARCHETYPE_DEFAULT_SKIN[key])
+    key: Character(
+        key=key,
+        name=ARCHETYPE_NAME[key],
+        default_skin_key=ARCHETYPE_DEFAULT_SKIN[key],
+        extra_skin_keys=ARCHETYPE_EXTRA_SKINS[key],
+    )
     for key in ARCHETYPE_ROSTER
 }
 
