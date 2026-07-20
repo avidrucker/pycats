@@ -391,13 +391,24 @@ Study tree do not inherit this rule.
   with full test coverage and no behaviour change doesn't strictly need it, though a
   run command is still welcome.
 - **Full paths, not `python -m pycats.game` alone.** Worktrees have no `.venv`, so
-  point the interpreter at the **main repo's** `.venv` and run from the checkout.
-  Present it as a `REPO=` / `PY=` variable block (one assignment per line), not an
-  opaque one-liner:
+  the interpreter is **always** the main repo's `.venv` — but the **working directory
+  selects the code**: under `-m`, cwd is `sys.path[0]`, so `-m pycats.game` imports
+  the `pycats/` package from whatever directory you `cd` into. Present it as a
+  `REPO=` / `PY=` variable block (one assignment per line), not an opaque one-liner.
+  - **Merged change (default):** run from the main checkout.
 
-      REPO=/abs/path/to/pycats                   # the checkout (main repo or worktree)
-      PY=/abs/path/to/pycats/.venv/bin/python    # ALWAYS the main repo's venv
-      cd "$REPO" && "$PY" -m pycats.game
+        REPO=/abs/path/to/pycats                   # the main checkout
+        PY="$REPO/.venv/bin/python"                # ALWAYS the main repo's venv
+        cd "$REPO" && "$PY" -m pycats.game
+  - **Unmerged change (still on your claimed worktree branch):** `cd` into the
+    **worktree**, not the main checkout — otherwise `-m pycats.game` imports `main`'s
+    package and the reviewer sees the OLD, pre-change behavior. The interpreter stays
+    the main repo's venv (the worktree has none); only the cwd changes.
+
+        REPO=/abs/path/to/pycats
+        PY="$REPO/.venv/bin/python"                # ALWAYS the main repo's venv
+        WT="$REPO/.claude/worktrees/wt-<fruit>-<proj>-<N>"   # the UNMERGED change lives here
+        cd "$WT" && "$PY" -m pycats.game
 
 - **Pick the command that shows the change:** the live game (`-m pycats.game`), a
   replay/match (`watch.py`, `watch.py --match`), or a recorded video
