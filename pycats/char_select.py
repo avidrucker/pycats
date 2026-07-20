@@ -11,7 +11,6 @@ This module handles:
 import pygame
 
 from . import runtime_settings, text_utils
-from .characters.palettes import load_palettes
 from .characters.roster import ARCHETYPE_DEFAULT_SKIN, ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
 from .config import (
     BLACK,
@@ -30,6 +29,7 @@ from .config import (
     SCREEN_WIDTH,
     WHITE,
 )
+from .domain import SKINS, Selection, assign_distinct_skins, available_skins, character_for
 
 # --- char-select layout + behaviour constants (#420: named from inline literals) ---
 # Input debounce windows (frames): movement repeats faster than a committing action.
@@ -46,7 +46,6 @@ TILE_BG_COLOR = (50, 50, 60)  # per-tile background fill
 TILE_NAME_FONT_SIZE = 18  # archetype name under each tile
 CURSOR_LABEL_FONT_SIZE = 16  # "P1"/"P2" tag above a cursor
 CONFIRM_FONT_SIZE = 20  # "P1 ✓" confirmation label
-CONFIRM_PREVIEW_SIZE = 48  # per-player recolored skin-preview cat under the confirmation label (#662)
 CONTROLS_FONT_SIZE = 16  # bottom control-scheme strip
 
 # Preview cat drawn inside each tile
@@ -84,8 +83,10 @@ class CharacterSelector:
         # OG colour-skins; each archetype's cosmetic comes from its default palette.
         self.characters = list(ARCHETYPE_ROSTER)
 
-        # OG-skin keys, in cycle order, for the post-confirm palette cycler (#650, Part 3).
-        self._palette_keys = list(load_palettes().keys())
+        # Grid tile → the skin-key currently shown on it (#676). A tile paints in the
+        # most-recently-active player's Skin when a player is confirmed on that Character;
+        # absent → the Character's default. Keyed by Character, not player.
+        self._active_skin_by_char = {}
 
         # Player cursors (grid positions)
         self.p1_cursor = 0  # grid index
@@ -137,6 +138,9 @@ class CharacterSelector:
         self.p1_palette = None
         self.p2_palette = None
 
+        # Reset grid tile skins (#676)
+        self._active_skin_by_char = {}
+
         # Reset confirmations
         self.p1_confirmed = False
         self.p2_confirmed = False
@@ -179,6 +183,7 @@ class CharacterSelector:
                 if self.p1_controls["special"] in pressed_keys:
                     # Go back - unconfirm this player but keep selection
                     self.p1_confirmed = False
+                    self._release_tile(self.p1_selected)  # tile reverts if P1 no longer holds it (#676)
                     self.show_start_screen = False
                     self.start_screen_delay = 0
                     self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
@@ -187,6 +192,7 @@ class CharacterSelector:
                 if self.p2_controls["special"] in pressed_keys:
                     # Go back - unconfirm this player but keep selection
                     self.p2_confirmed = False
+                    self._release_tile(self.p2_selected)  # tile reverts if P2 no longer holds it (#676)
                     self.show_start_screen = False
                     self.start_screen_delay = 0
                     self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
@@ -214,23 +220,34 @@ class CharacterSelector:
                         self.p1_cursor = new_cursor
                     self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p1_controls["attack"] in pressed_keys:
-                    # Confirm selection — skin starts at the archetype's default (#650)
+                    # Confirm selection — skin starts at the Character's default, bumped if
+                    # the other player already holds it on the same Character (#676/#755).
                     self.p1_selected = self.characters[self.p1_cursor]
-                    self.p1_palette = ARCHETYPE_DEFAULT_SKIN.get(self.p1_selected)
+                    self.p1_palette = self._default_skin(1, self.p1_selected)
                     self.p1_confirmed = True
+                    self._active_skin_by_char[self.p1_selected] = self.p1_palette
                     self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
             else:
-                # If confirmed, B (special) cancels selection; left/right cycles the skin (#650)
+                # If confirmed, B (special) cancels selection; left/right cycles the skin
+                # within this Character's pool, skipping the other player's locked skin (#676).
                 if self.p1_controls["special"] in pressed_keys:
                     self.p1_confirmed = False
+                    released = self.p1_selected
                     self.p1_selected = None
                     self.p1_palette = None
+                    self._release_tile(released)
                     self.p1_input_cooldown = ACTION_COOLDOWN_FRAMES
                 elif self.p1_controls["left"] in pressed_keys:
-                    self.p1_palette = self._cycle_palette(self.p1_palette, -1)
+                    self.p1_palette = self._cycle_palette(
+                        self.p1_selected, self.p1_palette, -1, self._skins_locked_against(1)
+                    )
+                    self._active_skin_by_char[self.p1_selected] = self.p1_palette
                     self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p1_controls["right"] in pressed_keys:
-                    self.p1_palette = self._cycle_palette(self.p1_palette, +1)
+                    self.p1_palette = self._cycle_palette(
+                        self.p1_selected, self.p1_palette, +1, self._skins_locked_against(1)
+                    )
+                    self._active_skin_by_char[self.p1_selected] = self.p1_palette
                     self.p1_input_cooldown = MOVE_COOLDOWN_FRAMES
 
         # Handle P2 input (character selection)
@@ -254,23 +271,34 @@ class CharacterSelector:
                         self.p2_cursor = new_cursor
                     self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p2_controls["attack"] in pressed_keys:
-                    # Confirm selection — skin starts at the archetype's default (#650)
+                    # Confirm selection — skin starts at the Character's default, bumped if
+                    # the other player already holds it on the same Character (#676/#755).
                     self.p2_selected = self.characters[self.p2_cursor]
-                    self.p2_palette = ARCHETYPE_DEFAULT_SKIN.get(self.p2_selected)
+                    self.p2_palette = self._default_skin(2, self.p2_selected)
                     self.p2_confirmed = True
+                    self._active_skin_by_char[self.p2_selected] = self.p2_palette
                     self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
             else:
-                # If confirmed, B (special) cancels selection; left/right cycles the skin (#650)
+                # If confirmed, B (special) cancels selection; left/right cycles the skin
+                # within this Character's pool, skipping the other player's locked skin (#676).
                 if self.p2_controls["special"] in pressed_keys:
                     self.p2_confirmed = False
+                    released = self.p2_selected
                     self.p2_selected = None
                     self.p2_palette = None
+                    self._release_tile(released)
                     self.p2_input_cooldown = ACTION_COOLDOWN_FRAMES
                 elif self.p2_controls["left"] in pressed_keys:
-                    self.p2_palette = self._cycle_palette(self.p2_palette, -1)
+                    self.p2_palette = self._cycle_palette(
+                        self.p2_selected, self.p2_palette, -1, self._skins_locked_against(2)
+                    )
+                    self._active_skin_by_char[self.p2_selected] = self.p2_palette
                     self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
                 elif self.p2_controls["right"] in pressed_keys:
-                    self.p2_palette = self._cycle_palette(self.p2_palette, +1)
+                    self.p2_palette = self._cycle_palette(
+                        self.p2_selected, self.p2_palette, +1, self._skins_locked_against(2)
+                    )
+                    self._active_skin_by_char[self.p2_selected] = self.p2_palette
                     self.p2_input_cooldown = MOVE_COOLDOWN_FRAMES
 
     def both_confirmed(self):
@@ -281,12 +309,68 @@ class CharacterSelector:
         """Get the selected characters for both players."""
         return self.p1_selected, self.p2_selected
 
-    def _cycle_palette(self, current, step):
-        """Advance an OG-skin key by ``step`` (±1) through the cycle, wrapping (#650).
-        ``current`` None (shouldn't happen post-confirm) starts from the first skin."""
-        keys = self._palette_keys
-        idx = keys.index(current) if current in keys else 0
-        return keys[(idx + step) % len(keys)]
+    def _skin_pool(self, char_key):
+        """Ordered skin-keys ``char_key`` may cycle: the shared OG six + that Character's
+        own theme(s), from the #755 domain layer (`available_skins`). Never another
+        Character's theme — this is what makes the cycle pool per-Character (#676)."""
+        return [skin.key for skin in available_skins(character_for(char_key))]
+
+    def _skins_locked_against(self, player_num):
+        """Skins the OTHER confirmed player holds on the SAME Character as ``player_num``
+        (FCFS lock, #676/#755): those keys are removed from this player's cycle options, so
+        two players on one Character can never wear the same Skin."""
+        if player_num == 1:
+            my_char = self.p1_selected
+            other_char, other_pal, other_conf = self.p2_selected, self.p2_palette, self.p2_confirmed
+        else:
+            my_char = self.p2_selected
+            other_char, other_pal, other_conf = self.p1_selected, self.p1_palette, self.p1_confirmed
+        if other_conf and other_char == my_char and other_pal is not None:
+            return {other_pal}
+        return set()
+
+    def _default_skin(self, player_num, char_key):
+        """The Skin a newly-confirming player starts on: the Character's default, bumped to
+        the next available if the other player already holds it (FCFS lock via the domain
+        `assign_distinct_skins`, #755 — the already-confirmed holder keeps their Skin)."""
+        default = ARCHETYPE_DEFAULT_SKIN.get(char_key)
+        locked = self._skins_locked_against(player_num)
+        if default not in locked:
+            return default
+        holder = Selection(character_for(char_key), SKINS[next(iter(locked))])
+        mine = Selection(character_for(char_key), SKINS[default])
+        _held, resolved = assign_distinct_skins([holder, mine])
+        return resolved.skin.key
+
+    def _cycle_palette(self, char_key, current, step, locked=frozenset()):
+        """Advance ``current`` by ``step`` (±1) through ``char_key``'s available skins (#755),
+        wrapping and skipping any skin ``locked`` by another player on the same Character
+        (FCFS, #676). ``current`` absent from the pool starts from the first skin."""
+        pool = [key for key in self._skin_pool(char_key) if key not in locked]
+        if not pool:  # everything locked (can't happen with 2 players) — fall back to full
+            pool = self._skin_pool(char_key)
+        idx = pool.index(current) if current in pool else 0
+        return pool[(idx + step) % len(pool)]
+
+    def _tile_owner_skin(self, char_key):
+        """The Skin the grid tile for ``char_key`` should paint after a change: whichever
+        player is still confirmed on it (#676). None → no one; tile shows the default."""
+        if self.p1_confirmed and self.p1_selected == char_key:
+            return self.p1_palette
+        if self.p2_confirmed and self.p2_selected == char_key:
+            return self.p2_palette
+        return None
+
+    def _release_tile(self, char_key):
+        """Recompute a tile's shown Skin after a player leaves ``char_key`` (#676): hand it
+        to whoever remains confirmed there, else clear it back to the Character default."""
+        if char_key is None:
+            return
+        owner = self._tile_owner_skin(char_key)
+        if owner is not None:
+            self._active_skin_by_char[char_key] = owner
+        else:
+            self._active_skin_by_char.pop(char_key, None)
 
     def get_selected_palettes(self):
         """Get the chosen OG-skin key per player (None → the archetype's own palette)."""
@@ -426,8 +510,11 @@ class CharacterSelector:
             pygame.draw.rect(screen, TILE_BG_COLOR, tile_rect)
             pygame.draw.rect(screen, WHITE, tile_rect, 1)
 
-            # Draw cat preview
-            self._draw_cat_preview(screen, char_key, x, y, CHAR_SELECT_TILE_SIZE)
+            # Draw cat preview — the tile itself paints in the confirmed player's cycled
+            # Skin (most-recently-active on a shared Character), else the Character default (#676).
+            self._draw_cat_preview(
+                screen, char_key, x, y, CHAR_SELECT_TILE_SIZE, palette_key=self._active_skin_by_char.get(char_key)
+            )
 
             # Draw character name
             text_utils.render_text(
@@ -490,24 +577,10 @@ class CharacterSelector:
             center=True,
         )
 
-    def _confirmation_preview_pos(self, char_pos, is_p1):
-        """Top-left ``(px, py)`` + ``size`` of a confirmed player's recolored skin-preview
-        cat (#662). P1 sits left of the tile centre, P2 right, so two players who picked the
-        **same** character each get their own preview side-by-side instead of overlapping —
-        the two-players-same-character case #650 deferred."""
-        x, y = self._grid_pos_to_screen_pos(char_pos)
-        cx = x + CHAR_SELECT_TILE_SIZE // 2
-        cy = y + CHAR_SELECT_TILE_SIZE + 30
-        size = CONFIRM_PREVIEW_SIZE
-        gap = size // 2 + 4
-        side = -1 if is_p1 else 1
-        px = cx + side * gap - size // 2
-        py = cy + CONFIRM_FONT_SIZE + 6
-        return px, py, size
-
     def _draw_confirmation(self, screen, char_pos, color, player_name, use_unicode=True, palette_key=None):
-        """Draw a confirmation checkmark on a selected character, plus a live per-player
-        preview cat recolored to the chosen skin (#662, folding in #650's swatch)."""
+        """Draw a confirmation border + label on a selected Character's grid tile. The tile
+        itself now paints in the cycled Skin (see the grid loop), so #662's separate external
+        preview cat is retired (#676); the Skin **name** label stays for live cycle feedback."""
         x, y = self._grid_pos_to_screen_pos(char_pos)
 
         # Draw thick border to show selection
@@ -524,14 +597,6 @@ class CharacterSelector:
         else:
             label = f"{player_name} OK {skin_name}".rstrip()
             text_utils.render_text(screen, label, (cx, cy), CONFIRM_FONT_SIZE, color, center=True)
-
-        # Live preview of the player's *actual cat* wearing the cycled skin (#662): recolor
-        # `_draw_cat_preview` via its `palette_key` override, drawn per-player (see
-        # `_confirmation_preview_pos`) so same-character picks each keep their own skin. This
-        # replaces #650's flat swatch — the recolored cat itself is the skin preview.
-        char_key = self.characters[char_pos]
-        px, py, psize = self._confirmation_preview_pos(char_pos, player_name == "P1")
-        self._draw_cat_preview(screen, char_key, px, py, psize, palette_key=palette_key)
 
     def _player_slot_rect(self, slot_index):
         """Top-left ``(x, y)`` + ``size`` of player slot ``slot_index`` (0=P1 .. 3=P4) in the
