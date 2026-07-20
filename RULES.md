@@ -164,9 +164,14 @@
   scratch). This is the repo's expression of yegor-bdd (a bug is a failing test).
 - **The test must be able to fail.** Before claiming the fix works, confirm the
   new test is **red without the fix and green with it** — revert the fix (or stub
-  it), watch the test fail, then restore. A test that has never been red proves
-  nothing (it may assert the wrong thing or never reach the branch). See
-  `docs/learnings/today-i-learned-2026-06-23-dragonfruit.md` §1 & §4.
+  it), watch the test fail, then restore **by reversing the same edit** (undo the
+  mutation with the inverse Edit). Do **not** restore with `git checkout <file>` /
+  `git restore <file>`: that reverts the whole file to HEAD and discards your
+  uncommitted fix along with the mutation — a footgun that has recurred repeatedly.
+  Mutating via Edit keeps the undo symmetric so `git checkout` never enters the loop;
+  see `docs/research/2026-07-20-revert-check-footgun-findings.md` (#791). A test that
+  has never been red proves nothing (it may assert the wrong thing or never reach the
+  branch). See `docs/learnings/today-i-learned-2026-06-23-dragonfruit.md` §1 & §4.
 - **Already-fixed / non-reproducing bug?** If a reported bug does not reproduce on
   current `main`, the deliverable is still the *missing* regression test (find the
   commit that fixed it, add the can-fail guard), not a no-op close. Surface the
