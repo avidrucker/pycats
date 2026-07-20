@@ -49,10 +49,13 @@ Critical rules:
 - **Every `research` ticket produces ≥1 findings doc** (e.g. `docs/research/<topic>-findings.md`)
   as its closing artifact — a bare comment isn't sufficient; follow-up tickets are optional
   and filed one-at-a-time downstream of the doc. See [RULES.md](./RULES.md) → "Filing work".
-- **Verify ticket numbers before stating them; mint IDs/refs sequentially** — don't
-  tell the human or write a ticket's #/title until confirmed via a `gh` lookup; never
-  run `gh issue create` / `pmtools claim` concurrently (numbers/refs race + swap).
-  See [RULES.md](./RULES.md) → "Filing work".
+- **File new issues with `pmtools file`; verify ticket numbers before stating them;
+  mint IDs/refs sequentially** — open issues with `pmtools file` (alias `create`;
+  wraps `gh issue create` behind the area/role/severity gates, `--dry-run` to preview),
+  not bare `gh issue create`; don't tell the human or write a ticket's #/title until
+  confirmed via a `gh` lookup; never run `pmtools file` (issue creation) / `pmtools
+  claim` concurrently (numbers/refs race + swap). See [RULES.md](./RULES.md) → "Filing
+  work".
 - pycats runs **fleet** mode (`.claude/orchestrate.json`); claim work via
   `pmtools claim <issue> --as <fruit>`.
 - **Closing work:** commit with **`Closes #N` in the body**, then close from the

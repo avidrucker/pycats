@@ -85,6 +85,19 @@
 - **Suggest, don't act** — see ~/.claude/CLAUDE.md → "Suggest, don't act". When asked for a narrow action, do only that; propose anything further, don't perform it.
 - Shape every ticket as a complaint: **have X / should have Y / repro**
   (yegor-bdd).
+- **Open new issues with `pmtools file` (alias `create`), not bare `gh issue
+  create`.** `pmtools file` wraps `gh issue create` behind the config-driven
+  requirement gates: it enforces the role gate, maps `--area combat` →
+  `--label area:combat`, and refuses a `--severity` that isn't on a `bug`
+  (the "severity is for defects only" rule, enforced at filing time). Typical call:
+  `pmtools file --title "feat: X" --area <area> --role <ROLE> --body-file <f.md>`
+  (or `--body "…"`). Notes: `--role` is **required** (a valid role, e.g.
+  `DEV`/`RESEARCH`/`WRITER`); `--area X` becomes the `area:X` label; `--severity`
+  and extra `--label`s pass through (severity still gated to defects);
+  `--allow-uncategorized` files without an area. Always **`--dry-run` first** — it
+  prints the exact `gh issue create` call it would run, so you verify the labels
+  before minting. (Bare `gh issue create` still works and is what runs underneath,
+  but `pmtools file` is the path that keeps the gates on.)
 - **Repro/spec-first for unclear bugs.** If a bug's symptom isn't specific enough to
   write have/should/repro, file a **`research`** ticket to validate / spec /
   reproduce it first, then create the DEV bug ticket once the repro is known.
@@ -131,12 +144,13 @@
   clauses from the #535/#536 misnumbering (errors db 51), ratified in **#541**:
   **(A) Verify before you state.** Never tell the human — or write into any doc,
   commit, or comment — a ticket's **number or title** until it's confirmed from a
-  real lookup: the `gh issue create` return URL *for that specific create*, or
-  `gh issue view <N>`. Never infer a number from filing order or from a batched
-  command's stdout ordering.
+  real lookup: the `pmtools file` (→ `gh issue create`) return URL *for that specific
+  create*, or `gh issue view <N>`. Never infer a number from filing order or from a
+  batched command's stdout ordering.
   **(B) Mint IDs/refs sequentially, never concurrently.** Never run **ID/ref-minting
-  mutations** in parallel — `gh issue create` **and** `pmtools claim` (which mints a
-  claim ref + worktree, same race class): file/claim one, confirm the returned
+  mutations** in parallel — `pmtools file` (which calls `gh issue create`) **and**
+  `pmtools claim` (which mints a claim ref + worktree, same race class): file/claim
+  one, confirm the returned
   identifier, then do the next. No `&`, `wait`, `xargs -P`, or concurrent tool calls
   that each mint an ID/ref. Read-only `gh`/`pmtools` calls **may** still run in
   parallel — the ban is only on concurrent ID/ref-minting mutations. (The failure was
