@@ -30,6 +30,12 @@ FPS = 60
 # comments below stay as human-readable narrative; deep sourcing write-ups live in
 # docs/research/*. (Render/UI/tail/platform/menu constants are out of scope.)
 
+# NOTE (#785): these velocity/physics defaults are GAME-TUNED px, not faithful
+# rukaidata × PX_PER_UNIT — e.g. MAX_FALL_SPEED 13 is well above Mario's real term
+# vel (1.7 × 5.4 ≈ 9.2). New per-fighter *faithful* velocity data is authored raw-first
+# through `combat.units.vel(units)` (e.g. `move_speed=vel(1.2)`); these globals stay as
+# the tuned baseline. Sourcing true raw for the shipped cats + any re-tune is a separate
+# design pass. (config can't call vel() itself — units.py imports PX_PER_UNIT from here.)
 GRAVITY = 0.5
 MAX_FALL_SPEED = 13
 # Projectile physics defaults (#266, #425). ⚠ GUESS tuning starting points — no
