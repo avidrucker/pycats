@@ -291,6 +291,44 @@ _BODY_PAD_BOT = 12
 # Crouch squash easing (#124): fraction of the stand→crouch transition covered
 # per rendered frame (~3 frames to settle). Render-only; not part of the sim.
 _CROUCH_ANIM_RATE = 0.34
+
+# Idle breathing (#567): a subtle looping vertical body-height oscillation applied
+# only in the idle FSM state, feet planted, so a resting cat reads as alive.
+# Render-only — driven by the per-player `_breath_phase` accumulator, never the sim.
+#
+# Amplitude: peak body-height delta in px (author game-feel, #567). ±1px is
+# deliberately subtle; bump to 2 if imperceptible.
+IDLE_BREATH_AMPLITUDE_PX = 1
+# Period, PER ARCHETYPE, in render-frames for ONE breath. Sourced, not guessed:
+# the PM `Wait1` idle subaction LOOP length is datamined from the .pac via
+# brawllib_rs (#753), and the number of breaths per loop is read off the rendered
+# GIF (#567 review). Nalio = Mario: Wait1 loop = 51 frames containing 2 breaths,
+# so one breath = 51/2 = 25.5 frames (~0.43s at FPS=60). An archetype ABSENT from
+# this map does not breathe yet — its own Wait1 must be datamined first (one #567
+# follow-up per archetype: Narz, Birky, …).
+_NALIO_WAIT1_LOOP_FRAMES = 51  # brawllib_rs #753 (FOUND) — PM Mario Wait1 loop length
+_NALIO_BREATHS_PER_LOOP = 2  # GIF-verified (#567): two rise/falls per Wait1 loop
+_IDLE_BREATH_PERIOD_FRAMES = {
+    "nalio": _NALIO_WAIT1_LOOP_FRAMES / _NALIO_BREATHS_PER_LOOP,  # 25.5 frames/breath
+}
+
+
+def idle_breath_offset_px(character_key, state, phase, *, enabled=True):
+    """Render-only vertical body-height delta (px) for the idle breathing loop (#567).
+
+    Returns 0.0 unless breathing is `enabled`, the fighter is in the `idle` state, and
+    `character_key` names an archetype with a datamined period (`_IDLE_BREATH_PERIOD_FRAMES`).
+    Otherwise returns `A * sin(2π * phase / period)`. Pure — no pygame, no player state —
+    so the gate + waveform are unit-testable in isolation. The caller adds this delta to
+    the rendered body height with the feet (`p.rect.bottom`) planted."""
+    if not enabled or state != "idle":
+        return 0.0
+    period = _IDLE_BREATH_PERIOD_FRAMES.get(character_key)
+    if not period:
+        return 0.0
+    return IDLE_BREATH_AMPLITUDE_PX * math.sin(2 * math.pi * phase / period)
+
+
 _body_cache: dict = {}  # key -> merged composite (ring + body + name), one surface
 _body_layers_cache: dict = {}  # key -> (ring_layer, body_layer) for the split #585 draw
 
@@ -1048,8 +1086,26 @@ def render_battle(surface, players, platforms):
         anim = getattr(p, "_crouch_anim", 0.0)
         anim = min(target, anim + _CROUCH_ANIM_RATE) if anim < target else max(target, anim - _CROUCH_ANIM_RATE)
         p._crouch_anim = anim
+        # Idle breathing (#567): advance the render-only phase clock only while the
+        # effect is live (idle state, breathing on, this archetype has a datamined
+        # period), then read the px height delta. Mutually exclusive with the crouch/
+        # prone squash below — breathing fires only in idle, where low_h == stand_h —
+        # so the two never fight over the body height.
+        breath_key = getattr(getattr(p, "character", None), "key", None)
+        breath_on = runtime_settings.show_idle_breathing()
+        if breath_on and p.state == "idle" and breath_key in _IDLE_BREATH_PERIOD_FRAMES:
+            p._breath_phase = getattr(p, "_breath_phase", 0.0) + 1.0
+        breath_px = idle_breath_offset_px(breath_key, p.state, getattr(p, "_breath_phase", 0.0), enabled=breath_on)
         if anim > 0.0 and low_h != stand_h:
             s = (stand_h + (low_h - stand_h) * anim) / stand_h
+            size = (ring_layer.get_width(), max(1, round(ring_layer.get_height() * s)))
+            ring_layer = pygame.transform.scale(ring_layer, size)
+            body_layer = pygame.transform.scale(body_layer, size)
+            blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s)
+        elif breath_px:
+            # Same feet-anchored scale as the crouch path: p.rect.bottom (the feet)
+            # stays put while the body height moves by ±IDLE_BREATH_AMPLITUDE_PX.
+            s = (stand_h + breath_px) / stand_h
             size = (ring_layer.get_width(), max(1, round(ring_layer.get_height() * s)))
             ring_layer = pygame.transform.scale(ring_layer, size)
             body_layer = pygame.transform.scale(body_layer, size)

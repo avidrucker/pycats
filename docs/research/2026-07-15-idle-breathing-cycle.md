@@ -18,11 +18,22 @@
 
 > ## ✅ Result (2026-07-19, #753) — FOUND
 > The brawllib_rs dump was run against the PM 3.6 `.pac` (vanilla Brawl `-d` + PM 3.6 overlay `-m`).
-> **Mario `Wait1` = 51 frames** (`subaction.frames.len()`, `iasa=None`). At the 1:1 framerate bridge
-> that is **`IDLE_BREATH_PERIOD_FRAMES = 51`** (≈0.85 s @ 60fps) for #567 — a **`FOUND`** value.
+> **Mario `Wait1` = 51 frames** (`subaction.frames.len()`, `iasa=None`). This is the **loop length**.
 > The dump also confirms the mechanic split — `Wait1` 51 (the breathing loop) vs the fidget variants
 > `Wait2` 150 / `Wait3` 95. Evidence + provenance in **Datamine result (#753)** below. This
-> **supersedes** the interim author-chosen 120f (2.0 s) guess in Q4 — the real loop is ~2.4× faster.
+> **supersedes** the interim author-chosen 120f (2.0 s) guess in Q4.
+
+> ## 🔎 Refinement (2026-07-19, #567) — loop ≠ breath period
+> The #753 result recorded 51 as the `Wait1` **loop** length and left one thing un-eyeballed (see the
+> Loop-semantics caveat below): *how many breaths are in that loop?* During #567 implementation the
+> `Wait1` animation was rendered to a GIF (`brawllib_rs` `gif_generator`, saved
+> `repros/idle-breathing/mario_wait1.gif`) and its 51 frames analysed frame-by-frame: the body's
+> vertical position completes **two** full rise/fall cycles per loop (centroid peaks at frames ~4 & ~26,
+> troughs at ~13 & ~38). **So 51 frames = 2 breaths**, and the sin **breath period** #567 drives is
+> **51 / 2 = 25.5 frames/breath** (~0.43 s @ 60fps) — NOT 51. Using 51 as the sin period would bob at
+> half the real rate. In code this lives as a per-archetype map keyed on the loop length ÷ breaths-per-
+> loop (`_IDLE_BREATH_PERIOD_FRAMES["nalio"]` in `render_battle.py`), so each future archetype records
+> its own datamined `Wait1` loop + breath count.
 
 **Verdict in one line (original — superseded by the Correction above):** The idle-wait mechanic and
 its *existence* are web-datamineable, and the **precise `Wait1` loop length is not on the web
@@ -96,10 +107,13 @@ the only path to a sourced number, and nobody has run it yet.
 
 ## Q4 — Recommendation for #567 (framed, not decided)
 
-**Period provenance: `FOUND` = 51 frames (datamined #753).** Mario `Wait1` = **51 frames**
-(`subaction.frames.len()` via brawllib_rs against the PM 3.6 `.pac`). At the 1:1 framerate bridge:
+**Period provenance: `FOUND` = 51-frame loop, 2 breaths (datamined #753, GIF-refined #567).** Mario
+`Wait1` = **51 frames** (`subaction.frames.len()` via brawllib_rs against the PM 3.6 `.pac`). That 51
+is the **loop** length; the loop contains **2 breaths** (GIF-verified, see the #567 Refinement banner),
+so the `sin` **breath period** is `51 / 2`. At the 1:1 framerate bridge:
 
-    IDLE_BREATH_PERIOD_FRAMES = 51    # ≈0.85 s @ 60fps — FOUND (Mario Wait1, brawllib_rs #753)
+    # render_battle.py — per-archetype, loop ÷ breaths-per-loop
+    _IDLE_BREATH_PERIOD_FRAMES = {"nalio": 51 / 2}   # = 25.5 f/breath (~0.43 s @ 60fps) — FOUND #753/#567
 
 **Framerate bridge:** Brawl 60fps ↔ pycats 60fps = **1:1**, so the dumped `frames.len()` maps directly
 with no scaling.
@@ -145,10 +159,12 @@ Mario `Wait*` subaction lengths (the idle family):
 `-m` overlay over the `-d` vanilla dump); field = `HighLevelSubaction.frames.len()` for `Wait1`;
 value = **51 frames**; tier = **`FOUND`**.
 
-**Loop-semantics caveat:** 51 is the `Wait1` animation's full frame count (`iasa=None` → it plays to
-the end, then the idle system loops it / occasionally swaps to `Wait2`/`Wait3`). For #567's `sin`
-bob, one `Wait1` = one period = 51f is the right mapping; whether the CHR0 contains exactly one visual
-breath vs a sub-cycle wasn't eyeballed frame-by-frame, but 51f is the canonical loop length to use.
+**Loop-semantics caveat — RESOLVED by the #567 Refinement above.** 51 is the `Wait1` animation's
+full frame count (`iasa=None` → it plays to the end, then the idle system loops it / occasionally
+swaps to `Wait2`/`Wait3`). The open question — one visual breath per loop, or a sub-cycle — was
+settled by rendering the loop to a GIF and analysing it frame-by-frame: **the loop contains 2
+breaths**, so #567's `sin` period is **51 / 2 = 25.5 f/breath**, not 51. Do NOT map one `Wait1` loop
+to one `sin` period. See **🔎 Refinement (2026-07-19, #567)** at the top.
 
 ## Sources
 - SmashWiki — *Idle pose*: https://www.ssbwiki.com/Idle_pose
@@ -160,14 +176,17 @@ breath vs a sub-cycle wasn't eyeballed frame-by-frame, but 51f is the canonical 
 
 ## Provenance tier
 - **Wait1 loop length:** **`FOUND` = 51 frames** (Mario `Wait1`, `subaction.frames.len()` via
-  brawllib_rs against the PM 3.6 `.pac`, #753). Datamined, NOT engine-locked, NOT web-only. → `IDLE_BREATH_PERIOD_FRAMES = 51`.
+  brawllib_rs against the PM 3.6 `.pac`, #753). Datamined, NOT engine-locked, NOT web-only.
+- **Breaths per loop:** **`FOUND` = 2** (GIF frame-analysis of the same `Wait1`, #567). → breath period
+  = loop ÷ breaths = **51 / 2 = 25.5 f/breath**.
 - **Framerate bridge:** `FOUND` — Brawl 60fps (SmashWiki *Frame*) ↔ pycats `FPS = 60` (`config.py`),
   1:1.
-- **`IDLE_BREATH_PERIOD_FRAMES` for #567:** **`FOUND` = 51** (Mario `Wait1`, #753). The earlier
-  `120` (range 90–180) was an interim author guess — **superseded** by the datamined 51.
+- **Breath period for #567:** **`FOUND` = 25.5 f/breath** (Mario `Wait1` loop 51 ÷ 2 breaths, #753/#567).
+  The earlier `120` (range 90–180) was an interim author guess — superseded; and the raw `51` is the
+  *loop*, not the breath period.
 
 ## Downstream (file one-at-a-time, not in this ticket)
-1. Edit #567 to pin `IDLE_BREATH_PERIOD_FRAMES = 51` (**`FOUND`** — Mario `Wait1`, brawllib_rs #753)
-   with a comment pointing here; add the matching `Provenance` entry when the constant lands.
+1. ✅ **Done (#567):** the per-archetype `_IDLE_BREATH_PERIOD_FRAMES` map in `render_battle.py` pins
+   Nalio at `51 / 2` (loop ÷ breaths), with a comment pointing here.
 2. ✅ **Done (#753):** the brawllib_rs dump — Mario `Wait1` = 51 frames. See **Datamine result (#753)**.
 3. #567 owner-decision: amplitude-scales-with-height (OPEN).

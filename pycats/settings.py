@@ -57,6 +57,12 @@ _DEFAULTS = {
     # player-facing stats render. Mirrors show_status_timer_bars; an Options
     # toggle is a later child (#544).
     "show_dev_info": False,
+    # Idle-stance breathing animation (#567): when True, a fighter in the idle FSM
+    # state renders a subtle looping vertical body-height oscillation (feet planted)
+    # so an idle cat reads as alive. Off → the idle body is byte-identical to a
+    # static render. Mirrors show_status_timer_bars; an Options toggle is a later
+    # child. ON by default (the feature is player-facing polish, not a dev tool).
+    "show_idle_breathing": True,
 }
 
 
@@ -98,6 +104,7 @@ def _validated(raw):
     out["show_screen_hints"] = bool(raw.get("show_screen_hints", out["show_screen_hints"]))
     out["esc_hold_to_navigate"] = bool(raw.get("esc_hold_to_navigate", out["esc_hold_to_navigate"]))
     out["show_dev_info"] = bool(raw.get("show_dev_info", out["show_dev_info"]))
+    out["show_idle_breathing"] = bool(raw.get("show_idle_breathing", out["show_idle_breathing"]))
     fs = raw.get("font_scale")
     if fs in FONT_SCALES:  # snap an unknown preset back to the default
         out["font_scale"] = fs

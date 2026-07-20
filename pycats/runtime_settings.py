@@ -73,6 +73,13 @@ def show_dev_info():
     return bool(get("show_dev_info"))
 
 
+def show_idle_breathing():
+    """Live toggle the idle-stance breathing animation honours (#567). Default on —
+    a subtle looping body-height oscillation in the idle state so cats read as alive;
+    off renders the idle body byte-identical to a static frame."""
+    return bool(get("show_idle_breathing"))
+
+
 def font_scale():
     """Live UI-text size multiplier (0.5 / 1.0 / 2.0) from the font_scale preset
     (#345). Unknown presets fall back to 1.0 (standard)."""
