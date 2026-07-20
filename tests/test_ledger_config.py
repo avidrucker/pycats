@@ -4,7 +4,8 @@ Guards that the config is well-formed and carries the pycats-ratified shape, so 
 `verify-claims` skill mints IDs and resolves the ledger consistently. The ledger DATA
 (`claims-data/`) is gitignored and absent in CI, so this asserts config SHAPE only —
 never that the ledger directory exists. Skill: avidrucker/claude-config verify-claims
-(config home #19). Ratified in the 2026-07-15 grill.
+(config home #19). Ratified in the 2026-07-15 grill; migrated to the 7-key schema
+(topics/testDir in, evidenceDir out) in #757.
 """
 
 import json
@@ -13,7 +14,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG = REPO_ROOT / ".claude" / "ledger.json"
 
-REQUIRED_KEYS = {"enabled", "dir", "prefix", "evidenceDir", "overloadedTerms"}
+# The verify-claims 7-key schema (evidenceDir was retired, topics + testDir added
+# in the migration, #757). agentScoped is nullable/optional, so it stays out of the
+# required set.
+REQUIRED_KEYS = {"enabled", "dir", "prefix", "topics", "testDir", "overloadedTerms"}
 
 
 def _load():
@@ -46,3 +50,9 @@ def test_enabled_is_true():
 def test_overloaded_terms_is_nonempty_list():
     terms = _load()["overloadedTerms"]
     assert isinstance(terms, list) and terms
+
+
+def test_evidence_dir_key_is_retired():
+    # `evidenceDir` was the old frozen-evidence-dir model; the 7-key migration
+    # (#757) removed it. Guard against a regression that re-adds it.
+    assert "evidenceDir" not in _load()
