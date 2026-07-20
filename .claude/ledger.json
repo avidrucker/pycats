@@ -3,7 +3,8 @@
   "dir": "claims-data",
   "prefix": "PYC",
   "agentScoped": null,
-  "evidenceDir": "claims-data/evidence",
+  "topics": true,
+  "testDir": null,
   "overloadedTerms": [
     "claim",
     "close",
