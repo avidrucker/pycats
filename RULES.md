@@ -480,12 +480,25 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    `.claude/orchestrate.json`'s `worktreeBranchPattern` parses the **branch column**
    of `git worktree list` (`br-<fruit>/<project>-N`), **not** the `wt-…` directory
    name.
-2. **Commit on the feature branch, with `Closes #N` in the commit _body_.** The
+2. **Re-run the full suite after your FINAL edit, before you commit.** The
+   post-claim run (see "Claiming work") guards the *merge race* — a red inherited
+   from another agent's mid-flight merge. It does **not** guard a red *you* introduce
+   with a later edit: #757 dropped `evidenceDir` from `.claude/ledger.json` *after* its
+   green post-claim run, and the broken `tests/test_ledger_config.py` merged anyway
+   (fixed reactively in #762) — ruff had nothing to say about a broken Python assertion.
+   So run the suite once more after your last change:
+
+       SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
+         /abs/path/to/pycats/.venv/bin/python -m pytest -q
+
+   The `pmtools close` gate re-runs the suite too (step 4), so this is not the only net
+   — but catching a red locally is faster feedback than a rejected merge.
+3. **Commit on the feature branch, with `Closes #N` in the commit _body_.** The
    subject may keep the repo's `type(scope): summary (#N)` style, but the body
    MUST carry the `Closes #N` keyword: it is both the GitHub auto-close trigger
    *and* exactly what `pmtools close` scans for (and recovers on). `git log
    --oneline` only shows the subject — put the keyword in the body, not the title.
-3. **Return the session to main with `ExitWorktree keep`, then land + tear down with
+4. **Return the session to main with `ExitWorktree keep`, then land + tear down with
    `pmtools close <N>` from the main checkout.** Because you entered the worktree at
    claim time (see "Claiming work"), the session is now *inside* the worktree — call
    the `ExitWorktree` tool with `action: keep` to move it back to the main checkout
@@ -493,13 +506,19 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    your job is only to leave the directory, not delete it. Then run `close` from the
    main repo root — it resolves the worktree + branch from the issue number
    (pmtools#104, `008cb2a`), so it must run from main, **not** from inside the worktree
-   it deletes. It loops fetch → rebase `origin/main` → push `HEAD:main` until it lands,
+   it deletes. Before pushing, `close` runs the `close.verify` gate (cwd=worktree, so
+   it checks the code being merged): `ruff format --check` + `ruff check` on `pycats/`,
+   then the **full pytest suite** under the SDL dummy drivers (`SDL_*=dummy … python -m
+   pytest -q`, added #764); any failure aborts the close before anything reaches `main`.
+   So a green close *does* mean the suite passed at merge — the pytest step is why;
+   before #764 the gate was ruff-only and a broken test could merge green-gated (#757→
+   #762). Then it loops fetch → rebase `origin/main` → push `HEAD:main` until it lands,
    then — only after confirming the commit reached `origin/main` — deletes the claim
    ref, closes the issue, and removes the worktree + branch. Exiting to main first
    keeps your shell from being stranded in the deleted directory. (No-code
    decision/research tickets close via `gh issue close` + `pmtools release`; the same
    `ExitWorktree keep` applies before running them from main.)
-4. **Run the pre-close error self-audit.** Before posting the closing comment,
+5. **Run the pre-close error self-audit.** Before posting the closing comment,
    re-read the session from claim → now, enumerate every log-error trigger event
    (including resolved ones), log any missing rows (`pmtools error log`), and include
    one of `error self-audit: N row(s) logged (#…)` or `error self-audit: no loggable
