@@ -107,6 +107,9 @@ use std::path::PathBuf;
 
 ## Refs
 
+- [`tooling-brawllib-rs-gif-recipe.md`](./tooling-brawllib-rs-gif-recipe.md) — the **visual** sibling:
+  render a subaction to an animated GIF (`gif_generator`) + measure its motion (cycle count / amplitude),
+  for when you need to *watch* an animation, not just read its frame count (#758, first used #567/#760).
 - `docs/research-120-smash-units-and-sources.md` — sourcing map (rukaidata ⭐ primary for moves).
 - Engine-global limit: #215 / #222, the `DODGE_AIR_SPEED` precedent; #599 charge globals are **not**
   sourced here.
