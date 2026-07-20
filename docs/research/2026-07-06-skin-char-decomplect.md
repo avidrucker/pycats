@@ -47,6 +47,8 @@ All five are **incidental** (construct/tool choices), i.e. worth decomplecting �
 | **Selection** | `(Character, Skin)` | what a player commits; already half-exists as char_select's `p*_selected` + `p*_palette` |
 | **Player** (Match context) | a seat, decomposed into 3 independent seams + a Selection | see below |
 | **PlaceholderSkin** | the flat-gray non-selectable Skin | `_TESTCAT`, no longer special-cased |
+| **Character Roster Tile** | a tile in the top char-select catalog; one per **Character**, always shown at its **default Skin** (Character-indexed — "who *can* you pick?") | code: `CharacterSelector.render` grid loop, `CHAR_SELECT_TILE_*`; ratified 2026-07-19 (#761) |
+| **Player Choice Slot** | a slot in the P1..P4 row; one per **Player (seat)**, shows that player's live **Selection** — cat + Character name + cycled Skin (Player-indexed — "who *did* each pick?") | code: `_draw_player_slots`, `PLAYER_SLOT_*` (#682); ratified 2026-07-19 (#761) |
 
 **The `Player` identity splits into three independent seams** (today all fused in `char_name`):
 
@@ -57,6 +59,8 @@ All five are **incidental** (construct/tool choices), i.e. worth decomplecting �
 | **PlayerName** | `"P1"` / `"P2"` (defaults from number) | custom nicknames (post-v1); absorbs today's `nickname` #478 |
 
 Number is primary; color and name *default from* it (composition, not braid) and stay independently overridable. HUD side is derived from number by the render adapter (not a 4th seam).
+
+**Char-select surfaces — the tile/slot split (ratified 2026-07-19, #761).** The two on-screen regions are named by what indexes them: a **Character Roster Tile** is *Character*-indexed (the fixed catalog, one per Character, always the default Skin), while a **Player Choice Slot** is *Player*-indexed (one per seat, showing that player's live Selection). Lexically: **tile** = roster catalog, **slot** = player choice — never the same word for both. A player's cycled Skin shows **only** in their Player Choice Slot; Character Roster Tiles never recolor per-player (#761).
 
 ---
 
