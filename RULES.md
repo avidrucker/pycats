@@ -431,7 +431,13 @@ The fleet closes via **`pmtools close`**, which owns the racy push to `main` and
 the gated worktree teardown. Follow this order — do **not** improvise:
 
 1. **Work in your claimed worktree.** `pmtools claim <N> --as <fruit>` created it
-   under `.claude/worktrees/<fruit>-issue-N` on branch `<fruit>/issue-N`.
+   under `.claude/worktrees/wt-<fruit>-<project>-N` on branch
+   `br-<fruit>/<project>-N` — the pmtools #128 "standard" mint shape (the legacy
+   `<fruit>/issue-N` branch and old-canonical `…-<lang>-issue-N` forms still parse
+   for back-compat). Note the branch and worktree-dir shapes differ:
+   `.claude/orchestrate.json`'s `worktreeBranchPattern` parses the **branch column**
+   of `git worktree list` (`br-<fruit>/<project>-N`), **not** the `wt-…` directory
+   name.
 2. **Commit on the feature branch, with `Closes #N` in the commit _body_.** The
    subject may keep the repo's `type(scope): summary (#N)` style, but the body
    MUST carry the `Closes #N` keyword: it is both the GitHub auto-close trigger
@@ -506,8 +512,8 @@ flow; #600.)
   run `close` from *inside* the worktree, its final step deletes the cwd you are
   standing in: the process returns **exit 1** after a *successful* close (trust the
   `CLOSE OK` banner, not the code — pmtools#8), and your shell is left in a deleted
-  directory (`getcwd: cannot access parent directories`, with a stale `wt-…-issue-N`
-  in your prompt) until you `cd /abs/path/to/pycats`. From-main (pmtools#104) avoids
+  directory (`getcwd: cannot access parent directories`, with a stale
+  `wt-<fruit>-<project>-N` in your prompt) until you `cd /abs/path/to/pycats`. From-main (pmtools#104) avoids
   all of this — which is why it is the default in step 3.
 - **Post the closing comment from `<main>` (where you already are)**, and include the
   step-4 `error self-audit: …` line:

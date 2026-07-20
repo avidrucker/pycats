@@ -4,7 +4,7 @@
   "mode": "fleet",
   "issueLimit": 50,
   "roster": ["APPLE", "BANANA", "CHERRY", "DRAGONFRUIT", "ELDERBERRY", "FIG", "GRAPE", "HONEYDEW", "INCABERRY"],
-  "worktreeBranchPattern": "^(?<agent>[a-z]+)/issue-(?<issue>\\d+)",
+  "worktreeBranchPattern": "^(?:br-)?(?<agent>[a-z0-9]+(?:-[0-9]+)?)/(?:(?!issue-\\d)(?<project>[a-z0-9]+)-(?:(?!issue-)(?<lang>[a-z0-9]+)-)?)?(?:issue-)?(?<issue>\\d+)",
   "defaultBase": "origin/main",
   "paths": { "worktreeDir": ".claude/worktrees" },
   "pmtools": { "home": null, "port": "py" },
