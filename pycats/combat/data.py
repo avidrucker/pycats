@@ -24,7 +24,7 @@ Design notes:
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, fields
+from dataclasses import MISSING, dataclass, fields
 from pathlib import Path
 
 # Movement-constant defaults live in config; FighterData uses them as field
@@ -321,6 +321,113 @@ def _fighter_from_json(doc: dict) -> FighterData:
         if doc.get(key) is not None:
             kw[key] = tuple(doc[key])
     return FighterData(**kw)
+
+
+# ---------------------------------------------------------------------------
+# JSON dump (#847, R5 of the #792 editor) — FighterData -> minimal dict
+# ---------------------------------------------------------------------------
+# The mechanical inverse of _fighter_from_json (design §2.4 + §1). Two schema
+# rules keep the output thin and golden-safe:
+#   1. Omit == default. Any field equal to its dataclass default is dropped, via
+#      dataclasses.fields() + a default comparison — so the dump reads the SAME
+#      single default table the hydrate does and the two cannot drift.
+#   2. Inline circles. Every Circle serializes to [dx, dy, r]; everything else
+#      keeps its dataclass field name.
+# Structured fields (circle/hitboxes/hurtbox/moves/*_size/*_hurtbox) are walked
+# explicitly, mirroring the hydrate; the plain scalar tail of each dataclass is
+# emitted by _nondefault_scalars. `provenance` is never written (migrated data
+# has no per-frame trace — §2.4; the editor seeds it on first open).
+#
+# R5 ships this function + its round-trip test ONLY and commits ZERO live
+# <character>.json (ruling on #847): no real fighter is flipped onto the R4 JSON
+# reader, so the dump is inert and goldens cannot move. The per-fighter flip is
+# deferred to follow-up DEV tickets, filed one-at-a-time once the dumper is proven.
+
+# Structural fields handled explicitly per dataclass (excluded from the generic
+# scalar sweep). Circles go inline; hurtboxes/moves/sizes get their own walk.
+_HITBOX_STRUCTURAL = frozenset({"circle"})
+_MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox"})
+_FIGHTER_STRUCTURAL = frozenset(
+    {"hurtbox", "moves", "stand_size", "crouch_size", "crouch_hurtbox", "prone_size", "prone_hurtbox"}
+)
+
+
+# Sentinel: field has no default (required) -> always emitted.
+_NO_DEFAULT = object()
+
+
+def _field_default(f):
+    """The default value of dataclass field `f`, or _NO_DEFAULT if it is required."""
+    if f.default is not MISSING:
+        return f.default
+    if f.default_factory is not MISSING:  # type: ignore[misc]
+        return f.default_factory()
+    return _NO_DEFAULT
+
+
+def _nondefault_scalars(obj, structural: frozenset) -> dict:
+    """Emit each non-structural field whose value differs from its default.
+
+    Required fields (no default) are always emitted. This is the "omit ==
+    default" rule (§1): it drives off dataclasses.fields(), the same default
+    table _fighter_from_json relies on, so serialize and hydrate cannot drift.
+    """
+    out = {}
+    for f in fields(obj):
+        if f.name in structural:
+            continue
+        value = getattr(obj, f.name)
+        default = _field_default(f)
+        if default is _NO_DEFAULT or value != default:
+            out[f.name] = value
+    return out
+
+
+def _circle_to_json(c: Circle) -> list:
+    return [c.dx, c.dy, c.r]
+
+
+def _hurtbox_to_json(h: Hurtbox) -> dict:
+    return {"circles": [_circle_to_json(c) for c in h.circles]}
+
+
+def _hitbox_to_json(hb: Hitbox) -> dict:
+    out = _nondefault_scalars(hb, _HITBOX_STRUCTURAL)
+    out["circle"] = _circle_to_json(hb.circle)
+    return out
+
+
+def _move_to_json(m: MoveData) -> dict:
+    out = _nondefault_scalars(m, _MOVE_STRUCTURAL)
+    out["hitboxes"] = [_hitbox_to_json(hb) for hb in m.hitboxes]
+    if m.hurtbox is not None:  # optional per-move override (#831)
+        out["hurtbox"] = _hurtbox_to_json(m.hurtbox)
+    return out
+
+
+def _fighter_to_json(fd: FighterData, character: str | None = None) -> dict:
+    """Serialize a FighterData to the minimal thin-mirror dict (inverse hydrate).
+
+    Pass `character` to emit the schema's `character` key (the file stem); it is
+    metadata the hydrate ignores, so the round-trip does not depend on it. Absent
+    -> the key is omitted. `schema_version` is always emitted (the hydrate asserts
+    it). The result is JSON-serializable (no tuples/dataclasses leak).
+    """
+    out: dict = {"schema_version": SCHEMA_VERSION}
+    if character is not None:
+        out["character"] = character
+    out.update(_nondefault_scalars(fd, _FIGHTER_STRUCTURAL))
+    out["hurtbox"] = _hurtbox_to_json(fd.hurtbox)
+    out["moves"] = {key: _move_to_json(m) for key, m in fd.moves.items()}
+    for key in ("crouch_hurtbox", "prone_hurtbox"):
+        hb = getattr(fd, key)
+        if hb is not None:
+            out[key] = _hurtbox_to_json(hb)
+    for key in ("stand_size", "crouch_size", "prone_size"):
+        size = getattr(fd, key)
+        if size is not None:
+            out[key] = list(size)
+    return out
 
 
 # Per-fighter JSON data directory (#844, R4 of the #792 editor; design §1). The
