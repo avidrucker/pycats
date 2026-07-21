@@ -115,10 +115,12 @@ def test_mixed_text_resizes_when_font_scale_changes():
 
 
 def test_main_menu_option_spacing_scales_with_font_scale():
-    """#402: the main-menu option rows spread further apart at large scale. Options now
-    render through the menu-button widget (#360), so capture the button centers rather
-    than render_text_simple. Able-to-fail: static spacing -> equal spans."""
-    import pycats.main_menu as mm
+    """#402: the main-menu option rows spread further apart at large scale. Options
+    render through the menu-button widget (#360); since #837 the button loop lives in
+    `menu_widgets.draw_menu_screen`, so capture the button centers by spying on
+    `menu_widgets.draw_menu_button` (its call site). Able-to-fail: static spacing ->
+    equal spans."""
+    import pycats.menu_widgets as mw
 
     def option_span(scale):
         ys = {}
@@ -127,13 +129,13 @@ def test_main_menu_option_spacing_scales_with_font_scale():
             ys[label] = center[1]
             return pygame.Rect(0, 0, 1, 1)
 
-        orig = mm.draw_menu_button
-        mm.draw_menu_button = spy
+        orig = mw.draw_menu_button
+        mw.draw_menu_button = spy
         try:
             with _font_scale(scale):
                 MainMenuManager(_P1, _P2).render(pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT)))
         finally:
-            mm.draw_menu_button = orig
+            mw.draw_menu_button = orig
         return ys["Quit"] - ys["Play"]
 
     assert option_span("large") > option_span("standard")

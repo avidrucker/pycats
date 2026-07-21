@@ -14,19 +14,16 @@ from . import runtime_settings
 from .config import (
     BLACK,
     MAIN_MENU_BG_COLOR,
-    MAIN_MENU_OPTION_SIZE,
     MAIN_MENU_OPTION_SPACING,
     MAIN_MENU_TITLE_COLOR,
     MAIN_MENU_TITLE_SIZE,
-    MENU_NAV_COOLDOWN,
-    MENU_SELECT_COOLDOWN,
     OVERLAY_DIM_ALPHA,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
     WHITE,
 )
-from .menu_widgets import PRESS_PULSE_FRAMES, draw_menu_button
-from .text_utils import text_renderer
+from .menu_controller import MenuController
+from .menu_widgets import draw_menu_screen
 
 # Pause-screen layout literals (#433: named inline). Offsets are from the vertical
 # centre; the dim overlay reuses config.BLACK at config.OVERLAY_DIM_ALPHA (#450).
@@ -36,79 +33,19 @@ PAUSE_INSTRUCTIONS_OFFSET_Y = 120  # instruction block below centre
 PAUSE_INSTRUCTION_LINE_SPACING = 25
 PAUSE_INSTRUCTION_FONT_SIZE = 18
 
+# What a confirmed row maps to, by index.
+_ACTIONS = ["resume", "end_match", "return_to_char_select"]
 
-class PauseMenuManager:
+
+class PauseMenuManager(MenuController):
     """Handles pause menu display and navigation for both players."""
 
     def __init__(self, p1_controls, p2_controls):
-        # Player controls
-        self.p1_controls = p1_controls
-        self.p2_controls = p2_controls
-
-        # Menu options
+        super().__init__(p1_controls, p2_controls)
         self.options = ["Resume", "End Match", "Return to Character Select"]
-        self.selected_option = 0  # Index of currently selected option
 
-        # Input debouncing
-        self.input_cooldown = 0
-
-        # Press-feedback flash: frames remaining on the focused button's pulse (#332).
-        self.press_pulse = 0
-
-        # Action results
-        self.action_requested = None  # "resume", "end_match", "return_to_char_select", or None
-
-    def reset(self):
-        """Reset the menu state."""
-        self.selected_option = 0
-        self.input_cooldown = 0
-        self.press_pulse = 0
-        self.action_requested = None
-
-    def update(self, pressed_keys):
-        """Update menu based on player input."""
-        # Decay the press-flash every frame, before the cooldown early-return (#332).
-        if self.press_pulse > 0:
-            self.press_pulse -= 1
-
-        # Decrease input cooldown
-        if self.input_cooldown > 0:
-            self.input_cooldown -= 1
-
-        # Don't process input during cooldown
-        if self.input_cooldown > 0:
-            return
-
-        # Handle navigation input from either player (up/down)
-        if self.p1_controls["up"] in pressed_keys or self.p2_controls["up"] in pressed_keys:
-            self.selected_option = (self.selected_option - 1) % len(self.options)
-            self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
-            self.press_pulse = PRESS_PULSE_FRAMES  # flash the newly-focused row
-
-        if self.p1_controls["down"] in pressed_keys or self.p2_controls["down"] in pressed_keys:
-            self.selected_option = (self.selected_option + 1) % len(self.options)
-            self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
-            self.press_pulse = PRESS_PULSE_FRAMES  # flash the newly-focused row
-
-        # Handle selection from either player's ATTACK key. Read the rebindable
-        # p1/p2_controls["attack"] (as main_menu does) rather than hardcoding the
-        # default K_v/K_SLASH, so an attack rebind is honored here too (#842).
-        if self.p1_controls["attack"] in pressed_keys or self.p2_controls["attack"] in pressed_keys:
-            if self.selected_option == 0:  # Resume
-                self.action_requested = "resume"
-            elif self.selected_option == 1:  # End Match
-                self.action_requested = "end_match"
-            elif self.selected_option == 2:  # Return to Character Select
-                self.action_requested = "return_to_char_select"
-
-            self.input_cooldown = MENU_SELECT_COOLDOWN  # Prevent rapid selection
-            self.press_pulse = PRESS_PULSE_FRAMES  # flash the confirmed row
-
-    def get_action(self):
-        """Get the requested action and clear it."""
-        action = self.action_requested
-        self.action_requested = None
-        return action
+    def on_select(self, index):
+        return _ACTIONS[index] if 0 <= index < len(_ACTIONS) else None
 
     def render(self, surface, background_surface=None):
         """Render the pause menu with optional background."""
@@ -123,48 +60,29 @@ class PauseMenuManager:
         pause_overlay.fill((*BLACK, OVERLAY_DIM_ALPHA))  # Black with ~50% transparency
         surface.blit(pause_overlay, (0, 0))
 
-        # Title
-        text_renderer.render_text_simple(
-            "GAME PAUSED",
-            MAIN_MENU_TITLE_SIZE,
-            MAIN_MENU_TITLE_COLOR,
-            surface,
-            (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - PAUSE_TITLE_OFFSET_Y),
-            center=True,
-        )
-
-        # Menu options — the shared glowing menu-button widget (#359/#360): a coloured
-        # rect that glows when focused with a redundant ► marker (focus not colour-only,
-        # #346), replacing the old per-option colour + ►◄ arrows. Reads well over the
-        # dimmed game background (unfocused rows are outline-only).
-        start_y = SCREEN_HEIGHT // 2 - PAUSE_OPTIONS_OFFSET_Y
-
-        for i, option in enumerate(self.options):
-            option_y = start_y + i * MAIN_MENU_OPTION_SPACING
-            draw_menu_button(
-                surface,
-                option,
-                (SCREEN_WIDTH // 2, option_y),
-                MAIN_MENU_OPTION_SIZE,
-                focused=(i == self.selected_option),
-                pressed=(i == self.selected_option and self.press_pulse > 0),
-            )
-
         # Instructions — pause is a BATTLE state, so its hints obey the show_controls
         # toggle (#681), not the non-battle show_screen_hints one.
         instructions = (
             ["Use W/S or ↑/↓ to navigate", "Press V or / to select"] if runtime_settings.show_controls() else []
         )
 
-        instruction_start_y = SCREEN_HEIGHT // 2 + PAUSE_INSTRUCTIONS_OFFSET_Y
-
-        for i, instruction in enumerate(instructions):
-            instruction_y = instruction_start_y + i * PAUSE_INSTRUCTION_LINE_SPACING
-            text_renderer.render_text_mixed(
-                instruction,
-                PAUSE_INSTRUCTION_FONT_SIZE,
-                WHITE,
-                surface,
-                (SCREEN_WIDTH // 2, instruction_y),
-                center=True,
-            )
+        # Title + glowing button column + instruction lines (#837 shared body). Unlike
+        # the main menu, the option spacing is fixed (not font-scaled) and there is no
+        # F11 hint; the dim overlay above is the pause-specific pre-step.
+        draw_menu_screen(
+            surface,
+            title="GAME PAUSED",
+            title_center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - PAUSE_TITLE_OFFSET_Y),
+            title_size=MAIN_MENU_TITLE_SIZE,
+            title_color=MAIN_MENU_TITLE_COLOR,
+            options=self.options,
+            selected=self.selected_option,
+            press_pulse=self.press_pulse,
+            options_start_y=SCREEN_HEIGHT // 2 - PAUSE_OPTIONS_OFFSET_Y,
+            option_spacing=MAIN_MENU_OPTION_SPACING,
+            instructions=instructions,
+            instructions_start_y=SCREEN_HEIGHT // 2 + PAUSE_INSTRUCTIONS_OFFSET_Y,
+            instruction_font_size=PAUSE_INSTRUCTION_FONT_SIZE,
+            instruction_line_spacing=PAUSE_INSTRUCTION_LINE_SPACING,
+            instruction_color=WHITE,
+        )

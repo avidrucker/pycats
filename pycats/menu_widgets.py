@@ -12,7 +12,13 @@ the pixels. Headless-safe (plain pygame Surface ops; no display hooks needed).
 import pygame
 
 from . import runtime_settings
-from .config import MAIN_MENU_OPTION_COLOR, MAIN_MENU_SELECTED_COLOR
+from .config import (
+    MAIN_MENU_OPTION_COLOR,
+    MAIN_MENU_OPTION_SIZE,
+    MAIN_MENU_SELECTED_COLOR,
+    SCREEN_WIDTH,
+    WHITE,
+)
 from .text_utils import text_renderer
 
 # ► (U+25BA) is in text_utils' font-capability probe, so it always renders.
@@ -85,3 +91,58 @@ def draw_menu_button(surface, label, center, size, focused, *, min_width=BUTTON_
     # centers horizontally (text top sits at y), which left labels low in the box.
     text_renderer.render_mixed_centered(text, size, color, surface, center)
     return rect
+
+
+def draw_menu_screen(
+    surface,
+    *,
+    title,
+    title_center,
+    options,
+    selected,
+    press_pulse,
+    options_start_y,
+    option_spacing,
+    instructions,
+    instructions_start_y,
+    instruction_font_size,
+    instruction_line_spacing,
+    title_size,
+    title_color,
+    option_size=MAIN_MENU_OPTION_SIZE,
+    instruction_color=WHITE,
+):
+    """Draw the shared menu body: a centred title, a column of glowing buttons, and
+    a block of instruction lines (#837).
+
+    This owns the draw sequence common to `main_menu` and `pause_menu`; each screen
+    keeps its own pre-step (background fill / dim overlay) and post-step (the main
+    menu's F11 hint) and supplies the layout literals so the pixels stay identical to
+    the hand-written renders. All rows are horizontally centred on the screen. An
+    empty `instructions` list draws no instruction block (the hint-toggle-off case).
+    """
+    center_x = SCREEN_WIDTH // 2
+
+    text_renderer.render_text_simple(title, title_size, title_color, surface, title_center, center=True)
+
+    for i, option in enumerate(options):
+        option_y = options_start_y + i * option_spacing
+        draw_menu_button(
+            surface,
+            option,
+            (center_x, option_y),
+            option_size,
+            focused=(i == selected),
+            pressed=(i == selected and press_pulse > 0),
+        )
+
+    for i, instruction in enumerate(instructions):
+        instruction_y = instructions_start_y + i * instruction_line_spacing
+        text_renderer.render_text_mixed(
+            instruction,
+            instruction_font_size,
+            instruction_color,
+            surface,
+            (center_x, instruction_y),
+            center=True,
+        )

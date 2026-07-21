@@ -26,17 +26,21 @@ _P2 = dict(up=pygame.K_UP, down=pygame.K_DOWN, left=pygame.K_LEFT, right=pygame.
            attack=pygame.K_SLASH, special=pygame.K_PERIOD)
 
 
-def _spy_button_calls(module, render_fn):
-    """Return the (label, focused) tuples that `render_fn` passes to draw_menu_button,
-    patched in `module`'s namespace. The fake returns a real Rect so callers that use
-    the return value keep working."""
+def _spy_button_calls(render_fn):
+    """Return the (label, focused) tuples that `render_fn` passes to draw_menu_button.
+
+    Patched at its definition site `pycats.menu_widgets.draw_menu_button`: since #837
+    the menus render their rows through the shared `draw_menu_screen` helper (which
+    calls `draw_menu_button` in menu_widgets' own namespace) rather than referencing
+    the widget directly, so the spy targets the widget module, not the screen module.
+    The fake returns a real Rect so callers that use the return value keep working."""
     calls = []
 
     def fake(surface, label, center, size, focused, **kw):
         calls.append((label, focused))
         return pygame.Rect(0, 0, 1, 1)
 
-    with patch(f"pycats.{module}.draw_menu_button", side_effect=fake):
+    with patch("pycats.menu_widgets.draw_menu_button", side_effect=fake):
         render_fn()
     return calls
 
@@ -54,7 +58,7 @@ def test_main_menu_renders_rows_via_widget():
     m = MainMenuManager(_P1, _P2)
     m.selected_option = 1  # "Options"
     surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    calls = _spy_button_calls("main_menu", lambda: m.render(surf))
+    calls = _spy_button_calls(lambda: m.render(surf))
     _assert_one_focused_at_selected(calls, m.options, 1)
 
 
@@ -63,7 +67,7 @@ def test_pause_menu_renders_rows_via_widget():
     m = PauseMenuManager(_P1, _P2)
     m.selected_option = 2  # "Return to Character Select"
     surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    calls = _spy_button_calls("pause_menu", lambda: m.render(surf))
+    calls = _spy_button_calls(lambda: m.render(surf))
     _assert_one_focused_at_selected(calls, m.options, 2)
 
 
@@ -73,5 +77,5 @@ def test_focus_moves_with_selection_main_menu():
     surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     for sel in range(len(m.options)):
         m.selected_option = sel
-        calls = _spy_button_calls("main_menu", lambda: m.render(surf))
+        calls = _spy_button_calls(lambda: m.render(surf))
         _assert_one_focused_at_selected(calls, m.options, sel)
