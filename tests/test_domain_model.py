@@ -16,7 +16,6 @@ from pycats.domain import (
     PLACEHOLDER_SKIN,
     SKINS,
     BuiltFighter,
-    Character,
     PlayerIdentity,
     PlayerName,
     PlayerNumberSlot,

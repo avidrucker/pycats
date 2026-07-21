@@ -10,10 +10,10 @@
   "pmtools": { "home": null, "port": "py" },
   "close": {
     "verify": {
-      "comment": "Whole-tree ruff gate + full pytest suite at merge (#633, from #628; pytest added #764). cwd=worktree has no .venv (repo convention), and neither `ruff` nor `python` is on PATH there; `git rev-parse --git-common-dir` resolves the MAIN repo's .venv/bin depth-independently while `pycats/` stays relative to the worktree cwd (checks the code being merged). Ruff runs first so a formatting/lint failure short-circuits before the slow suite; pytest last runs the whole suite under the SDL dummy drivers so a broken test blocks the merge (#757→#762: a red test previously merged green-gated because the gate was ruff-only). Ruff scoped to pycats/ until #540 widens to root scripts; pytest is whole-suite.",
+      "comment": "Whole-tree ruff gate + full pytest suite at merge (#633, from #628; pytest added #764). cwd=worktree has no .venv (repo convention), and neither `ruff` nor `python` is on PATH there; `git rev-parse --git-common-dir` resolves the MAIN repo's .venv/bin depth-independently while `pycats/` stays relative to the worktree cwd (checks the code being merged). Ruff runs first so a formatting/lint failure short-circuits before the slow suite; pytest last runs the whole suite under the SDL dummy drivers so a broken test blocks the merge (#757→#762: a red test previously merged green-gated because the gate was ruff-only). Ruff `check` (lint) covers pycats/ + tests/ (#817 widened it — a tests/ F401 rotted undetected because the lint gate was pycats/-only); `format --check` stays pycats/-only until a separate call reformats the never-formatted tests/ tree (#540/#817 deferred). pytest is whole-suite.",
       "commands": [
         "\"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/ruff\" format --check pycats/",
-        "\"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/ruff\" check pycats/",
+        "\"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/ruff\" check pycats/ tests/",
         "SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/python\" -m pytest -q"
       ],
       "cwd": "worktree",
