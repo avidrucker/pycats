@@ -140,6 +140,16 @@ class MoveData:
     grants_recovery: bool = False
     recovery_vy: float = 0.0
     recovery_vx: float = 0.0
+    # Per-move hurtbox override (#831, R1 of the #792 editor). None = use the
+    # fighter-posture hurtbox (FighterData.hurtbox / crouch_hurtbox / prone_hurtbox
+    # — today's behavior). A move that sets this carries its own always-active
+    # Hurtbox, letting the editor author per-move hurtboxes (per-frame edits are
+    # collapsed to one static override by union, #809 §1.2). Defaults None → every
+    # existing move is byte-identical (golden-safe). INERT until a consumer resolves
+    # `move.hurtbox or fighter.hurtbox` — that's R2 (#792), not this slice.
+    # Forward ref (Hurtbox is defined below): safe under `from __future__ import
+    # annotations`, which stringifies all annotations.
+    hurtbox: Hurtbox | None = None
 
     def __post_init__(self) -> None:
         # Per-hitbox temporal-window cross-checks (#204). Per-box shape (paired,

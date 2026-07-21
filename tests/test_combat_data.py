@@ -18,8 +18,7 @@ from pycats.combat.data import (
 
 
 def test_hitbox_carries_knockback_fields():
-    hb = Hitbox(circle=Circle(dx=1, dy=2, r=3), damage=10.0, angle=0,
-                base_knockback=30.0, knockback_growth=100.0)
+    hb = Hitbox(circle=Circle(dx=1, dy=2, r=3), damage=10.0, angle=0, base_knockback=30.0, knockback_growth=100.0)
     assert hb.base_knockback == 30.0
     assert hb.knockback_growth == 100.0
 
@@ -27,6 +26,7 @@ def test_hitbox_carries_knockback_fields():
 # ---------------------------------------------------------------------------
 # load_fighter_data returns FighterData for every CAT_CHARACTERS key
 # ---------------------------------------------------------------------------
+
 
 def test_load_fighter_data_calico_returns_fighter_data():
     fd = load_fighter_data("calico")
@@ -51,8 +51,9 @@ def test_load_fighter_data_unknown_char_returns_fighter_data():
 # the fallback and repoints "P1"/"P2" → Nalio).
 # ---------------------------------------------------------------------------
 
+
 def test_load_fighter_data_testcat_returns_minimal_one_move_kit():
-    """"testcat" resolves to the minimal fixture — exactly one move ("attack")."""
+    """ "testcat" resolves to the minimal fixture — exactly one move ("attack")."""
     fd = load_fighter_data("testcat")
     assert isinstance(fd, FighterData)
     assert set(fd.moves) == {"attack"}
@@ -79,6 +80,7 @@ def test_testcat_is_not_a_selectable_archetype():
 # Hurtbox has exactly 2 circles
 # ---------------------------------------------------------------------------
 
+
 def test_hurtbox_has_two_circles():
     fd = load_fighter_data("calico")
     assert len(fd.hurtbox.circles) == 2
@@ -93,6 +95,7 @@ def test_hurtbox_circles_are_Circle_instances():
 # ---------------------------------------------------------------------------
 # "attack" move exists and has correct shape
 # ---------------------------------------------------------------------------
+
 
 def test_attack_move_exists():
     fd = load_fighter_data("calico")
@@ -157,8 +160,44 @@ def test_attack_hitbox_angle_is_int():
 
 
 # ---------------------------------------------------------------------------
+# Per-move hurtbox override (#831, R1 of the #792 editor). Optional field on
+# MoveData; None = the fighter-posture hurtbox (today's behavior). Inert this
+# slice — no consumer reads it yet (R2 resolves `move.hurtbox or fighter.hurtbox`).
+# ---------------------------------------------------------------------------
+
+
+def _minimal_move(**kw):
+    base = dict(
+        name="ovr",
+        in_air=False,
+        startup=1,
+        active=1,
+        recovery=1,
+        hitboxes=(),
+    )
+    base.update(kw)
+    return MoveData(**base)
+
+
+def test_movedata_hurtbox_defaults_none():
+    """A move built without a hurtbox override has `.hurtbox is None`
+    (resolves to the posture hurtbox downstream)."""
+    md = _minimal_move()
+    assert md.hurtbox is None
+
+
+def test_movedata_accepts_hurtbox_override():
+    """MoveData accepts an optional per-move Hurtbox and round-trips it."""
+    hb = Hurtbox(circles=(Circle(dx=20, dy=10, r=16), Circle(dx=20, dy=40, r=16)))
+    md = _minimal_move(hurtbox=hb)
+    assert md.hurtbox is hb
+    assert md.hurtbox.circles[0] == Circle(dx=20, dy=10, r=16)
+
+
+# ---------------------------------------------------------------------------
 # Dataclasses are frozen (immutable)
 # ---------------------------------------------------------------------------
+
 
 def test_circle_is_frozen():
     c = Circle(dx=0, dy=0, r=10)
