@@ -136,8 +136,20 @@ def process_hits(players, attacks):
             # is simply treated as not crouching, mirroring the `resolved` getattr
             # fallback above.
             hurtbox = defender.fighter_data.hurtbox
+            # d_state is also read below for crouch-cancel (#135/#283), so keep it
+            # unconditionally computed.
             d_state = getattr(defender, "state", None)
-            if d_state == "crouch" and getattr(defender.fighter, "crouch_hurtbox", None) is not None:
+            # Per-move hurtbox override (#835, R2): a move can carry its own
+            # always-active Hurtbox that REPLACES the posture box while it
+            # executes (#809 §1.2 — the editor authors these per move). Top
+            # precedence over crouch/prone. Read current_move defensively — the
+            # minimal combat contract (#137) may lack it, mirroring the `state`
+            # getattr. No shipped move sets `hurtbox`, so this branch never fires
+            # today (goldens unchanged).
+            active_move = getattr(defender, "current_move", None)
+            if active_move is not None and active_move.hurtbox is not None:
+                hurtbox = active_move.hurtbox
+            elif d_state == "crouch" and getattr(defender.fighter, "crouch_hurtbox", None) is not None:
                 hurtbox = defender.fighter.crouch_hurtbox
             elif d_state == "prone" and getattr(defender.fighter, "prone_hurtbox", None) is not None:
                 # Prone lowers the hurtbox further (#173) so high attacks whiff

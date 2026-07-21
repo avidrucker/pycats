@@ -1177,6 +1177,13 @@ def _active_hurtbox(p):
     stale stand box. Read defensively — a minimal combat stand-in may lack
     `crouch_hurtbox`/`prone_hurtbox`/`state`."""
     hurtbox = p.fighter_data.hurtbox
+    # Per-move hurtbox override (#835, R2): mirror the sim resolver
+    # (combat.process_hits) — an executing move's own Hurtbox REPLACES the
+    # posture box, so the overlay shows the true region. Kept in lockstep with
+    # the sim; a divergence is a bug.
+    active_move = getattr(p, "current_move", None)
+    if active_move is not None and active_move.hurtbox is not None:
+        return active_move.hurtbox
     state = getattr(p, "state", None)
     if state == "crouch" and getattr(p.fighter, "crouch_hurtbox", None) is not None:
         return p.fighter.crouch_hurtbox
