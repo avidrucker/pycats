@@ -64,7 +64,7 @@ Order is decisive, and it is a **fresh-vs-held** distinction, not a millisecond 
 
 ## Q4 — Live-loop fire
 
-The measurements above drive the real `handle_actions` seam (not `resolve_move_key` in isolation), so they reflect the live per-frame input path, past the `game.py` import-time dispatch blindspot. **A human playtest is still required** to confirm the on-screen feel — specifically whether a player *intending* an up-tilt reliably lands in the held-Up path or keeps jumping. Recorded as pending below.
+The measurements above drive the real `handle_actions` seam (not `resolve_move_key` in isolation), so they reflect the live per-frame input path, past the `game.py` import-time dispatch blindspot. **A human playtest is still required** to confirm the on-screen feel — specifically whether a player *intending* an up-tilt reliably lands in the held-Up path or keeps jumping. Confirmed by the human test below.
 
 ## Automated test
 
@@ -75,18 +75,23 @@ The measurements above drive the real `handle_actions` seam (not `resolve_move_k
 - `test_up_and_a_same_frame_tilts_when_no_jump_is_left` — the 0-jumps corner.
 - `test_neutral_a_still_fires_the_jab` — harness baseline.
 
-## Human test — PENDING
+## Human test — DONE (2026-07-21)
 
-Playtest: pick a fighter with an up-tilt (Gnok once #841 lands, or nalio today), stand grounded, and try to throw an up-tilt with Up + A. Record: does it come out, or do you jump? Does holding Up first make it reliable? Fill in the result here.
+Playtest: pick a fighter with an up-tilt (Gnok, after #841 merged), stand grounded, and try to throw an up-tilt with Up + A.
 
-- Result: _pending_
+- **Result: confirmed.** The human ran it and reported the characterized behaviour matches on-screen — Up-held-then-A produces the up-tilt; a simultaneous Up + A jumps. No new discrepancy vs the sim characterization.
+- **Caveat noted:** the hitbox is only present for the move's brief active window (a tilt's ~4–6 active frames ≈ 0.07–0.10 s), so the box is hard to *see* during a live playtest — the confirmation is of the input/behaviour, not a frame-by-frame visual read. Making the boxes visible (a debug hitbox/hurtbox overlay and/or frame-step) would ease future eyeball checks — tracked as an observability idea, not filed here.
 
-## Assessment & downstream (contingent, filed one-at-a-time AFTER this doc)
+## Assessment & downstream (filed after this doc)
 
 The held-Up path works; move-select is wired correctly. The open question is a **design fork**, not a wiring bug: with tap-jump permanently on, a grounded simultaneous Up + A jumps instead of up-tilting. That is arguably faithful to tap-jump-on Melee/PM, but there is no tap-jump toggle and no jump-squat A→up-tilt buffer, so the up-tilt is harder to access than a player expects.
 
-- If the team wants grounded Up + A to favour the tilt (or wants a tap-jump toggle / buffer) → an **ARCHITECT decision** ticket (this is a design trade-off against tap-jump behaviour, not a defect). **Not filed here** — offer after this doc.
-- If a concrete registration defect is found in the *held-Up* path during the human test → a **DEV** fix ticket with the regression test scoped from the failing case.
+Downstream tickets filed (the human ruled to pursue the design fork, research-first):
+
+- **#864 (research):** characterize how PM/Melee resolve grounded Up+A with tap-jump on, whether PM has a tap-jump toggle, jump-squat buffering, and a pycats option matrix — produces `docs/research/2026-07-21-tapjump-vs-uptilt-access.md`.
+- **#865 (decision, blocked on #864):** rule on whether/how pycats changes grounded Up+A to favour the up-tilt. Blocked until #864's findings land; a downstream DEV follows the ruling.
+
+The held-Up path itself showed **no defect** in the human test, so no DEV fix ticket is warranted on registration grounds — only the design decision above.
 
 ## Out of scope
 
