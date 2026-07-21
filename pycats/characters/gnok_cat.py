@@ -215,13 +215,49 @@ _GNOK_FTILT = MoveData(
     ),
 )
 
+
+# --- Up-tilt (slice 3, #841): DK's AttackHi3, mapped to the "utilt" key --------
+# An overhead arc: THREE hitboxes (rukaidata id 0→2), angle 100 (an up-and-slightly-back
+# launch — a literal angle, NOT a sentinel), BKB 40, WDSK 0. Unlike the same-set f-tilt,
+# the boxes escalate: damage 9/10/11 and KBG 105/110/115 (id2 the strongest, the sweetspot).
+#
+# Datamined from the brawllib_rs PM3.6 dump (`-f Donkey -a AttackHi3`) and cross-checked
+# against rukaidata (FAF 36, active 6-11):
+#   active frames 6-11 (1-indexed) → startup 5 / active 6; FAF 36 → recovery 36-5-6 = 25.
+# Frames / % / angle / BKB / KBG entered RAW (#120). Radii = round(size × PX_PER_UNIT):
+# 5.0→27, 3.75→20, 4.0→22. Positions dx/dy APPROXIMATED as an arc clustered above the head
+# (small dy — id0 front, id1 directly overhead, id2 back), no skeleton modeled — same
+# convention as the jab/f-tilt/nalio. ⚠🔬 playtest starting points (ADR-0003).
+def _utilt_box(dx, dy, r, damage, kbg):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=damage,
+        angle=100,
+        base_knockback=40.0,
+        knockback_growth=kbg,
+    )
+
+
+_GNOK_UTILT = MoveData(
+    name="up tilt",
+    in_air=False,
+    startup=5,  # AttackHi3 first active frame 6 (1-indexed) → 5 startup frames
+    active=6,  # active frames 6-11
+    recovery=25,  # FAF 36 → 36 - 5 - 6 = 25
+    hitboxes=(
+        _utilt_box(dx=44, dy=6, r=27, damage=9.0, kbg=105.0),  # id0 (size 5.0) — front
+        _utilt_box(dx=36, dy=2, r=20, damage=10.0, kbg=110.0),  # id1 (size 3.75) — overhead
+        _utilt_box(dx=28, dy=8, r=22, damage=11.0, kbg=115.0),  # id2 (size 4.0) — back sweetspot
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
     # jab (DK's 1-2); the other slots reuse the default cat until their slices (#779) land.
     hurtbox=_HURTBOX,
     stand_size=_STAND_SIZE,
-    moves={**_DEFAULT.moves, "jab": _GNOK_JAB, "ftilt": _GNOK_FTILT},
+    moves={**_DEFAULT.moves, "jab": _GNOK_JAB, "ftilt": _GNOK_FTILT, "utilt": _GNOK_UTILT},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

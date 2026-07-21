@@ -118,6 +118,29 @@ def test_gnok_ftilt_maps_to_forward_a():
         assert key == "ftilt"
 
 
+def test_gnok_utilt_is_authored_from_attackhi3():
+    # Slice 3 (#841) u-tilt: DK's AttackHi3 — 3 boxes, angle 100, BKB 40; escalating
+    # damage 9/10/11 + KBG 105/110/115 (id2 the sweetspot); startup 5 / active 6 /
+    # recovery 25 (rukaidata FAF 36, active 6-11). Able-to-fail: a missing/mis-datamined
+    # utilt (or flat damage/kbg instead of the escalation) fails here.
+    utilt = load_fighter_data("gnok").moves["utilt"]
+    assert (utilt.startup, utilt.active, utilt.recovery) == (5, 6, 25)
+    assert len(utilt.hitboxes) == 3
+    assert all(hb.angle == 100 and hb.base_knockback == 40.0 for hb in utilt.hitboxes)
+    assert [hb.damage for hb in utilt.hitboxes] == [9.0, 10.0, 11.0]
+    assert [hb.knockback_growth for hb in utilt.hitboxes] == [105.0, 110.0, 115.0]
+
+
+def test_gnok_utilt_maps_to_up_a():
+    # The "utilt" key is what move-select picks for grounded up-A, so authoring it there
+    # means it fires in-game, not an orphaned move.
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    key = resolve_move_key(gnok.moves, direction="up", on_ground=True, is_special=False)
+    assert key == "utilt"
+
+
 def test_gnok_jab_is_a_two_hit_1_2():
     # DK's Attack11 → Attack12, modeled as one move with two SEQUENTIAL windows (#204).
     # Able-to-fail: a single-window jab (or overlapping windows) collapses this.
