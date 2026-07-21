@@ -16,6 +16,7 @@ Origin convention (from default_cat.py, confirmed in task-5-brief.md):
   origin_y=rect.y).  resolve_circle() adds dx when facing right, subtracts dx
   when facing left.
 """
+
 from __future__ import annotations
 
 import types
@@ -29,6 +30,7 @@ from pycats.systems.combat import process_hits
 # Stub helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_rect(x=100, y=100, w=40, h=60):
     r = pygame.Rect(x, y, w, h)
     return r
@@ -39,36 +41,53 @@ def _make_fighter_data(hurtbox_circles):
     return FighterData(hurtbox=hb, moves={})
 
 
-def _make_player(rect, *, hurtbox_circles, facing_right=True,
-                 intangible=False, is_alive=True):
+def _make_player(rect, *, hurtbox_circles, facing_right=True, intangible=False, invincible_timer=0, is_alive=True):
     """Return a lightweight namespace that satisfies combat's player contract."""
     p = types.SimpleNamespace(
         rect=rect,
         facing_right=facing_right,
         intangible=intangible,
+        invincible_timer=invincible_timer,  # #802: >0 => INVINCIBLE (register-but-zero)
         is_alive=is_alive,
         fighter_data=_make_fighter_data(hurtbox_circles),
-        state="idle",            # combat reads .state for the crouch hurtbox (#124)
-        crouch_hurtbox=None,     # via p.fighter (set below) — None = no crouch box
-        hits_received=0,
+        state="idle",  # combat reads .state for the crouch hurtbox (#124)
+        crouch_hurtbox=None,  # via p.fighter (set below) — None = no crouch box
+        hits_received=0,  # normal (TANGIBLE) damage path taken
         hits_landed=0,
+        invincible_hits=0,  # #802: register-but-zero (INVINCIBLE) path taken
+        hitlag_timer=0,
     )
 
     def receive_hit(atk, is_crouching=False):  # #283: combat now passes the crouch flag
         p.hits_received += 1
 
+    def receive_hit_invincible(atk):  # #802: INVINCIBLE branch — attacker freezes, defender zeroed
+        p.invincible_hits += 1
+        atk.owner.fighter.hitlag_timer = 1  # the attacker's freeze (only real behavior modeled)
+
     def record_hit_landed():
         p.hits_landed += 1
 
     p.receive_hit = receive_hit
+    p.receive_hit_invincible = receive_hit_invincible
     p.record_hit_landed = record_hit_landed
     p.fighter = p
     return p
 
 
-def _make_attack(owner, *, hit_cx, hit_cy, hit_r,
-                 damage=10.0, angle=0, active=True,
-                 disappear_on_hit=False, base_knockback=0.0, knockback_growth=0.0):
+def _make_attack(
+    owner,
+    *,
+    hit_cx,
+    hit_cy,
+    hit_r,
+    damage=10.0,
+    angle=0,
+    active=True,
+    disappear_on_hit=False,
+    base_knockback=0.0,
+    knockback_growth=0.0,
+):
     """Return a lightweight namespace that satisfies combat's attack contract."""
     atk = types.SimpleNamespace(
         owner=owner,
@@ -106,18 +125,19 @@ def _make_attack(owner, *, hit_cx, hit_cy, hit_r,
 PLAYER_RECT = _make_rect(100, 100, 40, 60)
 HURTBOX_CIRCLES = [Circle(dx=20, dy=30, r=14)]
 
-HIT_ATK_CX = 130   # overlaps hurtbox
+HIT_ATK_CX = 130  # overlaps hurtbox
 HIT_ATK_CY = 130
-HIT_ATK_R  = 12
+HIT_ATK_R = 12
 
-MISS_ATK_CX = 200   # too far right
+MISS_ATK_CX = 200  # too far right
 MISS_ATK_CY = 130
-MISS_ATK_R  = 12
+MISS_ATK_R = 12
 
 
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_hit_lands_when_circles_overlap():
     """Hitbox circle overlapping defender hurtbox circle → receive_hit called."""
@@ -149,15 +169,35 @@ def test_intangible_defender_is_skipped():
     """An intangible (intangible) defender is not hit even when circles overlap."""
     pygame.init()
     owner = _make_player(_make_rect(0, 0), hurtbox_circles=HURTBOX_CIRCLES)
-    defender = _make_player(PLAYER_RECT, hurtbox_circles=HURTBOX_CIRCLES,
-                            intangible=True)
+    defender = _make_player(PLAYER_RECT, hurtbox_circles=HURTBOX_CIRCLES, intangible=True)
     atk = _make_attack(owner, hit_cx=HIT_ATK_CX, hit_cy=HIT_ATK_CY, hit_r=HIT_ATK_R)
 
     process_hits([owner, defender], [atk])
 
     assert defender.hits_received == 0, "intangible defender should not be hit"
+    assert defender.invincible_hits == 0, "intangible is pass-through, not register-but-zero"
+    assert owner.hitlag_timer == 0, "no attacker hitlag: an intangible hit never connects (#802)"
     # attack should stay active since nothing was hit
     assert atk.active is True, "attack should remain active when defender is intangible"
+
+
+def test_invincible_defender_registers_but_takes_the_zero_branch():
+    """An INVINCIBLE defender (invincible_timer > 0, not intangible): the hit CONNECTS
+    — the attack deactivates, the attacker is credited the landed hit and freezes —
+    but the defender takes the register-but-zero branch, NOT the normal damage path
+    (#802, decision #784; #797 §6)."""
+    pygame.init()
+    owner = _make_player(_make_rect(0, 0), hurtbox_circles=HURTBOX_CIRCLES)
+    defender = _make_player(PLAYER_RECT, hurtbox_circles=HURTBOX_CIRCLES, invincible_timer=1)
+    atk = _make_attack(owner, hit_cx=HIT_ATK_CX, hit_cy=HIT_ATK_CY, hit_r=HIT_ATK_R)
+
+    process_hits([owner, defender], [atk])
+
+    assert defender.invincible_hits == 1, "invincible defender takes the register-but-zero branch"
+    assert defender.hits_received == 0, "invincible defender does NOT take the normal damage path"
+    assert owner.hitlag_timer > 0, "attacker freezes on connect with an invincible defender"
+    assert owner.hits_landed == 1, "the hit connected — attacker is credited a landed hit"
+    assert atk.active is False, "the attack connected, so it deactivates (contact made)"
 
 
 def test_self_hit_is_excluded():
@@ -179,8 +219,7 @@ def test_disappear_on_hit_kills_attack():
     pygame.init()
     owner = _make_player(_make_rect(0, 0), hurtbox_circles=HURTBOX_CIRCLES)
     defender = _make_player(PLAYER_RECT, hurtbox_circles=HURTBOX_CIRCLES)
-    atk = _make_attack(owner, hit_cx=HIT_ATK_CX, hit_cy=HIT_ATK_CY, hit_r=HIT_ATK_R,
-                       disappear_on_hit=True)
+    atk = _make_attack(owner, hit_cx=HIT_ATK_CX, hit_cy=HIT_ATK_CY, hit_r=HIT_ATK_R, disappear_on_hit=True)
 
     process_hits([owner, defender], [atk])
 
@@ -192,8 +231,7 @@ def test_dead_defender_is_skipped():
     """A dead (is_alive=False) defender is not hit even when circles overlap."""
     pygame.init()
     owner = _make_player(_make_rect(0, 0), hurtbox_circles=HURTBOX_CIRCLES)
-    defender = _make_player(PLAYER_RECT, hurtbox_circles=HURTBOX_CIRCLES,
-                            is_alive=False)
+    defender = _make_player(PLAYER_RECT, hurtbox_circles=HURTBOX_CIRCLES, is_alive=False)
     atk = _make_attack(owner, hit_cx=HIT_ATK_CX, hit_cy=HIT_ATK_CY, hit_r=HIT_ATK_R)
 
     process_hits([owner, defender], [atk])
@@ -206,8 +244,7 @@ def test_inactive_attack_does_not_hit():
     pygame.init()
     owner = _make_player(_make_rect(0, 0), hurtbox_circles=HURTBOX_CIRCLES)
     defender = _make_player(PLAYER_RECT, hurtbox_circles=HURTBOX_CIRCLES)
-    atk = _make_attack(owner, hit_cx=HIT_ATK_CX, hit_cy=HIT_ATK_CY, hit_r=HIT_ATK_R,
-                       active=False)
+    atk = _make_attack(owner, hit_cx=HIT_ATK_CX, hit_cy=HIT_ATK_CY, hit_r=HIT_ATK_R, active=False)
 
     process_hits([owner, defender], [atk])
 
@@ -229,9 +266,7 @@ def test_hit_with_multi_circle_hurtbox():
 
     process_hits([owner, defender], [atk])
 
-    assert defender.hits_received == 1, (
-        "attack overlapping the lower hurtbox circle should register a hit"
-    )
+    assert defender.hits_received == 1, "attack overlapping the lower hurtbox circle should register a hit"
 
 
 def test_body_center_hurtbox_is_facing_invariant():

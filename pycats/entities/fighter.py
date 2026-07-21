@@ -41,6 +41,7 @@ from ..combat.knockback import (
     set_knockback,
 )
 from ..combat.shield import shield_break_stun_frames, shieldstun_frames
+from ..combat.tangibility import resolve_tangibility
 from ..config import (
     BLAST_PADDING,
     BLAST_PADDING_X,
@@ -179,6 +180,12 @@ class Fighter:
         self.jumps_remaining = self.max_jumps
         self.air_dodge_ok = True  # players can only air dodge once per sustained jump/fall, until they land
         self.intangible = False  # dodging / post-hit / respawn / ledge-grab intangibility
+        # Respawn-descent invincibility window (#802 machinery; SET by #506's respawn
+        # flow, not here). While > 0 the fighter is INVINCIBLE: a hit CONNECTS but the
+        # defender is "otherwise unaffected" (attacker freezes, defender zeroed) — see
+        # pycats.combat.tangibility. Distinct from `intangible` (pass-through). Ticked
+        # down in Player.update alongside the other immunity timers.
+        self.invincible_timer = 0
         # (#321/F3: done_attacking is a derived Player property now — no field here.)
 
         # ---------- shield / dodge flags ----------
@@ -247,6 +254,13 @@ class Fighter:
         """Record percent damage this fighter dealt to an opponent (#98)."""
         self.damage_given += amount
 
+    @property
+    def tangibility(self):
+        """This fighter's immunity state for the frame (#802), derived from the
+        imperative `intangible` flag and the `invincible_timer`, most-protective-wins
+        (INTANGIBLE > INVINCIBLE > TANGIBLE). See pycats.combat.tangibility."""
+        return resolve_tangibility(self.intangible, self.invincible_timer > 0)
+
     # ----------- per-frame timers ------------
     def tick_timers(self) -> None:
         """Advance the fighter's *stateless* per-frame timers (S1/#273).
@@ -262,6 +276,7 @@ class Fighter:
             "ledge_regrab_lockout_timer",
             "shieldstun_timer",
             "dash_input_window",
+            "invincible_timer",  # #802: respawn-invincibility window (stateless; #506 sets it)
         ):  # #403: double-tap window (stateless)
             v = getattr(self, name)
             if v > 0:
@@ -397,6 +412,23 @@ class Fighter:
             self.hitlag_timer = hl
             atk.owner.fighter.hitlag_timer = hl
 
+    def receive_hit_invincible(self, atk) -> None:
+        """INVINCIBLE defender (#802, decision #784): the hit CONNECTS but this
+        defender is "otherwise unaffected" — only the ATTACKER takes hitlag.
+
+        Grounded in the #797 findings
+        (docs/research/2026-07-20-pm-invincible-hitlag-findings.md, Q1/Q2/§6):
+        meleelight `executeRegularHit` sets the attacker's hitlag before bailing out
+        of the invincible victim's processing, so the attacker freezes while the
+        defender's percent, knockback, hitstun, and hitlag all stay at zero. SmashWiki
+        (series-universal): "the attacker will still experience hitlag … the opponent
+        will otherwise be unaffected." The PM-3.6 step is `[inference]`; no PM primary
+        exists. Contrast `receive_hit` (TANGIBLE, full resolution) and the INTANGIBLE
+        skip in `combat.process_hits` (pass-through, no attacker hitlag)."""
+        # Attacker freezes exactly as on a normal hit; the invincible defender is left
+        # untouched — no percent, knockback, hitstun, or hitlag applied to it.
+        atk.owner.fighter.hitlag_timer = hitlag_frames(atk.damage)
+
     def _handle_landing(self, was_airborne: bool) -> bool:
         """Resolve a landing. Returns True when the #145 auto-knockdown triggers
         (the caller, via step_physics -> Player.update, applies force_prone — the
@@ -525,6 +557,7 @@ class Fighter:
         self.shieldstun_timer = 0  # nor a block-stun (#140)
         self.intangible_timer = 0
         self.intangible = False
+        self.invincible_timer = 0  # don't carry a respawn-invincibility window across a KO/respawn (#802)
         self.spot_dodge_shield_held = False
         self.cancel_smash_charge()  # don't carry a pending charge across KO/respawn (#327/3a)
         self.smash_angle_dir = None  # nor a pending aimed-fsmash angle (#327/4)

@@ -12,6 +12,7 @@ Task 5: hit detection uses circle geometry.
 """
 
 from pycats.combat.geometry import circle_overlap, circles_overlap, resolve_circle
+from pycats.combat.tangibility import Tangibility, resolve_tangibility
 from pycats.config import CLANK_PRIORITY_RANGE
 
 
@@ -109,8 +110,21 @@ def process_hits(players, attacks):
             boxes = [(atk.hit_cx, atk.hit_cy, atk.hit_r, atk)]
 
         for defender in players:
-            # Skip if defender is intangible, is dead, or is the owner of the attack
-            if defender.fighter.intangible or not defender.fighter.is_alive or defender is atk.owner:  # no self-hit
+            # #802 3-way tangibility gate (decision #784; grounded in #797 findings,
+            # docs/research/2026-07-20-pm-invincible-hitlag-findings.md). Resolve the
+            # defender's immunity state defensively — the same duck-typed read the
+            # `intangible` bool used before (a minimal combat stand-in without an
+            # `invincible_timer` is simply never INVINCIBLE):
+            #   INTANGIBLE -> the attack passes THROUGH: detection is skipped, no hit
+            #                 registers, the attacker takes no hitlag (dodge/ledge/getup).
+            #   INVINCIBLE -> handled at hit-resolution below (register-but-zero).
+            #   TANGIBLE   -> normal hit resolution.
+            tang = resolve_tangibility(
+                getattr(defender.fighter, "intangible", False),
+                getattr(defender.fighter, "invincible_timer", 0) > 0,
+            )
+            # Skip if the defender passes the hit through (intangible), is dead, or owns the attack.
+            if tang is Tangibility.INTANGIBLE or not defender.fighter.is_alive or defender is atk.owner:  # no self-hit
                 continue
 
             # Resolve defender hurtbox circles to absolute coordinates.
@@ -148,10 +162,17 @@ def process_hits(players, attacks):
                 atk.base_knockback = hit_box.base_knockback
                 atk.knockback_growth = hit_box.knockback_growth
                 atk.set_knockback = getattr(hit_box, "set_knockback", None)  # WDSK (#211)
-                # Crouch-cancel (#135/#283): pass the crouch fact in (reusing the
-                # d_state already computed for hurtbox selection) so the domain rule
-                # doesn't read the adapter's FSM state label.
-                defender.fighter.receive_hit(atk, is_crouching=(d_state == "crouch"))
+                if tang is Tangibility.INVINCIBLE:
+                    # Register-but-zero (#802/#784; #797 §6): the hit connects — the
+                    # attacker freezes — but the invincible defender is "otherwise
+                    # unaffected" (no percent / knockback / hitstun / hitlag). No
+                    # crouch-cancel: nothing is applied to the defender.
+                    defender.fighter.receive_hit_invincible(atk)
+                else:
+                    # Crouch-cancel (#135/#283): pass the crouch fact in (reusing the
+                    # d_state already computed for hurtbox selection) so the domain rule
+                    # doesn't read the adapter's FSM state label.
+                    defender.fighter.receive_hit(atk, is_crouching=(d_state == "crouch"))
                 atk.owner.fighter.record_hit_landed()  # Track successful hit
                 if getattr(atk, "rehit_rate", None) is not None:
                     # #213 looping multi-hit: stay active, just go on cooldown so
