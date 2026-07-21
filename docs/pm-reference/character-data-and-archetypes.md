@@ -91,12 +91,14 @@ mapping ([#117](https://github.com/avidrucker/pycats/issues/117)):
 | Cat plays as | Archetype | Weight | Signature |
 |---|---|---|---|
 | **Nalio** | Mario — all-rounder | medium (100) | versatile combo+KO baseline |
-| (TBD) | Marth — disjointed spacer | light-med | disjoint reach + tipper, no projectile |
-| (TBD) | Kirby — floaty featherweight | lightest | multi-jump (5–6), weak KO |
-| (TBD) | Donkey Kong — heavyweight | heaviest | big hurtbox, heavy hits, strong throws |
-| (TBD) | Fox — fast-faller rushdown | light | fastest run+fall, blaster, dies early |
+| **Narz** | Marth — disjointed spacer | light-med | disjoint reach + tipper, no projectile |
+| **Birky** | Kirby — floaty featherweight | lightest | multi-jump (5–6), weak KO |
+| **Gnok** | Donkey Kong — heavyweight | heaviest | big hurtbox, heavy hits, strong throws |
+| **Xoff** | Fox — fast-faller rushdown | light | fastest run+fall, blaster, dies early |
 
-> The four `(TBD)` rows are stale — the names are already canonical (`pycats/characters/roster.py: ARCHETYPE_NAME`; #294 Narz, #228 Birky, #779 Gnok, #839 Xoff). Syncing them is tracked separately.
+Names are canonical in `pycats/characters/roster.py: ARCHETYPE_NAME` (Nalio #142, Narz
+#294, Birky #228, Gnok #779); **Xoff** is the Fox archetype's name (#117 / #839) and is
+not yet wired in `roster.py` (implementation status is under "pycats status" below).
 
 ### Stretch archetypes (post-core-5)
 
