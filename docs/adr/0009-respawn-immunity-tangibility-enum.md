@@ -94,3 +94,52 @@ a `Tangibility` enum — not a second parallel bool.**
 #775); premise research #797 (findings doc); enum DEV #802 (implements); rename #776; respawn
 DEV #506; tint/timer #513; epic #772. Glossary: `docs/glossary.md`
 (*intangibility* / *invincibility* / *tangibility*).
+
+## Addendum — 2026-07-21: respawn-invincibility slice-1 rulings (#830 / #539)
+
+Research **#830** (`docs/research/2026-07-21-respawn-invincibility-validation-findings.md`,
+umbrella **#539**) validated the respawn-invincibility mechanic and surfaced two slice-1
+scope calls that the base decision above did not settle. The game-designer (owner) ratified
+both on 2026-07-21. This addendum records them; it does **not** reopen the Decision above —
+`Status` stays **Accepted**.
+
+Both rulings are tagged **DIVERGENCE** (an acknowledged, bounded departure from canon), each
+with a follow-on that re-anchors it to canon.
+
+### Validated facts (from #830, cited as the basis below)
+
+- **Duration: 120 frames (2 s), flat** — FOUND. SmashWiki *Revival platform* (verbatim) +
+  meleelight `characters/shared/moves/REBIRTHWAIT.js` sets `invincibleTimer = 120`. Ultimate's
+  wait-time scaling is not adopted (PM is Melee-based).
+- **Structure:** on-platform **intangible** → any action (or a ~300-frame timeout) ends it →
+  a **120-frame invincible** descent.
+- **No truncation:** acting during the post-drop window does **not** cut it short — the timer
+  decrements unconditionally per frame (meleelight `physics/physics.js::hurtBoxStateUpdate`;
+  PM→Melee is `[inference]`). This closes the gap the category index flagged
+  ("no verbatim that acting doesn't truncate it").
+- **Render: a ~9-frame blink**, not a solid fill — meleelight `main/render.js` toggles body
+  colour on `invincibleTimer % 9 > 3` (intangible and invincible render identically).
+  SmashWiki does not describe the respawn appearance.
+
+### Decision A — accept #506's interim "granted-at-spawn" respawn model for slice 1 · **DIVERGENCE (temporary)**
+
+Slice 1 grants the 120-frame invincibility **at respawn** and counts it down in real time
+(there is no revival platform yet). Ship it as an acknowledged temporary DIVERGENCE.
+
+- **Basis (#830):** the interim model is faithful to the **post-drop phase** — PM likewise
+  counts the 120 frames down in real time regardless of action (no truncation, above). The
+  only infidelities are the missing on-platform **intangible** phase and the leave-anchor.
+- **Re-anchored by:** epic **#482** slices 2–3, which move the window's start to
+  **platform-leave** (PM's post-leave ~120 f) and add the on-platform intangible phase.
+
+### Decision B — slice 1 renders a **solid** invincibility tint; defer the blink to post-V1 · **DIVERGENCE (V1-scoped)**
+
+V1 / slice 1 uses a solid invincibility tint, not the PM-faithful blink.
+
+- **Basis (#830):** PM renders respawn invincibility as a ~9-frame blink (above). A solid tint
+  is therefore a known, bounded divergence — acceptable for V1 and cheap to upgrade later.
+- **Deferred to:** the already-filed post-V1 epic **#558** (PM-faithful invincibility
+  blink/flicker).
+
+**Refs (addendum):** findings #830; umbrella #539; consumer DEV #506; blink deferral #558;
+respawn epic #482; spec #480; base decision #784.
