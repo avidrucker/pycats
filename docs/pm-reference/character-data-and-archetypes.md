@@ -96,6 +96,23 @@ mapping ([#117](https://github.com/avidrucker/pycats/issues/117)):
 | (TBD) | Donkey Kong — heavyweight | heaviest | big hurtbox, heavy hits, strong throws |
 | (TBD) | Fox — fast-faller rushdown | light | fastest run+fall, blaster, dies early |
 
+> The four `(TBD)` rows are stale — the names are already canonical (`pycats/characters/roster.py: ARCHETYPE_NAME`; #294 Narz, #228 Birky, #779 Gnok, #839 Xoff). Syncing them is tracked separately.
+
+### Stretch archetypes (post-core-5)
+
+Three additional archetype cats decided beyond the core five, to be built **only if
+time allows before the Aug 10 deadline** (stretch roster tracked in
+[#854](https://github.com/avidrucker/pycats/issues/854); part of roster epic
+[#117](https://github.com/avidrucker/pycats/issues/117), relates
+[#127](https://github.com/avidrucker/pycats/issues/127)). Each cat name is a **strict
+anagram** of its PM source (same convention as Birky←Kirby, Gnok←Kong):
+
+| Cat plays as | Archetype | Anagram of | Signature |
+|---|---|---|---|
+| **Kiln** | Link — projectile zoner | `Link` → `Kiln` | boomerang / bombs / arrows keepaway (the roster's only true zoner) |
+| **Pachiku** | Pikachu — agile all-rounder | `Pikachu` → `Pachiku` | thunder-jolt projectile, strong recovery, mobile |
+| **Werbos** | Bowser — super-heavy | `Bowser` → `Werbos` | biggest body + armor, kill-off-one-read power |
+
 ## Brawl / Melee / PM deltas
 
 - **PM rebalanced attributes & frame data** vs Brawl (and vs Melee) — the *formula*
