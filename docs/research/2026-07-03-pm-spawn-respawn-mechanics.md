@@ -26,6 +26,13 @@ Sources: SmashWiki [Respawn](https://www.ssbwiki.com/Respawn),
 [Revival platform](https://www.ssbwiki.com/Revival_platform),
 [Invincibility](https://www.ssbwiki.com/Invincibility).
 
+> **Validated 2026-07-21 (#830)** — see
+> [research/2026-07-21-respawn-invincibility-validation-findings.md](./2026-07-21-respawn-invincibility-validation-findings.md):
+> duration **120 f** confirmed (flat; Ultimate's scaling not adopted); **acting does not truncate** the
+> post-drop 120 f window (it runs in full regardless of actions — meleelight engine; PM `[inference]`);
+> the window renders as a **blink/flicker**, not a solid tint (PM `[inference]`; SmashWiki silent on the
+> respawn model's appearance). The on-platform *intangibility* still ends on any action.
+
 ## 2. pycats now (as-is, verified 2026-07-03)
 
 Both match-start and every post-KO respawn go through
