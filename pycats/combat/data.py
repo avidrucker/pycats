@@ -23,7 +23,7 @@ Design notes:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 # Movement-constant defaults live in config; FighterData uses them as field
 # defaults so any data that doesn't specify movement == today's globals (the
@@ -247,6 +247,78 @@ class FighterData:
 # ---------------------------------------------------------------------------
 # Loader seam
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# JSON hydrate (#838, R3 of the #792 editor) — dict -> FighterData
+# ---------------------------------------------------------------------------
+# A PURE, mechanical hydrate of the thin-mirror schema
+# (docs/pycats-editor-data-schema-design.md §1 + §2.1). No reshaping, no window
+# synthesis, no unit scaling — values are already px/frames as authored.
+#
+# Rules (§2.1):
+#   - inline [dx, dy, r] -> Circle(*triple); {"circles": [...]} -> Hurtbox.
+#   - Hitbox/MoveData/FighterData get ONLY the keys present in the doc — the
+#     frozen dataclass supplies every default, so the loader keeps a SINGLE
+#     default table and cannot drift from it. "Omit == default" (§1).
+#   - JSON arrays deserialize to lists -> re-tuple() every collection (hitboxes,
+#     circles, *_size) because the dataclasses are frozen and goldens depend on
+#     tuple identity.
+#   - Validation is DELEGATED to the existing __post_init__ checks (paired
+#     window, window-in-duration, same-start-same-window); the loader adds only
+#     the schema_version guard below.
+#   - doc["provenance"] is NEVER read here (the drift-guard test consumes it, R7).
+#
+# This slice is the function ONLY — it is not wired into load_fighter_data yet
+# (that's R4), so nothing calls it and no golden is touched.
+SCHEMA_VERSION = 1
+
+
+def _select(node: dict, cls) -> dict:
+    """Keep only the keys of `node` that are real fields of dataclass `cls`.
+
+    Drops schema-level keys (schema_version, character, provenance) and any
+    editor-added extras so the frozen dataclass never sees an unknown kwarg. The
+    structured fields (circle/hitboxes/hurtbox/moves/*_size) survive this filter
+    and are converted by the callers below.
+    """
+    names = {f.name for f in fields(cls)}
+    return {k: v for k, v in node.items() if k in names}
+
+
+def _hurtbox_from_json(node: dict) -> Hurtbox:
+    return Hurtbox(circles=tuple(Circle(*triple) for triple in node["circles"]))
+
+
+def _hitbox_from_json(node: dict) -> Hitbox:
+    kw = _select(node, Hitbox)
+    kw["circle"] = Circle(*node["circle"])
+    return Hitbox(**kw)  # __post_init__ validates the window pairing
+
+
+def _move_from_json(node: dict) -> MoveData:
+    kw = _select(node, MoveData)
+    kw["hitboxes"] = tuple(_hitbox_from_json(h) for h in node["hitboxes"])
+    if node.get("hurtbox") is not None:  # optional per-move override (#831)
+        kw["hurtbox"] = _hurtbox_from_json(node["hurtbox"])
+    return MoveData(**kw)  # __post_init__ validates windows vs duration
+
+
+def _fighter_from_json(doc: dict) -> FighterData:
+    """Hydrate a full FighterData from a parsed thin-mirror document."""
+    version = doc.get("schema_version")
+    if version != SCHEMA_VERSION:
+        raise ValueError(f"unsupported schema_version {version!r} (expected {SCHEMA_VERSION})")
+    kw = _select(doc, FighterData)
+    kw["hurtbox"] = _hurtbox_from_json(doc["hurtbox"])
+    kw["moves"] = {key: _move_from_json(m) for key, m in doc["moves"].items()}
+    for key in ("crouch_hurtbox", "prone_hurtbox"):
+        if doc.get(key) is not None:
+            kw[key] = _hurtbox_from_json(doc[key])
+    for key in ("stand_size", "crouch_size", "prone_size"):
+        if doc.get(key) is not None:
+            kw[key] = tuple(doc[key])
+    return FighterData(**kw)
 
 
 def load_fighter_data(character: str) -> FighterData:
