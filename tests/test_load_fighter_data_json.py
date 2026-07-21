@@ -4,10 +4,11 @@ design docs/pycats-editor-data-schema-design.md §2.1 + §2.2).
 
 R4 wires the R3 hydrate (_fighter_from_json) into load_fighter_data: when
 `CHARACTER_DATA_DIR / f"{character}.json"` exists it is hydrated and returned;
-otherwise the existing Python import switch runs unchanged. No `<character>.json`
-ships in the repo, so the branch never fires for a real character and goldens are
-untouched. Tests monkeypatch CHARACTER_DATA_DIR to a tmp dir to exercise the
-branch without touching the repo.
+otherwise the existing Python import switch runs unchanged. Migration flips real
+fighters onto JSON one-at-a-time (#851 flipped Nalio); each flip is proven
+byte-equal to its Python oracle in that fighter's own test, so goldens are
+untouched. These tests monkeypatch CHARACTER_DATA_DIR to a tmp dir to exercise
+the branch in isolation.
 """
 
 import json
@@ -105,11 +106,19 @@ def test_json_takes_precedence_over_python(tmp_path, monkeypatch):
 # --- Golden-safety: no committed <character>.json ships in the repo -----------
 
 
-def test_no_json_files_ship_in_repo():
-    """The real CHARACTER_DATA_DIR must contain no *.json (R4 ships the reader
-    only; R5 does the migration). Any committed file here would divert a real
-    character off its Python definition and could move goldens."""
-    from pycats.combat.data import CHARACTER_DATA_DIR
+def test_shipped_json_files_hydrate_cleanly():
+    """Every committed <character>.json must be a valid, current-schema thin
+    mirror that hydrates without error.
 
-    if CHARACTER_DATA_DIR.exists():
-        assert list(CHARACTER_DATA_DIR.glob("*.json")) == []
+    Fighters are flipped onto JSON one-at-a-time (#851 flipped Nalio first); this
+    guard scales to each new file with no edit. Per-fighter byte-equality to the
+    Python oracle — the golden-safety proof — lives in that fighter's own flip
+    test (e.g. tests/test_nalio_json_flip.py), not here."""
+    from pycats.combat.data import CHARACTER_DATA_DIR, SCHEMA_VERSION
+
+    if not CHARACTER_DATA_DIR.exists():
+        return
+    for path in sorted(CHARACTER_DATA_DIR.glob("*.json")):
+        doc = json.loads(path.read_text())
+        assert doc.get("schema_version") == SCHEMA_VERSION, f"{path.name}: wrong/absent schema_version"
+        _fighter_from_json(doc)  # raises if malformed / off-schema

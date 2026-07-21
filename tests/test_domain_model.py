@@ -83,13 +83,16 @@ def test_palette_of_is_identity():
 
 
 def test_fighter_data_of_uses_the_character_key():
-    assert fighter_data_of(CHARACTERS["nalio"]) is load_fighter_data("nalio")
+    # Nalio is JSON-backed (#851): load_fighter_data hydrates a fresh, equal
+    # FighterData per call, so the contract is value-equality, not the old
+    # Python-singleton identity. (Still-Python fighters keep `is` elsewhere.)
+    assert fighter_data_of(CHARACTERS["nalio"]) == load_fighter_data("nalio")
 
 
 def test_build_fighter_named_character():
     bf = build_fighter(resolve_selection("nalio"))
     assert isinstance(bf, BuiltFighter)
-    assert bf.fighter_data is load_fighter_data("nalio")
+    assert bf.fighter_data == load_fighter_data("nalio")  # JSON-backed (#851): equal, not identical
     assert bf.skin is SKINS["red-blue"]  # nalio's base-theme default skin (#677)
 
 
@@ -128,10 +131,7 @@ def test_domain_import_pulls_no_pygame():
     in-process check would false-pass.
     """
     code = (
-        "import pycats.domain\n"
-        "import sys\n"
-        "bad = sorted(m for m in sys.modules if 'pygame' in m)\n"
-        "assert not bad, bad\n"
+        "import pycats.domain\nimport sys\nbad = sorted(m for m in sys.modules if 'pygame' in m)\nassert not bad, bad\n"
     )
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr

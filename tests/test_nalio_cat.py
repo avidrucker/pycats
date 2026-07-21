@@ -8,6 +8,7 @@ These tests pin Nalio as DISTINCT data reachable through the load_fighter_data
 seam — without touching the default cat (so goldens stay green: the sim path
 loads "P1"/"P2", never "nalio").
 """
+
 import pygame
 
 from pycats.combat.data import FighterData, load_fighter_data
@@ -16,9 +17,15 @@ from pycats.entities import Player
 # The minimal one-move test fixture, loaded by name (#591).
 _TESTCAT = load_fighter_data("testcat")
 
-P1_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
-                   down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
-                   shield=pygame.K_x)
+P1_CONTROLS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
 
 
 def test_nalio_is_distinct_fighter_data():
@@ -183,8 +190,8 @@ def test_nalio_fair_spawns_two_windows_through_player_update():
     early window as one Attack on frame 16 and the meteor late window as a SEPARATE
     Attack on frame 18."""
     from pycats.core.input import InputFrame
-    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="nalio", facing_right=True)
+
+    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio", facing_right=True)
     group = pygame.sprite.Group()
     neutral = InputFrame(held=set(), pressed=set(), released=set())
     p._clock.start(load_fighter_data("nalio").moves["fair"])
@@ -237,8 +244,8 @@ def test_nalio_bair_spawns_two_windows_through_player_update():
     """End-to-end (#204): the clean window spawns one Attack on frame 6 and the
     Sakurai late window a SEPARATE Attack on frame 9."""
     from pycats.core.input import InputFrame
-    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="nalio", facing_right=True)
+
+    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio", facing_right=True)
     group = pygame.sprite.Group()
     neutral = InputFrame(held=set(), pressed=set(), released=set())
     p._clock.start(load_fighter_data("nalio").moves["bair"])
@@ -289,8 +296,8 @@ def test_nalio_uair_spawns_two_windows_through_player_update():
     """End-to-end (#204): the clean window spawns one Attack on frame 4 and the
     late window a SEPARATE Attack on frame 6."""
     from pycats.core.input import InputFrame
-    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="nalio", facing_right=True)
+
+    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio", facing_right=True)
     group = pygame.sprite.Group()
     neutral = InputFrame(held=set(), pressed=set(), released=set())
     p._clock.start(load_fighter_data("nalio").moves["uair"])
@@ -338,9 +345,9 @@ def test_nalio_dair_spawns_looping_windows_through_player_update():
     """End-to-end: the real d-air spawns phase 1 on frame 7 and phase 2 on frame
     16 as separate Attacks, each carrying the move's rehit_rate so they loop."""
     from pycats.core.input import InputFrame
+
     move = load_fighter_data("nalio").moves["dair"]
-    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="nalio", facing_right=True)
+    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio", facing_right=True)
     group = pygame.sprite.Group()
     neutral = InputFrame(held=set(), pressed=set(), released=set())
     p._clock.start(move)
@@ -386,7 +393,6 @@ def test_player_named_nalio_loads_nalio_data():
     """End-to-end seam: a Player given char_name='nalio' loads Nalio's distinct
     moveset, not the default jab. Able-to-fail: without the loader branch the
     Player would get the default cat (angle 0)."""
-    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="nalio")
-    assert p.fighter_data is load_fighter_data("nalio")
+    p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio")
+    assert p.fighter_data == load_fighter_data("nalio")  # JSON-backed (#851): equal, not identical
     assert p.fighter_data.moves["attack"].hitboxes[0].angle == 80
