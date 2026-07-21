@@ -13,8 +13,8 @@ from .palettes import load_palettes
 
 _PAL = load_palettes()
 
-# Implemented archetypes only (Nalio #142, Birky #228, Narz #294). Tuple order = grid order.
-ARCHETYPE_ROSTER = ("nalio", "birky", "narz")
+# Implemented archetypes only (Nalio #142, Birky #228, Narz #294, Gnok #779). Tuple order = grid order.
+ARCHETYPE_ROSTER = ("nalio", "birky", "narz", "gnok")
 
 # Default cosmetic palette per archetype (an OG skin; cosmetic only, ⚠ playtest-TBD).
 # Default OG-skin KEY per archetype — the single source (#650): the skin a character
@@ -23,6 +23,7 @@ ARCHETYPE_DEFAULT_SKIN = {
     "nalio": "red-blue",  # base theme (#677): red body, blue accents
     "birky": "pink-red",  # base theme (#677): pink body, red accents
     "narz": "blue-black",  # base theme (#677): blue body, black accents
+    "gnok": "brown-tan",  # base theme (#779): dark-brown body, medium-brown accents (the DK ape)
 }
 
 # Default cosmetic palette per archetype (derived from ARCHETYPE_DEFAULT_SKIN, cosmetic-only).
@@ -36,6 +37,7 @@ ARCHETYPE_EXTRA_SKINS = {
     "nalio": ("red-blue",),
     "birky": ("pink-red",),
     "narz": ("blue-black",),
+    "gnok": ("brown-tan",),  # Gnok owns its DK-brown base theme (#779); shared OG six still available
 }
 
 # Display name shown on the char-select tile (the archetype, not the palette).
@@ -43,6 +45,7 @@ ARCHETYPE_NAME = {
     "nalio": "Nalio",
     "birky": "Birky",
     "narz": "Narz",
+    "gnok": "Gnok",
 }
 
 # Neutral fallback cosmetic for any key with no archetype/OG palette.

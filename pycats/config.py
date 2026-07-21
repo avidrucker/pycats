@@ -446,8 +446,11 @@ CHAR_SELECT_TITLE_COLOR = WHITE
 CHAR_SELECT_TITLE_SIZE = 36
 CHAR_SELECT_INSTRUCTION_SIZE = 20
 CHAR_SELECT_PADDING = 20
-CHAR_SELECT_GRID_COLS = 3
-CHAR_SELECT_GRID_ROWS = 2
+# 5 cols holds the full 5-archetype roster on ONE row (#779/#821): 5×120 + 4×20 spacing =
+# 680 px, centred in the 960-wide screen (grid_start_x recomputes from COLS). Was 3 (the
+# 4th tile, Gnok, wrapped to a second row).
+CHAR_SELECT_GRID_COLS = 5
+CHAR_SELECT_GRID_ROWS = 1
 CHAR_SELECT_TILE_SIZE = 120
 CHAR_SELECT_TILE_SPACING = 20
 CHAR_SELECT_CURSOR_COLOR = WHITE

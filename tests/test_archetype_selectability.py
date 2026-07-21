@@ -20,7 +20,7 @@ _P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame
 
 def test_char_select_roster_is_the_implemented_archetypes():
     cs = CharacterSelector(_P1, _P2)
-    assert list(cs.characters) == ["nalio", "birky", "narz"]  # +narz (#294 slice 1)
+    assert list(cs.characters) == ["nalio", "birky", "narz", "gnok"]  # +gnok (#821 slice 1)
     assert tuple(cs.characters) == ARCHETYPE_ROSTER
 
 

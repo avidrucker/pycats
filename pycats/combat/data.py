@@ -267,6 +267,10 @@ def load_fighter_data(character: str) -> FighterData:
         from pycats.characters.narz_cat import NARZ_FIGHTER_DATA
 
         return NARZ_FIGHTER_DATA
+    if character == "gnok":
+        from pycats.characters.gnok_cat import GNOK_FIGHTER_DATA
+
+        return GNOK_FIGHTER_DATA
     if character == "testcat":
         # Named handle for the minimal one-move fixture (#591): tests that want
         # the minimal kit load it by this name rather than the anonymous

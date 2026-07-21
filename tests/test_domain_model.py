@@ -59,12 +59,14 @@ def test_player_identity_for_slot_defaults():
 
 
 def test_registries_hold_the_real_roster_only():
-    assert set(CHARACTERS) == {"nalio", "birky", "narz"}
+    assert set(CHARACTERS) == {"nalio", "birky", "narz", "gnok"}
     assert CHARACTERS["nalio"].name == "Nalio"
-    # Each Character defaults to its own base colour-theme Skin (#677).
+    # Each Character defaults to its own base colour-theme Skin (#677; Gnok's is the
+    # DK-brown "brown-tan" theme, #821 slice 1).
     assert CHARACTERS["nalio"].default_skin_key == "red-blue"
     assert CHARACTERS["birky"].default_skin_key == "pink-red"
     assert CHARACTERS["narz"].default_skin_key == "blue-black"
+    assert CHARACTERS["gnok"].default_skin_key == "brown-tan"
     assert "calico" in SKINS and "ghost" in SKINS and "void" in SKINS
 
 
