@@ -74,19 +74,48 @@ def test_gnok_differs_from_default_on_scalars_and_body():
     assert gnok.hurtbox != default.hurtbox
 
 
-def test_gnok_jab_is_authored_the_rest_reuse_default():
-    # Slice 2 (#824) authors the jab; every OTHER slot still reuses the default cat until
-    # its slice (#779) lands. Able-to-fail: a wrong wiring that drops the jab or clobbers a
-    # default slot fails here.
+# The moves Gnok has authored so far (grows one slice at a time under #779): slice 2 the
+# jab, slice 3 (#841) the three tilts. Every OTHER slot still reuses the default cat.
+_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt"}
+
+
+def test_gnok_authored_moves_are_its_own_the_rest_reuse_default():
+    # Slices 2-3 author the jab + tilts; every OTHER slot still reuses the default cat until
+    # its slice (#779) lands. Able-to-fail: a wrong wiring that drops an authored move or
+    # clobbers a default slot fails here.
     gnok = load_fighter_data("gnok")
     default = load_fighter_data("default")
-    assert "jab" in gnok.moves
-    assert gnok.moves["jab"] is not default.moves.get("jab")  # Gnok's own, not the default
+    assert "jab" in gnok.moves and "ftilt" in gnok.moves
+    # each authored move is Gnok's own, not the default's
+    for key in _GNOK_AUTHORED & set(default.moves):
+        assert gnok.moves[key] is not default.moves[key]
     # the untouched slots (e.g. the default "attack" fallback) are still the default's
     for key, mv in default.moves.items():
-        if key == "jab":
+        if key in _GNOK_AUTHORED:
             continue
         assert gnok.moves[key] == mv
+
+
+def test_gnok_ftilt_is_authored_from_attacks3s():
+    # Slice 3 (#841) f-tilt: DK's AttackS3S — 4 same-set boxes, damage 11, angle 361
+    # (Sakurai sentinel), BKB 10, KBG 100; frames startup 7 / active 4 / recovery 23
+    # (rukaidata FAF 34, active 8-11). Able-to-fail: a missing/mis-datamined ftilt fails.
+    ftilt = load_fighter_data("gnok").moves["ftilt"]
+    assert (ftilt.startup, ftilt.active, ftilt.recovery) == (7, 4, 23)
+    assert len(ftilt.hitboxes) == 4
+    assert all(hb.damage == 11.0 and hb.angle == 361 for hb in ftilt.hitboxes)
+    assert all(hb.base_knockback == 10.0 and hb.knockback_growth == 100.0 for hb in ftilt.hitboxes)
+
+
+def test_gnok_ftilt_maps_to_forward_a():
+    # The "ftilt" key is what move-select picks for grounded forward-A (and back-A), so
+    # authoring it under that key means it fires in-game, not an orphaned move.
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    for direction in ("forward", "back"):
+        key = resolve_move_key(gnok.moves, direction=direction, on_ground=True, is_special=False)
+        assert key == "ftilt"
 
 
 def test_gnok_jab_is_a_two_hit_1_2():

@@ -18,10 +18,11 @@ Per #120, combat scalars (weight, max_jumps) are RAW; velocity/accel scalars go 
     weight 114 (raw) · move_speed 1.2 · dash_speed 1.8 · jump_vel 2.8 · gravity 0.1
     · max_fall_speed 2.4 · max_jumps 2 (raw)   ← unit rates; vel() scales the spatial ones
 
-Slice 1 authored the scalars + measured body only. Slice 2 (#824) adds the **jab** — DK's
+Slice 1 authored the scalars + measured body only. Slice 2 (#824) added the **jab** — DK's
 1-2 punch (PM3.6 `Attack11` → `Attack12`), modeled as one move with two sequential hit
-windows; the rest of `moves` still reuses the default cat until its slice lands. Gnok's
-remaining heavy normals + smashes arrive one slice at a time under #779 (slices 3-7).
+windows. Slice 3 (#841) adds the three **tilts** — f-tilt (`AttackS3S`), u-tilt (`AttackHi3`),
+d-tilt (`AttackLw3`); the rest of `moves` still reuses the default cat until its slice lands.
+Gnok's remaining heavy normals + smashes arrive one slice at a time under #779 (slices 4-7).
 Deferred (NOT V1, need engine): grabs/throws, Giant Punch armor, Spinning Kong recovery
 (spec §3/§5).
 
@@ -175,13 +176,52 @@ _GNOK_JAB = MoveData(
     ),
 )
 
+
+# --- Forward-tilt (slice 3, #841): DK's AttackS3S, mapped to the "ftilt" key ---
+# move_select has one ground-forward key, so the mid/`S3S` variant is authored (the angled
+# `AttackS3Hi`/`AttackS3Lw` variants are out of scope — nalio convention). A big forward
+# arm-swing: FOUR same-set hitboxes (rukaidata id 0→3), all damage 11, angle 361 (the
+# Sakurai sentinel #203, same as nalio's ftilt), BKB 10, KBG 100, WDSK 0 — nothing deferred.
+#
+# Datamined from the brawllib_rs PM3.6 dump (`-f Donkey -a AttackS3S`) and cross-checked
+# against rukaidata (FAF 34, active 8-11):
+#   active frames 8-11 (1-indexed) → startup 7 / active 4; FAF 34 → recovery 34-7-4 = 23.
+# Frames / % / angle / BKB / KBG entered RAW (#120). Radii = round(size × PX_PER_UNIT):
+# 4.0→22, 4.75→26, 4.4→24, 3.52→19 (DK's fist → big radii, the heavy-normal signature).
+# Positions dx/dy APPROXIMATED along the forward arm at chest height (no skeleton modeled —
+# same convention as the jab/nalio); dx ordered by the datamined forward reach (id1 fist
+# furthest, then id0, id2, id3 inner). ⚠🔬 playtest starting points (ADR-0003).
+def _ftilt_box(dx, r):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=32, r=r),
+        damage=11.0,
+        angle=361,
+        base_knockback=10.0,
+        knockback_growth=100.0,
+    )
+
+
+_GNOK_FTILT = MoveData(
+    name="forward tilt",
+    in_air=False,
+    startup=7,  # AttackS3S first active frame 8 (1-indexed) → 7 startup frames
+    active=4,  # active frames 8-11
+    recovery=23,  # FAF 34 → 34 - 7 - 4 = 23
+    hitboxes=(
+        _ftilt_box(dx=76, r=22),  # id0 (size 4.0) — mid arm
+        _ftilt_box(dx=90, r=26),  # id1 (size 4.75) — fist, furthest reach / priority
+        _ftilt_box(dx=62, r=24),  # id2 (size 4.4) — inner
+        _ftilt_box(dx=48, r=19),  # id3 (size 3.52) — innermost
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
     # jab (DK's 1-2); the other slots reuse the default cat until their slices (#779) land.
     hurtbox=_HURTBOX,
     stand_size=_STAND_SIZE,
-    moves={**_DEFAULT.moves, "jab": _GNOK_JAB},
+    moves={**_DEFAULT.moves, "jab": _GNOK_JAB, "ftilt": _GNOK_FTILT},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,
