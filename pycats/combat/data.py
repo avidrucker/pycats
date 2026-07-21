@@ -23,7 +23,9 @@ Design notes:
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, fields
+from pathlib import Path
 
 # Movement-constant defaults live in config; FighterData uses them as field
 # defaults so any data that doesn't specify movement == today's globals (the
@@ -321,8 +323,22 @@ def _fighter_from_json(doc: dict) -> FighterData:
     return FighterData(**kw)
 
 
+# Per-fighter JSON data directory (#844, R4 of the #792 editor; design §1). The
+# editor writes one thin-mirror file per fighter here; load_fighter_data prefers
+# it when present. NO <character>.json ships today, so the branch never fires for
+# a real character and the Python switch below is authoritative (golden-safe).
+# The migration dump that populates this dir is R5 (#792). Tests monkeypatch this
+# constant to exercise the branch without touching the repo.
+CHARACTER_DATA_DIR = Path(__file__).parent.parent / "characters" / "data"
+
+
 def load_fighter_data(character: str) -> FighterData:
     """Return FighterData for the named character.
+
+    Resolution order (#844, R4): a `CHARACTER_DATA_DIR/<character>.json` thin
+    mirror is preferred when present (hydrated via `_fighter_from_json`, #809
+    §2.1); otherwise the Python import switch runs unchanged. No JSON ships yet,
+    so every character still resolves through the Python switch below.
 
     Phase 1 (#117/#123): per-archetype keys branch to their own definitions;
     every other string still maps to the shared default cat. The sim/golden path
@@ -337,6 +353,13 @@ def load_fighter_data(character: str) -> FighterData:
     Returns:
         FighterData instance (frozen, deterministic, no RNG).
     """
+    # JSON branch (#844): a per-fighter thin-mirror file wins over the Python
+    # switch. Only fires when the file exists — no JSON ships, so goldens are
+    # unchanged. Algorithm-free hydrate (§2.1); provenance is left untouched.
+    path = CHARACTER_DATA_DIR / f"{character}.json"
+    if path.exists():
+        return _fighter_from_json(json.loads(path.read_text()))
+
     if character == "nalio":
         from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
 
