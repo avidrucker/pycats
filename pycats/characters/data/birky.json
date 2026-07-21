@@ -1,0 +1,448 @@
+{
+  "schema_version": 1,
+  "character": "birky",
+  "weight": 70,
+  "gravity": 0.42,
+  "max_fall_speed": 12,
+  "move_speed": 5,
+  "jump_vel": -11,
+  "max_jumps": 6,
+  "hurtbox": {
+    "circles": [[20, 13, 13], [20, 30, 13]]
+  },
+  "moves": {
+    "attack": {
+      "name": "dtilt",
+      "in_air": false,
+      "startup": 3,
+      "active": 4,
+      "recovery": 14,
+      "hitboxes": [
+        {
+          "damage": 10.0,
+          "angle": 20,
+          "base_knockback": 40.0,
+          "knockback_growth": 30.0,
+          "circle": [42, 37, 25]
+        },
+        {
+          "damage": 10.0,
+          "angle": 20,
+          "base_knockback": 40.0,
+          "knockback_growth": 30.0,
+          "circle": [34, 38, 21]
+        },
+        {
+          "damage": 10.0,
+          "angle": 20,
+          "base_knockback": 40.0,
+          "knockback_growth": 30.0,
+          "circle": [28, 39, 19]
+        }
+      ]
+    },
+    "jab": {
+      "name": "jab",
+      "in_air": false,
+      "startup": 2,
+      "active": 2,
+      "recovery": 12,
+      "hitboxes": [
+        {
+          "damage": 3.0,
+          "angle": 361,
+          "base_knockback": 8.0,
+          "knockback_growth": 50.0,
+          "circle": [38, 22, 17]
+        },
+        {
+          "damage": 3.0,
+          "angle": 361,
+          "base_knockback": 8.0,
+          "knockback_growth": 50.0,
+          "circle": [30, 23, 17]
+        }
+      ]
+    },
+    "ftilt": {
+      "name": "ftilt",
+      "in_air": false,
+      "startup": 4,
+      "active": 4,
+      "recovery": 20,
+      "hitboxes": [
+        {
+          "damage": 11.0,
+          "angle": 361,
+          "base_knockback": 8.0,
+          "knockback_growth": 100.0,
+          "circle": [38, 23, 19]
+        },
+        {
+          "damage": 11.0,
+          "angle": 361,
+          "base_knockback": 8.0,
+          "knockback_growth": 100.0,
+          "circle": [46, 22, 21]
+        },
+        {
+          "damage": 11.0,
+          "angle": 361,
+          "base_knockback": 8.0,
+          "knockback_growth": 100.0,
+          "circle": [52, 22, 20]
+        }
+      ]
+    },
+    "utilt": {
+      "name": "utilt",
+      "in_air": false,
+      "startup": 3,
+      "active": 7,
+      "recovery": 14,
+      "hitboxes": [
+        {
+          "damage": 8.0,
+          "angle": 92,
+          "base_knockback": 40.0,
+          "knockback_growth": 118.0,
+          "active_start": 4,
+          "active_end": 5,
+          "circle": [22, 7, 25]
+        },
+        {
+          "damage": 8.0,
+          "angle": 92,
+          "base_knockback": 40.0,
+          "knockback_growth": 114.0,
+          "active_start": 4,
+          "active_end": 5,
+          "circle": [30, 9, 30]
+        },
+        {
+          "damage": 6.0,
+          "angle": 88,
+          "base_knockback": 40.0,
+          "knockback_growth": 118.0,
+          "active_start": 6,
+          "active_end": 10,
+          "circle": [22, 7, 25]
+        },
+        {
+          "damage": 6.0,
+          "angle": 88,
+          "base_knockback": 40.0,
+          "knockback_growth": 114.0,
+          "active_start": 6,
+          "active_end": 10,
+          "circle": [30, 9, 30]
+        }
+      ]
+    },
+    "nair": {
+      "name": "nair",
+      "in_air": true,
+      "startup": 2,
+      "active": 27,
+      "recovery": 14,
+      "hitboxes": [
+        {
+          "damage": 12.0,
+          "angle": 55,
+          "base_knockback": 15.0,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 6,
+          "circle": [20, 22, 22]
+        },
+        {
+          "damage": 9.0,
+          "angle": 55,
+          "knockback_growth": 100.0,
+          "active_start": 7,
+          "active_end": 29,
+          "circle": [20, 22, 14]
+        }
+      ]
+    },
+    "fair": {
+      "name": "fair",
+      "in_air": true,
+      "startup": 6,
+      "active": 18,
+      "recovery": 16,
+      "hitboxes": [
+        {
+          "damage": 5.0,
+          "angle": 60,
+          "knockback_growth": 100.0,
+          "active_start": 7,
+          "active_end": 8,
+          "set_knockback": 30,
+          "circle": [42, 22, 26]
+        },
+        {
+          "damage": 5.0,
+          "angle": 75,
+          "knockback_growth": 100.0,
+          "active_start": 7,
+          "active_end": 8,
+          "set_knockback": 30,
+          "circle": [50, 20, 25]
+        },
+        {
+          "damage": 5.0,
+          "angle": 60,
+          "knockback_growth": 100.0,
+          "active_start": 14,
+          "active_end": 15,
+          "set_knockback": 30,
+          "circle": [42, 22, 24]
+        },
+        {
+          "damage": 5.0,
+          "angle": 75,
+          "knockback_growth": 100.0,
+          "active_start": 14,
+          "active_end": 15,
+          "set_knockback": 30,
+          "circle": [50, 20, 25]
+        },
+        {
+          "damage": 7.0,
+          "angle": 361,
+          "knockback_growth": 160.0,
+          "active_start": 22,
+          "active_end": 24,
+          "circle": [50, 21, 30]
+        },
+        {
+          "damage": 7.0,
+          "angle": 361,
+          "knockback_growth": 160.0,
+          "active_start": 22,
+          "active_end": 24,
+          "circle": [42, 22, 30]
+        }
+      ]
+    },
+    "bair": {
+      "name": "bair",
+      "in_air": true,
+      "startup": 5,
+      "active": 15,
+      "recovery": 16,
+      "hitboxes": [
+        {
+          "damage": 14.0,
+          "angle": 361,
+          "base_knockback": 10.0,
+          "knockback_growth": 100.0,
+          "active_start": 6,
+          "active_end": 8,
+          "circle": [-12, 22, 30]
+        },
+        {
+          "damage": 14.0,
+          "angle": 361,
+          "base_knockback": 10.0,
+          "knockback_growth": 100.0,
+          "active_start": 6,
+          "active_end": 8,
+          "circle": [-2, 25, 32]
+        },
+        {
+          "damage": 10.0,
+          "angle": 361,
+          "knockback_growth": 100.0,
+          "active_start": 9,
+          "active_end": 20,
+          "circle": [-12, 22, 27]
+        },
+        {
+          "damage": 10.0,
+          "angle": 361,
+          "knockback_growth": 100.0,
+          "active_start": 9,
+          "active_end": 20,
+          "circle": [-2, 25, 23]
+        }
+      ]
+    },
+    "uair": {
+      "name": "uair",
+      "in_air": true,
+      "startup": 9,
+      "active": 6,
+      "recovery": 21,
+      "hitboxes": [
+        {
+          "damage": 15.0,
+          "angle": 75,
+          "base_knockback": 5.0,
+          "knockback_growth": 115.0,
+          "active_start": 10,
+          "active_end": 12,
+          "circle": [20, 7, 23]
+        },
+        {
+          "damage": 15.0,
+          "angle": 75,
+          "base_knockback": 5.0,
+          "knockback_growth": 115.0,
+          "active_start": 10,
+          "active_end": 12,
+          "circle": [28, 7, 23]
+        },
+        {
+          "damage": 12.0,
+          "angle": 30,
+          "base_knockback": 10.0,
+          "knockback_growth": 90.0,
+          "active_start": 13,
+          "active_end": 15,
+          "circle": [24, 7, 23]
+        }
+      ]
+    },
+    "dair": {
+      "name": "dair",
+      "in_air": true,
+      "startup": 12,
+      "active": 17,
+      "recovery": 21,
+      "rehit_rate": 3,
+      "hitboxes": [
+        {
+          "damage": 3.0,
+          "angle": 270,
+          "base_knockback": 10.0,
+          "knockback_growth": 100.0,
+          "active_start": 13,
+          "active_end": 29,
+          "circle": [18, 48, 33]
+        },
+        {
+          "damage": 3.0,
+          "angle": 270,
+          "base_knockback": 10.0,
+          "knockback_growth": 100.0,
+          "active_start": 13,
+          "active_end": 29,
+          "circle": [26, 52, 25]
+        }
+      ]
+    },
+    "fsmash": {
+      "name": "fsmash",
+      "in_air": false,
+      "startup": 7,
+      "active": 10,
+      "recovery": 22,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 15.0,
+          "angle": 38,
+          "base_knockback": 40.0,
+          "knockback_growth": 100.0,
+          "active_start": 8,
+          "active_end": 14,
+          "circle": [44, 22, 24]
+        },
+        {
+          "damage": 13.0,
+          "angle": 73,
+          "base_knockback": 25.0,
+          "knockback_growth": 100.0,
+          "active_start": 15,
+          "active_end": 17,
+          "circle": [44, 22, 22]
+        }
+      ]
+    },
+    "usmash": {
+      "name": "usmash",
+      "in_air": false,
+      "startup": 5,
+      "active": 8,
+      "recovery": 22,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 15.0,
+          "angle": 88,
+          "base_knockback": 30.0,
+          "knockback_growth": 120.0,
+          "active_start": 6,
+          "active_end": 8,
+          "circle": [20, 5, 24]
+        },
+        {
+          "damage": 13.0,
+          "angle": 70,
+          "base_knockback": 12.0,
+          "knockback_growth": 55.0,
+          "active_start": 9,
+          "active_end": 13,
+          "circle": [22, 7, 22]
+        }
+      ]
+    },
+    "dsmash": {
+      "name": "dsmash",
+      "in_air": false,
+      "startup": 3,
+      "active": 15,
+      "recovery": 29,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 14.0,
+          "angle": 50,
+          "base_knockback": 30.0,
+          "knockback_growth": 100.0,
+          "active_start": 4,
+          "active_end": 10,
+          "circle": [40, 37, 21]
+        },
+        {
+          "damage": 14.0,
+          "angle": 28,
+          "base_knockback": 20.0,
+          "knockback_growth": 85.0,
+          "active_start": 4,
+          "active_end": 10,
+          "circle": [-40, 37, 23]
+        },
+        {
+          "damage": 12.0,
+          "angle": 50,
+          "base_knockback": 30.0,
+          "knockback_growth": 100.0,
+          "active_start": 11,
+          "active_end": 18,
+          "circle": [40, 37, 21]
+        },
+        {
+          "damage": 10.0,
+          "angle": 28,
+          "base_knockback": 20.0,
+          "knockback_growth": 85.0,
+          "active_start": 11,
+          "active_end": 18,
+          "circle": [-40, 37, 23]
+        }
+      ]
+    }
+  },
+  "crouch_hurtbox": {
+    "circles": [[20, 10, 10], [20, 16, 8]]
+  },
+  "prone_hurtbox": {
+    "circles": [[16, 7, 7], [25, 7, 7]]
+  },
+  "stand_size": [40, 44],
+  "crouch_size": [40, 24],
+  "prone_size": [40, 14]
+}

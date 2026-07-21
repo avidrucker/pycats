@@ -43,7 +43,7 @@ def test_create_from_selection_threads_the_chosen_fighter_data():
     bs = BattleScreen(_P1, _P2)
     bs.create_from_selection("nalio", "birky")
     assert bs.player1.fighter_data == load_fighter_data("nalio")  # JSON-backed (#851): equal, not identical
-    assert bs.player2.fighter_data is load_fighter_data("birky")  # still Python — identity holds until birky flips
+    assert bs.player2.fighter_data == load_fighter_data("birky")  # JSON-backed (#856): equal, not identical
     # label unchanged → win-attribution (stats_print) + name render stay intact
     assert bs.player1.char_name == "P1" and bs.player2.char_name == "P2"
 
