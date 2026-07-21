@@ -40,7 +40,7 @@ def _player(rect, *, hurtbox_circles, facing_right=True):
 
 def test_ftilt_is_two_box_tipper_with_tip_first():
     ftilt = load_fighter_data("narz").moves["ftilt"]
-    assert ftilt is _NARZ_FTILT
+    assert ftilt == _NARZ_FTILT  # JSON-backed (#858): equal, not identical (fresh hydrate per load)
     assert len(ftilt.hitboxes) == 2
     tip, base = ftilt.hitboxes
     # the tip is authored FIRST and is the stronger hit
