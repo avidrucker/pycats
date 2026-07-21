@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "character": "gnok",
+  "weight": 114,
+  "gravity": 0.54,
+  "max_fall_speed": 12.96,
+  "move_speed": 6.48,
+  "dash_speed": 9.72,
+  "jump_vel": -15.12,
+  "hurtbox": {
+    "circles": [[24, 28, 22], [52, 28, 22], [24, 60, 16], [52, 60, 16]]
+  },
+  "moves": {
+    "attack": {
+      "name": "attack",
+      "in_air": false,
+      "startup": 3,
+      "active": 3,
+      "recovery": 6,
+      "hitboxes": [
+        {
+          "damage": 10.0,
+          "angle": 0,
+          "base_knockback": 30.0,
+          "knockback_growth": 100.0,
+          "circle": [46, 30, 12]
+        }
+      ]
+    },
+    "jab": {
+      "name": "jab",
+      "in_air": false,
+      "startup": 2,
+      "active": 4,
+      "recovery": 11,
+      "hitboxes": [
+        {
+          "damage": 4.0,
+          "angle": 65,
+          "base_knockback": 1.0,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 6,
+          "set_knockback": 20,
+          "circle": [82, 30, 25]
+        },
+        {
+          "damage": 4.0,
+          "angle": 65,
+          "base_knockback": 1.0,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 6,
+          "set_knockback": 20,
+          "circle": [68, 30, 19]
+        },
+        {
+          "damage": 4.0,
+          "angle": 65,
+          "base_knockback": 1.0,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 6,
+          "set_knockback": 20,
+          "circle": [56, 30, 15]
+        },
+        {
+          "damage": 6.0,
+          "angle": 75,
+          "base_knockback": 40.0,
+          "knockback_growth": 100.0,
+          "active_start": 10,
+          "active_end": 14,
+          "circle": [86, 26, 27]
+        },
+        {
+          "damage": 6.0,
+          "angle": 75,
+          "base_knockback": 40.0,
+          "knockback_growth": 100.0,
+          "active_start": 10,
+          "active_end": 14,
+          "circle": [72, 24, 26]
+        },
+        {
+          "damage": 6.0,
+          "angle": 75,
+          "base_knockback": 40.0,
+          "knockback_growth": 100.0,
+          "active_start": 10,
+          "active_end": 14,
+          "circle": [58, 28, 15]
+        }
+      ]
+    }
+  },
+  "crouch_hurtbox": {
+    "circles": [[25, 20, 20], [55, 20, 20], [25, 44, 14], [55, 44, 14]]
+  },
+  "prone_hurtbox": {
+    "circles": [[30, 10, 10], [50, 10, 10]]
+  },
+  "stand_size": [
+    76,
+    80
+  ],
+  "crouch_size": [
+    80,
+    58
+  ],
+  "prone_size": [
+    80,
+    20
+  ]
+}
