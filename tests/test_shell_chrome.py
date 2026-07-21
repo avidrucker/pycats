@@ -43,10 +43,8 @@ def _expected(fps, is_fullscreen, frame_input):
         WHITE,
         right_align=True,
     )
-    fs_text = (
-        "F11: Toggle Fullscreen | "
-        + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
-        + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
+    fs_text = "F11: Toggle Fullscreen | " + (
+        "F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size"
     )
     text_utils.render_text(
         s,
@@ -83,7 +81,55 @@ def test_draw_shell_chrome_matches_inline_windowed():
 
 
 def test_draw_shell_chrome_matches_inline_fullscreen():
-    # is_fullscreen flips the F10 label and adds the ESC hint — must be reproduced.
+    # is_fullscreen flips the F10 label (Zoom vs Window Size); no ESC hint (#868).
     fi = InputFrame(held={2}, pressed=set(), released=set())
     fps = 30.0
     assert _raw(_actual(fps, True, fi)) == _raw(_expected(fps, True, fi))
+
+
+def _fs_hud_ref(fps, fs_text):
+    """A shell-chrome surface with the fullscreen HUD's fs_text overridden — used to
+    prove the fullscreen hint's exact wording without depending on draw_shell_chrome."""
+    pygame.init()
+    s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    text_utils.render_text(
+        s,
+        f"FPS: {fps:.2f}",
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+        24,
+        WHITE,
+        right_align=True,
+    )
+    text_utils.render_text(
+        s,
+        fs_text,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+        24,
+        WHITE,
+        right_align=True,
+    )
+    if runtime_settings.show_controls() and runtime_settings.esc_hold_to_navigate():
+        text_utils.render_text(
+            s,
+            "Hold ESC to leave match",
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+            24,
+            WHITE,
+        )
+    return s
+
+
+def test_fullscreen_hud_omits_esc_exit_fullscreen_hint():
+    """#868: ESC no longer exits fullscreen, so the fullscreen shell HUD must not
+    advertise 'ESC: Exit Fullscreen'. Renders draw_shell_chrome in fullscreen and
+    proves, at the pixel level, that its fs_text is the no-ESC-tail wording and NOT
+    the old with-tail wording (able to fail: revert the source and it matches the
+    with-tail reference instead)."""
+    fps = 30.0
+    actual = _actual(fps, True, None)  # frame_input=None → no debug-input line
+    without_tail = _fs_hud_ref(fps, "F11: Toggle Fullscreen | F10: Fullscreen Zoom")
+    with_tail = _fs_hud_ref(
+        fps, "F11: Toggle Fullscreen | F10: Fullscreen Zoom | ESC: Exit Fullscreen"
+    )
+    assert _raw(actual) == _raw(without_tail)
+    assert _raw(actual) != _raw(with_tail)

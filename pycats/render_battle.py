@@ -1419,11 +1419,7 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
         WHITE,
         right_align=True,
     )
-    fs_text = (
-        "F11: Toggle Fullscreen | "
-        + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
-        + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
-    )
+    fs_text = "F11: Toggle Fullscreen | " + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
     text_utils.render_text(
         surface,
         fs_text,
@@ -1434,8 +1430,8 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
     )
     # In-battle ESC-hold leave-match hint (#681, from the #549 audit) — gated by the
     # BATTLE show_controls toggle, and only while the ESC-hold affordance is enabled.
-    # Worded "hold" + "leave match" so it does not read as the ESC-tap "Exit Fullscreen"
-    # above (the #549 disambiguation).
+    # Worded "hold" + "leave match" to name the ESC-hold action plainly (#868 removed the
+    # old ESC-tap "Exit Fullscreen" hint, since ESC no longer exits fullscreen).
     if runtime_settings.show_controls() and runtime_settings.esc_hold_to_navigate():
         text_utils.render_text(
             surface,

@@ -41,11 +41,8 @@ def render_active_screen(current_state, screen_manager, surface, *, battle, plat
         screen_manager.render(surface)
 
         # Draw fullscreen instructions on character select screen
-        fs_text = (
-            "F11: Toggle Fullscreen | "
-            + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
-            + (" | ESC: Exit Fullscreen" if is_fullscreen else "")
-        )
+        # (#868 removed the ESC: Exit Fullscreen hint — ESC no longer exits fullscreen)
+        fs_text = "F11: Toggle Fullscreen | " + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
         text_utils.render_text(
             surface,
             fs_text,
