@@ -251,13 +251,56 @@ _GNOK_UTILT = MoveData(
     ),
 )
 
+
+# --- Down-tilt (slice 3, #841): DK's AttackLw3, mapped to the "dtilt" key ------
+# A low forward poke (the crouching ankle-sweep): FOUR same-set hitboxes (rukaidata id 0→3),
+# all damage 9, angle 40 (a low diagonal — literal, NOT a sentinel), BKB 25, KBG 95, WDSK 0.
+#
+# Datamined from the brawllib_rs PM3.6 dump (`-f Donkey -a AttackLw3`) and cross-checked
+# against rukaidata (FAF 23, active 6-9):
+#   active frames 6-9 (1-indexed) → startup 5 / active 4; FAF 23 → recovery 23-5-4 = 14.
+# Frames / % / angle / BKB / KBG entered RAW (#120). Radii = round(size × PX_PER_UNIT):
+# 3.75→20, 5.4→29, 4.0→22, 3.75→20 (id1 the big low sweep). Positions dx/dy APPROXIMATED
+# as a low forward line (larger dy = lower on screen — below the f-tilt line), dx ordered by
+# the datamined forward reach (id1 furthest, then id3, id0, id2 inner); no skeleton modeled.
+# ⚠🔬 playtest starting points (ADR-0003).
+def _dtilt_box(dx, dy, r):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=9.0,
+        angle=40,
+        base_knockback=25.0,
+        knockback_growth=95.0,
+    )
+
+
+_GNOK_DTILT = MoveData(
+    name="down tilt",
+    in_air=False,
+    startup=5,  # AttackLw3 first active frame 6 (1-indexed) → 5 startup frames
+    active=4,  # active frames 6-9
+    recovery=14,  # FAF 23 → 23 - 5 - 4 = 14
+    hitboxes=(
+        _dtilt_box(dx=56, dy=52, r=20),  # id0 (size 3.75)
+        _dtilt_box(dx=84, dy=50, r=29),  # id1 (size 5.4) — big low sweep, furthest / priority
+        _dtilt_box(dx=44, dy=54, r=22),  # id2 (size 4.0) — inner
+        _dtilt_box(dx=70, dy=52, r=20),  # id3 (size 3.75)
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
     # jab (DK's 1-2); the other slots reuse the default cat until their slices (#779) land.
     hurtbox=_HURTBOX,
     stand_size=_STAND_SIZE,
-    moves={**_DEFAULT.moves, "jab": _GNOK_JAB, "ftilt": _GNOK_FTILT, "utilt": _GNOK_UTILT},
+    moves={
+        **_DEFAULT.moves,
+        "jab": _GNOK_JAB,
+        "ftilt": _GNOK_FTILT,
+        "utilt": _GNOK_UTILT,
+        "dtilt": _GNOK_DTILT,
+    },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

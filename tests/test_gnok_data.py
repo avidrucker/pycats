@@ -141,6 +141,27 @@ def test_gnok_utilt_maps_to_up_a():
     assert key == "utilt"
 
 
+def test_gnok_dtilt_is_authored_from_attacklw3():
+    # Slice 3 (#841) d-tilt: DK's AttackLw3 — 4 same-set boxes, damage 9, angle 40 (a low
+    # diagonal), BKB 25, KBG 95; startup 5 / active 4 / recovery 14 (rukaidata FAF 23,
+    # active 6-9). Able-to-fail: a missing/mis-datamined dtilt fails here.
+    dtilt = load_fighter_data("gnok").moves["dtilt"]
+    assert (dtilt.startup, dtilt.active, dtilt.recovery) == (5, 4, 14)
+    assert len(dtilt.hitboxes) == 4
+    assert all(hb.damage == 9.0 and hb.angle == 40 for hb in dtilt.hitboxes)
+    assert all(hb.base_knockback == 25.0 and hb.knockback_growth == 95.0 for hb in dtilt.hitboxes)
+
+
+def test_gnok_dtilt_maps_to_down_a():
+    # The "dtilt" key is what move-select picks for grounded down-A, so authoring it there
+    # means it fires in-game, not an orphaned move.
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    key = resolve_move_key(gnok.moves, direction="down", on_ground=True, is_special=False)
+    assert key == "dtilt"
+
+
 def test_gnok_jab_is_a_two_hit_1_2():
     # DK's Attack11 → Attack12, modeled as one move with two SEQUENTIAL windows (#204).
     # Able-to-fail: a single-window jab (or overlapping windows) collapses this.
