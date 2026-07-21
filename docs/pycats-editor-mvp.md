@@ -65,26 +65,26 @@ Per move / animation / attack:
 - **Reference is motion, not skin:** the #777 GIFs are hurtbox-capsule/skeleton renders — compare
   motion + box placement, scaled to a common body height, not appearance.
 
-## What's left (for the next agent — the deferred action plan)
+## Progress (what's done) + what's left
 
-These were agreed but **not yet executed** (session compacted here):
+**Done (2026-07-20):**
+1. **ADR `docs/adr/0008-pycats-editor-...md`** written (D0–D6 + MVP list).
+2. **#793** (research child) closed — findings + this doc + ADR on main.
+3. **#778** closed as superseded (folded into the editor per D0).
+4. **Ruling** posted on #792 (D0–D6 table).
+5. **DESIGN child #809** filed, then designed →
+   **[`docs/pycats-editor-data-schema-design.md`](./pycats-editor-data-schema-design.md)**. That doc
+   is the spine: JSON box-data schema (thin static mirror + inline `provenance` + drift-guard test),
+   the `load_fighter_data` seam, the px↔`Circle(dx,dy,r)` mapping, and the editor screens/interactions.
+   Chosen storage architecture: **A + drift-guard** (candidates A/B/C compared in §0 of that doc).
 
-1. **Write ADR `docs/adr/0008-pycats-editor-...md`** recording D0–D6 + the MVP feature list + the
-   deferred "game consumes per-frame data" question. (Optionally add a row to `docs/decisions-ledger.md`.)
-2. **Close #793** (this research child): commit the #793 findings doc + this doc + the ADR together
-   with `Closes #793`; log velocity; run the pre-close error self-audit; close from the main checkout
-   (`cd <main> && pmtools close 793`); post the closing comment.
-3. **Close #778** with a "superseded by #792 (folded into pycats-editor)" comment.
-4. **Post a ruling summary on #792** referencing the ADR.
-5. **File the next child — a DESIGN ticket** under #792 (one-at-a-time): the JSON box-data schema
-   (per-frame keyed hit/hurt boxes + provenance `notes`) and the editor screens/interactions
-   (scrub/loop/toggle/overlay/scale-translate-trace). Consider the design skills the user flagged:
-   `design-an-interface`, `domain-modeling`, `prototype`, `codebase-design`, then `to-spec`/`to-tickets`
-   (file resulting tickets **one at a time** per RULES, not as a batch).
+**What's left (next children, one-at-a-time downstream of #809):**
 
-Open sub-questions to settle at design time (not decided): whether the JSON migration of existing
-static data is a prerequisite slice or done incrementally; when/how the live game consumes per-frame
-data (the deferred D2 question, ties to the #782 interpolation gap); exact JSON schema shape.
+- **SCOPE** — cut the design into tracer-bullet DEV slices (data dir + loader JSON branch +
+  migration; the `MoveData.hurtbox` override; the editor's canvas/timeline/inspector; GIF overlay).
+  Open items to settle there are in §5 of the design doc.
+- **DEV slices** — build incrementally, TDD, each slice green with a regression test; goldens stay
+  green throughout.
 
 ## References
 
