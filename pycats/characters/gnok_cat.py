@@ -18,10 +18,12 @@ Per #120, combat scalars (weight, max_jumps) are RAW; velocity/accel scalars go 
     weight 114 (raw) · move_speed 1.2 · dash_speed 1.8 · jump_vel 2.8 · gravity 0.1
     · max_fall_speed 2.4 · max_jumps 2 (raw)   ← unit rates; vel() scales the spatial ones
 
-This slice authors **no moves** — `moves` reuses the default cat (like narz_cat.py slice 1),
-so Gnok differs from the default in scalars + body geometry only. Gnok's heavy normals +
-smashes arrive one slice at a time under #779 (slices 2-7). Deferred (NOT V1, need engine):
-grabs/throws, Giant Punch armor, Spinning Kong recovery (spec §3/§5).
+Slice 1 authored the scalars + measured body only. Slice 2 (#824) adds the **jab** — DK's
+1-2 punch (PM3.6 `Attack11` → `Attack12`), modeled as one move with two sequential hit
+windows; the rest of `moves` still reuses the default cat until its slice lands. Gnok's
+remaining heavy normals + smashes arrive one slice at a time under #779 (slices 3-7).
+Deferred (NOT V1, need engine): grabs/throws, Giant Punch armor, Spinning Kong recovery
+(spec §3/§5).
 
 Faithful-physics caveat (#785/#816): pycats' shipped velocity globals are *game-tuned px*,
 not rukaidata × 5.4 (e.g. MAX_FALL_SPEED = 13 vs Mario's real ~9.2). Gnok's `vel()` values
@@ -30,7 +32,7 @@ not block on it — it ships on the same basis the other cats do, just authored 
 """
 
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
-from pycats.combat.data import Circle, FighterData, Hurtbox
+from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 from pycats.combat.units import vel
 
 # --- Stand body (spec §2a/§2b, MEASURED) -------------------------------------
@@ -82,13 +84,104 @@ _PRONE_HURTBOX = Hurtbox(
     )
 )
 
+# --- Jab (slice 2, #824): DK's 1-2 punch (PM3.6 Attack11 → Attack12) ---------
+# Gnok's neutral-A is DK's TWO-hit jab (the "heavy-normals 1-2" of epic #779), authored
+# as ONE move with two SEQUENTIAL hit windows via per-hitbox active_start/active_end (the
+# same #204 engine seam narz's dsmash uses). Hit 1 links, hit 2 launches. This is where
+# Gnok's jab diverges from nalio/narz (whose "jab" is Attack11 only) — the spec §6 slice-2
+# scope is explicitly Attack11/Attack12.
+#
+# Datamined at DEV time from the brawllib_rs PM3.6 dump (`-f Donkey -a Attack11/Attack12`,
+# `high_level_frame_data -l subaction`; env #614):
+#   Attack11 (jab 1): first active frame 3, 4 active frames; 3 boxes, damage 4%,
+#                     trajectory 65°, kbg 100, bkb 1, WDSK 20 — a weight-set LINK hit.
+#   Attack12 (jab 2): first active frame 6, 6 active frames; 3 boxes, damage 6%,
+#                     trajectory 75°, kbg 100, bkb 40, WDSK 0 — the up-forward LAUNCHER.
+# Frames / % / angle / BKB / KBG / WDSK entered RAW (#120). Hitbox radii = round(size ×
+# PX_PER_UNIT) as for every other cat's moves (nalio/narz convention): jab1 sizes
+# 4.69/3.52/2.73 → 25/19/15; jab2 sizes 5.0/4.75/2.73 → 27/26/15 (DK's big fists → big
+# radii, reinforcing the heavy feel). Positions dx/dy are APPROXIMATED along the forward
+# arm at chest height (no skeleton modeled — same convention as nalio's jab) and remain
+# ⚠🔬 playtest starting points (ADR-0003). The two windows are compressed into one move:
+# jab1 [3,6], a link gap, jab2 [10,14], then end-lag (total 17).
+_GNOK_JAB = MoveData(
+    name="jab",
+    in_air=False,
+    startup=2,  # Attack11 first active frame 3 → 2 startup frames
+    active=4,  # jab-1 window (frames 3-6)
+    recovery=11,  # total 17; jab-2 fires late (frames 10-14) via active_start, then end-lag
+    hitboxes=(
+        # --- Hit 1 (Attack11): the forward LINK jab. WDSK 20 / BKB 1 is a weight-set link
+        # (#211 set_knockback): it deals 4% but launches a SET distance regardless of the
+        # victim's %, keeping the target in range for hit 2 instead of knocking it away.
+        Hitbox(
+            circle=Circle(dx=82, dy=30, r=25),
+            damage=4.0,
+            angle=65,
+            base_knockback=1.0,
+            knockback_growth=100.0,
+            set_knockback=20,
+            active_start=3,
+            active_end=6,
+        ),  # fist (id0, size 4.69)
+        Hitbox(
+            circle=Circle(dx=68, dy=30, r=19),
+            damage=4.0,
+            angle=65,
+            base_knockback=1.0,
+            knockback_growth=100.0,
+            set_knockback=20,
+            active_start=3,
+            active_end=6,
+        ),  # mid arm (id1, size 3.52)
+        Hitbox(
+            circle=Circle(dx=56, dy=30, r=15),
+            damage=4.0,
+            angle=65,
+            base_knockback=1.0,
+            knockback_growth=100.0,
+            set_knockback=20,
+            active_start=3,
+            active_end=6,
+        ),  # inner/shoulder (id2, size 2.73)
+        # --- Hit 2 (Attack12): the up-forward LAUNCH finisher (75°, real BKB 40, no WDSK).
+        Hitbox(
+            circle=Circle(dx=86, dy=26, r=27),
+            damage=6.0,
+            angle=75,
+            base_knockback=40.0,
+            knockback_growth=100.0,
+            active_start=10,
+            active_end=14,
+        ),  # fist (id0, size 5.0)
+        Hitbox(
+            circle=Circle(dx=72, dy=24, r=26),
+            damage=6.0,
+            angle=75,
+            base_knockback=40.0,
+            knockback_growth=100.0,
+            active_start=10,
+            active_end=14,
+        ),  # mid arm (id1, size 4.75)
+        Hitbox(
+            circle=Circle(dx=58, dy=28, r=15),
+            damage=6.0,
+            angle=75,
+            base_knockback=40.0,
+            knockback_growth=100.0,
+            active_start=10,
+            active_end=14,
+        ),  # inner (id2, size 2.73)
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
-    # PM3.6 velocity scalars authored raw-first via vel() (#785). No moves this slice — the
-    # default cat's "attack" is the neutral-A fallback until slices 2-7 (#779) add Gnok's kit.
+    # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
+    # jab (DK's 1-2); the other slots reuse the default cat until their slices (#779) land.
     hurtbox=_HURTBOX,
     stand_size=_STAND_SIZE,
-    moves=dict(_DEFAULT.moves),
+    moves={**_DEFAULT.moves, "jab": _GNOK_JAB},
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
     prone_size=_PRONE_SIZE,

@@ -74,12 +74,55 @@ def test_gnok_differs_from_default_on_scalars_and_body():
     assert gnok.hurtbox != default.hurtbox
 
 
-def test_gnok_reuses_default_moves_this_slice():
-    # No moves authored in slice 1 (like narz slice 1): the kit is the default cat's until
-    # slices 2-7 (#779) add Gnok's heavy normals/smashes.
+def test_gnok_jab_is_authored_the_rest_reuse_default():
+    # Slice 2 (#824) authors the jab; every OTHER slot still reuses the default cat until
+    # its slice (#779) lands. Able-to-fail: a wrong wiring that drops the jab or clobbers a
+    # default slot fails here.
     gnok = load_fighter_data("gnok")
     default = load_fighter_data("default")
-    assert gnok.moves == default.moves
+    assert "jab" in gnok.moves
+    assert gnok.moves["jab"] is not default.moves.get("jab")  # Gnok's own, not the default
+    # the untouched slots (e.g. the default "attack" fallback) are still the default's
+    for key, mv in default.moves.items():
+        if key == "jab":
+            continue
+        assert gnok.moves[key] == mv
+
+
+def test_gnok_jab_is_a_two_hit_1_2():
+    # DK's Attack11 → Attack12, modeled as one move with two SEQUENTIAL windows (#204).
+    # Able-to-fail: a single-window jab (or overlapping windows) collapses this.
+    jab = load_fighter_data("gnok").moves["jab"]
+    windows = sorted({(hb.active_start, hb.active_end) for hb in jab.hitboxes})
+    assert len(windows) == 2, "jab must fire in two distinct windows (1 then 2)"
+    (s1, e1), (s2, e2) = windows
+    assert e1 < s2, "the second hit must start strictly after the first ends"
+
+
+def test_gnok_jab1_links_and_jab2_launches():
+    # Faithful to the datamine: hit 1 is a weight-SET link (WDSK 20, low dmg/angle), hit 2
+    # is the real-BKB up-forward launcher (higher dmg, steeper angle, no set-knockback).
+    # Able-to-fail: swapping the link/launch roles or dropping the set-knockback fails here.
+    jab = load_fighter_data("gnok").moves["jab"]
+    hit1 = [hb for hb in jab.hitboxes if hb.active_start == 3]
+    hit2 = [hb for hb in jab.hitboxes if hb.active_start == 10]
+    assert hit1 and hit2
+    # hit 1: the set-knockback LINK — Attack11 damage 4, angle 65
+    assert all(hb.set_knockback == 20 for hb in hit1)
+    assert all(hb.damage == 4.0 and hb.angle == 65 for hb in hit1)
+    # hit 2: the real-knockback LAUNCHER — Attack12 damage 6, angle 75, bkb 40, no WDSK
+    assert all(hb.set_knockback is None for hb in hit2)
+    assert all(hb.damage == 6.0 and hb.angle == 75 and hb.base_knockback == 40.0 for hb in hit2)
+
+
+def test_gnok_jab_maps_to_neutral_a():
+    # The "jab" key is what the move-select seam picks for grounded neutral-A, so authoring
+    # it under that key means it actually fires in-game (not an orphaned move).
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    key = resolve_move_key(gnok.moves, direction="neutral", on_ground=True, is_special=False)
+    assert key == "jab"
 
 
 def test_gnok_is_in_the_selectable_roster():
