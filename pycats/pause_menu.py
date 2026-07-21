@@ -90,11 +90,10 @@ class PauseMenuManager:
             self.input_cooldown = MENU_NAV_COOLDOWN  # Prevent rapid navigation
             self.press_pulse = PRESS_PULSE_FRAMES  # flash the newly-focused row
 
-        # Handle selection input from either player (/ or V keys only)
-        if (
-            pygame.K_SLASH in pressed_keys  # P2's attack key
-            or pygame.K_v in pressed_keys  # P1's attack key
-        ):
+        # Handle selection from either player's ATTACK key. Read the rebindable
+        # p1/p2_controls["attack"] (as main_menu does) rather than hardcoding the
+        # default K_v/K_SLASH, so an attack rebind is honored here too (#842).
+        if self.p1_controls["attack"] in pressed_keys or self.p2_controls["attack"] in pressed_keys:
             if self.selected_option == 0:  # Resume
                 self.action_requested = "resume"
             elif self.selected_option == 1:  # End Match
