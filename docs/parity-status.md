@@ -5,7 +5,7 @@
 > `pycats/combat/provenance.py` registry (#233): 🟢 FOUND · 🟡 TUNED/GUESS · 🔴 DIVERGENCE.
 > Legend: [docs/parity-labeling-legend.md](parity-labeling-legend.md) (#452). Design: #448 (Pass C of #451).
 
-**Summary:** 22 🟢 / 32 🟡 / 4 🔴  (58 constants)
+**Summary:** 22 🟢 / 33 🟡 / 4 🔴  (59 constants)
 
 ## 🟢 Sourced — FOUND (PM-valid, checked)
 
@@ -40,6 +40,7 @@
 |---|---|---|---|---|
 | `AIR_FRICTION` | 0.85 | TUNED | 🟡 | pycats air friction; deliberate design knob, no PM equivalent |
 | `BLAST_PADDING` | 50 | TUNED | 🟡 | pycats KO boundary = px beyond the screen edge; pycats stage rule, no canon |
+| `BLAST_PADDING_TOP` | 150 | TUNED | 🟡 | pycats TOP KO boundary = BLAST_PADDING + 100; owner design decision (Avi 2026-07-20) raising the top blast line 100px above the bottom, no canon |
 | `DASH_DURATION` | 12 | GUESS | 🟡 | pycats initial-dash burst window; GUESS tuning start (config ⚠, #388), no canon single value |
 | `DODGE_FRAMES` | 15 | GUESS | 🟡 | roll intangibility window; playtest starting point (tracked #65) |
 | `DODGE_SPEED` | 14 | TUNED | 🟡 | pycats ground-roll horizontal boost; Melee rolls are animation-driven per-character, no single canon speed to derive |

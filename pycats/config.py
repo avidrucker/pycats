@@ -416,7 +416,13 @@ SHIELD_COLOR = (80, 180, 255)
 
 # ---------------- stocks / blast zone --------
 INITIAL_LIVES = 3
-BLAST_PADDING = 50  # px beyond screen = KO (vertical, top/bottom)
+BLAST_PADDING = 50  # px beyond screen = KO (vertical, bottom; also L/R fallback baseline)
+# Owner design decision (Avi, 2026-07-20): the TOP KO line sits 100px higher than the
+# bottom — a fighter launched upward is KO'd at 150px above the screen top instead of 50,
+# giving more vertical room above the stage. Mirrors the BLAST_PADDING_X axis-split (#733,
+# #823). The bottom KO boundary stays on BLAST_PADDING (50). Registered TUNED (owner
+# decision) in combat/provenance.py.
+BLAST_PADDING_TOP = BLAST_PADDING + 100  # = 150 px above the screen top = KO (#823)
 # TEMPORARY game-feel experiment (#733, owner-requested 2026-07-20): a *horizontal*
 # KO boundary widened so a fighter may travel ~100px off the left/right screen edge
 # before being KO'd — more sideways recovery room. This is NOT a Project M-faithful /

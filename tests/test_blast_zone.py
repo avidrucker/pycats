@@ -13,6 +13,7 @@ horizontal / 50px vertical thresholds — they red at the old 50px horizontal va
 from pycats.combat.data import Circle, FighterData, Hurtbox
 from pycats.config import (
     BLAST_PADDING,
+    BLAST_PADDING_TOP,
     BLAST_PADDING_X,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -62,15 +63,27 @@ def test_horizontal_75px_off_edge_survives_reds_at_old_50():
     assert not g._outside_blast_zone()
 
 
-def test_vertical_ko_boundary_unchanged_at_50():
-    # top/bottom stay on BLAST_PADDING (50): 49px off is safe, 51px off is KO.
-    f = _fighter()
-    f.rect.bottom = -49  # near the top edge
-    assert not f._outside_blast_zone()
-    f.rect.bottom = -51
-    assert f._outside_blast_zone()
+def test_bottom_ko_boundary_unchanged_at_50():
+    # the bottom stays on BLAST_PADDING (50): 49px below is safe, 51px below is KO.
     g = _fighter()
     g.rect.top = SCREEN_HEIGHT + 49  # near the bottom edge
     assert not g._outside_blast_zone()
     g.rect.top = SCREEN_HEIGHT + 51
     assert g._outside_blast_zone()
+
+
+def test_top_ko_boundary_raised_to_150():
+    # #823 owner decision: the top KO line is 100px higher than the bottom (150 vs 50).
+    assert BLAST_PADDING_TOP == 150
+    assert BLAST_PADDING_TOP == BLAST_PADDING + 100
+    f = _fighter()
+    # 110px above the top edge: past the OLD 50px line but inside the new 150px zone.
+    # Reds today — the old top check on BLAST_PADDING KOs a fighter here.
+    f.rect.bottom = -(BLAST_PADDING + 60)  # -110
+    assert not f._outside_blast_zone()
+    # 1px past the new top line: KO.
+    f.rect.bottom = -(BLAST_PADDING_TOP + 1)  # -151
+    assert f._outside_blast_zone()
+    # just inside the new line: safe.
+    f.rect.bottom = -(BLAST_PADDING_TOP - 1)  # -149
+    assert not f._outside_blast_zone()

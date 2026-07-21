@@ -81,7 +81,8 @@ playtest starts) rows are out of scope — read them straight from the registry.
 | `PLAYER_SIZE` | `pycats/config.py::PLAYER_SIZE` | TUNED | `pycats/combat/provenance.py` | default collision box (render→collision, #598) |
 | `LEDGE_CATCH_W` | `pycats/config.py::LEDGE_CATCH_W` | TUNED | `pycats/combat/provenance.py` | ledge-grab catch-region width |
 | `LEDGE_CATCH_H` | `pycats/config.py::LEDGE_CATCH_H` | TUNED | `pycats/combat/provenance.py` | ledge-grab catch-region height |
-| `BLAST_PADDING` | `pycats/config.py::BLAST_PADDING` | TUNED | `pycats/combat/provenance.py` | KO boundary px beyond screen edge |
+| `BLAST_PADDING` | `pycats/config.py::BLAST_PADDING` | TUNED | `pycats/combat/provenance.py` | KO boundary px beyond screen edge (bottom + L/R baseline) |
+| `BLAST_PADDING_TOP` | `pycats/config.py::BLAST_PADDING_TOP` | TUNED | `pycats/combat/provenance.py` | top KO line 100px higher than bottom (#823) |
 
 > The GUESS rows (`DODGE_FRAMES`, `DODGE_TIME`, `PROJECTILE_GRAVITY`, `PROJECTILE_RESTITUTION`,
 > `PROJECTILE_MAX_BOUNCES`, `DASH_DURATION`, `FSMASH_ANGLE_UP`, `FSMASH_ANGLE_DOWN`) are

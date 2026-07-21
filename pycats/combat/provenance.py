@@ -367,6 +367,13 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "BLAST_PADDING": Provenance(
         50, "px", "pycats KO boundary = px beyond the screen edge; pycats stage rule, no canon", "TUNED", 584
     ),
+    "BLAST_PADDING_TOP": Provenance(
+        150,
+        "px",
+        "pycats TOP KO boundary = BLAST_PADDING + 100; owner design decision (Avi 2026-07-20) raising the top blast line 100px above the bottom, no canon",  # noqa: E501
+        "TUNED",
+        823,
+    ),
 }
 
 # The curated combat/physics set (excludes render/UI/tail/platform/menu constants).
@@ -436,6 +443,7 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "LEDGE_CATCH_W",
         "LEDGE_CATCH_H",
         "BLAST_PADDING",
+        "BLAST_PADDING_TOP",
     }
 )
 
