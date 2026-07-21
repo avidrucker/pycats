@@ -78,13 +78,17 @@ Per move / animation / attack:
    the `load_fighter_data` seam, the px↔`Circle(dx,dy,r)` mapping, and the editor screens/interactions.
    Chosen storage architecture: **A + drift-guard** (candidates A/B/C compared in §0 of that doc).
 
-**What's left (next children, one-at-a-time downstream of #809):**
+6. **SCOPE child #826** filed + designed →
+   **[`docs/pycats-editor-scope.md`](./pycats-editor-scope.md)**. The design is cut into 15
+   tracer-bullet DEV slices (R1–R7 pycats runtime side, all golden-safe; E0–E8 the separate
+   `pycats-editor` repo) with a blocking-edge graph, PBS, issues, and risks. Head of the editor
+   chain: **E0** (creates the repo, D6); recommended first task overall: **R1** (`MoveData.hurtbox`).
 
-- **SCOPE** — cut the design into tracer-bullet DEV slices (data dir + loader JSON branch +
-  migration; the `MoveData.hurtbox` override; the editor's canvas/timeline/inspector; GIF overlay).
-  Open items to settle there are in §5 of the design doc.
-- **DEV slices** — build incrementally, TDD, each slice green with a regression test; goldens stay
-  green throughout.
+**What's left (next children, one-at-a-time downstream of #826):**
+
+- **DEV slices** — build incrementally per [`docs/pycats-editor-scope.md`](./pycats-editor-scope.md),
+  TDD, each slice green with a regression test; goldens stay green throughout. File one at a time
+  after a human greenlight, starting from R1 / E0.
 
 ## References
 
