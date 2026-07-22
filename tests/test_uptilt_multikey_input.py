@@ -24,13 +24,10 @@ is a design fork (tap-jump behaviour) left to a downstream ARCHITECT ticket, not
 
 import pygame as pg
 
-from pycats.combat.data import load_fighter_data
 from pycats.core.input import InputFrame
 from pycats.entities.player import Player
 
 P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s, attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
-
-_NALIO = load_fighter_data("nalio")
 
 
 def _frame(held=(), pressed=(), released=()):
@@ -45,11 +42,17 @@ def _grounded_nalio():
 
 
 def _current_key(p):
-    """The move key currently on the clock, or None."""
+    """The move key currently on the clock, or None.
+
+    Resolve against the Player's OWN `fighter_data` (the same object its clock
+    pulled the move from), not a separate module-level `load_fighter_data("nalio")`.
+    Since the #792 JSON flip, `load_fighter_data` hydrates a FRESH instance per
+    call, so two loads compare `==` but not `is` — an identity check against a
+    separate load resolves to "<unknown>" (#870). Identity holds within one Player."""
     cm = p.current_move
     if cm is None:
         return None
-    return next((k for k, v in _NALIO.moves.items() if v is cm), "<unknown>")
+    return next((k for k, v in p.fighter_data.moves.items() if v is cm), "<unknown>")
 
 
 # ---- the working path: Up already held, then A ------------------------------

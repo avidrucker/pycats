@@ -92,6 +92,110 @@
           "circle": [58, 28, 15]
         }
       ]
+    },
+    "ftilt": {
+      "name": "forward tilt",
+      "in_air": false,
+      "startup": 7,
+      "active": 4,
+      "recovery": 23,
+      "hitboxes": [
+        {
+          "damage": 11.0,
+          "angle": 361,
+          "base_knockback": 10.0,
+          "knockback_growth": 100.0,
+          "circle": [76, 32, 22]
+        },
+        {
+          "damage": 11.0,
+          "angle": 361,
+          "base_knockback": 10.0,
+          "knockback_growth": 100.0,
+          "circle": [90, 32, 26]
+        },
+        {
+          "damage": 11.0,
+          "angle": 361,
+          "base_knockback": 10.0,
+          "knockback_growth": 100.0,
+          "circle": [62, 32, 24]
+        },
+        {
+          "damage": 11.0,
+          "angle": 361,
+          "base_knockback": 10.0,
+          "knockback_growth": 100.0,
+          "circle": [48, 32, 19]
+        }
+      ]
+    },
+    "utilt": {
+      "name": "up tilt",
+      "in_air": false,
+      "startup": 5,
+      "active": 6,
+      "recovery": 25,
+      "hitboxes": [
+        {
+          "damage": 9.0,
+          "angle": 100,
+          "base_knockback": 40.0,
+          "knockback_growth": 105.0,
+          "circle": [44, 6, 27]
+        },
+        {
+          "damage": 10.0,
+          "angle": 100,
+          "base_knockback": 40.0,
+          "knockback_growth": 110.0,
+          "circle": [36, 2, 20]
+        },
+        {
+          "damage": 11.0,
+          "angle": 100,
+          "base_knockback": 40.0,
+          "knockback_growth": 115.0,
+          "circle": [28, 8, 22]
+        }
+      ]
+    },
+    "dtilt": {
+      "name": "down tilt",
+      "in_air": false,
+      "startup": 5,
+      "active": 4,
+      "recovery": 14,
+      "hitboxes": [
+        {
+          "damage": 9.0,
+          "angle": 40,
+          "base_knockback": 25.0,
+          "knockback_growth": 95.0,
+          "circle": [56, 52, 20]
+        },
+        {
+          "damage": 9.0,
+          "angle": 40,
+          "base_knockback": 25.0,
+          "knockback_growth": 95.0,
+          "circle": [84, 50, 29]
+        },
+        {
+          "damage": 9.0,
+          "angle": 40,
+          "base_knockback": 25.0,
+          "knockback_growth": 95.0,
+          "circle": [44, 54, 22]
+        },
+        {
+          "damage": 9.0,
+          "angle": 40,
+          "base_knockback": 25.0,
+          "knockback_growth": 95.0,
+          "circle": [70, 52, 20]
+        }
+      ]
     }
   },
   "crouch_hurtbox": {
@@ -100,16 +204,7 @@
   "prone_hurtbox": {
     "circles": [[30, 10, 10], [50, 10, 10]]
   },
-  "stand_size": [
-    76,
-    80
-  ],
-  "crouch_size": [
-    80,
-    58
-  ],
-  "prone_size": [
-    80,
-    20
-  ]
+  "stand_size": [76, 80],
+  "crouch_size": [80, 58],
+  "prone_size": [80, 20]
 }
