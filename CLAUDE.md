@@ -83,6 +83,12 @@ Critical rules:
   ending in `"$PY" -m pycats.game`. **There is no `main.py`** (entry points are
   `-m pycats.game`, `watch.py`, `bench.py`); never emit `python main.py`.
   See [RULES.md](./RULES.md) → "Surfacing run/sim commands".
+- **Human eyeball-OK gates closing a player-visible change** — if a change is
+  player-visible (render / UI / HUD / layout / color / animation / screen flow), show
+  it to the human and get an explicit OK **before `pmtools close`, even with a green
+  suite** (a green suite proves pixels are stable, not that they look right). Non-visible
+  changes (logic / tooling / docs, or a byte-identical render-oracle refactor) are
+  exempt. See [RULES.md](./RULES.md) → "Closing work" (step 4).
 - **Banned words in ALL output** (replies, tickets, commits, docs): avoid **crisp**
   and **honest / honestly / honesty** — they read as vague filler / throat-clearing.
   Name the concrete quality instead (crisp → specific / precise / clean; honest →

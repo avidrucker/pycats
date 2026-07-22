@@ -491,14 +491,26 @@ the gated worktree teardown. Follow this order — do **not** improvise:
        SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
          /abs/path/to/pycats/.venv/bin/python -m pytest -q
 
-   The `pmtools close` gate re-runs the suite too (step 4), so this is not the only net
+   The `pmtools close` gate re-runs the suite too (step 5), so this is not the only net
    — but catching a red locally is faster feedback than a rejected merge.
 3. **Commit on the feature branch, with `Closes #N` in the commit _body_.** The
    subject may keep the repo's `type(scope): summary (#N)` style, but the body
    MUST carry the `Closes #N` keyword: it is both the GitHub auto-close trigger
    *and* exactly what `pmtools close` scans for (and recovers on). `git log
    --oneline` only shows the subject — put the keyword in the body, not the title.
-4. **Return the session to main with `ExitWorktree keep`, then land + tear down with
+4. **Human eyeball-approval gate — for player-visible changes.** If the change is
+   **player-visible** — anything a player sees on screen: rendering, UI/HUD text,
+   layout, colors, animation, or screen flow — **show it to the human and get an
+   explicit OK before you land it (step 5), even when the full suite is green.** A
+   green suite proves behaviour/pixels are *stable*, not that they *look right*: the
+   render-parity oracle is a byte comparison, not a judgment of appearance (#677), and
+   #868 removed a HUD hint and merged before anyone eyeballed it. Surface the run/sim
+   command (see [Surfacing run/sim commands](#surfacing-runsim-commands) — the run
+   command is *how* the human eyeballs it) and wait for their confirmation; only then
+   land. **Carve-out — no eyeball OK needed for a non-visible change:** logic, tooling,
+   docs, or a render refactor proven byte-identical by a render-hash / parity oracle.
+   (Ratified in-session 2026-07-21; #873.)
+5. **Return the session to main with `ExitWorktree keep`, then land + tear down with
    `pmtools close <N>` from the main checkout.** Because you entered the worktree at
    claim time (see "Claiming work"), the session is now *inside* the worktree — call
    the `ExitWorktree` tool with `action: keep` to move it back to the main checkout
@@ -518,7 +530,7 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    keeps your shell from being stranded in the deleted directory. (No-code
    decision/research tickets close via `gh issue close` + `pmtools release`; the same
    `ExitWorktree keep` applies before running them from main.)
-5. **Run the pre-close error self-audit.** Before posting the closing comment,
+6. **Run the pre-close error self-audit.** Before posting the closing comment,
    re-read the session from claim → now, enumerate every log-error trigger event
    (including resolved ones), log any missing rows (`pmtools error log`), and include
    one of `error self-audit: N row(s) logged (#…)` or `error self-audit: no loggable
@@ -562,7 +574,7 @@ flow; #600.)
 - **No code markers** — pycats does not use `@todo`/`@inprogress #N` markers, so
   there is nothing to delete in the close commit; just include `Closes #N`.
 - **The errors store is live** (`storage.errors.enabled = true`) — `pmtools error
-  log '<json>'` records to `~/.pmtools/pycats/pmtools.db`. The step-4 self-audit
+  log '<json>'` records to `~/.pmtools/pycats/pmtools.db`. The step-6 self-audit
   logs to it, so the `error self-audit: …` line is always available to state.
 - **Fallback only if `pmtools` is unavailable:** `gh issue close <N>` plus a
   closing comment. Prefer the tool whenever it is installed.
@@ -580,9 +592,9 @@ flow; #600.)
   `CLOSE OK` banner, not the code — pmtools#8), and your shell is left in a deleted
   directory (`getcwd: cannot access parent directories`, with a stale
   `wt-<fruit>-<project>-N` in your prompt) until you `cd /abs/path/to/pycats`. From-main (pmtools#104) avoids
-  all of this — which is why it is the default in step 3.
+  all of this — which is why it is the default in step 5.
 - **Post the closing comment from `<main>` (where you already are)**, and include the
-  step-4 `error self-audit: …` line:
+  step-6 `error self-audit: …` line:
 
       gh issue comment <N> --body "Closed in <sha>. <summary>
       error self-audit: no loggable errors this session"
