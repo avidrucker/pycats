@@ -58,6 +58,23 @@ Note: in PM the "tap" that starts a dash is **not** a digital press-edge but an
 *analog* magnitude crossing (§6). It is listed here because functionally it is the
 "fresh-press" family; the mechanism is analog.
 
+### Tap-jump toggle — a control option, not a fixed interpretation
+
+Whether a **stick-up rising edge** counts as a jump input is itself a per-player
+**control setting**, not a hard-wired rule. With tap jump **ON** (default), a fast
+upward stick flick jumps; with it **OFF**, stick-up never jumps and only the jump
+*button* does — making up-tilt (grounded) and up-air (airborne) trivially
+stick-accessible. This is the real-world answer most players use to the "swallowed
+up-tilt/up-air" problem (#864 Q2; the pycats gap is #845/#864).
+
+| Fact | Confidence | Source (verbatim) |
+|---|---|---|
+| Brawl's per-Name **Controls** menu can toggle tap jump | **explicit (Brawl)** | SmashWiki [*Controls*](https://www.ssbwiki.com/Controls): *"Other options can be turned on and off in this mode, such as rumble and the ability to use **tap jump** and shake smash…"* — options *"save this to a Name"* |
+| Disableable **"From *Brawl* onward … in the Controls menu"** | explicit (Brawl-onward) | SmashWiki [*Tap jump*](https://www.ssbwiki.com/Tap_jump) — does **not** name PM |
+| **PM 3.6 exposes the toggle** | **(inference)** — Brawl-baseline-pinned | PM 3.6 boots Brawl's stock per-Name Controls screen; PMDT's changelog records no controller-config change (⇒ retained). **No PM-3.6-specific primary located** (#874). Firm to FOUND only on a PM controls screenshot / manual. |
+
+Full firm-up: [pm36-tapjump-toggle-primary (#874)](../research/2026-07-21-pm36-tapjump-toggle-primary.md).
+
 ---
 
 ## 3. Double-tapped — within a window
