@@ -8,19 +8,16 @@ thick wall blocks entry while a thin platform does not.
 Repro/proof of the original defect: tools/repro_issue_5.py.
 """
 import pygame
+from helpers import P1, mk_player
 
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-
 
 def _mk_player():
     # midbottom anchor; placed just LEFT of a wall at x=300, inside its band.
-    return Player(260, 200, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True)
+    return mk_player(260, 200)
 
 
 def _wall(thin=False):

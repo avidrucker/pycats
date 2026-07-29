@@ -4,21 +4,13 @@ double-tap trigger that calls `_start_dash` is slice 2b; here the seam is driven
 directly, and nothing in the default path starts a dash (golden-safe).
 """
 import pygame
+from helpers import P1
+from helpers import mk_player as _mk_player
 
 from pycats.combat.data import load_fighter_data
 from pycats.config import DASH_DURATION, DASH_SPEED, MOVE_SPEED
-from pycats.entities.player import Player
 
 pygame.init()
-
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-
-
-def _mk_player():
-    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True)
-
 
 # ---- the scalar ----
 

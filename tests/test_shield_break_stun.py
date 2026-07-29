@@ -10,20 +10,12 @@ inputs for a damage-scaled duration, matching Project M / Melee. Three concerns:
 3. Input lock — while stunned, held inputs neither move nor act on the fighter.
 """
 import pygame as pg
+from helpers import mk_player as _mk_player
 
 from pycats.combat.shield import shield_break_stun_frames
 from pycats.config import SHIELD_BREAK_STUN_MAX, SHIELD_BREAK_STUN_MIN
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
-from pycats.entities.player import Player
-
-P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
-          attack=pg.K_v, special=pg.K_c, shield=pg.K_x)
-
-
-def _mk_player():
-    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True)
 
 
 # ----------------------------------------------------------------- 1. formula

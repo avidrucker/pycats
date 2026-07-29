@@ -1,14 +1,11 @@
 """Attack visuals should reflect resolved hitbox primitives (#154)."""
 import pygame
+from helpers import P1
 
 from pycats.combat.data import Circle, Hitbox
 from pycats.config import ATTACK_SIZE
 from pycats.entities import Player
 from pycats.entities.attack import Attack
-
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
-          down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
-          shield=pygame.K_x)
 
 
 def test_attack_visual_bounds_follow_all_hitbox_circles():

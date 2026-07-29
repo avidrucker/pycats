@@ -7,15 +7,12 @@ resolution then falls back to what the character actually defines so partial kit
 (default cat = {"attack"}; Nalio = {"attack","jab","nair"}) behave incrementally.
 """
 import pygame as pg
+from helpers import P1
 
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 from pycats.combat.move_select import resolve_move_key, select_move_key
 from pycats.core.input import InputFrame
 from pycats.entities.player import Player
-
-P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
-          attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
-
 
 # ---- pure: canonical key per context --------------------------------------
 

@@ -8,23 +8,11 @@ player.state == "attack" throughout startup->active->recovery, and that the
 chart sub-phases progress as move_frame advances.
 """
 import pygame
+from helpers import P1
+from helpers import ground as _ground
+from helpers import mk_player as _mk_player
 
 from pycats.core.input import InputFrame
-from pycats.entities.platform import Platform
-from pycats.entities.player import Player
-
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-
-
-def _mk_player():
-    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True)
-
-
-def _ground():
-    # A wide thick platform directly under the player at y=100.
-    return [Platform(pygame.Rect(0, 100, 600, 40), thin=False)]
 
 
 def _press_attack():

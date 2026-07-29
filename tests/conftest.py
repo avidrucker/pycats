@@ -1,9 +1,47 @@
 # tests/conftest.py — fixtures shared across the test suite.
 import pygame
 import pytest
+from helpers import P1, P2, mk_player
+from helpers import ground as _ground
 
 from pycats import render_battle as rb
 from pycats import text_utils
+
+
+# --- shared construction fixtures (#884, Child 2 of #833) -------------------
+# Thin wrappers over tests/helpers.py so both the fixture users and the files
+# that import the helpers directly share one definition (no drift).
+@pytest.fixture
+def p1_controls():
+    """Player-1 combat control map (8-key superset; see helpers.P1)."""
+    return dict(P1)
+
+
+@pytest.fixture
+def p2_controls():
+    """Player-2 combat control map (arrow cluster; see helpers.P2)."""
+    return dict(P2)
+
+
+@pytest.fixture
+def player(p1_controls):
+    """A Player at the canonical spawn (100, 100) with the P1 map."""
+    return mk_player(controls=p1_controls)
+
+
+@pytest.fixture
+def ground():
+    """A wide solid platform under the canonical spawn (its top at y=100)."""
+    return _ground()
+
+
+@pytest.fixture
+def two_fighters(p1_controls, p2_controls):
+    """P1 (facing right) and P2 (facing left) at the canonical spawn."""
+    return (
+        mk_player(controls=p1_controls, facing_right=True),
+        mk_player(controls=p2_controls, facing_right=False),
+    )
 
 
 @pytest.fixture

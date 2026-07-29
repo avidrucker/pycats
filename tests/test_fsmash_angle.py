@@ -9,16 +9,14 @@ Golden-safe: only a real fsmash press sets smash_angle_dir; the default cat has 
 smash, so the spawn path is unchanged on the sim/golden cat.
 """
 import pygame as pg
+from helpers import P1
+from helpers import ground as _ground
 
 from pycats.combat.charge import angle_smash_hitboxes
 from pycats.combat.data import Circle, Hitbox, load_fighter_data
 from pycats.config import FSMASH_ANGLE_UP
 from pycats.core.input import InputFrame
-from pycats.entities.platform import Platform
 from pycats.entities.player import Player
-
-P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
-          attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
 
 
 def _frame(held=(), pressed=(), released=()):
@@ -93,10 +91,6 @@ def test_pure_vertical_smash_is_updown_smash_no_angle():
 
 
 # ---- integration: an angled fsmash spawns with the aimed angle --------------
-
-def _ground():
-    return [Platform(pg.Rect(0, 100, 600, 40), thin=False)]
-
 
 def _grounded():
     pg.init()

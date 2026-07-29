@@ -11,28 +11,21 @@ Golden-safety is structural: the sim path loads the default cat, which has no
 chargeable move, and scripted controllers never press smash.
 """
 import pygame as pg
+from helpers import P1
+from helpers import ground as _ground
 
 from pycats.combat.data import Circle, Hitbox, MoveData, load_fighter_data
 from pycats.config import SMASH_CHARGE_FRAMES
 from pycats.core.input import InputFrame
-from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
 # The minimal one-move test fixture, loaded by name (#591).
 _TESTCAT = load_fighter_data("testcat")
 
-P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
-          attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
-
-
 def _frame(held=(), pressed=(), released=()):
     return InputFrame(held={P1[k] for k in held},
                       pressed={P1[k] for k in pressed},
                       released={P1[k] for k in released})
-
-
-def _ground():
-    return [Platform(pg.Rect(0, 100, 600, 40), thin=False)]
 
 
 def _mk(char="nalio"):

@@ -10,12 +10,10 @@ fighter_input.handle_actions and reads fighter.on_ground; we drive it directly
 with on_ground set.
 """
 import pygame
+from helpers import P1
 
 from pycats.core.input import InputFrame
 from pycats.entities.player import Player
-
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
 
 
 def _press_attack():

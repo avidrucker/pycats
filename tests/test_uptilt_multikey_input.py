@@ -25,11 +25,10 @@ inverted here in the same commit as the fix (red on `main`, green with the guard
 """
 
 import pygame as pg
+from helpers import P1
 
 from pycats.core.input import InputFrame
 from pycats.entities.player import Player
-
-P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s, attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
 
 
 def _frame(held=(), pressed=(), released=()):

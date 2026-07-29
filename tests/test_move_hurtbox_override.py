@@ -16,11 +16,11 @@ posture-based assertions below flip.
 """
 
 import pygame
+from helpers import ground as _ground
 
 from pycats.combat.data import Circle, Hurtbox, MoveData
 from pycats.core.input import InputFrame
 from pycats.entities import Player
-from pycats.entities.platform import Platform
 from pycats.systems import combat
 
 _CONTROLS = dict(
@@ -36,10 +36,6 @@ _CONTROLS = dict(
 
 def _mk():
     return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
-
-
-def _ground():
-    return [Platform(pygame.Rect(0, 100, 600, 40), thin=False)]
 
 
 def _settle(p, plats):

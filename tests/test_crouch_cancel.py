@@ -16,11 +16,11 @@ from types import SimpleNamespace
 
 import pygame
 import pytest
+from helpers import ground as _ground
 
 from pycats.config import CROUCH_CANCEL_FACTOR
 from pycats.core.input import InputFrame
 from pycats.entities import Player
-from pycats.entities.platform import Platform
 
 _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
                  down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
@@ -30,10 +30,6 @@ _CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
 def _mk():
     return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
                   char_name="P", facing_right=True)
-
-
-def _ground():
-    return [Platform(pygame.Rect(0, 100, 600, 40), thin=False)]
 
 
 def _frame(*keys):

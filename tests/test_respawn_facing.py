@@ -8,18 +8,13 @@ through the real per-frame ``update`` loop so the behavior cannot silently
 regress.
 """
 
-
-
 import pygame  # type: ignore
 import pytest
+from helpers import mk_player
 
 from pycats.config import RESPAWN_DELAY_FRAMES, SCREEN_HEIGHT
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
-from pycats.entities.player import Player
-
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
 
 
 def _noop():
@@ -27,8 +22,7 @@ def _noop():
 
 
 def _mk_player(initial_facing_right):
-    p = Player(100, 300, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=initial_facing_right)
+    p = mk_player(y=300, facing_right=initial_facing_right)
     p.fighter.lives = 3
     return p
 

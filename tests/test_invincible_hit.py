@@ -19,21 +19,13 @@ Two layers:
 """
 
 import pygame
+from helpers import P1
 
 from pycats.combat.data import Circle, Hitbox
 from pycats.combat.knockback import hitlag_frames
 from pycats.entities.attack import Attack
 from pycats.entities.player import Player
 
-P1 = dict(
-    left=pygame.K_a,
-    right=pygame.K_d,
-    up=pygame.K_w,
-    down=pygame.K_s,
-    attack=pygame.K_v,
-    special=pygame.K_c,
-    shield=pygame.K_x,
-)
 P2 = dict(
     left=pygame.K_LEFT,
     right=pygame.K_RIGHT,

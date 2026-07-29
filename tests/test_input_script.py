@@ -1,13 +1,8 @@
 # tests/test_input_script.py
-import pygame
+from helpers import P1, P2
 
 from pycats.core.input import InputFrame
 from pycats.sim.input_script import InputSpan, compile_timeline
-
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-          attack=pygame.K_SLASH, special=pygame.K_PERIOD, shield=pygame.K_COMMA)
 
 
 def test_compile_length_covers_last_frame():

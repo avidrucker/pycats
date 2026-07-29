@@ -8,6 +8,7 @@ roadmap), and both fighters take hitlag (the #138 shield-hitlag deferral).
 Shield-BREAK still routes to the dizzy `stun`, not shieldstun.
 """
 import pygame as pg
+from helpers import P1
 
 from pycats.combat.data import Circle, Hitbox
 from pycats.combat.knockback import hitlag_frames
@@ -16,9 +17,6 @@ from pycats.core.input import InputFrame
 from pycats.entities.attack import Attack
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
-
-P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
-          attack=pg.K_v, special=pg.K_c, shield=pg.K_x)
 
 
 def _mk(char="P1"):

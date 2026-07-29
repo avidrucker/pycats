@@ -9,6 +9,7 @@ repositioned / velocity-cancelled on Y.
 Repro/proof of the original defect: repros/repro_issue_1.py.
 """
 import pygame
+from helpers import P1, P2
 
 from pycats.config import PLAYER_SIZE
 from pycats.core.input import InputFrame
@@ -17,12 +18,6 @@ from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
 PW = PLAYER_SIZE[0]  # player width (40)
-
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-          attack=pygame.K_SLASH, special=pygame.K_PERIOD, shield=pygame.K_COMMA)
-
 
 def _floor():
     # A wide thick (solid) platform; top at y=410.

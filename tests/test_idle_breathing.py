@@ -20,13 +20,13 @@ and the "no phase when …" tests go red.
 
 import pygame
 import pytest
+from helpers import ground as _ground
 
 from pycats import runtime_settings, settings
 from pycats.combat.data import load_fighter_data
 from pycats.core.input import InputFrame
 from pycats.domain.registry import character_for
 from pycats.entities import Player
-from pycats.entities.platform import Platform
 from pycats.render_battle import (
     IDLE_BREATH_BOB_PX,
     idle_breath_wave,
@@ -65,10 +65,6 @@ def _nalio():
 def _default_cat():
     # No `character` → character.key is None → no datamined period → never breathes.
     return Player(100, 100, _CONTROLS, (255, 0, 0), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
-
-
-def _ground():
-    return [Platform(pygame.Rect(0, 100, 600, 40), thin=False)]
 
 
 def _settle(p, plats, n=6):

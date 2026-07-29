@@ -1,16 +1,7 @@
 # tests/test_fighter_chart.py
-import pygame
+from helpers import mk_player as _mk_player
 
-from pycats.entities.player import Player
 from pycats.systems.state_engine_sc import StatechartEngine
-
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-
-
-def _mk_player():
-    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True)
 
 
 def test_initial_state_idle():

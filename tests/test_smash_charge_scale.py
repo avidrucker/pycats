@@ -7,17 +7,15 @@ formula (damage is an input) — base_knockback / knockback_growth are NOT scale
 so non-chargeable moves and the default cat are untouched (golden-safe).
 """
 import pygame as pg
+from helpers import P1
+from helpers import ground as _ground
 
 from pycats.combat.charge import charge_factor, scale_hitboxes
 from pycats.combat.data import Circle, Hitbox, load_fighter_data
 from pycats.combat.knockback import knockback
 from pycats.config import SMASH_CHARGE_FRAMES, SMASH_CHARGE_SCALE
 from pycats.core.input import InputFrame
-from pycats.entities.platform import Platform
 from pycats.entities.player import Player
-
-P1 = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
-          attack=pg.K_v, special=pg.K_c, shield=pg.K_x, smash=pg.K_b)
 
 
 def _boxes():
@@ -94,10 +92,6 @@ def test_scale_interpolates_at_half():
 
 
 # ---- integration: a full-charge fsmash spawns a scaled Attack ---------------
-
-def _ground():
-    return [Platform(pg.Rect(0, 100, 600, 40), thin=False)]
-
 
 def _frame(held=(), pressed=(), released=()):
     return InputFrame(held={P1[k] for k in held},

@@ -9,6 +9,7 @@ with h = e = c = 1 in this slice. Position, velocity, move-clock and the hitstun
 timer are all held during the freeze, then resume intact.
 """
 import pygame
+from helpers import P1
 
 from pycats.combat.data import Circle, Hitbox
 from pycats.combat.knockback import hitlag_frames
@@ -17,8 +18,6 @@ from pycats.entities.attack import Attack
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
-P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-          attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
 P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
 
