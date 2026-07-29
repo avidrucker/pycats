@@ -1,0 +1,30 @@
+# Minimal packaging metadata so pycats is editable-installable (#885).
+#
+# pycats runs as `python -m pycats.game` from the repo root; this file adds just
+# enough build metadata that `pip install -e .` succeeds and `import pycats`
+# works from any cwd/venv — which is what the separate pycats-editor repo (#882)
+# needs to couple via an editable install.
+#
+# requirements.txt stays the canonical runtime install documented in the README;
+# the [project].dependencies below mirror it and are pinned to it by
+# tests/test_packaging.py so the two cannot drift. Dev tooling stays in
+# requirements-dev.txt (not declared here). DRYing the two dep lists is a
+# separate follow-up, out of scope for #885.
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pycats"
+version = "0.1.0"
+description = "A pygame-ce fighting game with Project M-derived cat archetypes."
+requires-python = ">=3.12"
+dependencies = [
+    "pygame-ce",
+    "statecharts @ git+https://github.com/avidrucker/statecharts-py.git@v0.0.1",
+]
+
+# Scope discovery to the pycats package so tests/, docs/, scripts/, and the
+# repo-root helper modules (bench.py, watch.py, ...) are not packaged.
+[tool.setuptools.packages.find]
+include = ["pycats*"]
