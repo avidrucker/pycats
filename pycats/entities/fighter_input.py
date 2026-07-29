@@ -167,6 +167,7 @@ class FighterInput:
         # the symmetric takeoff clamp in fighter_physics (Fighter._handle_takeoff),
         # not here (resolved #466 → #473). This branch only spends a jump on a press.
         jump_pressed = self._pressed(pressed, "up")
+        atk_pressed = self._pressed(pressed, "attack")
         # up + special + a real `up_b` move = an up-special / recovery, not a jump —
         # divert the up press to the special block below (#578, B1 of #566). Fighters
         # without an `up_b` defined (e.g. the default cat) still jump on up+special, so
@@ -174,9 +175,19 @@ class FighterInput:
         wants_up_special = (
             self._pressed(pressed, "special") and self._move_direction(held) == "up" and "up_b" in p.fighter_data.moves
         )
+        # A fresh Up + A resolves the ATTACK, not a jump (#878 / #865 Option D): let the
+        # frame fall through to the Attack/Special seam below, where up + A becomes the
+        # up-tilt (grounded) / up-air (airborne). One guard fixes both the grounded and
+        # airborne cases because this branch is not `on_ground`-gated. Bare Up (no A)
+        # still jumps / double-jumps. Scope is A (`attack`) only — Up + B (`wants_up_special`)
+        # is unchanged. Shield is excluded so the frame keeps jumping out of shield: the
+        # attack seam does not fire in shield, so yielding the jump there would drop the
+        # frame instead of producing an attack.
+        attack_wins_over_jump = atk_pressed and p.state not in ("shield", "dodge", "helpless")
         if (
             jump_pressed
             and not wants_up_special
+            and not attack_wins_over_jump
             and p.fighter.jumps_remaining
             and p.state not in ("dodge", "hurt", "stun", "helpless")  # helpless locks jump (#184)
         ):
@@ -289,7 +300,7 @@ class FighterInput:
 
         # ------- Attack / Special (move-selection seam #143) ------
         #### TODO: implement attack buffering, that attacks can be chained
-        atk_pressed = self._pressed(pressed, "attack")
+        # `atk_pressed` was computed above (jump-branch guard, #878).
         sp_pressed = self._pressed(pressed, "special")
         # Smash (#331, slice 1 of #327): a dedicated input, ground-only. Takes
         # precedence over attack/special the frame it's pressed; smash-in-air alone

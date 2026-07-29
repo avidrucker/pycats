@@ -13,13 +13,15 @@ finding is the same for any fighter whose up-A maps to a utilt.
 
 Findings doc: docs/research/2026-07-21-uptilt-multikey-input-findings.md.
 
-KEY FINDING pinned below: tap-jump is always on (`up` == jump), and the jump branch
-reads the FRESH-press set and returns before the attack branch. So a *simultaneous*
-Up + A (both pressed the same frame) registers the up-press as a JUMP and never
-reaches the up-tilt — the up-tilt only comes out when Up is ALREADY HELD (no longer a
-fresh press) as A is pressed. Whether the simultaneous case *should* favour the tilt
-is a design fork (tap-jump behaviour) left to a downstream ARCHITECT ticket, not
-"fixed" here. These tests lock the current behaviour so any change is a red diff.
+#878 (implementing the #865 Option-D ruling) resolved the design fork this file first
+characterised: a fresh **Up + A** now resolves the ATTACK, not the jump. The jump
+branch carries a guard (`attack_wins_over_jump`) that yields the frame to the
+Attack/Special seam when a fresh attack accompanies the up-press, so simultaneous
+Up + A fires the up-tilt (grounded) / up-air (airborne). A **bare Up** (no A) still
+jumps / double-jumps, and jumping out of shield with A held is preserved (the attack
+seam does not fire in shield, so the jump is not yielded there). The tests below pin
+that post-#878 behaviour; the pre-#878 "simultaneous up+A jumps" assertions were
+inverted here in the same commit as the fix (red on `main`, green with the guard).
 """
 
 import pygame as pg
@@ -72,27 +74,69 @@ def test_up_held_then_a_fires_the_up_tilt():
     assert p.fighter.vel.y == 0.0
 
 
-# ---- the gotcha: simultaneous Up + A jumps instead --------------------------
+# ---- post-#878: simultaneous Up + A resolves the attack ---------------------
 
 
-def test_up_and_a_same_frame_jumps_instead_of_up_tilt():
-    """The reported gotcha: pressing Up and A on the SAME frame (both fresh) with a
-    jump available fires a JUMP, not the up-tilt — the jump branch consumes the
-    fresh up-press and returns before move-select. Able-to-fail: if the seam is
-    ever changed so simultaneous up+A tilts on the ground, this flips."""
+def test_up_and_a_same_frame_grounded_fires_up_tilt():
+    """#878: pressing Up and A on the SAME frame (both fresh) grounded fires the
+    up-tilt, NOT a jump — the `attack_wins_over_jump` guard yields the frame to the
+    attack seam. Able-to-fail: reverting the guard makes this jump (move None,
+    a jump spent), which is exactly the pre-#878 behaviour on `main`."""
     p = _grounded_nalio()
     jumps_before = p.fighter.jumps_remaining
     p.handle_actions(_frame(held=("up", "attack"), pressed=("up", "attack")), pg.sprite.Group())
-    assert _current_key(p) is None  # no attack started
+    assert _current_key(p) == "utilt"  # attack won over the jump branch
+    assert p.fighter.jumps_remaining == jumps_before  # did not jump
+    assert p.fighter.vel.y == 0.0
+
+
+def test_up_and_a_same_frame_airborne_fires_up_air():
+    """#878, airborne half: with a double-jump banked, simultaneous Up + A in the
+    air fires the up-air, NOT a double-jump. The jump branch is not `on_ground`-gated,
+    so the same guard fixes both cases. Able-to-fail: reverting the guard spends the
+    double-jump (jumps 2->1, move None), the pre-#878 airborne bug #864 found."""
+    p = _grounded_nalio()
+    p.fighter.on_ground = False
+    jumps_before = p.fighter.jumps_remaining
+    assert jumps_before > 0  # a jump is banked, so the pre-fix path WOULD double-jump
+    p.handle_actions(_frame(held=("up", "attack"), pressed=("up", "attack")), pg.sprite.Group())
+    assert _current_key(p) == "uair"  # attack won over the double-jump
+    assert p.fighter.jumps_remaining == jumps_before  # did not spend a jump
+    assert p.fighter.vel.y == 0.0  # no upward launch
+
+
+# ---- bare Up (no A) still jumps / double-jumps ------------------------------
+
+
+def test_bare_up_grounded_still_jumps():
+    """#878 must not touch bare Up: a fresh Up with no attack still jumps on the
+    ground. Able-to-fail: an over-broad guard that also swallowed bare Up would
+    leave jumps unspent here."""
+    p = _grounded_nalio()
+    jumps_before = p.fighter.jumps_remaining
+    p.handle_actions(_frame(held=("up",), pressed=("up",)), pg.sprite.Group())
+    assert _current_key(p) is None  # no attack
     assert p.fighter.jumps_remaining == jumps_before - 1  # spent a jump
     assert p.fighter.vel.y < 0.0  # launched upward
 
 
+def test_bare_up_airborne_still_double_jumps():
+    """#878 must not touch bare Up in the air either: with a jump banked, a fresh Up
+    (no attack) double-jumps. Able-to-fail: an over-broad guard would drop this."""
+    p = _grounded_nalio()
+    p.fighter.on_ground = False
+    jumps_before = p.fighter.jumps_remaining
+    p.handle_actions(_frame(held=("up",), pressed=("up",)), pg.sprite.Group())
+    assert _current_key(p) is None  # no attack
+    assert p.fighter.jumps_remaining == jumps_before - 1  # spent the double-jump
+    assert p.fighter.vel.y < 0.0  # launched upward
+
+
 def test_up_and_a_same_frame_tilts_when_no_jump_is_left():
-    """Corner of the same gotcha: with 0 jumps remaining the jump branch's
-    `jumps_remaining` guard fails, so a simultaneous up+A falls through to the
-    attack branch and DOES fire the up-tilt. Documents that the block is jump vs
-    tilt, decided by jump availability, not by the input itself."""
+    """Redundant-but-explicit: even with 0 jumps remaining, simultaneous up+A fires
+    the up-tilt. Post-#878 the `attack_wins_over_jump` guard already yields the frame;
+    the `jumps_remaining` guard failing is a second, independent reason it falls
+    through to the attack seam."""
     p = _grounded_nalio()
     p.fighter.jumps_remaining = 0
     p.handle_actions(_frame(held=("up", "attack"), pressed=("up", "attack")), pg.sprite.Group())
