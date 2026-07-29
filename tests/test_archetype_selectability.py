@@ -54,3 +54,16 @@ def test_create_from_selection_uses_each_archetype_default_palette():
     assert bs.player1.char_color == ARCHETYPE_PALETTE["nalio"]["color"]
     assert bs.player2.char_color == ARCHETYPE_PALETTE["birky"]["color"]
     assert bs.player1.eye_color == ARCHETYPE_PALETTE["nalio"]["eye_color"]
+
+
+def test_same_character_mirror_defaults_to_distinct_skins():
+    # #822: a Nalio-vs-Nalio LIVE mirror must NOT render two identical cats — the same rule
+    # #718 shipped for the sim, now on the live create_from_selection path. Neither player
+    # cycles a skin (both palettes None), so P2's default would collide with P1's; the
+    # domain layer (#748/#755 assign_distinct_skins) falls P2 to the next skin in Nalio's
+    # pool. Able-to-fail: today both resolve to palette_for("nalio") → identical.
+    bs = BattleScreen(_P1, _P2)
+    bs.create_from_selection("nalio", "nalio")
+    assert bs.player1.char_color != bs.player2.char_color
+    # Only the colliding P2 shifts; P1 keeps its archetype default.
+    assert bs.player1.char_color == ARCHETYPE_PALETTE["nalio"]["color"]

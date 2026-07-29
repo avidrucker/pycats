@@ -27,7 +27,7 @@ from .config import (
     SCREEN_WIDTH,
 )
 from .core.physics import resolve_player_push
-from .domain import Selection, Skin, build_fighter, character_for
+from .domain import Selection, Skin, assign_distinct_skins, build_fighter, character_for
 from .entities import Player
 from .entities.ledge import ledges_from_platforms
 from .input_history import InputHistory
@@ -81,6 +81,13 @@ class BattleScreen:
             character_for(p2_char),
             Skin.from_palette_dict(p2_palette or p2_char or "", palette_for(p2_palette or p2_char)),
         )
+        # #822: two players on the SAME character with no explicit skin cycle would otherwise
+        # render identically (both skins come from palette_for(char_key)). De-collide through
+        # the #748/#755 domain layer — the same rule #718 shipped for the sim: P2 falls to the
+        # next available skin in that character's pool. Different-character pairs and explicit
+        # distinct cycles pass through untouched (assign_distinct_skins only touches a
+        # same-character skin-key collision), so the render stays byte-identical there.
+        sel1, sel2 = assign_distinct_skins((sel1, sel2))
         built1 = build_fighter(sel1)
         built2 = build_fighter(sel2)
 
