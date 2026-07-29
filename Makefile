@@ -10,12 +10,13 @@ RUFF := $(VENV)/ruff
 HEADLESS := SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=.
 ARGS ?=
 
-.PHONY: help test run lint format bench goldens
+.PHONY: help test run run-cmd lint format bench goldens
 
 help:
 	@echo "pycats — command SSOT (see #724). Targets:"
 	@echo "  make test [ARGS=\"-k expr\"]   full suite headless (subset via ARGS)"
 	@echo "  make run                      play: python -m pycats.game"
+	@echo "  make run-cmd WHAT=<issue|branch|path>  print the run block for an UNMERGED worktree change (#859)"
 	@echo "  make lint                     ruff format --check + check on pycats/ (close-gate)"
 	@echo "  make format                   ruff format pycats/ (write; lint is its --check twin)"
 	@echo "  make bench [ARGS=\"...\"]        bench.py headless (extra flags via ARGS)"
@@ -28,6 +29,14 @@ test:
 # play the game
 run:
 	PYTHONPATH=. "$(PY)" -m pycats.game
+
+# Print the mistake-proof run block for an UNMERGED (worktree) change, resolving
+# an issue number / branch name / worktree path -> `cd <worktree> && make run`
+# (#859). Fails loudly if nothing matches — never falls back to main.
+#   make run-cmd WHAT=859   |   make run-cmd WHAT=br-fig/pycats-882-...
+run-cmd:
+	@test -n "$(WHAT)" || { echo "usage: make run-cmd WHAT=<issue|branch|worktree-path>" >&2; exit 2; }
+	@"$(PY)" scripts/run_cmd.py "$(WHAT)"
 
 # ruff format --check + ruff check on pycats/ (mirrors the close-gate)
 lint:

@@ -421,8 +421,23 @@ Study tree do not inherit this rule.
         cd "$REPO" && "$PY" -m pycats.game
   - **Unmerged change (still on your claimed worktree branch):** `cd` into the
     **worktree**, not the main checkout — otherwise `-m pycats.game` imports `main`'s
-    package and the reviewer sees the OLD, pre-change behavior. The interpreter stays
-    the main repo's venv (the worktree has none); only the cwd changes.
+    package and the reviewer sees the OLD, pre-change behavior. **Don't hand-assemble
+    the `WT=` path** — that is exactly the recurring mistake (a `WT` pointing at main
+    launches the pre-change build). Instead generate the block with the helper, which
+    resolves an issue number / branch name / worktree path to the exact worktree and
+    fails loudly if none matches (never falling back to main):
+
+        make run-cmd WHAT=<issue|branch|worktree-path>   # e.g. WHAT=859
+        # prints:  cd '<resolved-worktree>' && make run
+
+    `make run` already resolves the main repo's venv from a worktree cwd
+    (`VENV := $(GIT_COMMON)/../.venv/bin`), so `cd <worktree> && make run` needs no
+    hand-typed `PY=`/`WT=` at all — that is why it is the mistake-proof default.
+    (`scripts/run_cmd.py <what>` is the same generator if you want it without `make`.)
+
+    The raw block below is what that expands to — kept only as the explanation of the
+    moving parts, no longer the recipe to type by hand: the interpreter stays the main
+    repo's venv (the worktree has none); only the cwd changes.
 
         REPO=/abs/path/to/pycats
         PY="$REPO/.venv/bin/python"                # ALWAYS the main repo's venv
