@@ -7,6 +7,7 @@ resolution guard run against this live worktree's real `git worktree list`.
 """
 
 import importlib.util
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -102,16 +103,52 @@ def test_run_block_is_copy_paste_cd_make_run():
 # ---- CLI end-to-end against this live worktree ---------------------------
 
 
-def test_cli_resolves_this_worktree_from_its_issue_number():
-    # This test file lives on the #859 worktree, so issue 859 must resolve to REPO.
+def _some_live_issue_worktree():
+    """Pick a real (path, issue-number) from the live `git worktree list`, preferring
+    THIS checkout if it is itself an issue worktree. Returns (None, None) when no
+    issue-numbered worktree exists (e.g. a lone main checkout) so the caller can skip.
+
+    #895: the earlier version hardcoded issue 859 + asserted it resolved to REPO — it
+    passed only from inside the (since-torn-down) #859 worktree, reddening the whole
+    suite on main. Derive the target from runtime state instead of baking one in.
+    """
+    porcelain = subprocess.run(
+        ["git", "worktree", "list", "--porcelain"],
+        cwd=str(REPO),
+        capture_output=True,
+        text=True,
+    ).stdout
+    entries = run_cmd.parse_worktrees(porcelain)
+
+    def issue_of(entry):
+        m = re.search(r"pycats-(\d+)", entry["branch"] or "") or re.search(r"pycats-(\d+)", entry["path"])
+        return m.group(1) if m else None
+
+    # Prefer this checkout if it's an issue worktree (self-resolution — the strongest case).
+    for entry in entries:
+        if Path(entry["path"]).resolve() == REPO and issue_of(entry):
+            return entry["path"], issue_of(entry)
+    # Else any other live issue worktree (exercises the CLI on a plain main checkout too).
+    for entry in entries:
+        n = issue_of(entry)
+        if n:
+            return entry["path"], n
+    return None, None
+
+
+def test_cli_resolves_a_live_worktree_from_its_issue_number():
+    # Worktree-agnostic: resolve whatever real issue worktree we can see, not a baked-in #.
+    path, issue = _some_live_issue_worktree()
+    if issue is None:
+        pytest.skip("no issue-numbered worktree registered — nothing for the CLI to resolve")
     out = subprocess.run(
-        [sys.executable, str(SCRIPT), "859"],
+        [sys.executable, str(SCRIPT), issue],
         cwd=str(REPO),
         capture_output=True,
         text=True,
     )
     assert out.returncode == 0, out.stderr
-    assert f"cd '{REPO}' && make run" in out.stdout
+    assert f"cd '{path}' && make run" in out.stdout
 
 
 def test_cli_unknown_issue_exits_nonzero_without_falling_back_to_main():
