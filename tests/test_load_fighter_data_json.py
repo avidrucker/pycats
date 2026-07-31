@@ -13,6 +13,8 @@ the branch in isolation.
 
 import json
 
+import pytest
+
 from pycats.combat.data import (
     FighterData,
     _fighter_from_json,
@@ -78,12 +80,16 @@ def test_no_json_falls_through_to_python(tmp_path, monkeypatch):
     assert fd is NALIO_FIGHTER_DATA
 
 
-def test_unknown_key_still_defaults(tmp_path, monkeypatch):
+def test_unknown_key_raises(tmp_path, monkeypatch):
+    # Since #887/#881 an unknown key is a programming error and raises loudly — it
+    # no longer resolves to the default. The raise fires on the allow-list check
+    # (no <key>.json, not an archetype, not an intended-default key), so it does
+    # not depend on default.json being present in the monkeypatched dir.
     monkeypatch.setattr("pycats.combat.data.CHARACTER_DATA_DIR", tmp_path)
-    fd = load_fighter_data("no_such_cat")
-    from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+    from pycats.combat.errors import UnknownCharacter
 
-    assert fd is DEFAULT_FIGHTER_DATA
+    with pytest.raises(UnknownCharacter):
+        load_fighter_data("no_such_cat")
 
 
 # --- JSON precedence: a <character>.json wins over the Python definition ------

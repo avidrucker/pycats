@@ -109,7 +109,9 @@ def test_unknown_key_is_the_placeholder_in_both_halves():
     assert sel.skin is PLACEHOLDER_SKIN
     bf = build_fighter(sel)
     # mechanics coherently fall to the minimal fixture (the testcat kit)…
-    assert bf.fighter_data is load_fighter_data("testcat")
+    # value equality, not identity: since #887 testcat hydrates a fresh instance
+    # from default.json (the sole runtime source), so two calls are == not `is`.
+    assert bf.fighter_data == load_fighter_data("testcat")
     # …and cosmetics are the flat-gray placeholder — a typo is *visibly* the fixture
     assert bf.skin is PLACEHOLDER_SKIN
     assert bf.skin.color == (128, 128, 128)

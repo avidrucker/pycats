@@ -23,6 +23,7 @@ flips alike.
 import pytest
 
 from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA
+from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 from pycats.characters.gnok_cat import GNOK_FIGHTER_DATA
 from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
 from pycats.characters.narz_cat import NARZ_FIGHTER_DATA
@@ -31,11 +32,15 @@ from pycats.combat.data import CHARACTER_DATA_DIR, load_fighter_data
 # The maintained Python literal for each flipped fighter, keyed by the JSON stem
 # `load_fighter_data` resolves. A new flip MUST add its oracle here — the
 # registry-completeness guard below fails loudly (naming the stem) otherwise.
+# "default" is the default cat's flip (#887/#881): default.json is the sole
+# runtime source, and DEFAULT_FIGHTER_DATA is demoted to this oracle + gnok/narz's
+# construction base (never a runtime path).
 ORACLES = {
     "nalio": NALIO_FIGHTER_DATA,
     "birky": BIRKY_FIGHTER_DATA,
     "narz": NARZ_FIGHTER_DATA,
     "gnok": GNOK_FIGHTER_DATA,
+    "default": DEFAULT_FIGHTER_DATA,
 }
 
 

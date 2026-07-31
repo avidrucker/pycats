@@ -15,6 +15,7 @@ from pycats.combat.data import (
     MoveData,
     load_fighter_data,
 )
+from pycats.combat.errors import UnknownCharacter
 
 
 def test_hitbox_carries_knockback_fields():
@@ -24,24 +25,43 @@ def test_hitbox_carries_knockback_fields():
 
 
 # ---------------------------------------------------------------------------
-# load_fighter_data returns FighterData for every CAT_CHARACTERS key
+# Unknown keys raise loudly (#887/#881). Only the archetype keys and the intended-
+# default keys ({"default", "P1", "P2", "testcat"}) resolve; a real typo raises
+# UnknownCharacter (a ValueError subclass) at this seam. These tests are the
+# regression guard for the raise — able-to-fail (they returned the default before).
+# Production never reaches here: the #672 domain layer folds an unknown selection
+# into the testcat placeholder, and Player.__init__ maps a non-key char_name to
+# "testcat" (#894), so the raise cannot move goldens — its only reach is a
+# programming error at this seam.
 # ---------------------------------------------------------------------------
 
 
-def test_load_fighter_data_calico_returns_fighter_data():
-    fd = load_fighter_data("calico")
-    assert isinstance(fd, FighterData)
+def test_load_fighter_data_calico_raises_unknown_character():
+    with pytest.raises(UnknownCharacter):
+        load_fighter_data("calico")
 
 
-def test_load_fighter_data_ghost_returns_fighter_data():
-    fd = load_fighter_data("ghost")
-    assert isinstance(fd, FighterData)
+def test_load_fighter_data_ghost_raises_unknown_character():
+    with pytest.raises(UnknownCharacter):
+        load_fighter_data("ghost")
 
 
-def test_load_fighter_data_unknown_char_returns_fighter_data():
-    """Phase 0: any string maps to the same default."""
-    fd = load_fighter_data("unknown_character_xyz")
-    assert isinstance(fd, FighterData)
+def test_load_fighter_data_unknown_char_raises_unknown_character():
+    with pytest.raises(UnknownCharacter):
+        load_fighter_data("unknown_character_xyz")
+
+
+def test_unknown_character_message_names_key_and_valid_set():
+    """The raised message names the offending key and the derived valid set
+    (roster + allow-list), so it self-updates as cats are added."""
+    from pycats.characters.roster import ARCHETYPE_ROSTER
+
+    with pytest.raises(UnknownCharacter) as exc:
+        load_fighter_data("calico")
+    msg = str(exc.value)
+    assert "calico" in msg
+    for key in (*ARCHETYPE_ROSTER, "default", "P1", "P2", "testcat"):
+        assert key in msg
 
 
 # ---------------------------------------------------------------------------
@@ -59,13 +79,15 @@ def test_load_fighter_data_testcat_returns_minimal_one_move_kit():
     assert set(fd.moves) == {"attack"}
 
 
-def test_load_fighter_data_testcat_is_the_default_cat_object():
-    """The named handle returns the SAME object as the default cat (no copy),
-    so migrated tests observe identical data. Guards the #586 acceptance that
-    testcat is the minimal fixture, not a new archetype."""
+def test_load_fighter_data_testcat_equals_the_default_cat():
+    """The named handle returns data equal to the default cat, so migrated tests
+    observe identical data. Guards the #586 acceptance that testcat is the minimal
+    fixture, not a new archetype. Value equality, not identity: since #887 testcat
+    hydrates a FRESH instance from default.json (the sole runtime source), never
+    the Python DEFAULT_FIGHTER_DATA literal."""
     from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 
-    assert load_fighter_data("testcat") is DEFAULT_FIGHTER_DATA
+    assert load_fighter_data("testcat") == DEFAULT_FIGHTER_DATA
 
 
 def test_testcat_is_not_a_selectable_archetype():
@@ -82,12 +104,12 @@ def test_testcat_is_not_a_selectable_archetype():
 
 
 def test_hurtbox_has_two_circles():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     assert len(fd.hurtbox.circles) == 2
 
 
 def test_hurtbox_circles_are_Circle_instances():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     for c in fd.hurtbox.circles:
         assert isinstance(c, Circle)
 
@@ -98,63 +120,63 @@ def test_hurtbox_circles_are_Circle_instances():
 
 
 def test_attack_move_exists():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     assert "attack" in fd.moves
 
 
 def test_attack_move_is_ground_move():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     attack = fd.moves["attack"]
     assert attack.in_air is False
 
 
 def test_attack_move_startup_is_positive_int():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     attack = fd.moves["attack"]
     assert isinstance(attack.startup, int)
     assert attack.startup > 0
 
 
 def test_attack_move_active_is_positive_int():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     attack = fd.moves["attack"]
     assert isinstance(attack.active, int)
     assert attack.active > 0
 
 
 def test_attack_move_recovery_is_positive_int():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     attack = fd.moves["attack"]
     assert isinstance(attack.recovery, int)
     assert attack.recovery > 0
 
 
 def test_attack_move_has_at_least_one_hitbox():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     attack = fd.moves["attack"]
     assert len(attack.hitboxes) >= 1
 
 
 def test_attack_hitbox_is_Hitbox_instance():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     hb = fd.moves["attack"].hitboxes[0]
     assert isinstance(hb, Hitbox)
 
 
 def test_attack_hitbox_circle_is_Circle_instance():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     hb = fd.moves["attack"].hitboxes[0]
     assert isinstance(hb.circle, Circle)
 
 
 def test_attack_hitbox_damage_is_float():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     hb = fd.moves["attack"].hitboxes[0]
     assert isinstance(hb.damage, float)
 
 
 def test_attack_hitbox_angle_is_int():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     hb = fd.moves["attack"].hitboxes[0]
     assert isinstance(hb.angle, int)
 
@@ -231,6 +253,6 @@ def test_hurtbox_is_frozen():
 
 
 def test_fighter_data_is_frozen():
-    fd = load_fighter_data("calico")
+    fd = load_fighter_data("default")
     with pytest.raises((AttributeError, TypeError)):
         fd.hurtbox = None  # type: ignore[misc]

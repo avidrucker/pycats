@@ -461,34 +461,56 @@ def known_character_keys() -> frozenset[str]:
     return frozenset(ARCHETYPE_ROSTER) | _DEFAULT_KEYS
 
 
+def _default_fighter() -> FighterData:
+    """Hydrate the default cat from its shipped JSON — never the Python literal.
+
+    Since #881 default.json is the sole runtime source: the Python
+    DEFAULT_FIGHTER_DATA survives only as gnok/narz's construction base and the
+    R8 drift-guard oracle (#877), never a runtime path. A missing or malformed
+    default.json is therefore a hard, loud failure by design (no quiet floor).
+    """
+    return _fighter_from_json(json.loads((CHARACTER_DATA_DIR / "default.json").read_text()))
+
+
 def load_fighter_data(character: str) -> FighterData:
     """Return FighterData for the named character.
 
     Resolution order (#844, R4): a `CHARACTER_DATA_DIR/<character>.json` thin
     mirror is preferred when present (hydrated via `_fighter_from_json`, #809
-    §2.1); otherwise the Python import switch runs unchanged. No JSON ships yet,
-    so every character still resolves through the Python switch below.
+    §2.1). The four archetypes and the default cat all ship JSON, so they resolve
+    through that branch; the Python archetype arms below are dead (kept as the R8
+    oracles + gnok/narz's construction base — O1 "demote, don't delete", #881).
 
-    Phase 1 (#117/#123): per-archetype keys branch to their own definitions;
-    every other string still maps to the shared default cat. The sim/golden path
-    loads "P1"/"P2" (see sim/runner.py, game.py), so those stay on the default
-    and goldens are unaffected by new archetypes.
+    The intended-default keys (`_DEFAULT_KEYS` = `{"default", "P1", "P2",
+    "testcat"}`) resolve to the default cat loaded from default.json (a fresh
+    hydrated instance, never the Python literal). Every OTHER key is a programming
+    error and raises `UnknownCharacter` (#887/#881). Production never reaches the
+    raise: the #672 domain layer folds an unknown/None selection into the
+    `testcat` placeholder before this seam, and `Player.__init__` resolves a
+    non-key `char_name` to `"testcat"` (#894), so the raise is defense-in-depth
+    for a programming error and cannot move goldens.
 
     Args:
-        character: an archetype key (e.g. "nalio"), a CAT_CHARACTERS key, the
-            "testcat" test-fixture key (the minimal one-move kit, #591), or any
-            other string. Unknown strings fall through to the default cat.
+        character: an archetype key (e.g. "nalio"), an intended-default key
+            (`"default"`, `"P1"`, `"P2"`, `"testcat"`), or an unknown key (raises).
 
     Returns:
         FighterData instance (frozen, deterministic, no RNG).
+
+    Raises:
+        UnknownCharacter: the key is neither an archetype nor an intended-default
+            key (a typo / programming error).
     """
     # JSON branch (#844): a per-fighter thin-mirror file wins over the Python
-    # switch. Only fires when the file exists — no JSON ships, so goldens are
-    # unchanged. Algorithm-free hydrate (§2.1); provenance is left untouched.
+    # switch. The four archetypes + default ship JSON, so this fires for them;
+    # algorithm-free hydrate (§2.1), provenance left untouched.
     path = CHARACTER_DATA_DIR / f"{character}.json"
     if path.exists():
         return _fighter_from_json(json.loads(path.read_text()))
 
+    # Dead archetype arms (O1, #881): each archetype ships JSON, so the branch
+    # above already returned. Kept because the Python literals remain the R8
+    # drift-guard oracles; deleting them is a deferred follow-up.
     if character == "nalio":
         from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
 
@@ -505,18 +527,21 @@ def load_fighter_data(character: str) -> FighterData:
         from pycats.characters.gnok_cat import GNOK_FIGHTER_DATA
 
         return GNOK_FIGHTER_DATA
-    if character == "testcat":
-        # Named handle for the minimal one-move fixture (#591): tests that want
-        # the minimal kit load it by this name rather than the anonymous
-        # fallback. NOT a player-selectable archetype — deliberately absent from
-        # ARCHETYPE_ROSTER. Same object as today's default (see below).
-        from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
 
-        return DEFAULT_FIGHTER_DATA
-    # default cat for every other key (incl. the "P1"/"P2" sim path)
-    from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
+    if character in _DEFAULT_KEYS:
+        # Intended-default seats ("default"/"P1"/"P2"/"testcat"). "default" also
+        # resolves via the JSON branch above once default.json ships; "P1"/"P2"
+        # (sim seats) and "testcat" (#591 minimal fixture) have no JSON of their
+        # own, so they hydrate the default cat here — a fresh instance, never the
+        # Python literal.
+        return _default_fighter()
 
-    return DEFAULT_FIGHTER_DATA
+    # Unknown key → loud programming-error raise (#887/#881). The valid set is
+    # derived at raise time (roster + allow-list), so it self-updates as cats are
+    # added.
+    from .errors import UnknownCharacter
+
+    raise UnknownCharacter(character, sorted(known_character_keys()))
 
 
 # ---------------------------------------------------------------------------
