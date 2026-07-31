@@ -303,11 +303,25 @@ class ScreenStateManager:
         """Draw a small circular hold-progress indicator while ESC is held."""
         draw_esc_hold_arc(surface, self._esc_hold.progress)
 
+    # Menu screens where either player's mapped B-action key also drives the
+    # hold-to-quit timer (#867). Deliberately excludes the in-match states
+    # ``playing`` and ``pause``: there B (``controls["special"]``) is the attack
+    # button, and letting it accumulate the 2s timer would abandon the match (the
+    # playing/pause back-guards read ``esc_hold_complete()``). ESC still drives the
+    # timer on every state; only the B contribution is menu-gated. An allowlist
+    # (not a denylist) so a future gameplay state never inherits B-as-quit by
+    # accident.
+    _B_HOLD_STATES = ("main_menu", "options", "char_select", "win_screen")
+
     def _tick_esc_hold(self, frame_input):
-        """Hold-ESC-to-navigate (#113, generalised #453): count frames while ESC is
-        held; the value drives ``esc_hold_complete()``. The timer resets whenever
-        ESC is released, or immediately when the setting is off (ESC is then inert —
-        B / the menus still back out every screen).
+        """Hold-to-navigate/quit (#113, generalised #453, #867): count frames while
+        the trigger is held; the value drives ``esc_hold_complete()``. The timer
+        resets whenever the trigger is released, or immediately when the setting is
+        off (ESC is then inert — B / the menus still back out every screen).
+
+        The trigger is ESC on every screen, plus — on menu screens only
+        (``_B_HOLD_STATES``) — either player's mapped B-action key
+        (``controls["special"]``), resolved live so a rebind moves it.
 
         This method no longer decides a *destination*: it only maintains the timer.
         Each state's back-guard reads ``esc_hold_complete()`` to pop one level, and
@@ -318,7 +332,11 @@ class ScreenStateManager:
         if not load().get("esc_hold_to_navigate", True):
             self._esc_hold.reset()
             return
-        self._esc_hold.tick(pygame.K_ESCAPE in frame_input.held)
+        held = frame_input.held
+        trigger = pygame.K_ESCAPE in held
+        if self.engine.state in self._B_HOLD_STATES:
+            trigger = trigger or self.p1_controls["special"] in held or self.p2_controls["special"] in held
+        self._esc_hold.tick(trigger)
 
     def esc_hold_complete(self):
         """True once ESC has been held for the full 2-second threshold (#453)."""
