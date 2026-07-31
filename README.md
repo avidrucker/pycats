@@ -94,9 +94,11 @@ run-to-run; pass an int for a reproducible one.
 
 ## For contributors
 
-Common dev commands run through the root `Makefile` — the command SSOT (#724). `make help`
-lists them, and each resolves the project `.venv` automatically (including from a `git`
-worktree, which has no local `.venv`).
+Common dev commands run through the root `Makefile` — the command SSOT (#724). The targets
+are `make test`, `run`, `run-cmd`, `lint`, `format`, `bench`, and `goldens`; each resolves
+the project `.venv` automatically (including from a `git` worktree, which has no local
+`.venv`). `make help` prints the authoritative one-line list — if it and this section ever
+disagree, `make help` wins.
 
 ### Running the tests
 
@@ -109,7 +111,10 @@ make test ARGS="-k dodge"          # run a subset (any pytest args pass through)
 ```
 
 A green run with some skips is expected. Golden snapshots live in `tests/golden/`;
-regenerate them intentionally with `PYCATS_UPDATE_GOLDENS=1`.
+regenerate them intentionally with `make goldens` (it sets `PYCATS_UPDATE_GOLDENS=1` for the
+three golden modules, then prints the review steps). Review the regenerated `.summary.json`
+sidecars before committing — see
+[`tests/golden/REGEN_PROTOCOL.md`](./tests/golden/REGEN_PROTOCOL.md).
 
 ### Development setup
 
@@ -148,6 +153,23 @@ live in `scripts/`, so a bare `pytest` collects only real assert-based tests.
 make bench                                                       # quick run
 make bench ARGS="--frames 20000 --json bench_results/run.json"   # longer, with JSON output
 ```
+
+### Running an unmerged (worktree) change
+
+To run code that still lives on a claimed worktree branch (not yet merged to `main`), let
+the Makefile derive the exact command instead of hand-assembling a path — pass an issue
+number, branch name, or worktree path:
+
+```bash
+make run-cmd WHAT=892                       # by issue number
+make run-cmd WHAT=br-elderberry/pycats-892  # or by branch name / worktree path
+# prints:  cd '<resolved-worktree>' && make run
+```
+
+`make run` already resolves the main repo's `.venv` from a worktree cwd, so
+`cd '<worktree>' && make run` runs the unmerged code with the right interpreter — no
+hand-typed venv path to get wrong. The helper fails loudly if nothing matches (it never
+falls back to `main`). See RULES.md §"Surfacing run/sim commands".
 
 ### Project layout
 
