@@ -131,9 +131,13 @@ def test_draw_dizzy_stars_animate_between_frames():
 
 
 def test_render_battle_invokes_dizzy_for_stunned_player(monkeypatch):
+    # #900: render_battle lives in pycats.render.battle and looks up
+    # draw_dizzy_stars in its own module globals, so patch it there.
     from pycats import render_battle as rb
+    from pycats.render import battle
+
     calls = []
-    monkeypatch.setattr(rb, "draw_dizzy_stars", lambda surf, p: calls.append(p.fighter.stun_timer))
+    monkeypatch.setattr(battle, "draw_dizzy_stars", lambda surf, p: calls.append(p.fighter.stun_timer))
     surf = pg.Surface((400, 300))
 
     calm = _mk_player()

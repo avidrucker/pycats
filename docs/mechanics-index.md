@@ -26,8 +26,8 @@ number. Owner today is the #605 inventory (the section named in `§`); #604 supe
 
 | Mechanic | § | Landmark(s) | Owner | Class |
 |---|---|---|---|---|
-| Declarative status table | §1.1 | `pycats/render_battle.py::StatusSource`, `pycats/render_battle.py::STATUS_SOURCES`, `pycats/render_battle.py::active_tint`, `pycats/render_battle.py::timer_bar_specs` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented render architecture |
-| Exclusive-vs-overlay bar precedence | §1.2 | `pycats/render_battle.py::StatusSource`, `pycats/render_battle.py::active_tint`, `pycats/render_battle.py::timer_bar_specs` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented priority model |
+| Declarative status table | §1.1 | `pycats/systems/status_model.py::StatusSource`, `pycats/systems/status_model.py::STATUS_SOURCES`, `pycats/render/tint.py::active_tint`, `pycats/systems/status_model.py::timer_bar_specs` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented render architecture |
+| Exclusive-vs-overlay bar precedence | §1.2 | `pycats/systems/status_model.py::StatusSource`, `pycats/render/tint.py::active_tint`, `pycats/systems/status_model.py::timer_bar_specs` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented priority model |
 | Status-bar / dev-info runtime flags | §1.3 | `pycats/runtime_settings.py::show_status_timer_bars`, `pycats/runtime_settings.py::show_dev_info` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented render toggles |
 | Archetype vs cosmetic-skin naming split | §1.4 | `pycats/characters/roster.py::ARCHETYPE_DEFAULT_SKIN`, `pycats/characters/roster.py::ARCHETYPE_PALETTE` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented identity split |
 | `"attack"` legacy move-key alias | §3.1 | `pycats/combat/move_select.py::resolve_move_key`, `pycats/combat/move_select.py::select_move_key` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented naming convention |

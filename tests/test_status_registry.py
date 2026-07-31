@@ -19,6 +19,7 @@ import pygame  # noqa: E402
 import pytest  # noqa: E402
 
 from pycats import render_battle as rb  # noqa: E402
+from pycats.systems import status_model  # noqa: E402  (#900: STATUS_SOURCES' canonical home)
 
 
 def st(**kw):
@@ -128,6 +129,8 @@ def test_new_status_is_a_one_record_add(monkeypatch):
         tint=(7, 7, 7), bar_color=(9, 9, 9), bar_label="SYNTH", bar_class="overlay",
         ratio=lambda f, p: f._synth / 100, readout=lambda f, p: "9s",
         recency=lambda f, p: 0.0)
-    monkeypatch.setattr(rb, "STATUS_SOURCES", rb.STATUS_SOURCES + [synth])
+    # Patch the table at its canonical home (#900): both active_tint and
+    # timer_bar_specs read status_model.STATUS_SOURCES, so one patch drives both.
+    monkeypatch.setattr(status_model, "STATUS_SOURCES", status_model.STATUS_SOURCES + [synth])
     assert rb.active_tint(p) == (7, 7, 7)
     assert (0.5, "9s", (9, 9, 9), "SYNTH") in [tuple(b) for b in rb.timer_bar_specs(p)]
