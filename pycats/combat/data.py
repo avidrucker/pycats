@@ -439,6 +439,28 @@ def _fighter_to_json(fd: FighterData, character: str | None = None) -> dict:
 CHARACTER_DATA_DIR = Path(__file__).parent.parent / "characters" / "data"
 
 
+# Keys that resolve to the default cat rather than a distinct archetype: the sim
+# seats "P1"/"P2" (sim/runner.py, game.py), the migration key "default", and the
+# "testcat" minimal fixture (#591). Separate from the archetypes so a consumer can
+# tell an intended-default key from a real character key (#894).
+_DEFAULT_KEYS = frozenset({"default", "P1", "P2", "testcat"})
+
+
+def known_character_keys() -> frozenset[str]:
+    """The character keys `load_fighter_data` resolves to a fighter.
+
+    The playable archetypes (`ARCHETYPE_ROSTER`) plus the intended-default seats
+    (`_DEFAULT_KEYS`). Consumers use this to distinguish a real character key from
+    a display label — e.g. `Player.__init__` treats a `char_name` outside this set
+    as a label, not a key (#894). Kept a function (lazy `ARCHETYPE_ROSTER` import)
+    to avoid a module-load cycle, mirroring the lazy import inside
+    `load_fighter_data`.
+    """
+    from pycats.characters.roster import ARCHETYPE_ROSTER
+
+    return frozenset(ARCHETYPE_ROSTER) | _DEFAULT_KEYS
+
+
 def load_fighter_data(character: str) -> FighterData:
     """Return FighterData for the named character.
 

@@ -40,7 +40,7 @@ from enum import Enum, auto
 import pygame  # type: ignore
 
 from ..combat.charge import angle_smash_hitboxes, scale_hitboxes
-from ..combat.data import GETUP_ATTACK, load_fighter_data
+from ..combat.data import GETUP_ATTACK, known_character_keys, load_fighter_data
 from ..config import (
     BLACK,
     FSMASH_ANGLE_DOWN,
@@ -110,10 +110,17 @@ class Player(pygame.sprite.Sprite):
         # ---------- data-driven fighter definition (#71/#123/#126) ----------
         # Load the per-character FighterData first so the Fighter can take its
         # weight + movement constants from it. `fighter_data` may be injected
-        # (tests / future archetype selection); otherwise it's loaded by key.
-        # Phase 1: load_fighter_data branches per archetype ("nalio", …) and
-        # returns the default cat for the "P1"/"P2" sim path.
-        self.fighter_data = fighter_data or load_fighter_data(char_name)
+        # (the live/sim path always injects a resolved fighter_data — see
+        # battle_screen/sim.runner); otherwise it's loaded by key.
+        #
+        # `char_name` is the seat's DISPLAY label (win-attribution + PlayerName
+        # below), NOT necessarily a character key. Resolve the load key separately
+        # (#894): a char_name that names a known character loads that character;
+        # any other label loads the default kit ("testcat"). This keeps char_name
+        # free to be an arbitrary display label without it being read as a fighter
+        # key — the seam #887 relies on to raise on a genuinely unknown key.
+        _key = char_name if char_name in known_character_keys() else "testcat"
+        self.fighter_data = fighter_data or load_fighter_data(_key)
 
         # ---------- combat domain: the Fighter aggregate ----------
         # Sprite-free domain object that owns ALL of this fighter's simulation
