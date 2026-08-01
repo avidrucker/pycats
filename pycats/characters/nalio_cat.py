@@ -545,6 +545,112 @@ _DSMASH = MoveData(
     ),
 )
 
+
+# --- Up-B Super Jump Punch, mapped to "up_b" (PM3.6 Mario SpecialAirHi) --------
+# Nalio's recovery, wired onto the generalized recovery hook (#578, B2 of #566) as
+# DATA only. Every value below is sourced in
+# docs/research/2026-07-31-nalio-super-jump-punch-sourcing.md (closes #956) from a
+# primary datamine of PM3.6 Mario SpecialAirHi (rukaidata scalars cross-confirmed
+# by the brawllib_rs geometry read).
+#
+# Frame timeline (§1a): total 38 f, hitboxes active 3-15 -> startup 2 / active 13 /
+# recovery 23 (no IASA; recovery runs to the last frame). rukaidata frame numbers
+# map directly to pycats MoveClock coords (startup 2 => frame 3 is first active),
+# same as f-air/d-smash.
+#
+# A 4-window MULTI-HIT (the classic SJP grab -> rising links -> launcher), each
+# window two boxes (rukaidata id 0/1); the boxes fire in sequence via #204 windows,
+# and within a window first-box-wins gives one hit per target (#130):
+#   A [3,6]   grab-up  : dmg 5, WDSK 130, KBG 100, angles 70/90.
+#   B [7,9]   auto-link: dmg 1, WDSK 110/150, KBG 100, angles 74/78 (hold hits).
+#   C [10,13] auto-link: dmg 1, WDSK  90/120, KBG 100, angles 72/78.
+#   D [14,15] launcher : dmg 3, BKB 40 / KBG 140, angle 50 — real growing KB, no WDSK.
+# WDSK is the weight-dependent set knockback (#211, `set_knockback`), the same
+# mechanic Nalio's jab / d-air already use.
+#
+# Geometry (§0a): radii = size u × PX_PER_UNIT (verbatim — the datamine's Mario-jab
+# radii reproduced nalio.json's committed jab exactly, so radii + dy map cleanly);
+# `dx` is a body-relative placement seeded from the datamine and eyeball-adjusted to
+# Nalio's cat body (the documented per-move approximation, module docstring).
+#
+# Recovery burst (§0b): pycats models the rise as a single SET vertical burst +
+# gravity (a deliberate divergence from Melee/PM's authored per-frame rise curve).
+# recovery_vy = -15.5 back-solves the datamined net rise (∫ y_vel = 239.7 px ≈
+# 1.42× Nalio's full-jump height) under gravity 0.5 (apex = v²/2g, so v = √h).
+# recovery_vx = 2 is a small facing-forward arc (net forward drift ≈ 111 px measured;
+# a near-vertical move) — a ⚠ playtest/eyeball starting point in the 0-3 band, not
+# load-bearing.
+def _sjp_link(dx, dy, r, angle, wdsk, start, end):
+    # A 1% auto-link / hold hitbox: set (weight-dependent) knockback, KBG 100.
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=1.0,
+        angle=angle,
+        base_knockback=0.0,
+        knockback_growth=100.0,
+        set_knockback=wdsk,
+        active_start=start,
+        active_end=end,
+    )
+
+
+_SUPER_JUMP_PUNCH = MoveData(
+    name="super jump punch",
+    in_air=True,  # aerial special — does not clank (#133)
+    startup=2,
+    active=13,
+    recovery=23,
+    grants_recovery=True,
+    recovery_vy=-15.5,  # §0b net-rise integral (239.7 px ≈ 1.42× jump), g=0.5 -> v=√h
+    recovery_vx=2.0,  # ⚠ small forward arc (0-3 band; eyeball) — near-vertical move
+    hitboxes=(
+        # A [3,6] grab-up — 5%, WDSK 130, KBG 100
+        Hitbox(
+            circle=Circle(dx=33, dy=27, r=40),
+            damage=5.0,
+            angle=70,
+            knockback_growth=100.0,
+            set_knockback=130,
+            active_start=3,
+            active_end=6,
+        ),  # id0
+        Hitbox(
+            circle=Circle(dx=24, dy=16, r=27),
+            damage=5.0,
+            angle=90,
+            knockback_growth=100.0,
+            set_knockback=130,
+            active_start=3,
+            active_end=6,
+        ),  # id1 (straight up)
+        # B [7,9] auto-link — 1%, WDSK 110/150
+        _sjp_link(dx=32, dy=30, r=34, angle=74, wdsk=110, start=7, end=9),  # id0
+        _sjp_link(dx=28, dy=13, r=27, angle=78, wdsk=150, start=7, end=9),  # id1
+        # C [10,13] auto-link — 1%, WDSK 90/120
+        _sjp_link(dx=26, dy=31, r=34, angle=72, wdsk=90, start=10, end=13),  # id0
+        _sjp_link(dx=27, dy=16, r=27, angle=78, wdsk=120, start=10, end=13),  # id1
+        # D [14,15] launcher — 3%, BKB 40 / KBG 140, angle 50 (growing KB, no WDSK)
+        Hitbox(
+            circle=Circle(dx=8, dy=36, r=47),
+            damage=3.0,
+            angle=50,
+            base_knockback=40.0,
+            knockback_growth=140.0,
+            active_start=14,
+            active_end=15,
+        ),  # id0
+        Hitbox(
+            circle=Circle(dx=1, dy=14, r=21),
+            damage=3.0,
+            angle=50,
+            base_knockback=40.0,
+            knockback_growth=140.0,
+            active_start=14,
+            active_end=15,
+        ),  # id1
+    ),
+)
+
 # --- Crouch geometry (#124) ---------------------------------------------------
 # PM Mario's crouch is a moderate lower (not a Kirby-style ground-hug). The body
 # Rect resizes from the 40×60 stand box to a squarish 40×40 crouch box (feet
@@ -594,6 +700,7 @@ NALIO_FIGHTER_DATA = FighterData(
         "dair": _DOWN_AIR,
         "nair": _NEUTRAL_AIR,
         "neutral_b": _FIREBALL,
+        "up_b": _SUPER_JUMP_PUNCH,
         "fsmash": _FSMASH,
         "usmash": _USMASH,
         "dsmash": _DSMASH,

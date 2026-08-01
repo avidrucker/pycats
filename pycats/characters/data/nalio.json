@@ -291,6 +291,90 @@
         }
       ]
     },
+    "up_b": {
+      "name": "super jump punch",
+      "in_air": true,
+      "startup": 2,
+      "active": 13,
+      "recovery": 23,
+      "grants_recovery": true,
+      "recovery_vy": -15.5,
+      "recovery_vx": 2.0,
+      "hitboxes": [
+        {
+          "damage": 5.0,
+          "angle": 70,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 6,
+          "set_knockback": 130,
+          "circle": [33, 27, 40]
+        },
+        {
+          "damage": 5.0,
+          "angle": 90,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 6,
+          "set_knockback": 130,
+          "circle": [24, 16, 27]
+        },
+        {
+          "damage": 1.0,
+          "angle": 74,
+          "knockback_growth": 100.0,
+          "active_start": 7,
+          "active_end": 9,
+          "set_knockback": 110,
+          "circle": [32, 30, 34]
+        },
+        {
+          "damage": 1.0,
+          "angle": 78,
+          "knockback_growth": 100.0,
+          "active_start": 7,
+          "active_end": 9,
+          "set_knockback": 150,
+          "circle": [28, 13, 27]
+        },
+        {
+          "damage": 1.0,
+          "angle": 72,
+          "knockback_growth": 100.0,
+          "active_start": 10,
+          "active_end": 13,
+          "set_knockback": 90,
+          "circle": [26, 31, 34]
+        },
+        {
+          "damage": 1.0,
+          "angle": 78,
+          "knockback_growth": 100.0,
+          "active_start": 10,
+          "active_end": 13,
+          "set_knockback": 120,
+          "circle": [27, 16, 27]
+        },
+        {
+          "damage": 3.0,
+          "angle": 50,
+          "base_knockback": 40.0,
+          "knockback_growth": 140.0,
+          "active_start": 14,
+          "active_end": 15,
+          "circle": [8, 36, 47]
+        },
+        {
+          "damage": 3.0,
+          "angle": 50,
+          "base_knockback": 40.0,
+          "knockback_growth": 140.0,
+          "active_start": 14,
+          "active_end": 15,
+          "circle": [1, 14, 21]
+        }
+      ]
+    },
     "fsmash": {
       "name": "forward smash",
       "in_air": false,
