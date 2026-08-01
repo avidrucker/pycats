@@ -30,7 +30,7 @@ from pycats.combat.data import Hitbox, MoveData
 class MoveTick(NamedTuple):
     """Result of a single :meth:`MoveClock.tick`.
 
-    spawn    — the hitboxes of the temporal window opening this frame (#130:
+    spawn    — the hitboxes of the FIRST temporal window opening this frame (#130:
                multi-hitbox per move; #204: a move may open several windows on
                different frames), or None on frames where no window opens. A move
                with no per-box timing opens one window holding its full tuple.
@@ -39,11 +39,17 @@ class MoveTick(NamedTuple):
                the legacy ``lifetime=move.active``.
     in_air   — whether the spawning move is an aerial (#133: aerials don't clank);
                False on no-spawn ticks.
+    extra_spawns — Design B (#951): the OTHER ``(boxes, lifetime)`` windows that
+               open on this same frame (boxes sharing a start frame with different
+               ends, each its own Attack). Empty for every single-window frame, so
+               the tick is byte-identical to before; ``player.py`` spawns one
+               Attack per ``[(spawn, lifetime), *extra_spawns]`` group.
     """
 
     spawn: tuple[Hitbox, ...] | None
     lifetime: int
     in_air: bool = False
+    extra_spawns: tuple[tuple[tuple[Hitbox, ...], int], ...] = ()
 
 
 class MoveClock:
@@ -52,11 +58,13 @@ class MoveClock:
     def __init__(self) -> None:
         self._move: MoveData | None = None
         self._frame: int = 0
-        # Per-hitbox temporal windows (#204): start-frame -> (boxes, lifetime),
-        # and the set of window start-frames already fired. A move with no per-box
-        # timing has exactly one window (start = startup+1, lifetime = active), so
-        # the spawn behavior + MoveTick shape are byte-identical to before.
-        self._windows: dict[int, tuple[tuple[Hitbox, ...], int]] = {}
+        # Per-hitbox temporal windows (#204/#951): start-frame -> LIST of
+        # (boxes, lifetime) groups, and the set of window start-frames already
+        # fired. A move with no per-box timing has exactly one window (start =
+        # startup+1, lifetime = active) → a single-element list, so the spawn
+        # behavior + MoveTick shape are byte-identical to before. Design B allows
+        # several groups on one start frame (each its own Attack).
+        self._windows: dict[int, list[tuple[tuple[Hitbox, ...], int]]] = {}
         self._spawned_starts: set[int] = set()
         # B-full hit-set registry (#888): per-move-instance map set_id -> {targets
         # already hit by that set}. A move's temporal windows (#204) spawn separate
@@ -85,15 +93,17 @@ class MoveClock:
     @staticmethod
     def _compute_windows(
         move: MoveData,
-    ) -> dict[int, tuple[tuple[Hitbox, ...], int]]:
+    ) -> dict[int, list[tuple[tuple[Hitbox, ...], int]]]:
         """Group a move's hitboxes into temporal windows, keyed by START frame.
 
         A box with no per-box timing uses the move's default window
         ``[startup+1, startup+active]`` (today's single-window behavior); a timed
         box uses its own ``[active_start, active_end]``. Boxes sharing an identical
-        window spawn together. Returns ``{start_frame: (boxes, lifetime)}`` where
-        ``lifetime = end - start + 1``. At most one window per start frame (the
-        same-start/same-end constraint, validated in data.py).
+        window spawn together. Returns ``{start_frame: [(boxes, lifetime), ...]}``
+        where ``lifetime = end - start + 1``. Design B (#951): several windows may
+        share a start frame (different ends) → the list holds one entry per group,
+        in first-seen order; the common single-window frame yields a 1-element
+        list, so downstream behavior is byte-identical.
         """
         default_window = (move.startup + 1, move.startup + move.active)
         grouped: dict[tuple[int, int], list[Hitbox]] = {}
@@ -107,7 +117,10 @@ class MoveClock:
                 grouped[window] = []
                 order.append(window)
             grouped[window].append(hb)
-        return {start: (tuple(grouped[(start, end)]), end - start + 1) for (start, end) in order}
+        windows: dict[int, list[tuple[tuple[Hitbox, ...], int]]] = {}
+        for start, end in order:
+            windows.setdefault(start, []).append((tuple(grouped[(start, end)]), end - start + 1))
+        return windows
 
     # -- derived reads (back the Player properties) --------------------------
     @property
@@ -148,10 +161,12 @@ class MoveClock:
         self._frame += 1
         spawn: tuple[Hitbox, ...] | None = None
         lifetime = m.active
-        window = self._windows.get(self._frame)
-        if window is not None and self._frame not in self._spawned_starts:
+        extra_spawns: tuple[tuple[tuple[Hitbox, ...], int], ...] = ()
+        groups = self._windows.get(self._frame)
+        if groups is not None and self._frame not in self._spawned_starts:
             self._spawned_starts.add(self._frame)
-            spawn, lifetime = window
+            (spawn, lifetime), *rest = groups
+            extra_spawns = tuple(rest)
         if self._frame >= m.startup + m.active + m.recovery:
             self._move = None
-        return MoveTick(spawn, lifetime, m.in_air)
+        return MoveTick(spawn, lifetime, m.in_air, extra_spawns)

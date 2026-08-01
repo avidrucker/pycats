@@ -7,8 +7,13 @@ authorable — while every move that omits the feature stays byte-identical.
 A `Hitbox` may carry `active_start`/`active_end` (inclusive frame offsets in the
 MoveClock 1-indexed frame coordinate). `None` = "use the move's window"
 (`[startup+1, startup+active]`, exactly today's behavior). `MoveClock` fires
-each window on its own start frame; `MoveTick`'s shape is unchanged (≤1 window
-starts per frame), so `player.py`/`attack.py` are untouched.
+each window on its own start frame.
+
+Design B (#951, ruling on #945): boxes sharing a start frame may hold DIFFERENT
+windows, each spawning its own `Attack`. `MoveTick` conveys every group opening
+on a frame — `spawn`/`lifetime` for the first, `extra_spawns` for the rest — so
+a single-group frame stays byte-identical (`extra_spawns == ()`), and `player.py`
+loops over the groups.
 """
 
 import pygame
@@ -152,10 +157,57 @@ def test_window_outside_the_move_is_rejected():
         )  # 99 > total 8
 
 
-def test_same_start_different_end_is_rejected():
-    """Two boxes that begin on the same frame must share the same window (v1
-    constraint — one window => one Attack)."""
-    a = _box(damage=10.0, active_start=4, active_end=5)
-    b = _box(damage=20.0, active_start=4, active_end=9)  # same start, different end
-    with pytest.raises(ValueError):
-        MoveData(name="clash", in_air=False, startup=3, active=10, recovery=2, hitboxes=(a, b))
+# ------------------------------------ Cycle 5: Design B — divergent same-start
+
+
+def test_same_start_different_end_builds_and_spawns_both_windows():
+    """Design B (#951): two boxes sharing a start frame with DIFFERENT ends now
+    BUILD (no ValueError — the v1 rejection is lifted) and the clock opens BOTH
+    groups on that shared start frame, each carrying its own box + lifetime. The
+    first group rides `spawn`/`lifetime`; the rest ride `extra_spawns`."""
+    a = _box(damage=10.0, active_start=4, active_end=5)  # window len 2
+    b = _box(damage=20.0, active_start=4, active_end=9)  # same start, window len 6
+    move = MoveData(name="clash", in_air=False, startup=3, active=7, recovery=2, hitboxes=(a, b))  # total 12, [4,9]
+
+    clk = MoveClock()
+    clk.start(move)
+    frame4 = None
+    for _ in range(12):
+        t = clk.tick()
+        if clk.frame == 4:
+            frame4 = t
+
+    assert frame4 is not None and frame4.spawn is not None
+    groups = [(frame4.spawn, frame4.lifetime), *frame4.extra_spawns]
+    assert len(groups) == 2, "both same-start windows open on frame 4"
+    # Each group carries exactly its own box; lifetimes are the two distinct lengths.
+    by_damage = {boxes[0].damage: (len(boxes), lifetime) for boxes, lifetime in groups}
+    assert by_damage == {10.0: (1, 2), 20.0: (1, 6)}
+
+
+def test_same_start_windows_become_two_attacks_on_one_frame():
+    """The acceptance criterion for Design B end-to-end: two same-start boxes with
+    different ends spawn two SEPARATE Attacks on the SAME frame via Player.update,
+    each with its own frames_left and only its own box."""
+    p = Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="P", facing_right=True)
+    plats = [Platform(pygame.Rect(0, 100, 600, 40), thin=False)]
+    group = pygame.sprite.Group()
+    neutral = InputFrame(held=set(), pressed=set(), released=set())
+    for _ in range(3):  # settle on the ground
+        p.update(neutral, plats, group)
+
+    box_a = _box(damage=10.0, active_start=4, active_end=5)  # len 2
+    box_b = _box(damage=20.0, active_start=4, active_end=9)  # same start, len 6
+    move = MoveData(name="clash", in_air=False, startup=3, active=7, recovery=2, hitboxes=(box_a, box_b))
+    p._clock.start(move)
+
+    seen: set[int] = set()
+    appeared: list[tuple[int, float, int]] = []  # (frame, box damage, frames_left)
+    for frame in range(1, 13):
+        p.update(neutral, plats, group)
+        for atk in group:
+            if id(atk) not in seen:
+                seen.add(id(atk))
+                appeared.append((frame, atk.hitboxes[0].damage, atk.frames_left))
+
+    assert sorted(appeared) == [(4, 10.0, 2), (4, 20.0, 6)]

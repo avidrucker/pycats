@@ -166,13 +166,13 @@ class MoveData:
     hurtbox: Hurtbox | None = None
 
     def __post_init__(self) -> None:
-        # Per-hitbox temporal-window cross-checks (#204). Per-box shape (paired,
+        # Per-hitbox temporal-window cross-check (#204). Per-box shape (paired,
         # non-inverted, start >= 1) is enforced on Hitbox; here we need the move's
-        # duration + the sibling boxes: a window must end within the move, and two
-        # boxes that start on the same frame must share the same window (v1: one
-        # window => one Attack; see move_clock._compute_windows).
+        # duration: a window must end within the move. Design B (#951): boxes
+        # sharing a start frame may hold DIFFERENT windows (each its own Attack;
+        # see move_clock._compute_windows) — the v1 same-start/same-window
+        # rejection is lifted, so per-frame authored divergence is representable.
         total = self.startup + self.active + self.recovery
-        starts: dict[int, int] = {}
         for hb in self.hitboxes:
             if hb.active_start is None:
                 continue
@@ -180,14 +180,6 @@ class MoveData:
                 raise ValueError(
                     f"Hitbox window [{hb.active_start}, {hb.active_end}] exceeds move '{self.name}' duration {total}"
                 )
-            prev_end = starts.get(hb.active_start)
-            if prev_end is not None and prev_end != hb.active_end:
-                raise ValueError(
-                    f"move '{self.name}': two hitboxes share start frame "
-                    f"{hb.active_start} with different ends ({prev_end} != "
-                    f"{hb.active_end}); same start must share the same window"
-                )
-            starts[hb.active_start] = hb.active_end
 
 
 # ---------------------------------------------------------------------------

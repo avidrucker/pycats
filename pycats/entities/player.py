@@ -575,49 +575,54 @@ class Player(pygame.sprite.Sprite):
             mv = self.current_move
             # Task 5 / #130: pass the move's full hitbox tuple so the hit-box resolves
             # every circle (multi-hitbox moves activate all boxes at once).
-            if getattr(mv, "projectile_speed", None) is not None:
-                # #223/#266: a projectile move spawns a MOVING, detached Projectile —
-                # velocity in the facing direction, gravity + ground-bounce physics
-                # (Mario-faithful, #263), its own lifetime, vanishing on hit. Physics
-                # knobs are per-move overridable (getattr), else the Projectile defaults.
-                facing = 1 if self.fighter.facing_right else -1
-                attack_group.add(
-                    Projectile(
-                        self,
-                        hitboxes=tick.spawn,
-                        in_air=tick.in_air,
-                        disappear_on_hit=True,
-                        lifetime=mv.projectile_lifetime or tick.lifetime,
-                        rehit_rate=mv.rehit_rate,
-                        velocity=(facing * mv.projectile_speed, 0),
-                        gravity=getattr(mv, "projectile_gravity", PROJECTILE_GRAVITY),
-                        restitution=getattr(mv, "projectile_restitution", PROJECTILE_RESTITUTION),
-                        max_bounces=getattr(mv, "projectile_max_bounces", PROJECTILE_MAX_BOUNCES),
+            # Design B (#951): a frame may open several temporal windows (boxes
+            # sharing a start with different ends), each its own Attack — so spawn
+            # one per group. A single-window frame has no extra_spawns, so this
+            # loop runs exactly once (byte-identical to the old single spawn).
+            for group_boxes, group_lifetime in [(tick.spawn, tick.lifetime), *tick.extra_spawns]:
+                if getattr(mv, "projectile_speed", None) is not None:
+                    # #223/#266: a projectile move spawns a MOVING, detached Projectile —
+                    # velocity in the facing direction, gravity + ground-bounce physics
+                    # (Mario-faithful, #263), its own lifetime, vanishing on hit. Physics
+                    # knobs are per-move overridable (getattr), else the Projectile defaults.
+                    facing = 1 if self.fighter.facing_right else -1
+                    attack_group.add(
+                        Projectile(
+                            self,
+                            hitboxes=group_boxes,
+                            in_air=tick.in_air,
+                            disappear_on_hit=True,
+                            lifetime=mv.projectile_lifetime or group_lifetime,
+                            rehit_rate=mv.rehit_rate,
+                            velocity=(facing * mv.projectile_speed, 0),
+                            gravity=getattr(mv, "projectile_gravity", PROJECTILE_GRAVITY),
+                            restitution=getattr(mv, "projectile_restitution", PROJECTILE_RESTITUTION),
+                            max_bounces=getattr(mv, "projectile_max_bounces", PROJECTILE_MAX_BOUNCES),
+                        )
                     )
-                )
-            else:
-                # Smash charge (#327/3b): a chargeable move's hitboxes scale by the
-                # captured charge fraction; c=0 (and non-chargeable moves) is an exact
-                # identity, so the default cat's spawns are byte-identical (golden-safe).
-                boxes = tick.spawn
-                if getattr(mv, "chargeable", False):
-                    boxes = scale_hitboxes(boxes, self.fighter.smash_charge_fraction)
-                # Angled f-smash (#327/4): a forward smash aimed up/down replaces its
-                # launch angle. Only set for an fsmash press, consumed here so it
-                # never leaks onto a later move.
-                if self.fighter.smash_angle_dir is not None:
-                    boxes = angle_smash_hitboxes(boxes, _FSMASH_ANGLE[self.fighter.smash_angle_dir])
-                    self.fighter.smash_angle_dir = None
-                attack_group.add(
-                    Attack(
-                        self,
-                        hitboxes=boxes,
-                        in_air=tick.in_air,
-                        disappear_on_hit=False,
-                        lifetime=tick.lifetime,
-                        rehit_rate=mv.rehit_rate,
-                    )  # #213 looping; static hit-box
-                )
+                else:
+                    # Smash charge (#327/3b): a chargeable move's hitboxes scale by the
+                    # captured charge fraction; c=0 (and non-chargeable moves) is an exact
+                    # identity, so the default cat's spawns are byte-identical (golden-safe).
+                    boxes = group_boxes
+                    if getattr(mv, "chargeable", False):
+                        boxes = scale_hitboxes(boxes, self.fighter.smash_charge_fraction)
+                    # Angled f-smash (#327/4): a forward smash aimed up/down replaces its
+                    # launch angle. Only set for an fsmash press, consumed here so it
+                    # never leaks onto a later move.
+                    if self.fighter.smash_angle_dir is not None:
+                        boxes = angle_smash_hitboxes(boxes, _FSMASH_ANGLE[self.fighter.smash_angle_dir])
+                        self.fighter.smash_angle_dir = None
+                    attack_group.add(
+                        Attack(
+                            self,
+                            hitboxes=boxes,
+                            in_air=tick.in_air,
+                            disappear_on_hit=False,
+                            lifetime=group_lifetime,
+                            rehit_rate=mv.rehit_rate,
+                        )  # #213 looping; static hit-box
+                    )
         # (#321/F3: done_attacking is now a derived Player property — no latch.)
 
     def _apply_posture_geometry(self):
