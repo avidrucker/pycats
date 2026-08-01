@@ -503,6 +503,56 @@ _BIRKY_DSMASH = MoveData(
     ),
 )
 
+
+# --- Up-B = Final Cutter (rise-only, #969) -----------------------------------
+# Birky's recovery special, wired onto the #578 recovery hook as DATA ONLY. Sourced
+# from PM3.6 Kirby `SpecialAirHi2` via the brawllib_rs datamine
+# (docs/research/2026-07-31-birky-final-cutter-sourcing.md). Final Cutter has three
+# phases (rising slash / descending plunge+spike / landing shockwave); Avi's 2026-07-31
+# scope ruling keeps #969 to the RISING SLASH + recovery only — phases 2 & 3 need new
+# engine code and are split to #973 (mid-move velocity flip) / #974 (landing spawn).
+#
+# Rising slash (datamine phase-1, active f1-2): 4 boxes, all `set_id`-shared so by
+# first-box-wins (#130) exactly ONE connects — an 8% hit, WDSK 117/102, KBG 100, angle
+# ~80-91, effect Slash. Radius u(3.5)=19 maps cleanly; dx/dy are body-fit `⚠ playtest
+# starting point`s (raw forward reach u(18)=97 is far too long for Birky's small
+# featherweight body — drawn in to short-reach + zone-anchored, #309/ADR-0003).
+# recovery_vy = -15.7: the datamined apex rise 292.3px (∫ root velocity, ≈2.03x jump)
+# back-solved through Birky's gravity 0.42 (v=√(2·g·h)). recovery_vx = 0: root-motion x
+# is 0.0 on every frame — Final Cutter is purely vertical (canon).
+def _fc_slash(dx, dy, r, angle, wdsk):
+    # A rising-slash box: WDSK (weight-dependent set) knockback, KBG 100, 8%, active
+    # f3-4. All four share one window -> first-box-wins picks one -> a single hit.
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=8.0,
+        angle=angle,
+        base_knockback=0.0,
+        knockback_growth=100.0,
+        set_knockback=wdsk,
+        active_start=3,
+        active_end=4,
+    )
+
+
+_BIRKY_FINAL_CUTTER = MoveData(
+    name="final cutter",
+    in_air=True,  # aerial special — does not clank (#133)
+    startup=2,
+    active=2,
+    recovery=16,  # active f3-4 (rising slash); rest is the ascent to apex -> helpless
+    grants_recovery=True,
+    recovery_vy=-15.7,  # apex 292.3px (∫ root vel, §2) back-solved at g=0.42: √(2·g·h)
+    recovery_vx=0.0,  # purely vertical — datamine root-motion x = 0.0 every frame
+    hitboxes=(
+        # blade: 2 heights (head / above-head) x 2 forward reaches, r=u(3.5)=19
+        _fc_slash(dx=18, dy=zone_dy("head", _H), r=19, angle=80, wdsk=117),  # id0 near-low (wins)
+        _fc_slash(dx=38, dy=zone_dy("head", _H), r=19, angle=91, wdsk=117),  # id1 far-low
+        _fc_slash(dx=14, dy=zone_dy("head", _H, -14), r=19, angle=90, wdsk=102),  # id2 near-high
+        _fc_slash(dx=32, dy=zone_dy("head", _H, -14), r=19, angle=91, wdsk=102),  # id3 far-high
+    ),
+)
+
 BIRKY_FIGHTER_DATA = FighterData(
     # own Kirby-sized body (#275) + body-matched hurtbox; own Kirby-low crouch/prone (#589);
     # ground normals (#240/#245/#247/#249) + aerials nair #255 / fair #256 / bair #258
@@ -522,6 +572,7 @@ BIRKY_FIGHTER_DATA = FighterData(
         "fsmash": _BIRKY_FSMASH,
         "usmash": _BIRKY_USMASH,
         "dsmash": _BIRKY_DSMASH,
+        "up_b": _BIRKY_FINAL_CUTTER,  # Final Cutter, rise-only (#969)
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,

@@ -97,7 +97,8 @@ def test_birky_has_own_body_and_no_placeholder_moves():
         "fsmash",
         "usmash",
         "dsmash",
-    }  # smashes added (#459)
+        "up_b",
+    }  # smashes added (#459); up_b = Final Cutter rise-only (#969)
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():

@@ -413,6 +413,53 @@
           "circle": [-40, 37, 23]
         }
       ]
+    },
+    "up_b": {
+      "name": "final cutter",
+      "in_air": true,
+      "startup": 2,
+      "active": 2,
+      "recovery": 16,
+      "grants_recovery": true,
+      "recovery_vy": -15.7,
+      "hitboxes": [
+        {
+          "damage": 8.0,
+          "angle": 80,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 4,
+          "set_knockback": 117,
+          "circle": [18, 7, 19]
+        },
+        {
+          "damage": 8.0,
+          "angle": 91,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 4,
+          "set_knockback": 117,
+          "circle": [38, 7, 19]
+        },
+        {
+          "damage": 8.0,
+          "angle": 90,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 4,
+          "set_knockback": 102,
+          "circle": [14, -7, 19]
+        },
+        {
+          "damage": 8.0,
+          "angle": 91,
+          "knockback_growth": 100.0,
+          "active_start": 3,
+          "active_end": 4,
+          "set_knockback": 102,
+          "circle": [32, -7, 19]
+        }
+      ]
     }
   },
   "crouch_hurtbox": {
