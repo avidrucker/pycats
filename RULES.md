@@ -371,6 +371,12 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
   quote supports and record the rest as a flagged **`gap`**. Flag Melee/Brawl/Smash-4/Ultimate
   values so they are **never silently attributed to PM**. (Origin: #520 → correction #537,
   reframe #527, audit #536; ratified **#562**.)
+- **The verify-claims ledger lives outside the repo.** The claims ledger (`PYC-*` IDs,
+  per-area subtrees, generated `INDEX.md`) was relocated to the sibling
+  **`pycats-claims-data/`** — a plain untracked folder at `…/Study/Python/pycats-claims-data/`,
+  outside the pycats tree, with no git history by design. `.claude/ledger.json` `dir` holds
+  its absolute path; consumers resolve the ledger from there, not from an in-tree
+  `claims-data/`. (#946.)
 
 ## Process lessons
 

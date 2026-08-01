@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "dir": "claims-data",
+  "dir": "/home/avi/Documents/Study/Python/pycats-claims-data",
   "prefix": "PYC",
   "agentScoped": null,
   "topics": true,

@@ -163,8 +163,9 @@ cargo run --release --example cliff_lengths -- \
 [`Edge getup`](https://www.ssbwiki.com/Edge_getup), [`Planking`](https://www.ssbwiki.com/Planking) —
 all fetched 2026-07-19.
 
-**Claims ledger:** the individual facts above are drafted (ungated) in the git-excluded
-`claims-data/ledge-getup/` ledger (drafts d1–d11), awaiting human admission via `/verify-claims`.
+**Claims ledger:** the individual facts above are drafted (ungated) in the out-of-tree
+`pycats-claims-data/ledge-getup/` ledger (drafts d1–d11; relocated in #946), awaiting human
+admission via `/verify-claims`.
 
 ---
 

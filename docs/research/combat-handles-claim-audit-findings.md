@@ -121,8 +121,8 @@ not bouncing.
 
 ## Artifacts
 
-- Ledger topic: `claims-data/battle-mechanics/` — `PYC-C-001..007-GRAPE`
-  (git-excluded; this doc is the committed graduation).
+- Ledger topic: `pycats-claims-data/battle-mechanics/` — `PYC-C-001..007-GRAPE`
+  (out-of-tree, untracked; relocated in #946; this doc is the committed graduation).
 - Source audited @346e3d0: `systems/combat.py`, `combat/move_clock.py`,
   `combat/knockback.py`, `entities/attack.py`, `combat/data.py`.
 - Tests cited: `test_move_clock.py`, `test_hitlag.py`, `test_multi_hitbox.py`,

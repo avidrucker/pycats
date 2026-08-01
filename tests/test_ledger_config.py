@@ -2,8 +2,10 @@
 
 Guards that the config is well-formed and carries the pycats-ratified shape, so the
 `verify-claims` skill mints IDs and resolves the ledger consistently. The ledger DATA
-(`claims-data/`) is gitignored and absent in CI, so this asserts config SHAPE only —
-never that the ledger directory exists. Skill: avidrucker/claude-config verify-claims
+lives out-of-tree at the sibling `pycats-claims-data/` (untracked, absent in CI; #946),
+so this asserts config SHAPE only — it reads the `dir` string from the config, never the
+filesystem, so it passes regardless of whether the ledger folder exists on this checkout.
+Skill: avidrucker/claude-config verify-claims
 (config home #19). Ratified in the 2026-07-15 grill; migrated to the 7-key schema
 (topics/testDir in, evidenceDir out) in #757.
 """
@@ -39,8 +41,11 @@ def test_prefix_is_the_pycats_tag():
     assert _load()["prefix"] == "PYC"
 
 
-def test_dir_is_claims_data():
-    assert _load()["dir"] == "claims-data"
+def test_dir_points_at_sibling_ledger():
+    # #946 relocated the ledger out of the repo to an untracked sibling folder; `dir`
+    # now holds its absolute path (the accepted machine-specific tradeoff). This is a
+    # string-shape check on the config value, not a filesystem existence check.
+    assert _load()["dir"] == "/home/avi/Documents/Study/Python/pycats-claims-data"
 
 
 def test_enabled_is_true():

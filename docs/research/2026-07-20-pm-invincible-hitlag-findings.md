@@ -178,7 +178,7 @@ quotes**, with the **PM-3.6 step labeled `[inference]`** and the residual gap st
 - ➕ **Bonus:** engine-confirmed intangible>invincible precedence (feeds #784) and respawn=invincibility mapping (feeds #774 row 6 / #506).
 - ⚠️ **Residual gap stated:** no PM-3.6 primary; strongest is Melee reimpl + series-universal wiki + PM-codeset absence-of-override; PM step is `[inference]`.
 - ✅ All inference tagged `[inference]`; Brawl-specific carryover flagged.
-- ✅ No claims-ledger entries (external facts live here, not `claims-data/` — #754). No code changes.
+- ✅ No claims-ledger entries (external facts live here, not the `pycats-claims-data/` ledger — #754; relocated out-of-tree in #946). No code changes.
 
 ## Sources
 
