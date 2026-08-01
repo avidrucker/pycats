@@ -183,6 +183,7 @@ def _utilt_box(dx, dy, r, damage, angle, kbg, start, end):
         knockback_growth=kbg,
         active_start=start,
         active_end=end,
+        set_id=1,  # B-full (#888): both windows share one set → hit a target once
     )
 
 
@@ -395,6 +396,7 @@ _BIRKY_FSMASH = MoveData(
             knockback_growth=100.0,
             active_start=8,
             active_end=14,
+            set_id=1,  # B-full (#888): clean+late one set → hit once
         ),
         Hitbox(
             circle=Circle(dx=44, dy=zone_dy("center", _H), r=22),
@@ -404,6 +406,7 @@ _BIRKY_FSMASH = MoveData(
             knockback_growth=100.0,
             active_start=15,
             active_end=17,
+            set_id=1,
         ),
     ),
 )
@@ -426,6 +429,7 @@ _BIRKY_USMASH = MoveData(
             knockback_growth=120.0,
             active_start=6,
             active_end=8,
+            set_id=1,  # B-full (#888): clean+late one set → hit once
         ),
         Hitbox(
             circle=Circle(dx=22, dy=zone_dy("head", _H), r=22),
@@ -435,6 +439,7 @@ _BIRKY_USMASH = MoveData(
             knockback_growth=55.0,
             active_start=9,
             active_end=13,
+            set_id=1,
         ),
     ),
 )
@@ -451,6 +456,9 @@ _BIRKY_DSMASH = MoveData(
     recovery=29,  # 3 + 15 + 29 = 47 (PM3.6 IASA 47)
     hitboxes=(
         # Early window f4-10 (front + back simultaneous).
+        # B-full (#888): all four boxes share set_id=1 — a target on either side is
+        # hit once (early OR late), and two targets (one per side) still each take
+        # one hit since the registry keys on (set_id, target).
         Hitbox(
             circle=Circle(dx=40, dy=zone_dy("feet", _H), r=21),
             damage=14.0,
@@ -459,6 +467,7 @@ _BIRKY_DSMASH = MoveData(
             knockback_growth=100.0,
             active_start=4,
             active_end=10,
+            set_id=1,
         ),
         Hitbox(
             circle=Circle(dx=-40, dy=zone_dy("feet", _H), r=23),
@@ -468,6 +477,7 @@ _BIRKY_DSMASH = MoveData(
             knockback_growth=85.0,
             active_start=4,
             active_end=10,
+            set_id=1,
         ),
         # Late window f11-18 (weaker).
         Hitbox(
@@ -478,6 +488,7 @@ _BIRKY_DSMASH = MoveData(
             knockback_growth=100.0,
             active_start=11,
             active_end=18,
+            set_id=1,
         ),
         Hitbox(
             circle=Circle(dx=-40, dy=zone_dy("feet", _H), r=23),
@@ -487,6 +498,7 @@ _BIRKY_DSMASH = MoveData(
             knockback_growth=85.0,
             active_start=11,
             active_end=18,
+            set_id=1,
         ),
     ),
 )

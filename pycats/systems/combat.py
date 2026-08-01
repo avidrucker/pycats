@@ -167,6 +167,23 @@ def process_hits(players, attacks):
                 None,
             )
             if hit_box is not None:
+                # B-full hit-set dedup (#888): if the connecting box carries a
+                # set_id, consult the owner's per-move-instance registry. A box
+                # sharing a set_id with one that already hit THIS defender (an
+                # earlier temporal window of the same move) does not re-hit —
+                # skip to the next defender, leaving the Attack live for others.
+                # set_id is None on every existing move, so this branch is inert
+                # until a move is authored with sets (golden-safe).
+                set_id = getattr(hit_box, "set_id", None)
+                if set_id is not None:
+                    registry = getattr(atk.owner, "hit_registry", None)
+                    if registry is not None:
+                        already = registry.setdefault(set_id, set())
+                        # key by id() so the dedup doesn't require a hashable defender
+                        # (minimal combat stand-ins are duck-typed, not real Players)
+                        if id(defender) in already:
+                            continue  # same set already hit this target
+                        already.add(id(defender))
                 # Apply the connecting box's params so receive_hit reads the box
                 # that actually landed (no-op when box is the attack itself).
                 atk.damage = hit_box.damage

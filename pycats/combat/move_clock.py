@@ -58,6 +58,12 @@ class MoveClock:
         # the spawn behavior + MoveTick shape are byte-identical to before.
         self._windows: dict[int, tuple[tuple[Hitbox, ...], int]] = {}
         self._spawned_starts: set[int] = set()
+        # B-full hit-set registry (#888): per-move-instance map set_id -> {targets
+        # already hit by that set}. A move's temporal windows (#204) spawn separate
+        # Attacks; boxes sharing a set_id consult this shared list so a stationary
+        # target is hit ONCE by the set. Cleared on every start()/reset(), so the
+        # same set_id integer is scoped to one move-instance.
+        self.hit_registry: dict[int, set] = {}
 
     # -- lifecycle -----------------------------------------------------------
     def start(self, move: MoveData) -> None:
@@ -66,6 +72,7 @@ class MoveClock:
         self._frame = 0
         self._windows = self._compute_windows(move)
         self._spawned_starts = set()
+        self.hit_registry = {}
 
     def reset(self) -> None:
         """Clear to the idle (no-move) state."""
@@ -73,6 +80,7 @@ class MoveClock:
         self._frame = 0
         self._windows = {}
         self._spawned_starts = set()
+        self.hit_registry = {}
 
     @staticmethod
     def _compute_windows(

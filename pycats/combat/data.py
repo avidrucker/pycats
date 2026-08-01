@@ -73,6 +73,17 @@ class Hitbox:
                            victim's weight + KBG/BKB. None = normal percent-scaling
                            (today's behavior). The hit still deals its `damage` %;
                            only the knockback is set.
+        set_id           — hitbox-SET tag for B-full hit resolution (#888, mirrors
+                           Brawl's `set_id` + `hitbox_sets_rehit`). Boxes across a
+                           move's temporal windows (#204) that share a set_id share
+                           a per-target hit-list within one move-instance → a
+                           stationary target is hit ONCE by the set (the fix for a
+                           two-window clean/late move over-hitting). A DIFFERENT
+                           set_id re-hits. None = no set (today's behavior: each
+                           window's Attack is independent → multi-hit), so every
+                           existing move is byte-identical (golden-safe). The tag
+                           is per-move-instance: the registry clears on move start,
+                           so the same small integer may be reused across moves.
     """
 
     circle: Circle
@@ -83,6 +94,7 @@ class Hitbox:
     active_start: int | None = None
     active_end: int | None = None
     set_knockback: int | None = None
+    set_id: int | None = None
 
     def __post_init__(self) -> None:
         s, e = self.active_start, self.active_end

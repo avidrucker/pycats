@@ -108,6 +108,7 @@
           "knockback_growth": 118.0,
           "active_start": 4,
           "active_end": 5,
+          "set_id": 1,
           "circle": [22, 7, 25]
         },
         {
@@ -117,6 +118,7 @@
           "knockback_growth": 114.0,
           "active_start": 4,
           "active_end": 5,
+          "set_id": 1,
           "circle": [30, 9, 30]
         },
         {
@@ -126,6 +128,7 @@
           "knockback_growth": 118.0,
           "active_start": 6,
           "active_end": 10,
+          "set_id": 1,
           "circle": [22, 7, 25]
         },
         {
@@ -135,6 +138,7 @@
           "knockback_growth": 114.0,
           "active_start": 6,
           "active_end": 10,
+          "set_id": 1,
           "circle": [30, 9, 30]
         }
       ]
@@ -315,6 +319,7 @@
           "knockback_growth": 100.0,
           "active_start": 8,
           "active_end": 14,
+          "set_id": 1,
           "circle": [44, 22, 24]
         },
         {
@@ -324,6 +329,7 @@
           "knockback_growth": 100.0,
           "active_start": 15,
           "active_end": 17,
+          "set_id": 1,
           "circle": [44, 22, 22]
         }
       ]
@@ -343,6 +349,7 @@
           "knockback_growth": 120.0,
           "active_start": 6,
           "active_end": 8,
+          "set_id": 1,
           "circle": [20, 5, 24]
         },
         {
@@ -352,6 +359,7 @@
           "knockback_growth": 55.0,
           "active_start": 9,
           "active_end": 13,
+          "set_id": 1,
           "circle": [22, 7, 22]
         }
       ]
@@ -371,6 +379,7 @@
           "knockback_growth": 100.0,
           "active_start": 4,
           "active_end": 10,
+          "set_id": 1,
           "circle": [40, 37, 21]
         },
         {
@@ -380,6 +389,7 @@
           "knockback_growth": 85.0,
           "active_start": 4,
           "active_end": 10,
+          "set_id": 1,
           "circle": [-40, 37, 23]
         },
         {
@@ -389,6 +399,7 @@
           "knockback_growth": 100.0,
           "active_start": 11,
           "active_end": 18,
+          "set_id": 1,
           "circle": [40, 37, 21]
         },
         {
@@ -398,6 +409,7 @@
           "knockback_growth": 85.0,
           "active_start": 11,
           "active_end": 18,
+          "set_id": 1,
           "circle": [-40, 37, 23]
         }
       ]

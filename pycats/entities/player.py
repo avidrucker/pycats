@@ -263,6 +263,14 @@ class Player(pygame.sprite.Sprite):
         return self._clock.frame
 
     @property
+    def hit_registry(self) -> dict:
+        """B-full per-move-instance hit-set registry (#888): set_id -> {targets
+        already hit by that set}. process_hits consults this so same-set boxes
+        across a move's temporal windows hit a target once. Cleared on move start
+        by the MoveClock."""
+        return self._clock.hit_registry
+
+    @property
     def done_attacking(self) -> bool:
         """True when the current move has finished (the move clock has drained).
 
