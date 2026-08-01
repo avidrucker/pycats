@@ -247,6 +247,15 @@ class FighterData:
     # tap-burst (#374 design). Defaults to the config global so existing data is
     # unchanged; the dash is only reached via `_start_dash` (slice 2b's double-tap).
     dash_speed: float = DASH_SPEED
+    # `run_speed` (#967, slice 3): the SUSTAINED speed after the dash burst, held by
+    # keeping the dash direction pressed past the burst window (the `run` leaf).
+    # Provisional home mirroring move_speed/dash_speed until the ADR-0011 re-pin folds
+    # all three into the raw-unit per-character JSON schema (no config fallback); this
+    # slice adds NO new run global, so it defaults to DASH_SPEED. dash != run is a
+    # STATE distinction (sustained vs. decay), not a pixel one (ADR-0011 §Decision 4):
+    # for nalio run == dash == round(mod_factor(1.5)) == 8, an equal pixel that is
+    # correct and intended, not a value to force apart.
+    run_speed: float = DASH_SPEED
     jump_vel: float = JUMP_VEL
     max_jumps: int = MAX_JUMPS
     # Per-fighter standing body box (#275). None = the global config.PLAYER_SIZE

@@ -11,6 +11,7 @@ LABELS = (
     "idle",
     "walk",
     "dash",
+    "run",
     "crouch",
     "jump",
     "fall",

@@ -88,6 +88,7 @@ class Fighter:
         self.max_fall_speed = fighter_data.max_fall_speed
         self.move_speed = fighter_data.move_speed
         self.dash_speed = fighter_data.dash_speed  # #388: the faster tap-burst speed
+        self.run_speed = fighter_data.run_speed  # #967: sustained speed after the burst (`run`)
         self.jump_vel = fighter_data.jump_vel
         self.max_jumps = fighter_data.max_jumps
 
@@ -146,6 +147,13 @@ class Fighter:
         # records the first tap's direction (+1 right / -1 left, 0 = disarmed).
         self.dash_input_window = 0
         self.dash_input_dir = 0
+        # #967 slice 3: input-derived "the dash direction is still held" flag, set each
+        # frame by fighter_input.handle_move (True while a horizontal press toward
+        # `facing_right` is held). The `dash` leaf reads it to route the burst's expiry
+        # to `run` (still held) vs. `walk`/`idle` (released); `run` reads it to hold or
+        # release. The chart reads fighter STATE, never the keyboard (FSM signal nuance,
+        # #967), so this flag is the seam the input layer exposes to it.
+        self.run_input_held = False
         self.hurt_timer = 0
         self.stun_timer = 0
         self.prone_timer = 0  # knockdown/getup window (#13); prone while > 0

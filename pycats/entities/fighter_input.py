@@ -36,6 +36,21 @@ class FighterInput:
     # horizontal input movement
     def handle_move(self, keys):
         p = self._p
+        # #967 slice 3: expose "the dash direction is still held" to the chart. True
+        # while a horizontal press TOWARD current facing is held — the direction the
+        # dash burst launched (facing == dash direction after `_start_dash`). The chart
+        # cannot read the keyboard (it reads fighter STATE), so this is the input-derived
+        # seam its dash->run / run-release transitions test. Computed before the speed
+        # select below so the chart tick (later in Player.update) sees this frame's value.
+        p.fighter.run_input_held = self._pressed(keys, "right" if p.fighter.facing_right else "left")
+        # #967: while in the sustained `run` state, held movement is at `run_speed`;
+        # otherwise #388's dash-burst speed (dash_timer > 0) or the walk speed.
+        if p.state == "run":
+            move_speed = p.fighter.run_speed
+        elif p.fighter.dash_timer > 0:
+            move_speed = p.fighter.dash_speed
+        else:
+            move_speed = p.fighter.move_speed
         p.fighter.vel, p.fighter.facing_right = step_horizontal(
             p.fighter.vel,
             p.fighter.facing_right,
@@ -58,10 +73,7 @@ class FighterInput:
             # which lags a frame and would miss the trigger frame. `on_ground`-
             # gated so airborne attacks keep their air drift.
             or (p.attack_timer > 0 and p.fighter.on_ground),
-            # #388 (slice 2a): during the initial-dash burst, held movement is at
-            # `dash_speed`, not walk speed. dash_timer is 0 in the default path, so
-            # this is walk speed everywhere until slice 2b's double-tap starts a dash.
-            move_speed=(p.fighter.dash_speed if p.fighter.dash_timer > 0 else p.fighter.move_speed),
+            move_speed=move_speed,  # walk / dash-burst / run, selected above (#388, #967)
         )
 
     def _maybe_start_dash(self, held, pressed):

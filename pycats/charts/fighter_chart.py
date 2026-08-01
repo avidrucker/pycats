@@ -9,7 +9,10 @@ Structure (Task 3 of PM Phase 0):
     │   ├── actionable  (compound, initial=idle)
     │   │   ├── grounded  (compound, initial=idle)
     │   │   │   ├── idle    (leaf)
-    │   │   │   ├── walk     (leaf)
+    │   │   │   ├── walk    (leaf)
+    │   │   │   ├── dash    (leaf)   <- #388 slice 2: initial-dash burst
+    │   │   │   ├── run     (leaf)   <- #388 slice 3 / #967: sustained post-burst
+    │   │   │   ├── crouch  (leaf)
     │   │   │   └── shield  (leaf)
     │   │   └── airborne  (compound, initial=jump)
     │   │       ├── jump    (leaf)
@@ -28,8 +31,8 @@ Structure (Task 3 of PM Phase 0):
         ├── vulnerable   (leaf)
         └── intangible   (leaf)
 
-LEAF ids equal the flat labels (idle, walk, jump, fall, shield, dodge, ko, hurt,
-stun) so in_state("idle") etc. keep working. The attacking sub-phase leaves
+LEAF ids equal the flat labels (idle, walk, dash, run, crouch, jump, fall, shield,
+dodge, ko, hurt, stun) so in_state("idle") etc. keep working. The attacking sub-phase leaves
 (startup, active, recovery) do NOT match a flat label individually; instead
 StatechartEngine.state maps in_state("attacking") -> "attack", so the flat
 label stays "attack" across all three sub-phases. Compound/grouping ids
@@ -92,8 +95,11 @@ def build_fighter_chart(p):
         ),
         # Dash (#388, slice 2a): the initial-dash burst, entered while dash_timer > 0
         # (started via Fighter._start_dash — slice 2b's double-tap is the caller).
-        # Exits to walk/idle when the burst window expires; run (the sustained state
-        # after the burst) is slice 3. Grounded burst; standard interrupts apply.
+        # When the burst window expires (#967, slice 3): if the dash direction is still
+        # held (run_input_held, set by fighter_input) route to the sustained `run` state;
+        # otherwise decay to walk/idle. The run exit is FIRST so it wins over the walk
+        # exit (which would also match on the same still-moving frame). Grounded burst;
+        # standard interrupts apply.
         state(
             {"id": "dash"},
             _tick(lambda e, d: p.attack_timer > 0, "attacking"),
@@ -101,8 +107,28 @@ def build_fighter_chart(p):
             _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
             _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
             _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
+            _tick(lambda e, d: p.fighter.dash_timer == 0 and p.fighter.run_input_held, "run"),
             _tick(lambda e, d: p.fighter.dash_timer == 0 and p.fighter.vel.x != 0, "walk"),
             _tick(lambda e, d: p.fighter.dash_timer == 0 and p.fighter.vel.x == 0, "idle"),
+        ),
+        # Run (#388, slice 3 / #967): the SUSTAINED post-burst state, entered from `dash`
+        # when the dash direction is still held past the burst window. Movement runs at
+        # `run_speed` (fighter_input reads the state label). Holding keeps it; releasing
+        # the direction (run_input_held goes False) decays to walk (still sliding) / idle.
+        # dash != run is a STATE distinction, not a pixel one (ADR-0011 §Decision 4): for
+        # nalio run == dash == round(mod_factor(1.5)) == 8, an equal pixel that is correct
+        # and intended. Direction-flip-out-of-run = skid (slice 5, out of scope) — a flip
+        # keeps facing-toward held, so it simply keeps running the new way for now.
+        # Standard grounded interrupts (attack / dodge / hurt / jump / fall) apply.
+        state(
+            {"id": "run"},
+            _tick(lambda e, d: p.attack_timer > 0, "attacking"),
+            _tick(lambda e, d: p.fighter.dodge_timer > 0, "dodge"),
+            _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),
+            _tick(lambda e, d: p.fighter.vel.y < 0, "jump"),
+            _tick(lambda e, d: not p.fighter.on_ground and p.fighter.vel.y > 0, "fall"),
+            _tick(lambda e, d: not p.fighter.run_input_held and p.fighter.vel.x != 0, "walk"),
+            _tick(lambda e, d: not p.fighter.run_input_held and p.fighter.vel.x == 0, "idle"),
         ),
         # Crouch (#124): hold down on solid ground. Movement is locked (see
         # fighter_input), the body Rect resizes + the hurtbox lowers (Player).
