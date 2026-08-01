@@ -47,8 +47,25 @@ def apply_gravity(vel: pg.Vector2, gravity: float = GRAVITY, max_fall_speed: flo
 
 
 def move_rect(rect: pg.Rect, vel: pg.Vector2) -> None:
-    """Translate rect by vel (in-place)."""
-    rect.x += vel.x
+    """Translate rect by vel (in-place).
+
+    pygame Rect coords are integers, so a raw ``rect.x += vel.x`` truncates the
+    float toward zero. At a positive on-stage x that makes a leftward step
+    ``ceil(|vel.x|)`` and a rightward step ``floor(|vel.x|)`` — a fixed 1px/frame
+    leftward bias for any fractional ``vel.x`` (#949/#979). Rounding ``vel.x``
+    symmetrically about zero *before* it reaches the int Rect makes left and right
+    advance identically. ``round`` is sign-symmetric (half-to-even) so there is no
+    residual bias even at the .5 boundary. This realizes a fighter's horizontal
+    speed at the nearest integer px/frame (e.g. Gnok walk 6.48 → 6, dash
+    9.72 → 10); carrying a sub-pixel remainder to preserve the exact fractional
+    rate is out of scope here.
+
+    ``vel.y`` is left truncating on purpose: the reported defect (#949) is
+    horizontal, and rounding the gravity/jump-driven vertical step changes fall
+    trajectories (it moves the golden sims). Whether every Rect-writing site
+    should force int uniformly is the audit follow-up, not this fix.
+    """
+    rect.x += round(vel.x)
     rect.y += vel.y
 
 
