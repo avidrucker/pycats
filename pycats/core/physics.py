@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
-import pygame as pg  # type: ignore
+if TYPE_CHECKING:  # pg is used only in (stringized) annotations — never at runtime,
+    import pygame as pg  # type: ignore  # so the core carries no import-time pygame dep (#968, ADR-0004).
 
 
 class _DropThrough(Protocol):
