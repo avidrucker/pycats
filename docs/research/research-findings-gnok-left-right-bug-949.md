@@ -129,8 +129,10 @@ visible symptom without touching the integrator.
 
 ---
 
-## Suggested downstream tickets (file one-at-a-time on go-ahead — not filed here)
-- **DEV/ARC:** implement the chosen fix (default: sub-pixel accumulator, Option 1) — with a regression
-  test asserting `left_displacement == right_displacement` for a fractional-speed fighter over N frames.
-- Optional: a companion test guarding **all** float-velocity paths (knockback/air-drift) for L/R symmetry,
-  if the fix ticket adopts Option 1's broader scope.
+## Downstream fix ticket
+- **#979** (DEV, bug · area:combat/combat:physics) — implement the fix. The red-green non-vacuous
+  reproduction (`tests/test_move_rect_symmetry.py`, parametrized over every character × walk/dash/run ×
+  {equal L/R velocity, equal frames to travel 200px}) was transferred to #979's branch; currently
+  26 pass / 4 fail, every failure Gnok walk/dash. Design note carried on #979: a naive per-frame
+  `round(vel)` breaks gravity (`round(0.5)==0`), so the fix must round the **position** at the pygame
+  boundary with a sub-pixel accumulator, not round the per-frame velocity. Owner has a plan for the approach.
