@@ -1,25 +1,29 @@
-"""Per-fighter rolling input-history buffer (#21).
+"""Per-fighter rolling input-history buffer (#21, regridded #875).
 
-Pure, pygame-free. Records the last up-to-``INPUT_HISTORY_MAX`` raw input
-events a player pressed, each entry auto-expiring ``INPUT_HISTORY_TTL_FRAMES``
-frames after it was logged. Fed on the *press-edge* (``InputFrame.pressed``,
-not ``held``) so holding a key does not re-log; simultaneous new-presses in one
-frame join into a single entry (e.g. up+attack -> ``"↑A"``). Directions are
-ABSOLUTE — ``→`` always means physical right, independent of fighter facing.
+Pure, pygame-free. Records the last up-to-``INPUT_HISTORY_FRAMES`` raw input
+frames a player produced. Each frame stores, per mapped control, whether it was
+*pressed* this frame (the rising edge, ``InputFrame.pressed``) or merely *held*
+(down but not a fresh edge, ``InputFrame.held``). Keeping per-frame press-vs-held
+marks — instead of #21's press-edge-only joined glyphs — lets the HUD grid tell a
+same-frame combo from a sequential press and from a held-while-pressed one (#875:
+``A+↑`` same frame vs ``A`` then ``↑`` vs hold-``A``-then-press-``↑`` were
+indistinguishable on the old one-line strip). Directions are ABSOLUTE — ``→``
+always means physical right, independent of fighter facing.
 
 The HUD render (``render_battle.draw_input_history``) and the Options
 ``show_input_history`` toggle consume this; the buffer itself owns no pygame.
 """
 
-from pycats.config import FPS
+INPUT_HISTORY_FRAMES = 16  # grid width: most-recent this-many frames (newest on the right)
 
-INPUT_HISTORY_MAX = 10
-INPUT_HISTORY_TTL_FRAMES = 5 * FPS  # entries disappear 5s after they were logged
-INPUT_HISTORY_SEP = " · "  # between-entry separator on the HUD strip
+# Per-control mark for one frame. PRESSED (rising edge) outranks HELD when a key
+# is both — a fresh key is in ``.held`` too, but the grid should show its edge.
+PRESSED = "pressed"
+HELD = "held"
 
-# control-name -> glyph, in canonical join order (directions before buttons).
-# ``glyphs_for_frame`` walks this list, so a frame's joined entry is always
-# ordered the same way regardless of set iteration order.
+# control-name -> glyph, in canonical row order (directions before buttons).
+# ``frame_marks`` and the grid render walk this list, so rows are always ordered
+# the same way regardless of set iteration order.
 _GLYPHS = (
     ("up", "↑"),
     ("down", "↓"),
@@ -31,59 +35,45 @@ _GLYPHS = (
 )
 
 
-def glyphs_for_frame(pressed, controls):
-    """Map this frame's just-pressed keycodes to a joined glyph string.
+def frame_marks(pressed, held, controls):
+    """Map one frame's keycodes to ``{control-name: PRESSED | HELD}``.
 
-    ``pressed`` is a set of pygame keycodes (``InputFrame.pressed``);
-    ``controls`` maps control-name -> keycode (a fighter's ``controls`` dict).
-    Returns ``""`` when no relevant control was newly pressed this frame.
+    ``pressed`` / ``held`` are sets of pygame keycodes (``InputFrame.pressed`` /
+    ``.held``); ``controls`` maps control-name -> keycode (a fighter's ``controls``
+    dict). A control in ``pressed`` marks ``PRESSED`` (the rising edge wins even
+    though a fresh key is in ``held`` too); a control only in ``held`` marks
+    ``HELD``. Controls with no activity are absent. Returns ``{}`` for an idle
+    frame.
     """
-    out = []
-    for name, glyph in _GLYPHS:
+    marks = {}
+    for name, _glyph in _GLYPHS:
         code = controls.get(name)
-        if code is not None and code in pressed:
-            out.append(glyph)
-    return "".join(out)
-
-
-def format_line(label, entries, sep=INPUT_HISTORY_SEP):
-    """The HUD strip text: ``"<label> Inputs: <e0> · <e1> · ..."`` (oldest->newest).
-
-    Pure so the wording is unit-testable; the pixel draw is golden-covered.
-    """
-    return f"{label} Inputs: " + sep.join(entries)
+        if code is None:
+            continue
+        if code in pressed:
+            marks[name] = PRESSED
+        elif code in held:
+            marks[name] = HELD
+    return marks
 
 
 class InputHistory:
-    """A capped, per-entry-TTL ring of recent input glyph strings."""
+    """A rolling window of the last N frames' per-control marks (oldest->newest)."""
 
-    def __init__(self, max_entries=INPUT_HISTORY_MAX, ttl_frames=INPUT_HISTORY_TTL_FRAMES):
-        self._max = max_entries
-        self._ttl = ttl_frames
-        self._entries = []  # list of [glyphs, remaining_frames]
+    def __init__(self, frames=INPUT_HISTORY_FRAMES):
+        self._n = frames
+        self._frames = []  # list of {control-name: PRESSED | HELD}, oldest -> newest
 
-    def push(self, glyphs):
-        """Append a fresh entry (full TTL); no-op on empty. Caps at max, oldest out."""
-        if not glyphs:
-            return
-        self._entries.append([glyphs, self._ttl])
-        if len(self._entries) > self._max:
-            del self._entries[0]
+    def record(self, pressed, held, controls):
+        """Append this frame's marks; drop the oldest once the window is full.
 
-    def tick(self, frames=1):
-        """Age every entry; drop those whose TTL has run out."""
-        for entry in self._entries:
-            entry[1] -= frames
-        self._entries = [e for e in self._entries if e[1] > 0]
-
-    def record(self, pressed, controls):
-        """One frame: age existing entries, then push this frame's new presses.
-
-        Ticks first so a freshly-pushed entry keeps its full TTL this frame.
+        Idle frames (no mapped control down) are recorded as empty ``{}`` columns
+        so a gap between presses stays visible in the grid.
         """
-        self.tick()
-        self.push(glyphs_for_frame(pressed, controls))
+        self._frames.append(frame_marks(pressed, held, controls))
+        if len(self._frames) > self._n:
+            del self._frames[0]
 
-    def entries(self):
-        """Current glyph strings, oldest -> newest."""
-        return [entry[0] for entry in self._entries]
+    def frames(self):
+        """The recorded frames' marks, oldest -> newest."""
+        return list(self._frames)

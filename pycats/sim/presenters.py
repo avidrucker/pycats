@@ -51,14 +51,14 @@ def tick_fps(speed: float) -> int:
 # game (battle_screen) does.
 
 
-def record_player_histories(histories, players, pressed):
-    """Record this frame's press-edge into each player's InputHistory via that
+def record_player_histories(histories, players, pressed, held):
+    """Record this frame's pressed + held into each player's InputHistory via that
     player's own keymap (``player.controls``). Pure (no surface) so the data path
     is unit-testable; the pixel draw is separate. Mirrors ``battle_screen.step``'s
-    ``p1_history.record(pressed, self.p1_keys)`` — but reuses each player's controls
-    (the presenter has ``players``, not the P1_KEYS/P2_KEYS globals)."""
+    ``p1_history.record(pressed, held, self.p1_keys)`` — but reuses each player's
+    controls (the presenter has ``players``, not the P1_KEYS/P2_KEYS globals)."""
     for hist, player in zip(histories, players):
-        hist.record(pressed, player.controls)
+        hist.record(pressed, held, player.controls)
 
 
 class _InputStripMixin:
@@ -76,7 +76,8 @@ class _InputStripMixin:
         if self._input_histories is None:
             self._input_histories = [InputHistory() for _ in players]
         pressed = getattr(inputs, "pressed", None) or ()
-        record_player_histories(self._input_histories, players, pressed)
+        held = getattr(inputs, "held", None) or ()
+        record_player_histories(self._input_histories, players, pressed, held)
 
     def _draw_input_strip(self, surface):
         if not self.show_inputs or not self._input_histories:

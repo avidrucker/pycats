@@ -1,19 +1,19 @@
-"""Watch/demo input display (#434) — reuse #21's InputHistory in the presenters.
+"""Watch/demo input display (#434, regridded #875) — reuse InputHistory in presenters.
 
-The correct approach (vs the reverted #405 held-only overlay): feed each frame's
-press-edge (`InputFrame.pressed`) into a per-player `InputHistory` via that player's
-own keymap (`player.controls`), rendered by the existing `render_battle.draw_input_history`.
+Feed each frame's pressed + held (`InputFrame.pressed` / `.held`) into a per-player
+`InputHistory` via that player's own keymap (`player.controls`), rendered by
+`render_battle.draw_input_history` (now the #875 per-frame grid).
 
 Two able-to-fail layers:
 - the pure per-player record helper (data path), keymap-disjoint;
-- a headless `ScreenshotPresenter(show_inputs=True)` smoke test proving the strip
+- a headless `ScreenshotPresenter(show_inputs=True)` smoke test proving the grid
   renders inside `run_battle` and that default-off leaves the render untouched.
 """
 
 import types
 
 from pycats.core.input import InputFrame
-from pycats.input_history import InputHistory
+from pycats.input_history import PRESSED, InputHistory
 from pycats.sim.presenters import record_player_histories
 from pycats.sim.runner import P1_KEYS, P2_KEYS
 
@@ -26,38 +26,43 @@ def _players():
     )
 
 
-def _pressed(*codes):
-    return InputFrame(held=set(), pressed=set(codes), released=set()).pressed
+def _pf(*codes):
+    """One frame's (pressed, held) with `codes` freshly pressed (held == pressed)."""
+    fi = InputFrame(held=set(codes), pressed=set(codes), released=set())
+    return fi.pressed, fi.held
 
 
-def test_records_press_edge_into_each_players_history_via_controls():
+def test_records_frame_marks_into_each_players_history_via_controls():
     p1, p2 = _players()
     h1, h2 = InputHistory(), InputHistory()
     # P1 presses left + attack this frame.
-    record_player_histories([h1, h2], [p1, p2], _pressed(P1_KEYS["left"], P1_KEYS["attack"]))
-    assert h1.entries() == ["←A"]  # _GLYPHS order: directions then buttons
-    assert h2.entries() == []  # disjoint keymap: P2 sees nothing
+    pressed, held = _pf(P1_KEYS["left"], P1_KEYS["attack"])
+    record_player_histories([h1, h2], [p1, p2], pressed, held)
+    assert h1.frames() == [{"left": PRESSED, "attack": PRESSED}]
+    assert h2.frames() == [{}]  # disjoint keymap: P2 sees an idle column
 
 
 def test_recording_is_keymap_specific_disjoint_players():
     p1, p2 = _players()
     h1, h2 = InputHistory(), InputHistory()
-    # A key that is P2's "up" — only P2's history should log it.
-    record_player_histories([h1, h2], [p1, p2], _pressed(P2_KEYS["up"]))
-    assert h1.entries() == []
-    assert h2.entries() == ["↑"]
+    # A key that is P2's "up" — only P2's history should mark it.
+    pressed, held = _pf(P2_KEYS["up"])
+    record_player_histories([h1, h2], [p1, p2], pressed, held)
+    assert h1.frames() == [{}]
+    assert h2.frames() == [{"up": PRESSED}]
 
 
-def test_empty_frame_records_nothing():
+def test_empty_frame_records_idle_columns():
     p1, p2 = _players()
     h1, h2 = InputHistory(), InputHistory()
-    record_player_histories([h1, h2], [p1, p2], _pressed())
-    assert h1.entries() == [] and h2.entries() == []
+    pressed, held = _pf()
+    record_player_histories([h1, h2], [p1, p2], pressed, held)
+    assert h1.frames() == [{}] and h2.frames() == [{}]
 
 
-def test_screenshot_presenter_runs_input_strip_path_in_run_battle(tmp_path):
+def test_screenshot_presenter_runs_input_grid_path_in_run_battle(tmp_path):
     """End-to-end: run_battle threads `inputs=fi` to the presenter, which builds the
-    per-player histories and renders the strip on saved frames — headless, no error.
+    per-player histories and renders the grid on saved frames — headless, no error.
     Able-to-fail on the runner seam: drop `inputs=fi` and histories stay None."""
     import os
 

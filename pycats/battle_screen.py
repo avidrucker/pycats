@@ -137,11 +137,14 @@ class BattleScreen:
         """One frame of battle sim — SAME primitives/order as the old inline block."""
         if self._ledges is None:
             self._ledges = ledges_from_platforms(platforms)  # build once, persist (#14)
-        # Input-history capture (#21) — record this frame's press-edge per keymap
-        # before the sim runs; a side buffer that never feeds fighter/attack state.
+        # Input-history capture (#21, #875) — record this frame's pressed + held
+        # per keymap before the sim runs; a side buffer that never feeds
+        # fighter/attack state. Held is logged too so the grid tells a fresh press
+        # from a still-held key (#875).
         pressed = getattr(frame_input, "pressed", ())
-        self.p1_history.record(pressed, self.p1_keys)
-        self.p2_history.record(pressed, self.p2_keys)
+        held = getattr(frame_input, "held", ())
+        self.p1_history.record(pressed, held, self.p1_keys)
+        self.p2_history.record(pressed, held, self.p2_keys)
         for p in self.players:
             p.update(frame_input, platforms, self.attacks, self._ledges)
         resolve_player_push(list(self.players))

@@ -1,19 +1,20 @@
-"""Per-fighter rolling input-history buffer (#21).
+"""Per-fighter rolling input-history buffer (#21, regridded #875).
 
-Pure, pygame-free logic: records the last up-to-10 raw input events a player
-pressed (on the press-edge), each entry decaying 5s (300 frames @ 60 FPS) after
-it was logged. Simultaneous new-presses in one frame join into a single entry
-(e.g. up+attack -> "↑A"). Directions are ABSOLUTE (right always = physical
-right, independent of facing). The HUD render + Options toggle are exercised
-elsewhere (test_battle_screen_render / a runtime_settings toggle test).
+Pure, pygame-free logic. Records the last up-to-``INPUT_HISTORY_FRAMES`` raw
+frames a player produced. Each frame stores, per control, whether it was
+*pressed* this frame (the rising edge) or merely *held* (down but not fresh) —
+so the HUD grid can tell a same-frame combo from a sequential press and from a
+held-while-pressed one (#875). Directions are ABSOLUTE (right always = physical
+right, independent of facing). The HUD grid render + Options toggle are exercised
+elsewhere (test_input_history_render / test_input_history_toggle).
 """
 
 from pycats.input_history import (
-    INPUT_HISTORY_MAX,
-    INPUT_HISTORY_TTL_FRAMES,
+    HELD,
+    INPUT_HISTORY_FRAMES,
+    PRESSED,
     InputHistory,
-    format_line,
-    glyphs_for_frame,
+    frame_marks,
 )
 
 # A minimal controls dict shaped like game.P1_KEYS (name -> pygame keycode).
@@ -29,102 +30,89 @@ CONTROLS = {
 
 
 # --------------------------------------------------------------------------- #
-# glyphs_for_frame — keycode set + controls -> joined glyph string
+# frame_marks — (pressed, held) keycode sets + controls -> per-control mark
 # --------------------------------------------------------------------------- #
-def test_glyphs_single_direction():
-    assert glyphs_for_frame({3}, CONTROLS) == "↑"
+def test_pressed_key_marks_pressed():
+    # up freshly pressed this frame (in both pressed and held, edge model).
+    assert frame_marks({3}, {3}, CONTROLS) == {"up": PRESSED}
 
 
-def test_glyphs_single_button():
-    assert glyphs_for_frame({5}, CONTROLS) == "A"
-    assert glyphs_for_frame({6}, CONTROLS) == "B"
-    assert glyphs_for_frame({7}, CONTROLS) == "S"
+def test_held_but_not_pressed_marks_held():
+    # up still down but not a fresh edge -> held, not pressed.
+    assert frame_marks(set(), {3}, CONTROLS) == {"up": HELD}
 
 
-def test_glyphs_absolute_arrows():
-    assert glyphs_for_frame({1}, CONTROLS) == "←"
-    assert glyphs_for_frame({2}, CONTROLS) == "→"
-    assert glyphs_for_frame({4}, CONTROLS) == "↓"
+def test_pressed_wins_over_held_same_frame():
+    # A fresh key is in .held too; the edge (PRESSED) must win.
+    assert frame_marks({5}, {3, 5}, CONTROLS) == {"attack": PRESSED, "up": HELD}
 
 
-def test_glyphs_simultaneous_join_in_canonical_order():
-    # up + attack pressed the same frame -> one joined entry, direction first
-    assert glyphs_for_frame({3, 5}, CONTROLS) == "↑A"
-    # order is stable regardless of set iteration: down + special + shield
-    assert glyphs_for_frame({6, 4, 7}, CONTROLS) == "↓BS"
+def test_multiple_controls_one_frame():
+    assert frame_marks({3, 5}, {3, 5}, CONTROLS) == {"up": PRESSED, "attack": PRESSED}
 
 
-def test_glyphs_empty_when_no_relevant_press():
-    assert glyphs_for_frame(set(), CONTROLS) == ""
+def test_unmapped_keycodes_ignored():
+    assert frame_marks({99}, {99}, CONTROLS) == {}
+    assert frame_marks({99, 5}, {99, 5}, CONTROLS) == {"attack": PRESSED}
 
 
-def test_glyphs_ignores_keys_outside_controls():
-    # keycode 99 belongs to the other player / unrelated key
-    assert glyphs_for_frame({99}, CONTROLS) == ""
-    assert glyphs_for_frame({99, 5}, CONTROLS) == "A"
+def test_empty_frame_marks_nothing():
+    assert frame_marks(set(), set(), CONTROLS) == {}
 
 
 # --------------------------------------------------------------------------- #
-# InputHistory — ring buffer with per-entry TTL
+# InputHistory — rolling window of the last N frames' marks
 # --------------------------------------------------------------------------- #
-def test_push_records_oldest_to_newest():
+def test_records_frames_oldest_to_newest():
     h = InputHistory()
-    h.push("↑")
-    h.push("A")
-    assert h.entries() == ["↑", "A"]
+    h.record({3}, {3}, CONTROLS)  # up pressed
+    h.record(set(), {3}, CONTROLS)  # up held
+    h.record({5}, {3, 5}, CONTROLS)  # attack pressed, up still held
+    assert h.frames() == [
+        {"up": PRESSED},
+        {"up": HELD},
+        {"attack": PRESSED, "up": HELD},
+    ]
 
 
-def test_push_ignores_empty():
+def test_idle_frames_are_recorded_as_empty_columns():
+    # A gap between presses must survive as empty frames so the grid shows the gap.
     h = InputHistory()
-    h.push("")
-    assert h.entries() == []
+    h.record({5}, {5}, CONTROLS)
+    h.record(set(), set(), CONTROLS)
+    h.record({5}, {5}, CONTROLS)
+    assert h.frames() == [{"attack": PRESSED}, {}, {"attack": PRESSED}]
 
 
-def test_cap_drops_oldest_beyond_max():
-    h = InputHistory(max_entries=3)
-    for g in ["1", "2", "3", "4"]:
-        h.push(g)
-    assert h.entries() == ["2", "3", "4"]
+def test_window_caps_at_frame_count_oldest_out():
+    h = InputHistory(frames=3)
+    for code in (1, 2, 3, 4, 5):  # 5 distinct single-key frames (left,right,up,down,attack)
+        h.record({code}, {code}, CONTROLS)
+    # only the last 3 survive: up (3), down (4), attack (5)
+    assert h.frames() == [
+        {"up": PRESSED},
+        {"down": PRESSED},
+        {"attack": PRESSED},
+    ]
 
 
-def test_tick_expires_entry_after_ttl():
-    h = InputHistory(ttl_frames=3)
-    h.push("A")
-    h.tick()  # 2 left
-    h.tick()  # 1 left
-    assert h.entries() == ["A"]
-    h.tick()  # 0 -> expired
-    assert h.entries() == []
+def test_held_while_pressed_is_distinct_from_sequential_tap():
+    """The #875 core: hold-A-then-press-Up must differ from tap-A-then-tap-Up."""
+    held_then = InputHistory()
+    held_then.record({5}, {5}, CONTROLS)  # press A
+    held_then.record({3}, {3, 5}, CONTROLS)  # press Up while A still held
+
+    seq_taps = InputHistory()
+    seq_taps.record({5}, {5}, CONTROLS)  # tap A
+    seq_taps.record({3}, {3}, CONTROLS)  # tap Up, A already released
+
+    assert held_then.frames() != seq_taps.frames()
+    assert held_then.frames()[1] == {"up": PRESSED, "attack": HELD}
+    assert seq_taps.frames()[1] == {"up": PRESSED}
 
 
-def test_record_ticks_existing_then_pushes_fresh():
-    h = InputHistory(ttl_frames=2)
-    h.record({5}, CONTROLS)  # frame 1: push "A" (ttl 2)
-    h.record(set(), CONTROLS)  # frame 2: tick A -> 1, no new press
-    assert h.entries() == ["A"]
-    h.record(set(), CONTROLS)  # frame 3: tick A -> 0, expired
-    assert h.entries() == []
-
-
-def test_record_fresh_entry_survives_full_ttl():
-    h = InputHistory(ttl_frames=2)
-    h.record({5}, CONTROLS)  # push "A" this frame; not decremented same frame
-    assert h.entries() == ["A"]
-
-
-def test_config_constants_wired():
-    from pycats.config import FPS
-
-    assert INPUT_HISTORY_TTL_FRAMES == 5 * FPS
-    assert INPUT_HISTORY_MAX == 10
-
-
-# --------------------------------------------------------------------------- #
-# format_line — presentation string (pure; the pixel draw is golden-covered)
-# --------------------------------------------------------------------------- #
-def test_format_line_joins_entries_with_separator():
-    assert format_line("P1", ["↑", "A", "↑A"]) == "P1 Inputs: ↑ · A · ↑A"
-
-
-def test_format_line_empty_buffer():
-    assert format_line("P2", []) == "P2 Inputs: "
+def test_default_window_is_the_named_constant():
+    h = InputHistory()
+    for _ in range(INPUT_HISTORY_FRAMES + 5):
+        h.record({5}, {5}, CONTROLS)
+    assert len(h.frames()) == INPUT_HISTORY_FRAMES

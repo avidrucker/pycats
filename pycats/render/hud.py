@@ -19,7 +19,7 @@ from ..config import (
     WHITE,
 )
 from ..entities import Player
-from ..input_history import format_line
+from ..input_history import _GLYPHS, INPUT_HISTORY_FRAMES, PRESSED
 
 # HUD / text-overlay layout (#415: named from inline literals). The overlay font
 # size was repeated at ~10 call sites; the line counts + block gap couple the
@@ -38,6 +38,22 @@ HUD_LINE_COUNT = HUD_PLAYER_LINE_COUNT + HUD_DEV_LINE_COUNT  # 5, all secondary 
 CONTROLS_LINE_COUNT = 7  # rows drawn by draw_controls (header + 6 controls)
 HUD_BLOCK_GAP = 20  # vertical gap between stacked text blocks
 HUD_EMPHASIS_SPACING = 34  # row pitch for the larger emphasized rows (cf. HUD_SPACING for the size 24 rows)
+
+# Input-history GRID layout (#875). Replaces #21's one-line strip: one row per
+# control (in _GLYPHS order), one column per recent frame (newest on the right),
+# so a same-frame combo, a sequential press, and a held-while-pressed one read
+# apart. Compact font/pitch keeps the 7-row block from crowding the 540px screen.
+INPUT_GRID_FONT_SIZE = 16
+INPUT_GRID_ROW_H = 18  # vertical pitch between grid rows (header + 7 control rows)
+INPUT_GRID_CELL_W = 13  # horizontal pitch between frame columns
+INPUT_GRID_LABEL_W = 22  # width reserved for the leading row-glyph column
+# Cells are drawn as pygame primitives, not text glyphs — the HUD font lacks ●/│,
+# and primitives keep columns pixel-aligned regardless of glyph metrics. A filled
+# dot = a rising edge that frame; a dim vertical bar = down-but-not-freshly-pressed.
+INPUT_GRID_DOT_R = 4  # pressed-edge dot radius
+INPUT_GRID_BAR_H = 12  # held bar height
+INPUT_GRID_PRESSED_COLOR = WHITE
+INPUT_GRID_HELD_COLOR = (130, 130, 140)  # dimmer than a fresh press
 
 
 def hud_line_count():
@@ -170,24 +186,49 @@ def draw_controls(surface, p: Player, label, topright=False):
 
 
 def draw_input_history(surface, history, label, topright=False):
-    """Draw a fighter's recent-input strip (#21) below the controls block.
+    """Draw a fighter's recent-input GRID (#875) below the controls block.
 
-    ``history`` is an :class:`~pycats.input_history.InputHistory`; entries render
-    oldest->newest as absolute-direction arrows + A/B/S, joined by ' · '. Unicode
-    arrows go through ``render_text_mixed`` (same path draw_controls uses). One
-    line, anchored under the HUD (its live row count, #545) + controls (7 lines)
-    blocks."""
-    line = format_line(label, history.entries())
+    ``history`` is an :class:`~pycats.input_history.InputHistory`. Rows are the
+    seven controls (``_GLYPHS`` order: absolute-direction arrows then A/B/S);
+    columns are the last ``INPUT_HISTORY_FRAMES`` frames, newest at the right.
+    A cell shows ``●`` where that control had its rising edge that frame and
+    ``│`` where it was held-but-not-freshly-pressed — so a same-frame combo, a
+    sequential press, and a held-while-pressed one look different (the #21 strip
+    could not tell them apart). Glyphs go through ``render_text_mixed`` (the same
+    Unicode path draw_controls uses). The block anchors under the HUD (its live
+    row count, #545) + controls (7 lines) blocks; for P2 it hugs the right edge."""
+    frames = history.frames()
+    n = INPUT_HISTORY_FRAMES
+    block_w = INPUT_GRID_LABEL_W + n * INPUT_GRID_CELL_W
+    top_y = HUD_PADDING + (hud_line_count() + CONTROLS_LINE_COUNT) * HUD_SPACING + 2 * HUD_BLOCK_GAP
+    block_x = (SCREEN_WIDTH - HUD_PADDING - block_w) if topright else HUD_PADDING
+    cells_x0 = block_x + INPUT_GRID_LABEL_W
+    # Recorded frames right-align inside the N-column window (newest fixed at the
+    # rightmost column, filling in from the right as the buffer warms up).
+    offset = n - len(frames)
 
-    # Below the HUD (its live row count, #545) and the controls block (header + 6 rows).
-    y_pos = HUD_PADDING + (hud_line_count() + CONTROLS_LINE_COUNT) * HUD_SPACING + 2 * HUD_BLOCK_GAP
-    x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
-
-    if topright:
-        text_width = text_utils.text_renderer._get_font(None, HUD_FONT_SIZE).size(line)[0]
-        text_utils.text_renderer.render_text_mixed(line, HUD_FONT_SIZE, WHITE, surface, (x_pos - text_width, y_pos))
-    else:
-        text_utils.text_renderer.render_text_mixed(line, HUD_FONT_SIZE, WHITE, surface, (x_pos, y_pos))
+    draw = text_utils.text_renderer.render_text_mixed
+    draw(f"{label} Inputs", INPUT_GRID_FONT_SIZE, WHITE, surface, (block_x, top_y))
+    mid = INPUT_GRID_FONT_SIZE // 2  # vertical centre of a row-glyph, for cell markers
+    for r, (name, glyph) in enumerate(_GLYPHS):
+        row_y = top_y + (r + 1) * INPUT_GRID_ROW_H
+        draw(glyph, INPUT_GRID_FONT_SIZE, WHITE, surface, (block_x, row_y))
+        cy = row_y + mid
+        for i, marks in enumerate(frames):
+            mark = marks.get(name)
+            if mark is None:
+                continue
+            cx = cells_x0 + (offset + i) * INPUT_GRID_CELL_W + INPUT_GRID_CELL_W // 2
+            if mark == PRESSED:
+                pygame.draw.circle(surface, INPUT_GRID_PRESSED_COLOR, (cx, cy), INPUT_GRID_DOT_R)
+            else:
+                pygame.draw.line(
+                    surface,
+                    INPUT_GRID_HELD_COLOR,
+                    (cx, cy - INPUT_GRID_BAR_H // 2),
+                    (cx, cy + INPUT_GRID_BAR_H // 2),
+                    2,
+                )
 
 
 def draw_pause_hint(surface):
