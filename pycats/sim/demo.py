@@ -62,6 +62,11 @@ class Demo:
     segments: tuple[DemoSegment, ...]
     p1_char: str | None = None
     p2_char: str | None = None
+    # #898: optional cosmetic skin per player (an OG skin key like "ghost"/"tabby"),
+    # independent of the archetype in p*_char — lets a demo pick a high-visibility skin
+    # for legibility. None → the char-derived skin (unchanged).
+    p1_palette: str | None = None
+    p2_palette: str | None = None
     default_dwell: int = 0  # #352: caption freeze applied to segments that don't set `dwell`
 
 

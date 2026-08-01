@@ -1,5 +1,5 @@
 {
-  "attack_active_frames": 80,
+  "attack_active_frames": 4,
   "final_phase": "in_play",
   "frames": 600,
   "players": {

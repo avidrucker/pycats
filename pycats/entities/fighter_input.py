@@ -48,7 +48,16 @@ class FighterInput:
                 "crouch",
                 "helpless",
                 "smash_charge",
-            ),  # no walking while shielding/crouching (#124), helpless (#184), or charging a smash (#327/3a)
+            )  # no walking while shielding/crouching (#124), helpless (#184), or charging a smash (#327/3a)
+            # A grounded normal roots the fighter (#898): `handle_actions` starts
+            # the move, then this runs the SAME frame — held left/right must not
+            # apply walk speed, or a forward-tilt slides ~10px instead of staying
+            # planted. Friction still runs (step 1 of step_horizontal), so any
+            # prior momentum bleeds off. Read `attack_timer` (set synchronously
+            # when the clock starts) rather than the "attacking" state label,
+            # which lags a frame and would miss the trigger frame. `on_ground`-
+            # gated so airborne attacks keep their air drift.
+            or (p.attack_timer > 0 and p.fighter.on_ground),
             # #388 (slice 2a): during the initial-dash burst, held movement is at
             # `dash_speed`, not walk speed. dash_timer is 0 in the default path, so
             # this is walk speed everywhere until slice 2b's double-tap starts a dash.

@@ -15,9 +15,12 @@ The beats, and what each depends on (the #398 re-choreography):
      that only lands at its ~48px sweet-spot, so P1 must be grounded and adjacent.
   4. Shield — P1 shields while Birky jabs it, so the shield takes (and absorbs) hits
      (a two-sided beat: Birky is given offence via p2 spans).
-  5. Jab combo — a short chain that racks damage + knockback but leaves Birky mid-stage.
-  6. Fireball — Nalio's neutral-B projectile, thrown at the knocked-back Birky and
-     connecting (the mid-stage gap from beat 5 gives the projectile room to travel).
+  5. Jab combo — three grounded jabs in place that rack damage on the adjacent Birky.
+     (Since #898 a grounded normal roots the fighter, so the jabs no longer walk Nalio
+     forward; both fighters hold position and the beat just racks damage.)
+  6. Fireball — Nalio's neutral-B projectile. P1 first steps BACK to open ~130px of
+     space (the rooted jabs above leave Birky adjacent), then throws; the projectile
+     travels right and connects. The step-back gives it the flight the snapshot needs.
   7. Roll-dodge — P1 rolls RIGHT clean THROUGH Birky (a dodge is intangible and passes
      through the body when it has room; the light combo above preserves that room).
   8. Ledge grab — P1 walks to the right ledge and presses BACK as it slips off, so it
@@ -87,34 +90,39 @@ _SEGMENTS = (
         spans=(InputSpan(190, 235, 1, "shield"), InputSpan(200, 201, 2, "attack"), InputSpan(214, 215, 2, "attack")),
     ),
     DemoSegment(
-        # A short jab combo — racks damage + knockback but leaves Birky mid-stage,
-        # with room for the roll-through beat to follow.
+        # A short jab combo — three GROUNDED jabs in place that rack damage on the
+        # adjacent Birky. Since #898 a grounded normal roots the fighter (no walking
+        # during startup/active/recovery), so — unlike the pre-#898 cut, which walked
+        # Nalio forward between jabs to body-shove Birky downstage — both fighters hold
+        # position and the jabs simply rack damage (3% -> 12%). The fireball beat opens
+        # its own spacing (below), so this beat no longer needs to advance anyone.
         "Jab combo racks up damage & knockback",
         anchor=BOTTOM_CENTER,
         start=250,
         end=340,
         spans=(
             InputSpan(255, 256, 1, "attack"),
-            InputSpan(256, 275, 1, "right"),
             InputSpan(275, 276, 1, "attack"),
-            InputSpan(276, 295, 1, "right"),
             InputSpan(295, 296, 1, "attack"),
         ),
     ),
     DemoSegment(
-        # P1 fires Nalio's neutral-B fireball at the knocked-back Birky (#432). The jab
-        # combo (beat 5) left Birky ~116px to P1's right at 12%, so a neutral `special`
-        # (no direction held → move_select._SPECIAL["neutral"] = neutral_b) throws the
-        # projectile, which travels right and CONNECTS (+~7%). Nalio is stationary during
-        # the throw, so the shifted roll/ledge beats below still start from the same P1
-        # position. dwell_at (#412): freeze at f366 while the fireball is airborne
-        # mid-flight between the fighters (the projectile is live f364-368), not f345.
+        # P1 zones with Nalio's neutral-B fireball (#432). The jab combo (beat 5) now
+        # leaves Birky adjacent (~40px) rather than downstage (#898 rooted the advancing
+        # jabs), so P1 first takes a short step BACK (walk left, f346-360) to open ~130px
+        # of space, then throws a neutral `special` (no direction held ->
+        # move_select._SPECIAL["neutral"] = neutral_b). The snapshot is taken AFTER
+        # process_hits, so the projectile is only visible while in flight — the step-back
+        # gives it that flight (it would otherwise spawn on top of Birky and be consumed
+        # before any frame captures it). It travels right and CONNECTS (+~7%). dwell_at
+        # (#412/#898): freeze at f388 while the fireball is airborne mid-flight (the
+        # projectile is live f379-398 with the new fire frame), not f345.
         "Fireball — Nalio's neutral-B projectile",
         anchor=BOTTOM_CENTER,
         start=345,
         end=420,
-        dwell_at=366,
-        spans=(InputSpan(350, 351, 1, "special"),),
+        dwell_at=388,
+        spans=(InputSpan(346, 360, 1, "left"), InputSpan(365, 366, 1, "special")),
     ),
     DemoSegment(
         # P1 rolls RIGHT clean through Birky (intangible — passes through the body).
@@ -130,13 +138,16 @@ _SEGMENTS = (
         # and HANGS on the edge (no walk-off self-destruct). The 1-frame input gap at the
         # lip lets the grab register before the back-press holds the hang.
         # dwell_at (#412): freeze at f542 while P1 hangs on the ledge, not the walking f485.
-        # Frames shifted +80 by the inserted fireball beat (#432).
+        # Frames shifted +80 by the inserted fireball beat (#432). The right-walk runs
+        # longer (f485-540, was f485-500) because #898 rooted the earlier jabs, so P1
+        # enters this beat ~230px further left than the pre-#898 cut and needs the extra
+        # steps to reach the lip before the back-press at f542.
         "Ledge grab — hang on the edge",
         anchor=BOTTOM_CENTER,
         start=485,
         end=600,
         dwell_at=542,
-        spans=(InputSpan(485, 500, 1, "right"), InputSpan(502, 585, 1, "left")),
+        spans=(InputSpan(485, 540, 1, "right"), InputSpan(542, 595, 1, "left")),
     ),
     DemoSegment(
         # From the hang (still holding at ~f585, auto-release not until ~f621), P1 presses
@@ -159,4 +170,15 @@ _SEGMENTS = (
 # readable. 2.5s * 60fps = 150 frames. Presenter-level hold — the choreography is
 # unchanged (its jab/KO beats are frame-tuned; idle timeline frames would desync them).
 _DWELL = round(2.5 * FPS)  # 150
-SHOWCASE = Demo(name="showcase", segments=_SEGMENTS, p1_char="nalio", p2_char="birky", default_dwell=_DWELL)
+# #898: dress the fighters in high-visibility light skins (P1 ghost / P2 tabby) so a
+# viewer can read state at a glance — the archetypes (nalio/birky, and their movesets)
+# are unchanged; only the cosmetic palette is overridden.
+SHOWCASE = Demo(
+    name="showcase",
+    segments=_SEGMENTS,
+    p1_char="nalio",
+    p2_char="birky",
+    p1_palette="ghost",
+    p2_palette="tabby",
+    default_dwell=_DWELL,
+)

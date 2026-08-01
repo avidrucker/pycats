@@ -99,7 +99,7 @@ def _skin_for(char_key, default_skin_key):
     return Skin.from_palette_dict(char_key, palette_for(char_key))
 
 
-def build_players(p1_char=None, p2_char=None):
+def build_players(p1_char=None, p2_char=None, p1_palette=None, p2_palette=None):
     # #244: an optional per-player character loads that archetype's FighterData
     # (e.g. "nalio" → Nalio's moveset); unknown/None → the default cat. char_name
     # stays "P1"/"P2".
@@ -107,8 +107,13 @@ def build_players(p1_char=None, p2_char=None):
     # #648: cosmetics now follow the char key via `palette_for` (dev/debug visual) when a
     # key is given; a `None` key keeps the legacy calico/tabby default so goldens are
     # byte-identical. Mechanics still resolve the per-player key (unknown/None → default cat).
-    sel1 = Selection(character_for(p1_char), _skin_for(p1_char, "calico"))
-    sel2 = Selection(character_for(p2_char), _skin_for(p2_char, "tabby"))
+    # #898: an optional per-player palette key (an OG skin name like "ghost"/"tabby")
+    # decouples the SKIN from the character — the moveset still comes from p*_char, but the
+    # cosmetic palette comes from p*_palette when given. Used so a demo can pick a
+    # high-visibility skin (e.g. the showcase) without changing the archetype; None keeps
+    # the char-derived skin, so every existing caller is byte-identical.
+    sel1 = Selection(character_for(p1_char), _skin_for(p1_palette or p1_char, "calico"))
+    sel2 = Selection(character_for(p2_char), _skin_for(p2_palette or p2_char, "tabby"))
     # #718: two players on the SAME Character would otherwise render identically (both
     # skins come from `palette_for(char_key)`). De-collide through the #755 domain layer:
     # P2 falls to the next available skin in that Character's pool. Different-Character and
@@ -205,6 +210,8 @@ def run_battle(
     controllers=None,
     p1_char=None,
     p2_char=None,
+    p1_palette=None,
+    p2_palette=None,
     boundaries=None,
 ):
     """Run the headless battle.
@@ -238,7 +245,7 @@ def run_battle(
 
     platforms = build_stage()
     ledges = ledges_from_platforms(platforms)  # solid-edge ledges (#14)
-    p1, p2, players = build_players(p1_char, p2_char)
+    p1, p2, players = build_players(p1_char, p2_char, p1_palette, p2_palette)
     attacks = pygame.sprite.Group()
     match = make_match_engine([p1, p2])
 

@@ -213,6 +213,7 @@ def main(argv=None, presenter=None):
     controllers = None
     frame_inputs = None
     p1_char, p2_char = args.p1_char, args.p2_char
+    p1_palette = p2_palette = None  # #898: demos may pick a high-visibility skin (below)
     leveled = args.p1_level is not None or args.p2_level is not None
     if args.demo:
         demo = DEMOS[args.demo]
@@ -221,6 +222,7 @@ def main(argv=None, presenter=None):
         stop_on_match_over = False
         p1_char = p1_char or demo.p1_char
         p2_char = p2_char or demo.p2_char
+        p1_palette, p2_palette = demo.p1_palette, demo.p2_palette  # #898: demo's chosen skins
         if not captions:  # --captions overrides the demo's own
             captions = demo_captions(demo)
     elif leveled:
@@ -266,6 +268,8 @@ def main(argv=None, presenter=None):
             stop_on_match_over=stop_on_match_over,
             p1_char=p1_char,
             p2_char=p2_char,
+            p1_palette=p1_palette,
+            p2_palette=p2_palette,
             boundaries=boundaries,
         )
     except KeyboardInterrupt:
