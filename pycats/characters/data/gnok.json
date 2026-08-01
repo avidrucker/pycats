@@ -331,6 +331,22 @@
           "circle": [6, 42, 19]
         }
       ]
+    },
+    "uair": {
+      "name": "up air",
+      "in_air": true,
+      "startup": 5,
+      "active": 4,
+      "recovery": 28,
+      "hitboxes": [
+        {
+          "damage": 14.0,
+          "angle": 90,
+          "base_knockback": 32.0,
+          "knockback_growth": 90.0,
+          "circle": [34, 4, 42]
+        }
+      ]
     }
   },
   "crouch_hurtbox": {

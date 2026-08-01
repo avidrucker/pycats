@@ -440,6 +440,31 @@ _GNOK_BAIR = MoveData(
     ),
 )
 
+# --- U-air (slices 5-6, #914): DK's AttackAirHi — a straight-up juggle --------
+# A single-window upward headbutt (no early/late decay). Datamined (`-f Donkey -a
+# AttackAirHi`, high_level_frame_data -l subaction; env #614):
+#   FAF 37; active frames 6-9 → startup 5 / active 4 / recovery 28.
+#   One box: damage 14, trajectory 90 (straight up), BKB 32, KBG 90, WDSK 0.
+# Frames/%/angle/BKB/KBG RAW (#120); radius = round(7.81 u × PX_PER_UNIT) = 42 (a wide
+# overhead sweep). One box spanning the whole active window (no #204 sub-window). Position
+# APPROXIMATED just above the head (small dy) — ⚠🔬 playtest (ADR-0003).
+_GNOK_UAIR = MoveData(
+    name="up air",
+    in_air=True,
+    startup=5,
+    active=4,
+    recovery=28,
+    hitboxes=(
+        Hitbox(
+            circle=Circle(dx=34, dy=4, r=42),
+            damage=14.0,
+            angle=90,
+            base_knockback=32.0,
+            knockback_growth=90.0,
+        ),
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
@@ -455,6 +480,7 @@ GNOK_FIGHTER_DATA = FighterData(
         "nair": _GNOK_NAIR,
         "fair": _GNOK_FAIR,
         "bair": _GNOK_BAIR,
+        "uair": _GNOK_UAIR,
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,

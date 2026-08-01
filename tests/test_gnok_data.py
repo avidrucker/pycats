@@ -77,7 +77,7 @@ def test_gnok_differs_from_default_on_scalars_and_body():
 # The moves Gnok has authored so far (grows one slice at a time under #779): slice 2 the
 # jab, slice 3 (#841) the three tilts, slices 5-6 (#914) the aerials (one per commit).
 # Every OTHER slot still reuses the default cat.
-_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair", "fair", "bair"}
+_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair", "fair", "bair", "uair"}
 
 
 def test_gnok_authored_moves_are_its_own_the_rest_reuse_default():
@@ -289,3 +289,25 @@ def test_gnok_bair_maps_to_air_back_a():
     gnok = load_fighter_data("gnok")
     key = resolve_move_key(gnok.moves, direction="back", on_ground=False, is_special=False)
     assert key == "bair"
+
+
+def test_gnok_uair_is_a_single_upward_headbutt():
+    # Slices 5-6 (#914) u-air: DK's AttackAirHi — a single-window straight-up juggle hit (no
+    # early/late decay). startup 5 / active 4 / recovery 28 (datamine FAF 37, active frames
+    # 6-9). One box: damage 14, angle 90 (straight up), BKB 32, KBG 90. Able-to-fail: a
+    # missing/mis-datamined uair, or a spurious second window, fails here.
+    uair = load_fighter_data("gnok").moves["uair"]
+    assert (uair.startup, uair.active, uair.recovery) == (5, 4, 28)
+    assert len(uair.hitboxes) == 1
+    hb = uair.hitboxes[0]
+    assert hb.damage == 14.0 and hb.angle == 90
+    assert hb.base_knockback == 32.0 and hb.knockback_growth == 90.0
+    assert hb.active_start is None  # single window spans the whole active period
+
+
+def test_gnok_uair_maps_to_air_up_a():
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    key = resolve_move_key(gnok.moves, direction="up", on_ground=False, is_special=False)
+    assert key == "uair"
