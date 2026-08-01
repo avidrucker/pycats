@@ -150,9 +150,12 @@ class LivePresenter(_InputStripMixin):
         self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
 
     def _esc_held(self):
-        """Whether Esc is currently held on the live keyboard (#515). Non-interactive
-        playback reads an all-released keyboard, so the hold timer never advances."""
-        return bool(pygame.key.get_pressed()[pygame.K_ESCAPE])
+        """Whether a quit key is currently held on the live keyboard: Esc (#515) or
+        the alternate `q` (#907), either of which drives the same 2s hold-to-quit.
+        Non-interactive playback reads an all-released keyboard, so the hold timer
+        never advances."""
+        keys = pygame.key.get_pressed()
+        return bool(keys[pygame.K_ESCAPE] or keys[pygame.K_q])
 
     def _service_esc_hold(self):
         """Tick the shared hold-Esc timer once per displayed frame; raise
