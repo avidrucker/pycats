@@ -77,7 +77,7 @@ def test_gnok_differs_from_default_on_scalars_and_body():
 # The moves Gnok has authored so far (grows one slice at a time under #779): slice 2 the
 # jab, slice 3 (#841) the three tilts, slices 5-6 (#914) the aerials (one per commit).
 # Every OTHER slot still reuses the default cat.
-_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair"}
+_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair", "fair"}
 
 
 def test_gnok_authored_moves_are_its_own_the_rest_reuse_default():
@@ -236,3 +236,31 @@ def test_gnok_nair_maps_to_air_neutral_a():
     gnok = load_fighter_data("gnok")
     key = resolve_move_key(gnok.moves, direction="neutral", on_ground=False, is_special=False)
     assert key == "nair"
+
+
+def test_gnok_fair_is_a_two_window_downward_smash():
+    # Slices 5-6 (#914) f-air: DK's AttackAirF — a two-hand overhead smash with an EARLY
+    # link window and a LATE spike window (#204). startup 22 / active 5 / recovery 21
+    # (datamine FAF 48, active frames 23-27). EARLY [23,25]: angle 361, BKB 20, KBG 100.
+    # LATE [26,27]: the spike box swings to angle 290 (down-forward) with BKB 50 / KBG 73.
+    # All boxes damage 17. Able-to-fail: a single-window fair, or a missing late spike, fails.
+    fair = load_fighter_data("gnok").moves["fair"]
+    assert (fair.startup, fair.active, fair.recovery) == (22, 5, 21)
+    windows = sorted({(hb.active_start, hb.active_end) for hb in fair.hitboxes})
+    assert windows == [(23, 25), (26, 27)]
+    early = [hb for hb in fair.hitboxes if hb.active_start == 23]
+    late = [hb for hb in fair.hitboxes if hb.active_start == 26]
+    assert early and late
+    assert all(hb.damage == 17.0 for hb in fair.hitboxes)
+    assert all(hb.angle == 361 and hb.base_knockback == 20.0 and hb.knockback_growth == 100.0 for hb in early)
+    # the late window is the finisher: higher BKB, and its big box spikes at angle 290
+    assert all(hb.base_knockback == 50.0 and hb.knockback_growth == 73.0 for hb in late)
+    assert any(hb.angle == 290 for hb in late), "the late window must carry the down-forward spike"
+
+
+def test_gnok_fair_maps_to_air_forward_a():
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    key = resolve_move_key(gnok.moves, direction="forward", on_ground=False, is_special=False)
+    assert key == "fair"

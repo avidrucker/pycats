@@ -241,6 +241,51 @@
           "circle": [52, 64, 32]
         }
       ]
+    },
+    "fair": {
+      "name": "forward air",
+      "in_air": true,
+      "startup": 22,
+      "active": 5,
+      "recovery": 21,
+      "hitboxes": [
+        {
+          "damage": 17.0,
+          "angle": 361,
+          "base_knockback": 20.0,
+          "knockback_growth": 100.0,
+          "active_start": 23,
+          "active_end": 25,
+          "circle": [72, 22, 40]
+        },
+        {
+          "damage": 17.0,
+          "angle": 361,
+          "base_knockback": 20.0,
+          "knockback_growth": 100.0,
+          "active_start": 23,
+          "active_end": 25,
+          "circle": [84, 42, 17]
+        },
+        {
+          "damage": 17.0,
+          "angle": 290,
+          "base_knockback": 50.0,
+          "knockback_growth": 73.0,
+          "active_start": 26,
+          "active_end": 27,
+          "circle": [74, 52, 35]
+        },
+        {
+          "damage": 17.0,
+          "angle": 361,
+          "base_knockback": 50.0,
+          "knockback_growth": 73.0,
+          "active_start": 26,
+          "active_end": 27,
+          "circle": [84, 36, 17]
+        }
+      ]
     }
   },
   "crouch_hurtbox": {

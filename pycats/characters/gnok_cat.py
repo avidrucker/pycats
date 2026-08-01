@@ -340,6 +340,57 @@ _GNOK_NAIR = MoveData(
     ),
 )
 
+
+# --- F-air (slices 5-6, #914): DK's AttackAirF — a two-hand overhead smash ----
+# Two #204 windows: an EARLY link then a LATE spike finisher. Datamined at DEV time
+# (`-f Donkey -a AttackAirF`, high_level_frame_data -l subaction; env #614):
+#   FAF 48; active frames 23-27 → startup 22 / active 5 / recovery 21.
+#   EARLY [23,25]: 4 boxes, damage 17, trajectory 361 (Sakurai), BKB 20, KBG 100.
+#   LATE  [26,27]: the big boxes swing to trajectory 290 (down-forward SPIKE) at BKB 50 /
+#                  KBG 73; the small link boxes keep 361 but also jump to BKB 50 / KBG 73.
+# Frames/%/angle/BKB/KBG RAW (#120). The 4 raw boxes collapse to 2 distinct sizes per window
+# (id0/id1 share, id2/id3 share); radii = round(size u × PX_PER_UNIT): early 7.5→40, 3.2→17;
+# late 6.4→35, 3.2→17. Positions APPROXIMATED as an overhead arc swung forward-then-down (no
+# skeleton modeled) — ⚠🔬 playtest starting points (ADR-0003).
+def _fair_early(dx, dy, r):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=17.0,
+        angle=361,
+        base_knockback=20.0,
+        knockback_growth=100.0,
+        active_start=23,
+        active_end=25,
+    )
+
+
+def _fair_late(dx, dy, r, angle):
+    # BKB 50 / KBG 73 for both late boxes; the big box spikes at 290, the link stays 361.
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=17.0,
+        angle=angle,
+        base_knockback=50.0,
+        knockback_growth=73.0,
+        active_start=26,
+        active_end=27,
+    )
+
+
+_GNOK_FAIR = MoveData(
+    name="forward air",
+    in_air=True,
+    startup=22,
+    active=5,
+    recovery=21,
+    hitboxes=(
+        _fair_early(dx=72, dy=22, r=40),  # early — big overhead arc
+        _fair_early(dx=84, dy=42, r=17),  # early — forward link
+        _fair_late(dx=74, dy=52, r=35, angle=290),  # late — the down-forward SPIKE
+        _fair_late(dx=84, dy=36, r=17, angle=361),  # late — link (Sakurai)
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
@@ -353,6 +404,7 @@ GNOK_FIGHTER_DATA = FighterData(
         "utilt": _GNOK_UTILT,
         "dtilt": _GNOK_DTILT,
         "nair": _GNOK_NAIR,
+        "fair": _GNOK_FAIR,
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
