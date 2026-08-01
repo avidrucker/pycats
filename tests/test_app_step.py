@@ -20,6 +20,21 @@ from pycats.core.input import InputFrame
 _PREFS = {"windowed_scale": 1.0, "fullscreen": False}
 
 
+class _FakeClock:
+    """Stand-in for pygame's C Clock (whose .tick is read-only, so it can't be patched).
+    Records every tick() argument; get_fps() is a stub for the render call."""
+
+    def __init__(self):
+        self.tick_args = []
+
+    def tick(self, *a):
+        self.tick_args.append(a[0] if a else None)
+        return 0
+
+    def get_fps(self):
+        return 60.0
+
+
 def _frame():
     return InputFrame(held=set(), pressed=set(), released=set())
 
@@ -63,6 +78,72 @@ def test_step_wires_update_then_render_then_present(monkeypatch):
     monkeypatch.setattr(app.dm, "present", lambda *a, **k: order.append("present"))
     app.step()
     assert order == ["update", "render", "present"]
+
+
+def test_speed_defaults_to_real_time():
+    app = _app(_poll_once())
+    assert app.speed == 1.0
+
+
+def test_speed_is_stored_from_constructor():
+    pygame.init()
+    app = App(prefs=dict(_PREFS), poll=_poll_once(), speed=0.25)
+    assert app.speed == 0.25
+
+
+def _tick_arg_for_speed(monkeypatch, speed):
+    """Run one inert frame at `speed` and return the argument App.step passed to
+    clock.tick (the present-rate pacing target)."""
+    pygame.init()
+    app = App(prefs=dict(_PREFS), poll=_poll_once(), speed=speed)
+    app.clock = _FakeClock()
+    monkeypatch.setattr(app.screen_manager, "update", lambda *a, **k: None)
+    monkeypatch.setattr(app.screen_manager, "should_quit_game", lambda: False)
+    monkeypatch.setattr(app_mod.screen_render, "render_active_screen", lambda *a, **k: None)
+    monkeypatch.setattr(app.dm, "present", lambda *a, **k: None)
+    app.step()
+    return app.clock.tick_args
+
+
+def test_step_paces_clock_to_full_fps_at_default_speed(monkeypatch):
+    # Able-to-fail: revert step to clock.tick(FPS) leaves this at 60 (still passes), but
+    # the 0.5/0.25 tests below flip — together they pin tick_fps(self.speed) wiring.
+    assert _tick_arg_for_speed(monkeypatch, 1.0) == [60]
+
+
+def test_step_paces_clock_to_half_fps_at_half_speed(monkeypatch):
+    assert _tick_arg_for_speed(monkeypatch, 0.5) == [30]
+
+
+def test_step_paces_clock_to_quarter_fps_at_quarter_speed(monkeypatch):
+    assert _tick_arg_for_speed(monkeypatch, 0.25) == [15]
+
+
+def _update_args_at_speed(monkeypatch, speed):
+    """Capture the (frame_input, battle, platforms) App.step forwards to
+    screen_manager.update at a given speed — the sim-facing arguments."""
+    pygame.init()
+    app = App(prefs=dict(_PREFS), poll=_poll_once(), speed=speed)
+    app.clock = _FakeClock()
+    seen = {}
+    monkeypatch.setattr(app.screen_manager, "update", lambda *a, **k: seen.setdefault("args", a))
+    monkeypatch.setattr(app.screen_manager, "should_quit_game", lambda: False)
+    monkeypatch.setattr(app_mod.screen_render, "render_active_screen", lambda *a, **k: None)
+    monkeypatch.setattr(app.dm, "present", lambda *a, **k: None)
+    app.step()
+    return seen["args"], app
+
+
+def test_speed_does_not_reach_the_sim_update(monkeypatch):
+    # Determinism guard: slow-mo is present-rate only. At any speed, App.step must forward
+    # its OWN battle + platforms (unchanged) and the polled frame to the sim/update path;
+    # speed only changes clock pacing, never what the sim sees, so outcomes/goldens can't
+    # move. (battle/platforms are per-App builds, so this asserts identity within an app.)
+    for speed in (1.0, 0.25):
+        (frame_input, battle, platforms), app = _update_args_at_speed(monkeypatch, speed)
+        assert frame_input == _frame()  # the polled input, untouched by speed
+        assert battle is app.battle
+        assert platforms is app.platforms
 
 
 def test_f11_routes_to_toggle_fullscreen_then_save(monkeypatch):

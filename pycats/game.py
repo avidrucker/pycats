@@ -20,6 +20,7 @@ collaborators live on `App` (#707, C3 — see pycats/app.py).
 # increased with a short hop/bounce up
 """
 
+import argparse
 import sys
 
 import pygame  # type: ignore
@@ -28,12 +29,32 @@ from . import runtime_settings, settings
 from .app import App
 
 
+def parse_args(argv):
+    """Parse the game's launch flags. Pure (no I/O, no pygame) so it's unit-testable.
+
+    `--speed` sets a present-rate slow-motion factor (#932): 1.0 = real time (default),
+    0.5 = half speed, 0.25 = quarter speed. It paces only how long each already-computed
+    frame is DISPLAYED (App.step → tick_fps) — never the sim — mirroring the sim-side
+    `watch.py --demo-speed` (#351). The in-app Options picker is the post-v1 sibling (#933)."""
+    ap = argparse.ArgumentParser(prog="pycats.game", description="Run the interactive game.")
+    ap.add_argument(
+        "--speed",
+        type=float,
+        default=1.0,
+        help="present-rate speed factor (1.0 real time, 0.5 half, 0.25 quarter); "
+        "presentation-only, the sim is unchanged.",
+    )
+    return ap.parse_args(argv)
+
+
 def main():
     """Boot pygame, restore prefs, and drive the game loop until quit.
 
     All side-effectful setup (pygame.init, settings I/O) and the drive live here, not at
     module scope, so `import pycats.game` stays inert (#701). The per-frame body lives on
     `App.step()` (#707); this owns only the pygame boot + the drive loop."""
+    args = parse_args(sys.argv[1:])
+
     pygame.init()
     pygame.display.set_caption("PyCats - Smash-Draft Rev 6 (fsm)")
 
@@ -44,7 +65,7 @@ def main():
     # toggles immediately; the Options sub-menu mutates this live.
     runtime_settings.seed(prefs)
 
-    app = App(prefs=prefs)
+    app = App(prefs=prefs, speed=args.speed)
     while app.running:
         app.step()
 

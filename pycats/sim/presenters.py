@@ -6,7 +6,7 @@ from __future__ import annotations
 import pygame
 
 from .. import text_utils
-from ..config import BG_COLOR, FPS, HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from ..config import BG_COLOR, FPS, HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, tick_fps
 from ..esc_hold import EscHoldTimer, draw_esc_hold_arc
 from ..input_history import InputHistory
 from ..render_battle import draw_input_history, render_attacks, render_battle
@@ -38,10 +38,9 @@ def frames_per_output(speed: float) -> int:
     return max(1, round(1 / speed))
 
 
-def tick_fps(speed: float) -> int:
-    """Live display tick target at `speed`. 0.5 -> 30 (each frame dwells ~2x as long
-    on screen). Clamped to >= 1."""
-    return max(1, round(FPS * speed))
+# `tick_fps` moved to config (its only dependency is FPS) so the live game (#932) can reuse
+# it without importing this sim/video module; imported above and re-exported here (#351
+# callers of `presenters.tick_fps` keep working).
 
 
 # --- Watch/demo input display (#434) -----------------------------------------

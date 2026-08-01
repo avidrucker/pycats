@@ -28,7 +28,7 @@ import pygame  # type: ignore
 from . import cat_faces, display, screen_render, settings
 from . import input_poll as inp
 from .battle_screen import BattleScreen
-from .config import FPS
+from .config import tick_fps
 from .core.keymap import Keymap
 from .display_manager import DisplayManager
 from .entities.stages import DEFAULT_PLAYER_STAGE
@@ -74,8 +74,15 @@ class App:
     Constructed by `main()` with the loaded prefs + the real `inp.poll`; constructed by
     tests with a literal prefs dict + a fake poll. Assumes `pygame.init()` has run."""
 
-    def __init__(self, prefs, poll=inp.poll):
+    def __init__(self, prefs, poll=inp.poll, speed=1.0):
         self._poll = poll
+
+        # Present-rate slow-motion factor (#932): 1.0 = real time (default, unchanged),
+        # 0.5 = half speed, etc. Paces only how long each already-computed frame is
+        # DISPLAYED (via tick_fps in step) — never the sim step, so outcomes/goldens are
+        # identical at any speed (the sim is fixed-timestep). Set at launch from a CLI arg;
+        # the in-app Options picker is the post-v1 sibling (#933).
+        self.speed = speed
 
         # Players get a single stage for v1: "Starting Point", pycats' flat Final
         # Destination (#660). Stage selection is post-v1; the demos/sims keep their own
@@ -124,7 +131,7 @@ class App:
     def step(self):
         """Run exactly one frame: poll → dispatch events → update → quit-check → render →
         present. Sets `self.running = False` on QUIT or when the FSM asks to quit."""
-        self.clock.tick(FPS)  # cap the frame rate (return value unused)
+        self.clock.tick(tick_fps(self.speed))  # cap the frame rate at the current speed
         frame_input, events = self._poll()
 
         for ev in events:
