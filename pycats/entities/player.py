@@ -303,75 +303,97 @@ class Player(pygame.sprite.Sprite):
 
     # ============================================================== update
     def update(self, input_frame, platforms, attack_group, ledges=()):
+        """Master per-frame update: KO/respawn + freeze guards, then the usual phase
+        sequence (shield/actions/ledge-hang/physics/ledge-grab/timers/spawn/FSM/posture).
+
+        Each phase is its own helper; the early guards return before any of them run."""
         held = input_frame.held
-        # note: currently unused, formerly called prev_keys
-        #       pressed means freshly pressed this frame
         pressed = input_frame.pressed
 
-        """Master per-frame update; handles KO/respawn before usual logic."""
+        if self._handle_death_and_freezes():
+            return  # dead / hitlag freeze (#138) / blast-zone KO — nothing else this frame
+
+        in_shieldstun = self._tick_shield_and_intent(held, pressed)
+        self._run_actions_and_movement(input_frame, held, attack_group, in_shieldstun)
+
+        self._drive_ledge_hang(held)
+        self._step_physics(platforms, held)
+        self._try_ledge_grab(ledges)
+        self._tick_timers_and_getup(input_frame, held)
+        self._spawn_move_hitbox(attack_group)
+
+        # Update tail physics
+        self.tail.update(platforms)
+
+        # FSM state transitions -----------------------------------
+        self.engine.tick(None)
+
+        # Posture body resize (#124 crouch / #173 prone): derived from the final
+        # state label so the geometry stays byte-identical (golden-stable).
+        self._apply_posture_geometry()
+
+    def _handle_death_and_freezes(self):
+        """Dead/respawn, hitlag freeze (#138), and blast-zone KO early-outs.
+
+        Returns True when one fired and update() should stop for this frame. Ordered:
+        the dead check first (a KO'd fighter is never frozen), then the hitlag freeze
+        (a frozen fighter can't drift out), then the blast-zone KO."""
         # ---------- dead / waiting to respawn ----------
         if not self.fighter.is_alive:
             self.fighter.tick_respawn()  # #293/S4b: aggregate owns the decrement
             if self.fighter.respawn_timer <= 0 and self.fighter.lives > 0:
                 self.reset_to_spawn()  # #286: Player owns the clock/tail reset
-            return  # nothing else while dead
+            return True  # nothing else while dead
 
         # ---------- hitlag / freeze frames (#138) ----------
         # On a clean hit both fighters freeze for hitlag_timer frames. Returning
-        # early here holds everything — position (no step_physics), velocity (no
-        # decay), the move clock, the hitstun timer, and the FSM — so the impact
-        # pause precedes the knockback slide, which then resumes intact. Placed
-        # after the dead check (a KO'd fighter is never frozen) and before the
-        # blast-zone check (a frozen fighter can't drift out).
+        # early holds everything — position (no step_physics), velocity (no decay),
+        # the move clock, the hitstun timer, and the FSM — so the impact pause
+        # precedes the knockback slide, which then resumes intact.
         if self.fighter.hitlag_timer > 0:
             self.fighter.hitlag_timer -= 1
-            return
+            return True
 
         # ---------- blast-zone KO check ----------
         if self.fighter._outside_blast_zone():
             self.fighter._ko()
             self.engine.force("ko")  # #298/S5: adapter applies the FSM transition
-            return
+            return True
+        return False
 
-        # ---------- shield tick ----------
-        # Shield HP drains while shielding (breaking into `stun` if it empties,
-        # #341) and regenerates otherwise — the domain owns both the drain rate
-        # (SHIELD_DRAIN_PER_FRAME) and the drain-to-0 break rule (Fighter setter
-        # clamps [0, MAX]).
+    def _tick_shield_and_intent(self, held, pressed):
+        """Tick shield HP + shieldstun lock (#140/#341) and set crouch intent (#124).
+
+        Returns in_shieldstun (gates this frame's actions). Shield HP drains while
+        shielding (breaking into `stun` if it empties, #341) and regenerates otherwise;
+        a blocked hit locks the defender in shield for shieldstun_timer frames. Crouch
+        reads raw held input (not the shield_attempting flag set later this frame) so the
+        shield/crouch split is order-independent; the geometry follows in
+        _apply_posture_geometry (golden-stable)."""
         self.fighter.tick_shield(self.state == "shield")
 
-        # Shieldstun (#140): a blocked hit locks the defender in shield for
-        # shieldstun_timer frames — no drop, jump, dodge, grab, or move. Force
-        # shield_attempting True (so the chart stays in "shield") and skip the
-        # "shield released -> attempting False" reset below; the input gate and
-        # the timer tick are handled further down. Runs only after any hitlag
-        # freeze (the early-return above precedes this).
         in_shieldstun = self.fighter.shieldstun_timer > 0
         if in_shieldstun:
             self.fighter.shield_attempting = True
         elif not self._pressed(held, "shield") and not self._pressed(pressed, "shield"):
             self.fighter.shield_attempting = False
 
-        # crouch intent (#124): hold down on solid ground, no shield (shield+down
-        # is a spot dodge), for a cat that can crouch. Read raw held input (not
-        # the shield_attempting flag, which is set later this frame) so the
-        # shield/crouch split is order-independent. The state machine reacts to
-        # this flag; _apply_posture_geometry resizes the body from the resulting
-        # state label (so the geometry stays byte-identical to the golden).
         self.fighter.crouch_attempting = (
             self._pressed(held, "down")
             and not self._pressed(held, "shield")
             and self.fighter.on_ground
             and self.fighter.crouch_size is not None
         )
+        return in_shieldstun
 
-        # input / movement / state logic --------------------------------------
-        # Issue #8: hits are resolved AFTER this frame's engine.tick (game.py
-        # runs process_hits after player.update), so hurt_timer/stun_timer are
-        # set one frame before the FSM label flips to "hurt"/"stun". Gate input
-        # on the timers too, not just the lagging state label, so the post-hit
-        # frame does not run handle_move and clobber the knockback with walk
-        # speed when a direction is held.
+    def _run_actions_and_movement(self, input_frame, held, attack_group, in_shieldstun):
+        """Dispatch actions + movement, gated by hitstun/shieldstun/landing-lag.
+
+        #8: hits resolve AFTER this frame's engine.tick, so hurt/stun timers are set one
+        frame before the FSM label flips — gate on the timers too, not just the lagging
+        label, so the post-hit frame doesn't clobber knockback with walk speed. In
+        hitstun, bleed off launch velocity (#44/#43); in landing-lag, keep the grounded
+        waveland slide under friction (#202)."""
         in_hitstun = self.fighter.hurt_timer > 0 or self.fighter.stun_timer > 0
         in_landing_lag = self.fighter.landing_lag_timer > 0  # waveland lock (#202)
         dodge_initiated = False
@@ -398,15 +420,13 @@ class Player(pygame.sprite.Sprite):
             # apply it directly — same job step_horizontal would do, minus walking).
             self.fighter.vel = apply_horizontal_friction(self.fighter.vel, self.fighter.on_ground)
 
-        # ---------- ledge-hang driving (#14 + #311 edge-hog) ----------
-        # While on the edge (hang or getup climb): pin position (skip gravity).
-        #  - Hanging: tick the percent-scaled intangibility burst (#311). There is
-        #    NO hang timeout (#475: PM has no hang timer) — the fighter hangs until
-        #    it acts. Intangibility is `ledge_intangible_timer > 0` (a short burst), NOT
-        #    the whole hang. Up = neutral getup, down/away = drop.
-        #  - Getup climb (#311): a LEDGE_GETUP_FRAMES action-lock on the stage; the
-        #    edge frees to others at the halfway frame (half-animation regrab), and
-        #    the climb completes to idle when the window closes.
+    def _drive_ledge_hang(self, held):
+        """Drive a hang or getup-climb while on a ledge (#14 + #311 edge-hog).
+
+        Pin position (skip gravity). Hanging: tick the percent-scaled intangibility
+        burst (#311); no hang timeout (#475). Up = neutral getup -> climb window,
+        down/away = drop. Getup climb: a LEDGE_GETUP_FRAMES action-lock; the edge frees
+        to others at the halfway frame, and the climb completes to idle when it closes."""
         if self.fighter.grabbed_ledge is not None:
             ledge = self.fighter.grabbed_ledge
             self.fighter.vel.x = 0
@@ -438,22 +458,24 @@ class Player(pygame.sprite.Sprite):
                     self.fighter.grabbed_ledge = None
                     self.fighter.vel.y = 1  # nudge so next frame is airborne
 
-        # physics: gravity, edge-aware dodge clamping, movement, drop-through,
-        # vertical/horizontal collision, and landing — see fighter_physics (#77).
-        # Skipped while hanging — the fighter is pinned to the ledge.
+    def _step_physics(self, platforms, held):
+        """Gravity/dodge-clamp/movement/collision/landing via fighter_physics (#77).
+
+        Skipped while hanging — the fighter is pinned to the ledge. step_physics
+        returns True on a #145 auto-knockdown landing; the adapter applies force_prone
+        (the domain returns intent — #298/S5)."""
         if self.fighter.grabbed_ledge is None:
-            # step_physics returns True on a #145 auto-knockdown landing; the
-            # adapter applies force_prone (the domain returns intent — #298/S5).
             if step_physics(self, platforms, held):
                 self.force_prone(KNOCKDOWN_PRONE_FRAMES)
 
-        # ---------- ledge grab (#14 + #311 edge-hog) ----------
-        # After physics so on_ground/vel/pos are final. Grab when airborne +
-        # descending + the body overlaps the catch box + not locked out. Edge-hog
-        # timing (#311): an OCCUPIED edge is grabbable only once the occupant's
-        # intangibility burst has lapsed (ledge_intangible_timer == 0) — grab too early
-        # and the hog holds. A grab that lands on an occupied edge EVICTS the
-        # occupant (mistimed hog loses the ledge; the incoming fighter takes it).
+    def _try_ledge_grab(self, ledges):
+        """Grab a ledge after physics (#14 + #311 edge-hog).
+
+        Grab when airborne + descending + the body overlaps the catch box + not locked
+        out. Edge-hog timing (#311): an OCCUPIED edge is grabbable only once the
+        occupant's intangibility burst has lapsed (ledge_intangible_timer == 0) — grab
+        too early and the hog holds. A grab landing on an occupied edge EVICTS the
+        occupant (mistimed hog loses the ledge; the incoming fighter takes it)."""
         if (
             self.fighter.grabbed_ledge is None
             and self.fighter.ledge_regrab_lockout_timer == 0
@@ -481,14 +503,16 @@ class Player(pygame.sprite.Sprite):
                     self.engine.force("ledge_grab")
                     break
 
-        # Non-shield timers tick. Stateless ones (hurt/stun/landing_lag/
-        # ledge_regrab_lockout/shieldstun) -> Fighter.tick_timers (#273/S1).
-        # Coupled prone + dodge decrements -> Fighter.tick_action_timers (#289/S4),
-        # which returns the names that hit 0 this frame. getup_roll/getup_attack
-        # KEEP their inline decrement (they're set-and-ticked in the same frame by
-        # the prone block below — moving them would drop that same-frame tick).
-        # Placed at the top so landing_lag_timer is decremented before the dodge-end
-        # read of it (`landing_lag_timer == 0`) further down.
+    def _tick_timers_and_getup(self, input_frame, held):
+        """Tick non-shield timers, drive getup-roll/attack (#146/#225), end dodges.
+
+        Stateless timers (hurt/stun/landing_lag/ledge_regrab_lockout/shieldstun) ->
+        Fighter.tick_timers (#273/S1); coupled prone + dodge decrements ->
+        Fighter.tick_action_timers (#289/S4), which returns the names that hit 0 this
+        frame. getup_roll/getup_attack KEEP their inline decrement (set-and-ticked in
+        the same frame). Runs before the move-clock spawn so a getup-attack's clock
+        start spawns its hitbox this frame; landing_lag_timer is decremented before the
+        dodge-end read of it (`landing_lag_timer == 0`)."""
         self.fighter.tick_timers()
         expired = self.fighter.tick_action_timers()
         if "prone_timer" in expired and self.fighter.on_ground:
@@ -535,14 +559,14 @@ class Player(pygame.sprite.Sprite):
                     # print(f"SPOT DODGE TRANSITION: {self.char_name} shield_attempting set to True")
                 self.fighter.spot_dodge_shield_held = False  # reset spot dodge flag
 
-        # ---------- data-driven move clock (Task 4 / #71: MoveClock) ----------
-        # Advance the move one frame and spawn its hitbox exactly once, when the
-        # active window opens. The clock owns move_frame/current_move and clears
-        # itself on completion (current_move -> None, attack_timer -> 0). The
-        # attack-exit condition is now the derived `done_attacking` property
-        # (attack_timer == 0) — #321/F3 removed the hand-latched flag. The active
-        # window is startup < move_frame <= startup + active; the hitbox lives for
-        # `active` frames.
+    def _spawn_move_hitbox(self, attack_group):
+        """Advance the move clock one frame and spawn its hitbox/projectile once.
+
+        Data-driven move clock (Task 4 / #71: MoveClock): the clock owns
+        move_frame/current_move and clears itself on completion (current_move ->
+        None, attack_timer -> 0). The active window is startup < move_frame <=
+        startup + active; the hitbox lives for `active` frames. #321/F3 removed the
+        hand-latched flag — done_attacking is now a derived Player property."""
         tick = self._clock.tick()
         if tick.spawn is not None:
             # #223: a projectile move (projectile_speed set) spawns a MOVING,
@@ -595,16 +619,6 @@ class Player(pygame.sprite.Sprite):
                     )  # #213 looping; static hit-box
                 )
         # (#321/F3: done_attacking is now a derived Player property — no latch.)
-
-        # Update tail physics
-        self.tail.update(platforms)
-
-        # FSM state transitions -----------------------------------
-        self.engine.tick(None)
-
-        # Posture body resize (#124 crouch / #173 prone): derived from the final
-        # state label so the geometry stays byte-identical (golden-stable).
-        self._apply_posture_geometry()
 
     def _apply_posture_geometry(self):
         """Resize the body Rect to match a lowered posture, feet planted.
