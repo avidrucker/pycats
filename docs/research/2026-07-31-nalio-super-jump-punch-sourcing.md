@@ -6,10 +6,10 @@
 > **Method:** primary datamine of rukaidata's PM 3.6 Mario `SpecialAirHi` subaction (hitbox scalars +
 > frame timeline read verbatim from the page's own tables) + the PM 3.6 Mario attributes page; the
 > Melee lineage from SmashWiki is used as labelled *context/PROXY*, never as the PM number. Every
-> hitbox scalar below is FOUND from rukaidata PM 3.6. Two value classes are **gaps**, stated plainly:
-> hitbox **size/position** (rendered only in rukaidata's WebGL model, not in text — obtainable via the
-> repo's gated brawllib_rs datamine) and the **recovery rise velocity** (engine/character-hardcoded —
-> no primary number published). Inference/recommendation is confined to §2/§3 and is labelled.
+> hitbox scalar below is FOUND from rukaidata PM 3.6. The two value classes first flagged as **gaps**
+> (hitbox **size/position** and the **recovery rise velocity**) were **both closed by running the
+> brawllib_rs datamine — see §0** (added 2026-07-31); §1–§3 below are the original rukaidata-only pass,
+> kept for provenance. Inference/recommendation is labelled throughout.
 
 ## TL;DR
 
@@ -43,6 +43,81 @@
    the `wdsk` hitbox JSON key (`combat/collapse.py`) implement weight-dependent set knockback, and Nalio
    already ships WDSK/same-set multi-hit moves (u-tilt, d-smash). No new combat capability is required for
    the hitboxes; the launcher and all linking hits map directly.
+
+---
+
+## 0. Datamine resolution (2026-07-31) — BOTH gaps closed (brawllib_rs, PM 3.6 primary)
+
+> Update supersedes the two GAPs flagged in the TL;DR. The gated brawllib_rs datamine was **run**
+> (toolchain present after all — `cargo 1.92` via rustup; the "cargo absent" note was a PATH gap in the
+> prior subshell). Command (reproducible):
+> ```bash
+> cd ~/Documents/Study/Rust/brawllib_rs && cargo run --release --example high_level_frame_data -- \
+>   -d ~/Documents/Study/Rust/pm-data/brawl-dump/DATA/files \
+>   -m ~/Documents/Study/Rust/pm-data/pm36-sd -f Mario -l subaction -a SpecialAirHi
+> ```
+> (`-m` is the PARENT of the `projectm` mod dir — brawllib scans `*/pf/fighter`; `-d` is the dir holding
+> `fighter/`.) The processed `HighLevelHitBox` carries `next_pos` (Point3, units) + `next_size` (units),
+> and each frame carries `y_vel_temp` = the animation root's per-frame vertical velocity (units/frame).
+> **The datamine's hitbox scalars match §1b's rukaidata read exactly** (independent cross-confirmation).
+
+### 0a. Hitbox geometry — FOUND (was §1d gap)
+
+Per-window `next_pos`/`next_size` (representative active frame; positions drift ≤2px across a window).
+Coordinate mapping (validated below): pycats `dx ← brawl z` (forward), `dy ← brawl y` (up), `r ← size`,
+each `× PX_PER_UNIT (5.4)`; brawl `x` (lateral depth) is dropped in the 2-D side view.
+
+| Window (rukaidata f) | ID | brawl (y_up, z_fwd, size) | pycats (dx, dy, r) | Dmg | Angle |
+|---|---|---|---|---|---|
+| A: 3–6 | 0 | (4.9, 6.0, 7.42) | (33, 27, **40**) | 5 | 70 |
+| A: 3–6 | 1 | (2.9, 4.5, 5.08) | (24, 16, **27**) | 5 | 90 |
+| B: 7–9 | 0 | (5.5, 6.0, 6.25) | (32, 30, **34**) | 1 | 74 |
+| B: 7–9 | 1 | (2.1, 5.2, 5.08) | (28, 13, **27**) | 1 | 78 |
+| C: 10–13 | 0 | (5.7, 4.9, 6.25) | (26, 31, **34**) | 1 | 72 |
+| C: 10–13 | 1 | (3.0, 5.0, 5.08) | (27, 16, **27**) | 1 | 78 |
+| **D: 14–15** | 0 | (6.7, 1.5, 8.79) | (8, 36, **47**) | 3 | 50 |
+| **D: 14–15** | 1 | (2.6, 0.1, 3.91) | (1, 14, **21**) | 3 | 50 |
+
+**Radius mapping validated against shipped data:** datamining Mario's jab (`Attack11`) yields radii
+`19 / 13 / 15` px — **identical** to committed `nalio.json` jab `[54,27,**19**] / [44,28,**13**] /
+[34,29,**15**]`, confirming `size × 5.4 → r` and that Nalio's existing hitboxes were authored from this
+same datamine. **Positions are a faithful STARTING point, not a hard number:** the jab check shows the
+author kept datamined radii verbatim but **hand-stylised the horizontal `dx`** (raw z→66/33/24 became an
+even 54/44/34) to sit on Nalio's cat body, which differs from Mario's. So #954 should seed from the table
+above and **eyeball-adjust `dx` to Nalio's body** (a player-visible tuning step, per the existing-move
+precedent) — radii + `dy` map cleanly; `dx` is placement.
+
+### 0b. Recovery rise velocity — FOUND-derived (was §2 gap)
+
+`SpecialAirHi` applies the rise as the animation root's per-frame velocity (`y_vel_temp`; `y_vel_modify`
+is `None` — no single "set-velocity" event, so there is no one attribute to copy). The curve, integrated:
+
+- Peak per-frame velocity ≈ **9.4 units/f** (frame 7) — but it decays and reverses over the move, so the
+  peak is **not** the recovery height.
+- **Cumulative rise (∫ velocity) peaks at 44.4 units = 239.7 px ≈ 1.42× Nalio's full-jump height** (169 px).
+
+pycats models the rise as a **single SET burst + gravity** (a documented divergence from the per-frame
+curve — §2b). Matching the datamined **net rise** (239.7 px) under Nalio's `gravity = 0.5` (apex = v²/2g,
+so v = √(2·g·h) = √h):
+
+> **`recovery_vy ≈ −15.5`**  (√239.7 = 15.48). Lands inside the −13…−16 band §2c predicted from
+> SmashWiki's "poor recovery / reduced range." This is now **datamine-derived**, not a bare game-feel pick.
+
+Horizontal: net forward drift ≈ **111 px** over 38 f (avg 0.54 u/f) — a minor near-vertical arc. Recommend
+**`recovery_vx ≈ 0` to ~3** (a small facing-forward push), an eyeball/design call in #954, not load-bearing.
+
+### 0c. Updated routing — nothing blocks #954
+
+| Value class | Was | Now |
+|---|---|---|
+| Hitbox scalars + frame timing | FOUND (rukaidata) | FOUND (datamine-cross-confirmed) |
+| Hitbox size / position | GAP (WebGL-only) | **FOUND** (§0a) — radii verbatim; `dx` eyeball-adjust to Nalio's body |
+| Recovery `recovery_vy` | GAP / needs decision | **FOUND-derived** (§0b) — `≈ −15.5` from the net-rise integral |
+| `recovery_vx` | — | ≈ 0–3 (small arc; eyeball) |
+
+#954 can author the whole move now (no `decision` child required). The only remaining human step is the
+**`dx` placement eyeball-adjust** to fit Nalio's cat body — a normal player-visible tuning pass, gated by
+the human eyeball-OK on close, exactly like every other Nalio move.
 
 ---
 
@@ -202,16 +277,16 @@ is run. Keep `recovery_vx` ≈ 0 (SJP is near-vertical) or a small facing value 
 | Damage / angle / BKB / KBG / **WDSK** (all 4 windows, §1b) | **FOUND** (rukaidata PM 3.6, verbatim) | **Yes** — RAW, straight into hitbox JSON (`damage/angle/bkb/kbg/wdsk`). |
 | Frame timeline: total 38, active 3–15, intangible 3–9, IASA none (§1a) | **FOUND** | **Yes** — `startup=2 / active=13 / recovery=23` (derived per pycats convention). |
 | Multi-hit / WDSK combat support (§ TL;DR 5) | **FOUND capability** (`knockback.set_knockback`, `wdsk` key) | **Yes** — no new engine work; mirror Nalio's existing WDSK/same-set moves. |
-| Hitbox **size / position** (§1d) | **GAP** — WebGL-only; obtainable via **gated** datamine (pac + overlay present, toolchain install pending) | **Not sourced.** Either run the gated datamine first, or ship a labelled placeholder (geometry reuse) as an explicit design choice. |
-| Recovery **rise velocity** `recovery_vy` (§2) | **GAP** — no published primary; obtainable via gated datamine (root-motion) OR a human design pick | **Needs a `decision`** — do not hardcode a number here. Route 1 (datamine) upgrades it to FOUND; routes 2/3 are design picks the owner ratifies. |
+| Hitbox **size / position** (§1d → §0a) | ~~GAP~~ → **FOUND** (datamine, §0a) | **Yes** — radii verbatim (`size×5.4`, jab-validated); seed positions from §0a and eyeball-adjust `dx` to Nalio's body. |
+| Recovery **rise velocity** `recovery_vy` (§2 → §0b) | ~~GAP~~ → **FOUND-derived** (datamine, §0b) | **Yes** — `≈ −15.5` (net-rise integral, 239.7 px ≈ 1.42× jump). No `decision` child needed. |
 | Recovery model divergence (single burst + gravity vs per-frame curve) | Design note | Document it in #954 (§2b). |
 
-**Bottom line:** #954 can author the **entire hitbox scalar set + frame timing now** (FOUND). Two inputs
-are blocked: hitbox **size/position** and the **rise velocity** — both are ultimately obtainable from the
-same gated brawllib datamine (pac data already on disk; only the toolchain install is pending human
-approval), and the rise additionally invites a human `decision` on magnitude if the datamine isn't run.
-Recommend #954 land the FOUND hitboxes + timing, and either (a) run the gated datamine to source
-size/position + rise, or (b) split the rise magnitude into a `decision` child with §2c as its input.
+**Bottom line (post-datamine, §0):** the datamine was run, so **every value #954 needs is now FOUND** —
+hitbox scalars + frame timing (rukaidata, datamine-cross-confirmed), hitbox size/position (§0a), and the
+rise velocity `recovery_vy ≈ −15.5` (§0b, net-rise integral). **No `decision` child is required.** #954's
+only human step is the routine `dx` placement eyeball-adjust to Nalio's cat body (a player-visible tuning
+pass gated by the eyeball-OK on close, same as every other Nalio move). §1–§2 are retained as the
+rukaidata-only provenance trail behind §0.
 
 ---
 
