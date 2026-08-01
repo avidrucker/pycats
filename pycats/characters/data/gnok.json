@@ -347,6 +347,36 @@
           "circle": [34, 4, 42]
         }
       ]
+    },
+    "dair": {
+      "name": "down air",
+      "in_air": true,
+      "startup": 17,
+      "active": 6,
+      "recovery": 19,
+      "hitboxes": [
+        {
+          "damage": 16.0,
+          "angle": 270,
+          "base_knockback": 38.0,
+          "knockback_growth": 90.0,
+          "circle": [44, 72, 38]
+        },
+        {
+          "damage": 13.0,
+          "angle": 270,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "circle": [28, 68, 34]
+        },
+        {
+          "damage": 13.0,
+          "angle": 270,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "circle": [58, 66, 25]
+        }
+      ]
     }
   },
   "crouch_hurtbox": {

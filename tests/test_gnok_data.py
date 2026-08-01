@@ -77,7 +77,7 @@ def test_gnok_differs_from_default_on_scalars_and_body():
 # The moves Gnok has authored so far (grows one slice at a time under #779): slice 2 the
 # jab, slice 3 (#841) the three tilts, slices 5-6 (#914) the aerials (one per commit).
 # Every OTHER slot still reuses the default cat.
-_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair", "fair", "bair", "uair"}
+_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair", "fair", "bair", "uair", "dair"}
 
 
 def test_gnok_authored_moves_are_its_own_the_rest_reuse_default():
@@ -311,3 +311,28 @@ def test_gnok_uair_maps_to_air_up_a():
     gnok = load_fighter_data("gnok")
     key = resolve_move_key(gnok.moves, direction="up", on_ground=False, is_special=False)
     assert key == "uair"
+
+
+def test_gnok_dair_is_the_downward_spike():
+    # Slices 5-6 (#914) d-air: DK's AttackAirLw — the SPIKE. A single window whose boxes all
+    # launch straight down (angle 270); the sweetspot box (dmg 16, BKB 38) meteors, the two
+    # sour boxes (dmg 13, BKB 20) are weaker. startup 17 / active 6 / recovery 19 (datamine
+    # FAF 42, active frames 18-23). Able-to-fail: a non-270 (non-spike) dair, or a missing
+    # sweetspot, fails here.
+    dair = load_fighter_data("gnok").moves["dair"]
+    assert (dair.startup, dair.active, dair.recovery) == (17, 6, 19)
+    assert len(dair.hitboxes) == 3
+    assert all(hb.angle == 270 and hb.knockback_growth == 90.0 for hb in dair.hitboxes)  # straight down = spike
+    sweet = [hb for hb in dair.hitboxes if hb.damage == 16.0]
+    sour = [hb for hb in dair.hitboxes if hb.damage == 13.0]
+    assert len(sweet) == 1 and len(sour) == 2
+    assert sweet[0].base_knockback == 38.0  # the meteor sweetspot
+    assert all(hb.base_knockback == 20.0 for hb in sour)
+
+
+def test_gnok_dair_maps_to_air_down_a():
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    key = resolve_move_key(gnok.moves, direction="down", on_ground=False, is_special=False)
+    assert key == "dair"

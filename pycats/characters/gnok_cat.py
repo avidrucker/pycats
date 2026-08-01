@@ -20,11 +20,13 @@ Per #120, combat scalars (weight, max_jumps) are RAW; velocity/accel scalars go 
 
 Slice 1 authored the scalars + measured body only. Slice 2 (#824) added the **jab** — DK's
 1-2 punch (PM3.6 `Attack11` → `Attack12`), modeled as one move with two sequential hit
-windows. Slice 3 (#841) adds the three **tilts** — f-tilt (`AttackS3S`), u-tilt (`AttackHi3`),
-d-tilt (`AttackLw3`); the rest of `moves` still reuses the default cat until its slice lands.
-Gnok's remaining heavy normals + smashes arrive one slice at a time under #779 (slices 4-7).
-Deferred (NOT V1, need engine): grabs/throws, Giant Punch armor, Spinning Kong recovery
-(spec §3/§5).
+windows. Slice 3 (#841) added the three **tilts** — f-tilt (`AttackS3S`), u-tilt (`AttackHi3`),
+d-tilt (`AttackLw3`). Slices 5-6 (#914) added the five **aerials** — n-air (`AttackAirN`, a sex
+kick), f-air (`AttackAirF`, an overhead smash with a late spike), b-air (`AttackAirB`, a Sakurai
+sex kick), u-air (`AttackAirHi`, an upward juggle), d-air (`AttackAirLw`, the downward spike);
+the remaining slots (dash attack slice 4, smashes slice 7) still reuse the default cat until
+those slices land. Deferred (NOT V1, need engine): grabs/throws, Giant Punch armor, Spinning
+Kong recovery (spec §3/§5).
 
 Faithful-physics caveat (#785/#816): pycats' shipped velocity globals are *game-tuned px*,
 not rukaidata × 5.4 (e.g. MAX_FALL_SPEED = 13 vs Mario's real ~9.2). Gnok's `vel()` values
@@ -465,6 +467,39 @@ _GNOK_UAIR = MoveData(
     ),
 )
 
+
+# --- D-air (slices 5-6, #914): DK's AttackAirLw — the SPIKE -------------------
+# DK's signature downward stomp: every box launches straight down (angle 270 = meteor). A
+# single window with a sweetspot (dmg 16, BKB 38) + two sour boxes (dmg 13, BKB 20).
+# Datamined (`-f Donkey -a AttackAirLw`, high_level_frame_data -l subaction; env #614):
+#   FAF 42; active frames 18-23 → startup 17 / active 6 / recovery 19.
+#   3 boxes, angle 270, KBG 90: id0 dmg 16 BKB 38 (sweetspot), id1/id2 dmg 13 BKB 20 (sour).
+# Frames/%/angle/BKB/KBG RAW (#120); radii = round(size u × PX_PER_UNIT): 7.03→38, 6.25→34,
+# 4.69→25. One window (no #204 sub-window). Positions APPROXIMATED below the body (large dy —
+# a downward stomp), the sweetspot centered under the feet — ⚠🔬 playtest (ADR-0003).
+def _dair_box(dx, dy, r, damage, bkb):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=damage,
+        angle=270,
+        base_knockback=bkb,
+        knockback_growth=90.0,
+    )
+
+
+_GNOK_DAIR = MoveData(
+    name="down air",
+    in_air=True,
+    startup=17,
+    active=6,
+    recovery=19,
+    hitboxes=(
+        _dair_box(dx=44, dy=72, r=38, damage=16.0, bkb=38.0),  # sweetspot — the meteor
+        _dair_box(dx=28, dy=68, r=34, damage=13.0, bkb=20.0),  # sour (inner)
+        _dair_box(dx=58, dy=66, r=25, damage=13.0, bkb=20.0),  # sour (outer)
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
@@ -481,6 +516,7 @@ GNOK_FIGHTER_DATA = FighterData(
         "fair": _GNOK_FAIR,
         "bair": _GNOK_BAIR,
         "uair": _GNOK_UAIR,
+        "dair": _GNOK_DAIR,
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
