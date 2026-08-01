@@ -16,14 +16,17 @@ a single-group frame stays byte-identical (`extra_spawns == ()`), and `player.py
 loops over the groups.
 """
 
+import types
+
 import pygame
 import pytest
 
-from pycats.combat.data import Circle, Hitbox, MoveData
+from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 from pycats.combat.move_clock import MoveClock
 from pycats.core.input import InputFrame
 from pycats.entities import Player
 from pycats.entities.platform import Platform
+from pycats.systems.combat import process_hits
 
 _CONTROLS = dict(
     left=pygame.K_a,
@@ -211,3 +214,64 @@ def test_same_start_windows_become_two_attacks_on_one_frame():
                 appeared.append((frame, atk.hitboxes[0].damage, atk.frames_left))
 
     assert sorted(appeared) == [(4, 10.0, 2), (4, 20.0, 6)]
+
+
+# ------------------------ Cycle 6: the multi-hit OUTCOME through process_hits (#852)
+
+
+def _hit_counting_defender(rect):
+    """A minimal duck-typed defender for `process_hits` — a big hurtbox that
+    overlaps the attacker's hitbox and counts the hits it takes. Mirrors the stub
+    in test_rehit_rate; only the hit tally matters here."""
+    d = types.SimpleNamespace(
+        rect=rect,
+        facing_right=True,
+        intangible=False,
+        is_alive=True,
+        fighter_data=FighterData(hurtbox=Hurtbox(circles=(Circle(dx=0, dy=0, r=80),)), moves={}),
+        hits_received=0,
+        percent=0.0,
+    )
+
+    def receive_hit(atk, is_crouching=False):
+        d.hits_received += 1
+        d.percent += atk.damage
+
+    d.receive_hit = receive_hit
+    d.record_hit_landed = lambda: None
+    d.fighter = d
+    return d
+
+
+def test_two_windows_deal_two_hits_to_a_stationary_target():
+    """The PYC-C-005 evidence gap (#852): a 2-window move doesn't just spawn two
+    Attacks — a stationary target overlapping both windows actually TAKES two hits.
+    Drives the real Player.update (spawns the windows) + process_hits + group.update
+    against one overlapping defender across the move, and asserts it is struck
+    exactly twice — 10 on window A's frame, 20 on window B's — for 30% total.
+
+    Able-to-fail: with only one window opening (or a shared per-target hit-ID
+    collapsing the two into one), hits_received would be 1 and percent 10.0."""
+    p = Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="P", facing_right=True)
+    plats = [Platform(pygame.Rect(0, 100, 600, 40), thin=False)]
+    group = pygame.sprite.Group()
+    neutral = InputFrame(held=set(), pressed=set(), released=set())
+    for _ in range(3):  # settle on the ground
+        p.update(neutral, plats, group)
+
+    # A stationary defender parked on the attacker's hitbox origin (r=80 hurtbox
+    # guarantees overlap with the r=10 hitbox both windows spawn there).
+    defender = _hit_counting_defender(p.rect.copy())
+
+    box_a = _box(damage=10.0, active_start=4, active_end=5)  # window A: frame 4, len 2
+    box_b = _box(damage=20.0, active_start=13, active_end=17)  # window B: frame 13, len 5
+    move = MoveData(name="two-hit", in_air=False, startup=3, active=14, recovery=3, hitboxes=(box_a, box_b))
+    p._clock.start(move)
+
+    for _frame in range(1, 21):
+        p.update(neutral, plats, group)  # ticks the clock; spawns each window's Attack
+        process_hits([defender], list(group))  # attacker isn't in the list — never a self-hit
+        group.update()  # drain each Attack's lifetime
+
+    assert defender.hits_received == 2, "target takes one hit per temporal window"
+    assert defender.percent == 30.0, "10 from window A + 20 from window B"
