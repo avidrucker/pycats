@@ -19,6 +19,7 @@ collapse first), deliberately out of scope here.
 """
 
 import json
+from dataclasses import replace
 
 from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
 from pycats.combat.collapse import collapse
@@ -84,7 +85,15 @@ def _nalio_jab_fixture() -> dict:
     # A real, hydratable fighter (so _fighter_from_json succeeds) carrying a
     # provenance trace for its jab — the §1.1 worked example. Serialize the real
     # Nalio, then attach the per-frame jab trace the migrated file lacks.
-    doc = fighter_to_json(NALIO_FIGHTER_DATA, "nalio")
+    #
+    # #958: collapse now labels its hitboxes, so a labeled file's committed
+    # `hitboxes` must ALSO carry those labels for the drift-guard's `collapse ==
+    # committed` contract to hold. Rebuild the jab's canonical hitboxes from the
+    # labeled collapse output, so committed and recompiled agree.
+    jab = NALIO_FIGHTER_DATA.moves["jab"]
+    labeled_jab = replace(jab, hitboxes=collapse(_JAB_FRAMES, startup=jab.startup, active=jab.active))
+    fighter = replace(NALIO_FIGHTER_DATA, moves={**NALIO_FIGHTER_DATA.moves, "jab": labeled_jab})
+    doc = fighter_to_json(fighter, "nalio")
     doc["provenance"] = {"jab": {"note": "§1.1 worked example fixture", "frames": _JAB_FRAMES}}
     return doc
 

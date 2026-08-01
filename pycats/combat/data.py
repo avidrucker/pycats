@@ -84,6 +84,14 @@ class Hitbox:
                            existing move is byte-identical (golden-safe). The tag
                            is per-move-instance: the registry clears on move start,
                            so the same small integer may be reused across moves.
+        label            — a stable per-hitbox display id (#958): a letter A–Z the
+                           editor (and a JSON reader) uses to tell which hitbox is
+                           which across a move's temporal windows. Assigned by
+                           `collapse` = the source box's rank among the move's
+                           distinct hit-box ids; a box that spans several windows
+                           keeps ONE letter. None = unlabeled (today's behavior:
+                           migrated/hand-written data), so every existing move is
+                           byte-identical (the serializer omits it) — golden-safe.
     """
 
     circle: Circle
@@ -95,6 +103,7 @@ class Hitbox:
     active_end: int | None = None
     set_knockback: int | None = None
     set_id: int | None = None
+    label: str | None = None
 
     def __post_init__(self) -> None:
         s, e = self.active_start, self.active_end

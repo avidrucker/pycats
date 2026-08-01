@@ -49,13 +49,14 @@ def _scalar_signature(box: dict) -> tuple:
     return (tuple(box["circle"]), tuple(box.get(k) for k in _SCALAR_KEYS))
 
 
-def _make_hitbox(box: dict, *, active_start: int | None, active_end: int | None) -> Hitbox:
+def _make_hitbox(box: dict, *, active_start: int | None, active_end: int | None, label: str | None) -> Hitbox:
     """Build a `Hitbox` from a provenance box, mapping the editor key names."""
     dx, dy, r = box["circle"]
     return Hitbox(
         circle=Circle(dx=dx, dy=dy, r=r),
         damage=box["damage"],
         angle=box["angle"],
+        label=label,
         base_knockback=box.get("bkb", 0.0),
         knockback_growth=box.get("kbg", 0.0),
         active_start=active_start,
@@ -87,6 +88,12 @@ def collapse(frames, *, startup: int, active: int) -> tuple[Hitbox, ...]:
         for box in frame_record["boxes"]:
             streams.setdefault(box["id"], []).append((frame, box))
 
+    # 1b. Letter labels (#958) — each distinct box id gets a letter = its rank
+    #     among the SORTED distinct ids (dense A, B, C… even when ids are sparse).
+    #     A box that spans several windows keeps its one letter (stamped per id).
+    #     Assumes ≤26 hit boxes per move (chr overflows 'Z' beyond that).
+    labels = {box_id: chr(ord("A") + rank) for rank, box_id in enumerate(sorted(streams))}
+
     # 2. Run-length fold — one Hitbox per maximal run where frame is contiguous
     #    and (circle, scalars) are unchanged. Track (window_start, id, Hitbox).
     emitted: list[tuple[int, object, Hitbox]] = []
@@ -101,11 +108,23 @@ def collapse(frames, *, startup: int, active: int) -> tuple[Hitbox, ...]:
             elif frame == run_last + 1 and _scalar_signature(box) == _scalar_signature(run_box):
                 run_last = frame
             else:
-                emitted.append((run_first, box_id, _make_hitbox(run_box, active_start=run_first, active_end=run_last)))
+                emitted.append(
+                    (
+                        run_first,
+                        box_id,
+                        _make_hitbox(run_box, active_start=run_first, active_end=run_last, label=labels[box_id]),
+                    )
+                )
                 run_first = run_last = frame
                 run_box = box
         if run_box is not None:
-            emitted.append((run_first, box_id, _make_hitbox(run_box, active_start=run_first, active_end=run_last)))
+            emitted.append(
+                (
+                    run_first,
+                    box_id,
+                    _make_hitbox(run_box, active_start=run_first, active_end=run_last, label=labels[box_id]),
+                )
+            )
 
     # 3. Default-window canonicalization (golden-safe) — if EVERY emitted box
     #    spans exactly [startup+1, startup+active], drop the windows to None so

@@ -12,9 +12,16 @@ the fixtures below assert exact structures; a wrong fold, a dropped
 canonicalization, or a non-deterministic order breaks a specific assertion.
 """
 
+from dataclasses import replace
+
 from pycats.characters.nalio_cat import _JAB
 from pycats.combat.collapse import collapse
 from pycats.combat.data import Circle, Hitbox
+
+# #958: collapse now stamps each hitbox with a letter (rank among distinct ids).
+# The jab's three boxes (ids 0, 1, 2) collapse in that id order → A, B, C. The
+# committed _JAB is unlabeled (migrated data), so the oracle is _JAB + labels.
+_LABELED_JAB = tuple(replace(hb, label=letter) for hb, letter in zip(_JAB.hitboxes, "ABC"))
 
 # The design §1.1 worked example: Nalio jab (startup=1, active=2 → default window
 # [2,3]), three boxes all present + identical on frames 2 and 3.
@@ -42,7 +49,7 @@ def test_nalio_jab_collapses_to_the_python_oracle():
     # The headline golden-safety guarantee: the per-frame trace folds back to the
     # exact hand-written _JAB.hitboxes, windows canonicalized to None.
     result = collapse(_JAB_FRAMES, startup=1, active=2)
-    assert result == _JAB.hitboxes
+    assert result == _LABELED_JAB
 
 
 def test_nalio_jab_windows_canonicalize_to_none():
@@ -73,7 +80,7 @@ def test_shuffled_frame_and_box_order_is_deterministic():
             ],
         },
     ]
-    assert collapse(shuffled, startup=1, active=2) == _JAB.hitboxes
+    assert collapse(shuffled, startup=1, active=2) == _LABELED_JAB
 
 
 def test_moving_box_yields_a_one_frame_window_staircase():
@@ -87,10 +94,41 @@ def test_moving_box_yields_a_one_frame_window_staircase():
     ]
     result = collapse(frames, startup=3, active=3)  # default window would be [4,6]
     assert result == (
-        Hitbox(circle=Circle(10, 0, 8), damage=5.0, angle=40, active_start=4, active_end=4),
-        Hitbox(circle=Circle(14, 0, 8), damage=5.0, angle=40, active_start=5, active_end=5),
-        Hitbox(circle=Circle(18, 0, 8), damage=5.0, angle=40, active_start=6, active_end=6),
+        Hitbox(circle=Circle(10, 0, 8), damage=5.0, angle=40, active_start=4, active_end=4, label="A"),
+        Hitbox(circle=Circle(14, 0, 8), damage=5.0, angle=40, active_start=5, active_end=5, label="A"),
+        Hitbox(circle=Circle(18, 0, 8), damage=5.0, angle=40, active_start=6, active_end=6, label="A"),
     )
+
+
+def test_collapse_labels_boxes_by_id_order():
+    # #958: each hitbox gets a letter label = its box id's rank among the move's
+    # DISTINCT ids (dense A, B, C… — even when the ids are sparse). Able-to-fail:
+    # no labeling leaves label None; a wrong ordering mislabels.
+    frames = [
+        {
+            "frame": 4,
+            "boxes": [
+                {"id": 7, "circle": [10, 0, 8], "damage": 5.0, "angle": 40},
+                {"id": 3, "circle": [20, 0, 8], "damage": 5.0, "angle": 40},
+            ],
+        },
+    ]
+    result = collapse(frames, startup=3, active=1)  # default window [4,4] → canonicalized
+    # sorted distinct ids [3, 7] → 3=A, 7=B; output sorted by (start, id) → id 3 then id 7
+    assert [hb.label for hb in result] == ["A", "B"]
+
+
+def test_collapse_label_is_stable_across_a_boxs_windows():
+    # #958: a single box that blinks yields two windows under one id — both carry
+    # the SAME letter (the label tracks identity, not the window). Able-to-fail:
+    # a per-window (not per-id) label would give the two windows different letters.
+    frames = [
+        {"frame": 4, "boxes": [{"id": 0, "circle": [10, 0, 8], "damage": 5.0, "angle": 40}]},
+        {"frame": 5, "boxes": [{"id": 0, "circle": [10, 0, 8], "damage": 5.0, "angle": 40}]},
+        {"frame": 7, "boxes": [{"id": 0, "circle": [10, 0, 8], "damage": 5.0, "angle": 40}]},
+    ]
+    result = collapse(frames, startup=3, active=4)  # default [4,7]; two windows [4,5] + [7,7]
+    assert [hb.label for hb in result] == ["A", "A"]
 
 
 def test_blinking_box_yields_two_windows_under_one_id():
@@ -104,6 +142,6 @@ def test_blinking_box_yields_two_windows_under_one_id():
     ]
     result = collapse(frames, startup=3, active=4)  # default [4,7]; neither run matches
     assert result == (
-        Hitbox(circle=Circle(10, 0, 8), damage=5.0, angle=40, active_start=4, active_end=5),
-        Hitbox(circle=Circle(10, 0, 8), damage=5.0, angle=40, active_start=7, active_end=7),
+        Hitbox(circle=Circle(10, 0, 8), damage=5.0, angle=40, active_start=4, active_end=5, label="A"),
+        Hitbox(circle=Circle(10, 0, 8), damage=5.0, angle=40, active_start=7, active_end=7, label="A"),
     )
