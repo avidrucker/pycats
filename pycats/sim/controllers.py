@@ -77,6 +77,18 @@ IN_RANGE_NEAR_MARGIN = 18
 # gate always passes (#444: named from the -10_000 magic).
 NEVER_ATTACKED = -10_000
 
+# #714 (kill-confirm smash): opponent percent at/above which a smash-enabled leveled bot
+# throws a fully-charged forward-smash instead of its normal grounded attack — the
+# finisher the PM-faithful low-knockback jab/tilt can't provide (#706).
+# ⚠ PLACEHOLDER_MECHANIC_DECISION (NOT PM-sourced): one flat threshold for every level is
+# the V1 stand-in. Lower levels smash *less often* only as a side effect of the shared
+# per-level follow_through_p roll, not a designed policy; the per-level, PM-faithful
+# when/how-often/how-skilfully usage policy is research #915. The #588-sanctioned
+# full-charge fsmash KOs in the ~69-88% band (combat golden), so 100% sits safely inside
+# kill range. This is a controller AI knob (not a config combat/physics constant), so it
+# follows the controllers.py ⚠-comment convention rather than a combat/provenance row.
+SMASH_KILL_PERCENT = 100.0
+
 
 # ---------------------------------------------------------------------------
 # CPU difficulty levels (#232, #231 / #148 step 1) — DETERMINISTIC core only.
@@ -102,10 +114,10 @@ class LevelParams:
     # punish the opening. High levels punish (paired with reactive_shield); low levels
     # don't. Off = the pre-#274 cadence-only attack.
     whiff_punish: bool = False
-    # Capability gate (#248 / #148 step 3). Only "specials" is wired today (the bot
-    # presses B → fireball); tilts/aerials emerge from the move-select seam when the
-    # bot attacks while moving/airborne, and smash/grab don't exist in pycats yet —
-    # they ride here as data for future gating.
+    # Capability gate (#248 / #148 step 3). "specials" (the bot presses B → fireball)
+    # and "smashes" (#714: the kill-confirm forward-smash) are wired; tilts/aerials
+    # emerge from the move-select seam when the bot attacks while moving/airborne. Grab
+    # doesn't exist in pycats yet — it rides here as data for future gating.
     enabled_moves: frozenset = frozenset({"jab", "tilts", "aerials"})
     # #335 (DEV-A of #285): derive the melee range from the reach of the move the bot
     # actually commits (per-character/per-move) instead of the flat `attack_range=45`.
@@ -171,7 +183,8 @@ LEVEL_PARAMS: dict[int, LevelParams] = {
         shield_chance=0.15,
         reactive_shield=True,
         whiff_punish=True,
-        enabled_moves=frozenset({"jab", "tilts", "aerials"}),
+        # #714: "smashes" unlocks at Lv5+ (PLACEHOLDER cut — the per-level policy is #915).
+        enabled_moves=frozenset({"jab", "tilts", "aerials", "smashes"}),
         reach_aware=True,
         reactive_spacing=True,
         recover=True,
@@ -185,7 +198,7 @@ LEVEL_PARAMS: dict[int, LevelParams] = {
         shield_chance=0.40,
         reactive_shield=True,
         whiff_punish=True,
-        enabled_moves=frozenset({"jab", "tilts", "aerials"}),
+        enabled_moves=frozenset({"jab", "tilts", "aerials", "smashes"}),
         reach_aware=True,
         reactive_spacing=True,
         evade_chance=0.15,
@@ -201,7 +214,7 @@ LEVEL_PARAMS: dict[int, LevelParams] = {
         shield_chance=0.85,
         reactive_shield=True,
         whiff_punish=True,
-        enabled_moves=frozenset({"jab", "tilts", "aerials", "specials"}),
+        enabled_moves=frozenset({"jab", "tilts", "aerials", "specials", "smashes"}),
         reach_aware=True,
         reactive_spacing=True,
         evade_chance=0.30,
@@ -551,6 +564,17 @@ class AttackerController(BaseController):
         keys = a.controls
         held = set()
 
+        # #714 kill-confirm smash — keep a smash we started held until it auto-fires.
+        # Pressing `smash`+direction puts the engine in the `smash_charge` state, which
+        # roots the fighter; holding `smash` there accumulates the charge and the engine
+        # auto-fires at SMASH_CHARGE_FRAMES (fighter_input). So while that state is live
+        # we do nothing but keep `smash` held. TEMPORARY_MECHANIC_DECISION (#714): V1
+        # always charges to FULL — the situational (early-release) charge policy is
+        # deferred to research #915. Gated on the "smashes" capability so the level-less
+        # default / Lv1-4 never reach here (they never press smash) → golden-safe.
+        if "smashes" in self.enabled_moves and getattr(a, "state", None) == "smash_charge":
+            return {keys["smash"]}
+
         # Ledge recovery (#291 + #902 C1): a hanging fighter only escapes by pressing up
         # (the neutral getup, #14) — the engine imposes no timeout (#475: no hang timer).
         # Skilled bots (level >= 5) getup immediately; lower leveled bots (1-4) hang
@@ -778,6 +802,28 @@ class AttackerController(BaseController):
                 # golden-safe default); a failed roll hesitates and retries later.
                 commit = self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p
                 if commit:
+                    # #714 kill-confirm: at/above SMASH_KILL_PERCENT, throw a fully-
+                    # charged FORWARD-smash (press smash+toward → fsmash charge) instead
+                    # of the low-knockback tilt/jab — the finisher #706 found missing.
+                    # PLACEHOLDER_MECHANIC_DECISION (#714/#915): a single flat threshold
+                    # for every level; lower levels smash less often only via the shared
+                    # follow_through_p roll above, not a designed policy — the per-level
+                    # PM-faithful usage policy is research #915. fsmash only for V1 (up/
+                    # down deferred to #916); the #588-sanctioned side-blast finisher.
+                    # Skipped when up/down already steer a jump/drop (mirrors the #292
+                    # tilt gate) so no smash is injected mid-air-movement. Gated on level
+                    # + "smashes" so the level-less default / Lv1-4 are byte-identical
+                    # (never evaluated, no extra rng draw) → golden-safe.
+                    if (
+                        self.level is not None
+                        and "smashes" in self.enabled_moves
+                        and a.fighter.on_ground
+                        and getattr(t.fighter, "percent", 0) >= SMASH_KILL_PERCENT
+                        and keys["up"] not in held
+                        and keys["down"] not in held
+                    ):
+                        self._last_attack = self._f
+                        return {keys["smash"], toward}
                     held.add(keys["attack"])
                     self._last_attack = self._f
                     # #292: convert a NEUTRAL grounded attack into a forward-tilt.

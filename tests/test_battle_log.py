@@ -153,11 +153,16 @@ def test_events_from_real_seeded_run():
 
     rng = random.Random(3)
     cs = (AttackerController(attacker_num=1, level=5, rng=rng), AttackerController(attacker_num=2, level=5, rng=rng))
-    # 3000f window: #911 flattened the lingering aerials (ruling #893), lowering their
-    # knockback, so this deterministic seed-3 KO now converts later (around frame ~2567,
-    # up from ~1428 pre-flatten). The window is sized past that so the log has a KO event
-    # to derive. (#309 zone-anchored Birky's hitboxes originally set this trajectory.)
-    snaps = run_battle(frames=3000, controllers=cs, p1_char="nalio", p2_char="birky", stop_on_match_over=True)
+    # 4000f window: this deterministic seed-3 KO frame has drifted with several changes —
+    # #309 zone-anchored Birky's hitboxes (~1428), #911 flattened the lingering aerials
+    # (ruling #893), and #714 gave the Lv5 CPU a kill-confirm smash whose full-charge
+    # sometimes whiffs a MOVING opponent (the V1 full-charge policy is deliberate — the
+    # situational charge is deferred to research #915). With all three applied the first
+    # KO converts around frame ~1634 (the smash is a stronger finisher than #911's
+    # flattened aerials, so it lands sooner); the window is sized well past that so the
+    # log has a KO event to derive. The win-condition regression itself lives in
+    # tests/test_bot_match_resolves.py (6000f budget, same seed/matchup).
+    snaps = run_battle(frames=4000, controllers=cs, p1_char="nalio", p2_char="birky", stop_on_match_over=True)
     ev = events_from_snaps(snaps)
     kinds = {e.type for e in ev}
     assert JUMP in kinds and ATTACK in kinds, kinds
