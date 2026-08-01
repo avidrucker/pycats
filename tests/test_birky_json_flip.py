@@ -18,7 +18,7 @@ import json
 from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA
 from pycats.combat.data import (
     CHARACTER_DATA_DIR,
-    _fighter_to_json,
+    fighter_to_json,
     load_fighter_data,
 )
 
@@ -40,7 +40,7 @@ def test_committed_json_matches_serializer():
     # Guards against a stale / hand-edited file: the committed bytes must parse to
     # exactly what the R5 serializer emits for the current Python literal.
     on_disk = json.loads(BIRKY_JSON.read_text())
-    assert on_disk == _fighter_to_json(BIRKY_FIGHTER_DATA, "birky")
+    assert on_disk == fighter_to_json(BIRKY_FIGHTER_DATA, "birky")
 
 
 def test_migrated_json_has_no_provenance():

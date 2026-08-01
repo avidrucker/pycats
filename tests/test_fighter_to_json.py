@@ -4,7 +4,7 @@ tests/test_fighter_to_json.py
 R5 (#847, child of #792 editor): the migration dump — FighterData -> minimal
 thin-mirror dict (docs/pycats-editor-data-schema-design.md §2.4 + §1).
 
-`_fighter_to_json` is the inverse of `_fighter_from_json` (R3, #838). The core
+`fighter_to_json` is the inverse of `_fighter_from_json` (R3, #838). The core
 guarantee is a round-trip THROUGH JSON (mirroring the real §2.2 write->reload
 cycle: dict -> json.dumps -> json.loads -> hydrate): every shipped fighter
 survives serialize->reload byte-equal. A serializer bug (wrong key, a dropped
@@ -32,9 +32,9 @@ from pycats.combat.data import (
     Hurtbox,
     MoveData,
     _fighter_from_json,
-    _fighter_to_json,
     _move_from_json,
     _move_to_json,
+    fighter_to_json,
     load_fighter_data,
 )
 
@@ -57,7 +57,7 @@ def _through_json(doc: dict) -> dict:
 @pytest.mark.parametrize("key", FIGHTER_KEYS)
 def test_roundtrip_through_json_equals_source(key):
     fd = load_fighter_data(key)
-    rebuilt = _fighter_from_json(_through_json(_fighter_to_json(fd)))
+    rebuilt = _fighter_from_json(_through_json(fighter_to_json(fd)))
     assert rebuilt == fd
 
 
@@ -72,7 +72,7 @@ def test_getup_attack_move_roundtrips():
 @pytest.mark.parametrize("key", FIGHTER_KEYS)
 def test_output_is_json_serializable(key):
     # No tuples/sets/dataclasses leak into the dump — json.dumps must not raise.
-    json.dumps(_fighter_to_json(load_fighter_data(key)))
+    json.dumps(fighter_to_json(load_fighter_data(key)))
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +83,7 @@ def test_output_is_json_serializable(key):
 def test_nalio_jab_is_thin_matches_worked_example():
     # §1.1: the Nalio jab dumps to exactly the collapsed hitboxes, no default
     # keys. Grounded in nalio_cat.py _JAB, not the design prose.
-    doc = _fighter_to_json(load_fighter_data("nalio"))
+    doc = fighter_to_json(load_fighter_data("nalio"))
     jab = doc["moves"]["jab"]
     assert jab["hitboxes"] == [
         {"circle": [54, 27, 19], "damage": 3.0, "angle": 83, "knockback_growth": 100.0, "set_knockback": 20},
@@ -98,7 +98,7 @@ def test_nalio_jab_is_thin_matches_worked_example():
 
 
 def test_default_valued_move_tail_omitted():
-    jab = _fighter_to_json(load_fighter_data("nalio"))["moves"]["jab"]
+    jab = fighter_to_json(load_fighter_data("nalio"))["moves"]["jab"]
     for defaulted in (
         "rehit_rate",
         "projectile_speed",
@@ -116,7 +116,7 @@ def test_default_valued_fighter_fields_omitted():
     # Nalio uses weight 100 (the default) and the config movement globals -> none
     # of those keys appear. (Nalio DOES set crouch geometry, so *_size/*_hurtbox
     # are intentionally not asserted here — see test_optional_geometry_roundtrips.)
-    doc = _fighter_to_json(load_fighter_data("nalio"))
+    doc = fighter_to_json(load_fighter_data("nalio"))
     for defaulted in (
         "weight",
         "gravity",
@@ -138,7 +138,7 @@ def test_nondefault_scalar_is_emitted_and_roundtrips():
         moves=base.moves,
         weight=123,
     )
-    doc = _fighter_to_json(heavy)
+    doc = fighter_to_json(heavy)
     assert doc["weight"] == 123
     assert _fighter_from_json(_through_json(doc)).weight == 123
 
@@ -149,19 +149,19 @@ def test_nondefault_scalar_is_emitted_and_roundtrips():
 
 
 def test_circles_are_inline_arrays():
-    doc = _fighter_to_json(load_fighter_data("nalio"))
+    doc = fighter_to_json(load_fighter_data("nalio"))
     assert doc["hurtbox"]["circles"] == [[20, 15, 14], [20, 45, 14]]
     assert doc["moves"]["jab"]["hitboxes"][0]["circle"] == [54, 27, 19]
 
 
 def test_schema_version_present():
-    assert _fighter_to_json(load_fighter_data("nalio"))["schema_version"] == SCHEMA_VERSION
+    assert fighter_to_json(load_fighter_data("nalio"))["schema_version"] == SCHEMA_VERSION
 
 
 def test_character_key_present_only_when_named():
     fd = load_fighter_data("nalio")
-    assert _fighter_to_json(fd, "nalio")["character"] == "nalio"
-    assert "character" not in _fighter_to_json(fd)
+    assert fighter_to_json(fd, "nalio")["character"] == "nalio"
+    assert "character" not in fighter_to_json(fd)
 
 
 def test_optional_geometry_roundtrips():
@@ -186,4 +186,4 @@ def test_optional_geometry_roundtrips():
         prone_size=(40, 24),
         prone_hurtbox=Hurtbox(circles=(Circle(10, 40, 8),)),
     )
-    assert _fighter_from_json(_through_json(_fighter_to_json(fd))) == fd
+    assert _fighter_from_json(_through_json(fighter_to_json(fd))) == fd

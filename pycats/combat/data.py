@@ -417,7 +417,7 @@ def _move_to_json(m: MoveData) -> dict:
     return out
 
 
-def _fighter_to_json(fd: FighterData, character: str | None = None) -> dict:
+def fighter_to_json(fd: FighterData, character: str | None = None) -> dict:
     """Serialize a FighterData to the minimal thin-mirror dict (inverse hydrate).
 
     Pass `character` to emit the schema's `character` key (the file stem); it is

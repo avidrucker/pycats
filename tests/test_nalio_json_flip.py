@@ -17,7 +17,7 @@ import json
 from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
 from pycats.combat.data import (
     CHARACTER_DATA_DIR,
-    _fighter_to_json,
+    fighter_to_json,
     load_fighter_data,
 )
 
@@ -41,7 +41,7 @@ def test_committed_json_matches_serializer():
     # Python changes and the JSON is not regenerated, this fails and names nothing
     # ambiguous — regenerate the dump.
     on_disk = json.loads(NALIO_JSON.read_text())
-    assert on_disk == _fighter_to_json(NALIO_FIGHTER_DATA, "nalio")
+    assert on_disk == fighter_to_json(NALIO_FIGHTER_DATA, "nalio")
 
 
 def test_migrated_json_has_no_provenance():

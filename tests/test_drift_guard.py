@@ -25,7 +25,7 @@ from pycats.combat.collapse import collapse
 from pycats.combat.data import (
     CHARACTER_DATA_DIR,
     _fighter_from_json,
-    _fighter_to_json,
+    fighter_to_json,
 )
 
 # The design §1.1 worked example: Nalio jab per-frame trace (frames 2 & 3
@@ -84,7 +84,7 @@ def _nalio_jab_fixture() -> dict:
     # A real, hydratable fighter (so _fighter_from_json succeeds) carrying a
     # provenance trace for its jab — the §1.1 worked example. Serialize the real
     # Nalio, then attach the per-frame jab trace the migrated file lacks.
-    doc = _fighter_to_json(NALIO_FIGHTER_DATA, "nalio")
+    doc = fighter_to_json(NALIO_FIGHTER_DATA, "nalio")
     doc["provenance"] = {"jab": {"note": "§1.1 worked example fixture", "frames": _JAB_FRAMES}}
     return doc
 
