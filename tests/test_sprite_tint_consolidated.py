@@ -18,6 +18,7 @@ Revert-the-fix checks:
     survives a hurt flash" pixel-count assertions go red (the ear/tail pixels
     stay exactly char_color).
 """
+
 import pygame as pg
 import pytest
 
@@ -33,13 +34,11 @@ pytestmark = pytest.mark.usefixtures("render_isolation")
 # "untinted" from "tinted" regions.
 C = (10, 200, 30)
 
-CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-            "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
+CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
 
 
 def _mk(hurt=0, stun=0, dodge=0):
-    p = Player(x=100, y=100, controls=CONTROLS, color=C, eye_color=(0, 0, 200),
-               char_name="P1", facing_right=True)
+    p = Player(x=100, y=100, controls=CONTROLS, color=C, eye_color=(0, 0, 200), char_name="P1", facing_right=True)
     p.fighter.hurt_timer = hurt
     p.fighter.stun_timer = stun
     p.fighter.dodge_timer = dodge
@@ -54,10 +53,11 @@ def _count_exact(surf, rgb):
     """Number of fully-opaque pixels exactly equal to `rgb` in `surf`."""
     data = pg.image.tobytes(surf, "RGBA")
     target = bytes((*rgb, 255))
-    return sum(1 for i in range(0, len(data), 4) if data[i:i + 4] == target)
+    return sum(1 for i in range(0, len(data), 4) if data[i : i + 4] == target)
 
 
 # --- the pure tint helper -----------------------------------------------------
+
 
 def test_tinted_is_identity_when_no_timer_is_live():
     p = _mk()
@@ -94,6 +94,7 @@ def test_body_tint_75_contract_is_unchanged():
 
 # --- whole-sprite composite: body + ears + stripes all flash ------------------
 
+
 def test_hurt_flash_leaves_no_untinted_char_color_in_the_body_composite():
     normal = rb._cat_body_surface(_mk(), cat_faces.PRIMITIVES)
     assert _count_exact(normal, C) > 0, "setup: body/ears/stripes paint char_color when calm"
@@ -111,6 +112,7 @@ def test_stun_and_dodge_also_clear_raw_char_color_from_the_composite():
 
 
 # --- the tail flashes too -----------------------------------------------------
+
 
 def _draw_tail(p):
     surf = pg.Surface((300, 300), pg.SRCALPHA)

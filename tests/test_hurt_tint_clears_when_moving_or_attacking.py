@@ -13,6 +13,7 @@ Revert-the-fix check: gate the decrement at `Player.update` on
 `not in_hitstun`/`self.state != "attack"` and the timer never reaches 0 → both
 tests go red.
 """
+
 import pygame as pg
 
 from pycats.combat.data import Circle, Hitbox
@@ -23,8 +24,7 @@ from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 from pycats.render_battle import body_tint
 
-CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-            "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
+CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
 
 
 def _frame(held=(), pressed=(), released=()):
@@ -38,15 +38,13 @@ def _floor():
 
 
 def _mk(x, name, color):
-    return Player(x=x, y=400, controls=CONTROLS, color=color, eye_color=WHITE,
-                  char_name=name, facing_right=True)
+    return Player(x=x, y=400, controls=CONTROLS, color=color, eye_color=WHITE, char_name=name, facing_right=True)
 
 
 def _hit(victim, attacker):
     # Real knockback so computed hitstun (#40) exceeds 1 frame — else a single
     # update() would consume it before we can observe the countdown.
-    hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=10, angle=0,
-                base_knockback=30.0, knockback_growth=100.0)
+    hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=10, angle=0, base_knockback=30.0, knockback_growth=100.0)
     victim.fighter.receive_hit(Attack(owner=attacker, hitbox=hb, lifetime=1))
 
 
@@ -74,8 +72,9 @@ def _assert_tint_clears(victim_input):
             break
 
     assert cleared_at is not None, "hurt_timer never returned to 0 — fighter stuck red"
-    assert tuple(body_tint(victim)) == tuple(victim.char_color), \
+    assert tuple(body_tint(victim)) == tuple(victim.char_color), (
         "tint did not return to the character colour after hitstun"
+    )
     return cleared_at
 
 
@@ -84,6 +83,4 @@ def test_hurt_tint_clears_when_hit_while_moving():
 
 
 def test_hurt_tint_clears_when_hit_while_attacking():
-    _assert_tint_clears(
-        lambda: _frame(held={CONTROLS["attack"]}, pressed={CONTROLS["attack"]})
-    )
+    _assert_tint_clears(lambda: _frame(held={CONTROLS["attack"]}, pressed={CONTROLS["attack"]}))

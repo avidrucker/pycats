@@ -6,7 +6,6 @@ A coloured rect that brightens/glows when focused, plus a non-colour focus cue
 Piloted in OptionsMenu here; rolled out to the other menus in #360.
 """
 
-
 import pygame  # noqa: E402
 
 from pycats.menu_widgets import (  # noqa: E402
@@ -76,10 +75,24 @@ from pycats.config import (  # noqa: E402
 )
 from pycats.options_menu import OptionsMenu  # noqa: E402
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def test_options_render_draws_glow_button_only_at_focused_row():
@@ -90,7 +103,7 @@ def test_options_render_draws_glow_button_only_at_focused_row():
     s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     m.render(s)
     centers = {i: c for i, c in m._layout()[0]}
-    fx, fy = centers[0]   # focused cell
-    ux, uy = centers[3]   # a different, unfocused cell
-    assert _row_has_fill(s, fy, BUTTON_FILL_FOCUSED, fx - 150, fx + 150)      # focused
+    fx, fy = centers[0]  # focused cell
+    ux, uy = centers[3]  # a different, unfocused cell
+    assert _row_has_fill(s, fy, BUTTON_FILL_FOCUSED, fx - 150, fx + 150)  # focused
     assert not _row_has_fill(s, uy, BUTTON_FILL_FOCUSED, ux - 150, ux + 150)  # unfocused

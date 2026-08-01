@@ -18,5 +18,6 @@ def test_player_engine_is_statechart():
     # builds it regardless of the retained `backend` param, so a default Player
     # gets a StatechartEngine (legacy is gone).
     from pycats.systems.state_engine_sc import StatechartEngine
+
     p = _mk_player()
     assert isinstance(p.engine, StatechartEngine)

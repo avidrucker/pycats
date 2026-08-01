@@ -6,17 +6,21 @@ left/right between columns). Labels are centered in their button rects on BOTH
 axes (vertical centering was the visible defect — text sat low in the rect).
 """
 
-
 import pygame  # noqa: E402
 
 from pycats.options_menu import NCOLS, OptionsMenu  # noqa: E402
 from pycats.text_utils import text_renderer  # noqa: E402
 
 # Full control dicts (the grid needs left/right, unlike the old single column).
-_P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d,
-           attack=pygame.K_v, special=pygame.K_c)
-_P2 = dict(up=pygame.K_UP, down=pygame.K_DOWN, left=pygame.K_LEFT, right=pygame.K_RIGHT,
-           attack=pygame.K_SLASH, special=pygame.K_PERIOD)
+_P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d, attack=pygame.K_v, special=pygame.K_c)
+_P2 = dict(
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    attack=pygame.K_SLASH,
+    special=pygame.K_PERIOD,
+)
 
 UP, DOWN, LEFT, RIGHT = pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d
 
@@ -71,6 +75,5 @@ def test_render_mixed_centered_centers_on_both_axes():
     """The button-label renderer centers the composed text on the point (both axes),
     unlike render_text_mixed which places the text top at the y (so it sat low)."""
     surf = pygame.Surface((240, 120))
-    rect = text_renderer.render_mixed_centered("Status Bars: ON", 36, (255, 255, 255),
-                                               surf, (120, 60))
+    rect = text_renderer.render_mixed_centered("Status Bars: ON", 36, (255, 255, 255), surf, (120, 60))
     assert rect.center == (120, 60)

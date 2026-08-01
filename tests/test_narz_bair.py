@@ -3,6 +3,7 @@
 Marth's backward KO/spacing poke: a 2-box tipper (tip first) BEHIND the body (negative
 dx), disjoint. Golden-free: sim loads the default cat.
 """
+
 from __future__ import annotations
 
 import types
@@ -16,9 +17,15 @@ from pycats.systems.combat import process_hits
 
 def _player(rect, *, hurtbox_circles, facing_right=True):
     p = types.SimpleNamespace(
-        rect=rect, facing_right=facing_right, intangible=False, is_alive=True,
+        rect=rect,
+        facing_right=facing_right,
+        intangible=False,
+        is_alive=True,
         fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)), moves={}),
-        hits_received=0, hits_landed=0, last_damage=None, last_angle=None,
+        hits_received=0,
+        hits_landed=0,
+        last_damage=None,
+        last_angle=None,
     )
 
     def receive_hit(atk, is_crouching=False):
@@ -53,8 +60,7 @@ def test_bair_is_disjoint_behind_the_body():
 
 def test_bair_tip_beats_base_when_both_overlap():
     pygame.init()
-    attacker = _player(pygame.Rect(0, 0, 40, 60),
-                       hurtbox_circles=[Circle(20, 15, 14), Circle(20, 45, 14)])
+    attacker = _player(pygame.Rect(0, 0, 40, 60), hurtbox_circles=[Circle(20, 15, 14), Circle(20, 45, 14)])
     # defender hurtbox circle at absolute (-53,29): overlaps tip(-64,28) and base(-42,30).
     defender = _player(pygame.Rect(-73, -1, 40, 60), hurtbox_circles=[Circle(20, 30, 14)])
     bair = load_fighter_data("narz").moves["bair"]

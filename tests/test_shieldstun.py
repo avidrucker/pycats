@@ -7,6 +7,7 @@ shieldstun_frames(damage) = floor(damage * 0.345) frames (SmashWiki / the projec
 roadmap), and both fighters take hitlag (the #138 shield-hitlag deferral).
 Shield-BREAK still routes to the dizzy `stun`, not shieldstun.
 """
+
 import pygame as pg
 from helpers import P1
 
@@ -20,13 +21,11 @@ from pycats.entities.player import Player
 
 
 def _mk(char="P1"):
-    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name=char, facing_right=True)
+    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name=char, facing_right=True)
 
 
 def _atk(owner, damage):
-    hb = Hitbox(circle=Circle(dx=20, dy=30, r=14), damage=damage, angle=45,
-                base_knockback=30.0, knockback_growth=100.0)
+    hb = Hitbox(circle=Circle(dx=20, dy=30, r=14), damage=damage, angle=45, base_knockback=30.0, knockback_growth=100.0)
     return Attack(owner, hitbox=hb, lifetime=2)
 
 
@@ -40,13 +39,15 @@ def _shielding(p):
 
 # ---- pure formula ---------------------------------------------------------
 
+
 def test_shieldstun_frames_reference_values():
-    assert shieldstun_frames(9) == 3     # floor(9 * 0.345)  = floor(3.105) = 3
-    assert shieldstun_frames(12) == 4    # floor(12 * 0.345) = floor(4.14)  = 4
-    assert shieldstun_frames(2) == 0     # < ~2.9% -> 0 (floor(0.69))
+    assert shieldstun_frames(9) == 3  # floor(9 * 0.345)  = floor(3.105) = 3
+    assert shieldstun_frames(12) == 4  # floor(12 * 0.345) = floor(4.14)  = 4
+    assert shieldstun_frames(2) == 0  # < ~2.9% -> 0 (floor(0.69))
 
 
 # ---- behaviour ------------------------------------------------------------
+
 
 def test_blocked_hit_sets_shieldstun_and_hitlag_on_both():
     pg.init()

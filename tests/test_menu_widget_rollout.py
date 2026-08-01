@@ -10,7 +10,6 @@ Able-to-fail: before adoption the menus render plain text and never call
 `draw_menu_button`, so the spy records no calls and these go red.
 """
 
-
 from unittest.mock import patch  # noqa: E402
 
 import pygame  # noqa: E402
@@ -20,10 +19,15 @@ from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
 from pycats.main_menu import MainMenuManager  # noqa: E402
 from pycats.pause_menu import PauseMenuManager  # noqa: E402
 
-_P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d,
-           attack=pygame.K_v, special=pygame.K_c)
-_P2 = dict(up=pygame.K_UP, down=pygame.K_DOWN, left=pygame.K_LEFT, right=pygame.K_RIGHT,
-           attack=pygame.K_SLASH, special=pygame.K_PERIOD)
+_P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d, attack=pygame.K_v, special=pygame.K_c)
+_P2 = dict(
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    attack=pygame.K_SLASH,
+    special=pygame.K_PERIOD,
+)
 
 
 def _spy_button_calls(render_fn):

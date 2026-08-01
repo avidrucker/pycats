@@ -8,7 +8,6 @@ Able-to-fail: revert NAME_LABEL_OFFSET_Y back to 25 and the label bottom drops o
 the ears -> the clearance assertion fails.
 """
 
-
 import pygame
 import pytest
 
@@ -20,6 +19,7 @@ pytestmark = pytest.mark.usefixtures("render_isolation")
 
 class _FakeP:
     """Minimal surface draw_player_name reads: a rect + char_name + nickname."""
+
     def __init__(self, char_name="P1", nickname=None):
         self.rect = pygame.Rect(200, 200, 40, 60)
         self.char_name = char_name
@@ -38,9 +38,7 @@ def test_label_bottom_clears_the_ear_tips():
     p = _FakeP("P1")
     ear_tip_y = p.rect.top - EAR_HEIGHT
     bounds = _label_bounds(p)
-    assert bounds.bottom <= ear_tip_y, (
-        f"label bottom {bounds.bottom} overlaps ear zone (ear tip at {ear_tip_y})"
-    )
+    assert bounds.bottom <= ear_tip_y, f"label bottom {bounds.bottom} overlaps ear zone (ear tip at {ear_tip_y})"
 
 
 def test_both_slots_clear_the_ears():

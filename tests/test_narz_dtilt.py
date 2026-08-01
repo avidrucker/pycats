@@ -4,6 +4,7 @@ Marth's low spacing / edgeguard tool: a 2-box tipper (tip first) like the f-tilt
 near the feet (high dy) and at a low launch angle. Reuses the f-tilt's tipper proof
 (tip wins on dual overlap). Golden-free: sim loads the default cat.
 """
+
 from __future__ import annotations
 
 import types
@@ -17,9 +18,15 @@ from pycats.systems.combat import process_hits
 
 def _player(rect, *, hurtbox_circles, facing_right=True):
     p = types.SimpleNamespace(
-        rect=rect, facing_right=facing_right, intangible=False, is_alive=True,
+        rect=rect,
+        facing_right=facing_right,
+        intangible=False,
+        is_alive=True,
         fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)), moves={}),
-        hits_received=0, hits_landed=0, last_damage=None, last_angle=None,
+        hits_received=0,
+        hits_landed=0,
+        last_damage=None,
+        last_angle=None,
     )
 
     def receive_hit(atk, is_crouching=False):
@@ -47,14 +54,13 @@ def test_dtilt_is_low_and_disjoint():
     narz = load_fighter_data("narz")
     tip = narz.moves["dtilt"].hitboxes[0].circle
     hurtbox_outer = max(c.dx + c.r for c in narz.hurtbox.circles)
-    assert tip.dx - tip.r > hurtbox_outer          # disjoint reach
-    assert tip.dy > 30                             # low — near the feet (body is 60 tall)
+    assert tip.dx - tip.r > hurtbox_outer  # disjoint reach
+    assert tip.dy > 30  # low — near the feet (body is 60 tall)
 
 
 def test_dtilt_tip_beats_base_when_both_overlap():
     pygame.init()
-    attacker = _player(pygame.Rect(0, 0, 40, 60),
-                       hurtbox_circles=[Circle(20, 15, 14), Circle(20, 45, 14)])
+    attacker = _player(pygame.Rect(0, 0, 40, 60), hurtbox_circles=[Circle(20, 15, 14), Circle(20, 45, 14)])
     # defender hurtbox circle at absolute (55,47): overlaps tip(66,46) and base(44,48).
     defender = _player(pygame.Rect(35, 17, 40, 60), hurtbox_circles=[Circle(20, 30, 14)])
     dtilt = load_fighter_data("narz").moves["dtilt"]

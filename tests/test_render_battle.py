@@ -17,6 +17,7 @@ def test_render_battle_draws_without_error():
     p1, p2, players = build_players()
     # advance one frame so players have valid rects/tails
     from pycats.core.input import InputFrame
+
     empty = InputFrame(held=set(), pressed=set(), released=set())
     for p in players:
         p.update(empty, platforms, pygame.sprite.Group())
@@ -42,9 +43,8 @@ def test_tail_entity_does_not_import_the_render_adapter():
             for alias in node.names:
                 if alias.name.endswith("render_battle"):
                     offenders.append(f"line {node.lineno}: import {alias.name}")
-    assert offenders == [], (
-        "entities/tail.py imports the render adapter (layering inversion, #265):\n"
-        + "\n".join(offenders)
+    assert offenders == [], "entities/tail.py imports the render adapter (layering inversion, #265):\n" + "\n".join(
+        offenders
     )
 
 
@@ -53,6 +53,7 @@ def test_platform_renders_thickness_colour_pixels():
     (thick (164,113,73) / thin (193,153,112)). Guards the Surface -> draw.rect
     extraction — able-to-fail if the colour mapping or the rect draw is wrong."""
     from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
+
     plats = build_stage()
     surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     surf.fill((0, 0, 0))

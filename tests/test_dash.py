@@ -3,6 +3,7 @@
 double-tap trigger that calls `_start_dash` is slice 2b; here the seam is driven
 directly, and nothing in the default path starts a dash (golden-safe).
 """
+
 import pygame
 from helpers import P1
 from helpers import mk_player as _mk_player
@@ -14,6 +15,7 @@ pygame.init()
 
 # ---- the scalar ----
 
+
 def test_fighter_data_has_dash_speed_default():
     fd = load_fighter_data("default")
     assert fd.dash_speed == DASH_SPEED
@@ -23,6 +25,7 @@ def test_fighter_data_has_dash_speed_default():
 
 
 # ---- the _start_dash seam ----
+
 
 def test_start_dash_sets_timer_velocity_and_facing():
     p = _mk_player()
@@ -38,6 +41,7 @@ def test_start_dash_sets_timer_velocity_and_facing():
 
 
 # ---- the dash chart leaf ----
+
 
 def test_dash_state_entered_while_timer_positive():
     p = _mk_player()
@@ -71,11 +75,12 @@ def test_dash_timer_decrements_in_tick_action_timers():
 
 # ---- movement applies dash_speed while dashing ----
 
+
 def test_handle_move_uses_dash_speed_while_dashing():
     p = _mk_player()
     p.fighter.on_ground = True
     p.fighter._start_dash(1)  # dash_timer > 0
-    p.handle_move({P1["right"]})   # hold right while dashing
+    p.handle_move({P1["right"]})  # hold right while dashing
     assert p.fighter.vel.x == DASH_SPEED
 
     # once the dash timer is drained, held movement falls back to walk speed
@@ -87,6 +92,7 @@ def test_handle_move_uses_dash_speed_while_dashing():
 
 
 # ---- golden-safety: the default path never dashes ----
+
 
 def test_default_moving_fighter_is_walk_not_dash():
     # a fighter that simply moves (no _start_dash) is in `walk`, never `dash`.

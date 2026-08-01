@@ -5,6 +5,7 @@ presenters — a presentation overlay only (sim/goldens untouched). Tested with 
 offscreen-surface oracle (the #205 render-test pattern); the presenter wiring is tested
 with a fake video writer (no ffmpeg).
 """
+
 import pygame
 import pytest
 
@@ -31,6 +32,7 @@ def _pygame():
 
 # --- frame-window gating -------------------------------------------------------
 
+
 def test_is_active_untimed_is_always_on():
     c = Caption("x", frames=None)
     assert is_active(c, 0) and is_active(c, 999)
@@ -44,6 +46,7 @@ def test_is_active_respects_inclusive_window():
 
 
 # --- anchored geometry ---------------------------------------------------------
+
 
 def test_anchored_rect_three_anchors():
     size = (SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -63,6 +66,7 @@ def test_anchored_rect_rejects_unknown_anchor():
 
 # --- font / size ---------------------------------------------------------------
 
+
 def test_size_scales_caption_footprint():
     small = render_caption_surface(Caption("HELLO", size=12))
     big = render_caption_surface(Caption("HELLO", size=48))
@@ -72,11 +76,10 @@ def test_size_scales_caption_footprint():
 
 # --- drawing + active-only composition ----------------------------------------
 
+
 def _count(surface, color):
     arr = pygame.surfarray.array3d(surface)
-    return int(((arr[:, :, 0] == color[0]) &
-                (arr[:, :, 1] == color[1]) &
-                (arr[:, :, 2] == color[2])).sum())
+    return int(((arr[:, :, 0] == color[0]) & (arr[:, :, 1] == color[1]) & (arr[:, :, 2] == color[2])).sum())
 
 
 def test_draw_captions_renders_active_and_skips_inactive():
@@ -91,6 +94,7 @@ def test_draw_captions_renders_active_and_skips_inactive():
 
 # --- presenter wiring (fake writer, no ffmpeg) --------------------------------
 
+
 def test_video_presenter_draws_captions(monkeypatch):
     frames_out = []
 
@@ -102,14 +106,15 @@ def test_video_presenter_draws_captions(monkeypatch):
             pass
 
     import imageio.v2 as imageio
+
     monkeypatch.setattr(imageio, "get_writer", lambda *a, **k: _FakeWriter())
     from pycats.sim.presenters import VideoPresenter
 
     cap = Caption("HELLO", anchor=TOP_CENTER, size=48, color=(255, 0, 0), frames=(0, 10))
     vp = VideoPresenter("ignored.mp4", captions=[cap])
     empty = pygame.sprite.Group()
-    vp.show([], empty, empty, frame=5)     # caption active
-    vp.show([], empty, empty, frame=100)   # caption inactive
+    vp.show([], empty, empty, frame=5)  # caption active
+    vp.show([], empty, empty, frame=100)  # caption inactive
 
     assert len(frames_out) == 2
 

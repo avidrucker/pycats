@@ -6,7 +6,6 @@ inserting a field in snapshot() (without matching PlayerSnap) reds this — the
 named accessor can't silently read the wrong slot.
 """
 
-
 from pycats.config import INITIAL_LIVES  # noqa: E402
 from pycats.sim.runner import PlayerSnap, run_battle  # noqa: E402
 

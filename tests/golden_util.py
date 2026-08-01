@@ -10,6 +10,7 @@ Set the environment variable ``PYCATS_UPDATE_GOLDENS=1`` to (re)write the
 golden file; otherwise the test asserts byte-identity against the committed
 snapshot and fails with the first differing frame index.
 """
+
 from __future__ import annotations
 
 import json
@@ -26,6 +27,7 @@ GOLDEN_DIR = Path(__file__).parent / "golden"
 # ---------------------------------------------------------------------------
 # Serialization helpers
 # ---------------------------------------------------------------------------
+
 
 def _to_list(obj: Any) -> Any:
     """Recursively convert tuples to lists so json.dumps can handle them."""
@@ -48,6 +50,7 @@ def serialize(snaps: list) -> str:
 # Semantic summary (S4 — the reviewable digest of an opaque golden)
 # ---------------------------------------------------------------------------
 
+
 def summarize(snaps: list) -> dict:
     """Distil a snapshot list into a tiny, human-reviewable semantic digest.
 
@@ -65,8 +68,7 @@ def summarize(snaps: list) -> dict:
     snaps = _to_list(snaps)  # normalise tuples → lists for uniform indexing
     n = len(snaps)
     if n == 0:
-        return {"frames": 0, "final_phase": None, "winner": None,
-                "attack_active_frames": 0, "players": {}}
+        return {"frames": 0, "final_phase": None, "winner": None, "attack_active_frames": 0, "players": {}}
 
     # #322/B-b: wrap each per-player row in PlayerSnap so fields are read by name
     # (the parts are lists here after _to_list; PlayerSnap(*row) re-attaches names).
@@ -122,10 +124,7 @@ def _check_or_update_summary(name: str, snaps: list) -> None:
         return
 
     if not path.exists():
-        raise AssertionError(
-            f"Golden summary missing: {path}\n"
-            "Run tests with PYCATS_UPDATE_GOLDENS=1 to record it."
-        )
+        raise AssertionError(f"Golden summary missing: {path}\nRun tests with PYCATS_UPDATE_GOLDENS=1 to record it.")
 
     expected = json.loads(path.read_text(encoding="utf-8"))
     if summary != expected:
@@ -140,6 +139,7 @@ def _check_or_update_summary(name: str, snaps: list) -> None:
 # ---------------------------------------------------------------------------
 # Oracle
 # ---------------------------------------------------------------------------
+
 
 def check_or_update(name: str, snaps: list) -> None:
     """Compare *snaps* against the committed golden file ``tests/golden/<name>.json``.
@@ -162,8 +162,7 @@ def check_or_update(name: str, snaps: list) -> None:
 
     if not golden_path.exists():
         raise AssertionError(
-            f"Golden file missing: {golden_path}\n"
-            "Run tests with PYCATS_UPDATE_GOLDENS=1 to record it."
+            f"Golden file missing: {golden_path}\nRun tests with PYCATS_UPDATE_GOLDENS=1 to record it."
         )
 
     # Semantic summary first: a behaviour change fails with a small readable diff
@@ -180,8 +179,7 @@ def check_or_update(name: str, snaps: list) -> None:
 
     if len(actual_frames) != len(expected_frames):
         raise AssertionError(
-            f"Golden '{name}': frame count mismatch — "
-            f"got {len(actual_frames)}, expected {len(expected_frames)}."
+            f"Golden '{name}': frame count mismatch — got {len(actual_frames)}, expected {len(expected_frames)}."
         )
 
     for i, (a, e) in enumerate(zip(actual_frames, expected_frames)):

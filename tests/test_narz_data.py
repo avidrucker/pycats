@@ -5,6 +5,7 @@ its movement scalars (weight/gravity/jump_vel), the load_fighter_data branch, an
 selectable-roster entry. No moves authored yet (the tippered forward-tilt is slice 2).
 Golden-free: the sim/golden path loads the default cat via "P1"/"P2".
 """
+
 from pycats.characters import roster
 from pycats.combat.data import load_fighter_data
 
@@ -21,8 +22,7 @@ def test_narz_differs_from_default_on_the_deltas():
     narz = load_fighter_data("narz")
     default = load_fighter_data("default")
     # revert-check: a wrong scalar (or no branch) fails here
-    assert (narz.weight, narz.gravity, narz.jump_vel) != (
-        default.weight, default.gravity, default.jump_vel)
+    assert (narz.weight, narz.gravity, narz.jump_vel) != (default.weight, default.gravity, default.jump_vel)
     assert narz.weight != default.weight
     assert narz.gravity != default.gravity
 
@@ -42,7 +42,7 @@ def test_narz_keeps_default_placeholders_except_its_own_moves():
     narz = load_fighter_data("narz")
     default = load_fighter_data("default")
     assert narz.hurtbox == default.hurtbox
-    assert narz.moves["attack"] == default.moves["attack"]   # placeholder kept
+    assert narz.moves["attack"] == default.moves["attack"]  # placeholder kept
     assert "ftilt" in narz.moves and "ftilt" not in default.moves  # Narz's own move
 
 

@@ -6,7 +6,6 @@ visible. These assert the acceptance: adaptive column count, on-screen + non-
 overlapping buttons, and scrolling that follows the selection.
 """
 
-
 import contextlib  # noqa: E402
 
 import pygame  # noqa: E402
@@ -17,10 +16,15 @@ from pycats.config import MAIN_MENU_OPTION_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH  # 
 from pycats.menu_widgets import menu_button_size  # noqa: E402
 from pycats.options_menu import OptionsMenu  # noqa: E402
 
-_P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d,
-           attack=pygame.K_v, special=pygame.K_c)
-_P2 = dict(up=pygame.K_UP, down=pygame.K_DOWN, left=pygame.K_LEFT, right=pygame.K_RIGHT,
-           attack=pygame.K_SLASH, special=pygame.K_PERIOD)
+_P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d, attack=pygame.K_v, special=pygame.K_c)
+_P2 = dict(
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    attack=pygame.K_SLASH,
+    special=pygame.K_PERIOD,
+)
 
 
 @contextlib.contextmanager
@@ -46,8 +50,7 @@ def _rects(m):
     bw = meta["button_width"]
     rects = []
     for i, (cx, cy) in placements:
-        _, bh = menu_button_size(m._row_label(m.rows[i]), MAIN_MENU_OPTION_SIZE,
-                                 focused=True, min_width=bw)
+        _, bh = menu_button_size(m._row_label(m.rows[i]), MAIN_MENU_OPTION_SIZE, focused=True, min_width=bw)
         r = pygame.Rect(0, 0, bw, bh)
         r.center = (cx, cy)
         rects.append((i, r))
@@ -79,15 +82,14 @@ def test_no_two_visible_buttons_overlap_at_large():
         rects, _ = _rects(OptionsMenu(_P1, _P2))
         for a in range(len(rects)):
             for b in range(a + 1, len(rects)):
-                assert not rects[a][1].colliderect(rects[b][1]), \
-                    f"rows {rects[a][0]} and {rects[b][0]} overlap"
+                assert not rects[a][1].colliderect(rects[b][1]), f"rows {rects[a][0]} and {rects[b][0]} overlap"
 
 
 # ---- scrolling follows the selection --------------------------------------- #
 def test_last_row_scrolls_into_view_at_large():
     with _scale("large"):
         m = OptionsMenu(_P1, _P2)
-        m.selected_option = len(m.rows) - 1   # select "Back" (bottom of the list)
+        m.selected_option = len(m.rows) - 1  # select "Back" (bottom of the list)
         rects, meta = _rects(m)
         visible = {i for i, _ in rects}
         assert (len(m.rows) - 1) in visible, "the selected bottom row must be visible"
@@ -98,8 +100,8 @@ def test_scrolling_back_up_reveals_the_top_row_at_large():
     with _scale("large"):
         m = OptionsMenu(_P1, _P2)
         m.selected_option = len(m.rows) - 1
-        _rects(m)                              # scroll to the bottom
-        m.selected_option = 0                  # jump back to the top
+        _rects(m)  # scroll to the bottom
+        m.selected_option = 0  # jump back to the top
         rects, meta = _rects(m)
         assert 0 in {i for i, _ in rects}, "top row must scroll back into view"
         assert meta["more_below"], "at the top -> rows exist below"

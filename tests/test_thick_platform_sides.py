@@ -7,6 +7,7 @@ thick wall blocks entry while a thin platform does not.
 
 Repro/proof of the original defect: tools/repro_issue_5.py.
 """
+
 import pygame
 from helpers import P1, mk_player
 
@@ -59,8 +60,7 @@ def test_thick_platform_left_face_blocks_entry():
 
 def test_thick_platform_right_face_blocks_entry():
     # Player starts to the RIGHT of the wall, driving left into the right face.
-    p = Player(420, 200, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=False)
+    p = Player(420, 200, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=False)
     walls = _wall(thin=False)
     attacks = pygame.sprite.Group()
     penetrated = reached_face = False
@@ -89,8 +89,7 @@ def test_thin_platform_side_stays_passthrough():
 def test_landing_on_thick_top_is_not_side_ejected():
     # A player dropping onto a thick platform's top must land normally and must
     # NOT be shoved off the side by the horizontal resolver.
-    p = Player(300, 280, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=True)
+    p = Player(300, 280, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
     floor = [Platform(pygame.Rect(200, 300, 200, 40), thin=False)]  # top y=300
     attacks = pygame.sprite.Group()
     noop = InputFrame(set(), set(), set())
@@ -99,5 +98,6 @@ def test_landing_on_thick_top_is_not_side_ejected():
 
     assert p.fighter.on_ground, "player failed to land on the thick platform top"
     assert p.rect.bottom == floor[0].rect.top
-    assert floor[0].rect.left <= p.rect.left and p.rect.right <= floor[0].rect.right, \
+    assert floor[0].rect.left <= p.rect.left and p.rect.right <= floor[0].rect.right, (
         "player was wrongly ejected sideways off the platform top"
+    )

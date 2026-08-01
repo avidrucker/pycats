@@ -66,8 +66,7 @@ def test_vs_battle_runs_headless_and_is_bounded():
     cap = 40
     snaps = run_battle(
         frames=cap,
-        controllers=(AttackerController(attacker_num=1),
-                     AttackerController(attacker_num=2)),
+        controllers=(AttackerController(attacker_num=1), AttackerController(attacker_num=2)),
         stop_on_match_over=True,
     )
     assert 0 < len(snaps) <= cap

@@ -5,6 +5,7 @@ PLAYER_SIZE, so a small archetype (Birky, 40x44) renders shorter than a default-
 one (Nalio, 40x60) and its drawn body doesn't hang below its collision box (clipping
 into platforms).
 """
+
 import pygame
 
 from pycats.battle_screen import BattleScreen
@@ -16,10 +17,24 @@ from pycats.render_battle import (
     render_battle,
 )
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def _battle():

@@ -5,6 +5,7 @@ Drive BOTH players from per-player controllers, merging their emitted frames by
 set-union. Safe because P1/P2 keymaps are disjoint and Player._pressed filters by
 self.controls, so the union is unambiguous.
 """
+
 import pytest
 
 from pycats.core.input import InputFrame, merge_frames
@@ -65,9 +66,7 @@ def test_p2_controller_emits_no_p1_keycodes():
     """Load-bearing invariant: a P2-bound controller only emits P2 keycodes."""
     c2 = ChaseController(attacker_num=2)
     run_battle(frames=300, controllers=(None, c2))
-    emitted = set().union(
-        *(f.held | f.pressed | f.released for f in c2.emitted)
-    ) if c2.emitted else set()
+    emitted = set().union(*(f.held | f.pressed | f.released for f in c2.emitted)) if c2.emitted else set()
     assert emitted, "P2 controller never emitted anything to check"
     assert emitted.isdisjoint(set(P1_KEYS.values())), (
         f"P2 controller leaked P1 keycodes: {emitted & set(P1_KEYS.values())}"

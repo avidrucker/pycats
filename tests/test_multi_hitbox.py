@@ -16,6 +16,7 @@ Geometry: attacker rect at (0,0), facing right → a Hitbox Circle(dx,dy,r)
 resolves to absolute centre (dx, dy). Defender rect at (100,100,40,60) with a
 single hurtbox circle dx=20,dy=30,r=14 → absolute centre (120,130).
 """
+
 from __future__ import annotations
 
 import types
@@ -27,15 +28,13 @@ from pycats.entities.attack import Attack
 from pycats.systems.combat import process_hits
 
 
-def _player(rect, *, hurtbox_circles, facing_right=True,
-            intangible=False, is_alive=True):
+def _player(rect, *, hurtbox_circles, facing_right=True, intangible=False, is_alive=True):
     p = types.SimpleNamespace(
         rect=rect,
         facing_right=facing_right,
         intangible=intangible,
         is_alive=is_alive,
-        fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)),
-                                 moves={}),
+        fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)), moves={}),
         hits_received=0,
         hits_landed=0,
         last_damage=None,
@@ -56,12 +55,13 @@ def _player(rect, *, hurtbox_circles, facing_right=True,
     return p
 
 
-_DEF_HURTBOX = [Circle(dx=20, dy=30, r=14)]   # defender centre (120,130)
+_DEF_HURTBOX = [Circle(dx=20, dy=30, r=14)]  # defender centre (120,130)
 
 
 def _hb(dx, dy, r, *, damage, angle):
-    return Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=angle,
-                  base_knockback=30.0, knockback_growth=80.0)
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=angle, base_knockback=30.0, knockback_growth=80.0
+    )
 
 
 def test_non_first_hitbox_can_connect():
@@ -72,9 +72,9 @@ def test_non_first_hitbox_can_connect():
     defender = _player(pygame.Rect(100, 100, 40, 60), hurtbox_circles=_DEF_HURTBOX)
 
     move_boxes = (
-        _hb(300, 130, 10, damage=99, angle=0),    # box[0] — far, misses
-        _hb(320, 130, 10, damage=99, angle=0),    # box[1] — far, misses
-        _hb(120, 130, 12, damage=8,  angle=80),   # box[2] — overlaps (120,130)
+        _hb(300, 130, 10, damage=99, angle=0),  # box[0] — far, misses
+        _hb(320, 130, 10, damage=99, angle=0),  # box[1] — far, misses
+        _hb(120, 130, 12, damage=8, angle=80),  # box[2] — overlaps (120,130)
     )
     atk = Attack(owner, hitboxes=move_boxes, lifetime=4)
 
@@ -93,8 +93,8 @@ def test_overlapping_boxes_hit_once_in_priority_order():
     defender = _player(pygame.Rect(100, 100, 40, 60), hurtbox_circles=_DEF_HURTBOX)
 
     move_boxes = (
-        _hb(120, 130, 12, damage=9, angle=80),    # box[0] — overlaps, priority
-        _hb(118, 130, 12, damage=5, angle=361),   # box[1] — also overlaps
+        _hb(120, 130, 12, damage=9, angle=80),  # box[0] — overlaps, priority
+        _hb(118, 130, 12, damage=5, angle=361),  # box[1] — also overlaps
     )
     atk = Attack(owner, hitboxes=move_boxes, lifetime=4)
 

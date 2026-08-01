@@ -12,6 +12,7 @@ directly, bypassing this dispatch — which is the layer that was actually broke
 Able-to-fail: delete the `options` branch from render_active_screen and
 `test_options_state_renders_via_screen_manager` goes red (render spy never called).
 """
+
 import pygame
 
 from pycats import screen_render
@@ -39,9 +40,14 @@ def _surface():
 
 def _dispatch(state, sm, surface):
     screen_render.render_active_screen(
-        state, sm, surface,
-        battle=None, platforms=None,
-        is_fullscreen=False, frame_input=None, fps=60.0,
+        state,
+        sm,
+        surface,
+        battle=None,
+        platforms=None,
+        is_fullscreen=False,
+        frame_input=None,
+        fps=60.0,
     )
 
 

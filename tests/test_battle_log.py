@@ -10,6 +10,7 @@ dodge_timer, 13 hurt_timer, 14 stun_timer, 15 attack_timer, 16 intangible_timer,
 18 intangible, 19 defensive_status, 20 move_frame); attack = (x, y, frames_left, owner,
 active, hit_cx, hit_cy, hit_r); snap = (parts, attacks, phase, winner).
 """
+
 from pycats.sim.battle_log import (
     ATTACK,
     HIT,
@@ -25,8 +26,29 @@ from pycats.sim.battle_log import (
 
 def _part(name, state="idle", percent=0.0, lives=3, jumps=2, on_ground=True):
     # 21-field part tuple; only the contract-relevant fields vary.
-    return (name, state, 0, 0, 0.0, 0.0, on_ground, float(percent), 0.0, lives,
-            lives > 0, jumps, 0, 0, 0, 0, 0, True, False, "none", 0)
+    return (
+        name,
+        state,
+        0,
+        0,
+        0.0,
+        0.0,
+        on_ground,
+        float(percent),
+        0.0,
+        lives,
+        lives > 0,
+        jumps,
+        0,
+        0,
+        0,
+        0,
+        0,
+        True,
+        False,
+        "none",
+        0,
+    )
 
 
 def _atk(owner, active=True):
@@ -42,51 +64,45 @@ def _types(events):
 
 
 def test_jump_event_on_jumps_remaining_drop():
-    snaps = [_snap([_part("P1", jumps=2)]),
-             _snap([_part("P1", jumps=1)])]
+    snaps = [_snap([_part("P1", jumps=2)]), _snap([_part("P1", jumps=1)])]
     ev = events_from_snaps(snaps)
     assert ev == [BattleEvent(1, "P1", JUMP, {"remaining": 1})]
 
 
 def test_hit_event_carries_damage_delta_and_attacker():
     # P2's percent rises while P1 owns an active attack -> HIT on P2, by P1.
-    snaps = [_snap([_part("P1"), _part("P2", percent=0)]),
-             _snap([_part("P1"), _part("P2", percent=14)], atk=[_atk("P1")])]
+    snaps = [
+        _snap([_part("P1"), _part("P2", percent=0)]),
+        _snap([_part("P1"), _part("P2", percent=14)], atk=[_atk("P1")]),
+    ]
     ev = events_from_snaps(snaps)
     assert len(ev) == 2  # ATTACK P1 + HIT P2
     hit = [e for e in ev if e.type == HIT]
-    assert hit == [BattleEvent(1, "P2", HIT,
-                               {"damage": 14.0, "from": 0.0, "to": 14.0, "by": "P1"})]
+    assert hit == [BattleEvent(1, "P2", HIT, {"damage": 14.0, "from": 0.0, "to": 14.0, "by": "P1"})]
 
 
 def test_ko_event_on_stock_loss():
-    snaps = [_snap([_part("P2", percent=142, lives=2)]),
-             _snap([_part("P2", percent=0, lives=1)])]
+    snaps = [_snap([_part("P2", percent=142, lives=2)]), _snap([_part("P2", percent=0, lives=1)])]
     ev = events_from_snaps(snaps)
-    assert ev == [BattleEvent(1, "P2", KO,
-                              {"stock_from": 2, "stock_to": 1, "percent": 142.0})]
+    assert ev == [BattleEvent(1, "P2", KO, {"stock_from": 2, "stock_to": 1, "percent": 142.0})]
 
 
 def test_attack_event_on_new_active_attack():
-    snaps = [_snap([_part("P1")]),
-             _snap([_part("P1")], atk=[_atk("P1")])]
+    snaps = [_snap([_part("P1")]), _snap([_part("P1")], atk=[_atk("P1")])]
     ev = events_from_snaps(snaps)
     assert ev == [BattleEvent(1, "P1", ATTACK, {})]
 
 
 def test_state_event_only_on_notable_transition():
     # idle -> hurt is notable; idle -> walk is not.
-    notable = events_from_snaps([_snap([_part("P1", state="idle")]),
-                                 _snap([_part("P1", state="hurt")])])
+    notable = events_from_snaps([_snap([_part("P1", state="idle")]), _snap([_part("P1", state="hurt")])])
     assert notable == [BattleEvent(1, "P1", STATE, {"from": "idle", "to": "hurt"})]
-    plain = events_from_snaps([_snap([_part("P1", state="idle")]),
-                              _snap([_part("P1", state="walk")])])
+    plain = events_from_snaps([_snap([_part("P1", state="idle")]), _snap([_part("P1", state="walk")])])
     assert plain == []
 
 
 def test_match_end_event_on_winner_set():
-    snaps = [_snap([_part("P1")], winner=None),
-             _snap([_part("P1")], winner="P1")]
+    snaps = [_snap([_part("P1")], winner=None), _snap([_part("P1")], winner="P1")]
     ev = events_from_snaps(snaps)
     assert ev == [BattleEvent(1, "MATCH", MATCH_END, {"winner": "P1"})]
 
@@ -99,8 +115,10 @@ def test_no_events_when_frames_identical():
 def test_intra_frame_event_ordering():
     # One frame: P1 starts an attack, P2 jumps AND takes a hit.
     # Contract order: ATTACK, then per-fighter (index order) JUMP/HIT/KO/STATE.
-    snaps = [_snap([_part("P1"), _part("P2", percent=0, jumps=2)]),
-             _snap([_part("P1"), _part("P2", percent=14, jumps=1)], atk=[_atk("P1")])]
+    snaps = [
+        _snap([_part("P1"), _part("P2", percent=0, jumps=2)]),
+        _snap([_part("P1"), _part("P2", percent=14, jumps=1)], atk=[_atk("P1")]),
+    ]
     ev = events_from_snaps(snaps)
     assert _types(ev) == [("P1", ATTACK), ("P2", JUMP), ("P2", HIT)]
 
@@ -132,15 +150,14 @@ def test_events_from_real_seeded_run():
 
     from pycats.sim.controllers import AttackerController
     from pycats.sim.runner import run_battle
+
     rng = random.Random(3)
-    cs = (AttackerController(attacker_num=1, level=5, rng=rng),
-          AttackerController(attacker_num=2, level=5, rng=rng))
+    cs = (AttackerController(attacker_num=1, level=5, rng=rng), AttackerController(attacker_num=2, level=5, rng=rng))
     # 2000f window: #309 zone-anchored Birky's hitboxes, re-placing its move
     # geometry and perturbing this deterministic seed-3 trajectory (the first KO
     # now converts around frame ~1428). The window is sized past that so the log
     # has a KO event to derive.
-    snaps = run_battle(frames=2000, controllers=cs, p1_char="nalio", p2_char="birky",
-                       stop_on_match_over=True)
+    snaps = run_battle(frames=2000, controllers=cs, p1_char="nalio", p2_char="birky", stop_on_match_over=True)
     ev = events_from_snaps(snaps)
     kinds = {e.type for e in ev}
     assert JUMP in kinds and ATTACK in kinds, kinds

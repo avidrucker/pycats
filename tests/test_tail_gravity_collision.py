@@ -6,6 +6,7 @@ straight-down (progressively toward the tip) and is pushed out of solid (thick)
 platforms so it rests on the surface instead of clipping through. Thin platforms
 remain pass-through.
 """
+
 import pygame as pg
 import pytest
 
@@ -23,8 +24,8 @@ def _physics_only(monkeypatch):
     # tail; disable them here so the asserts isolate the physics rest pose.
     monkeypatch.setattr(_tail, "TAIL_CURL_STRENGTH", 0)
 
-C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-     "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
+
+C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
 
 
 def _empty():
@@ -34,8 +35,7 @@ def _empty():
 def _player(y, platform):
     plats = pg.sprite.Group()
     plats.add(platform)
-    p = Player(x=460, y=y, controls=C, color=P1_COLOR, eye_color=WHITE,
-               char_name="Cat", facing_right=True)
+    p = Player(x=460, y=y, controls=C, color=P1_COLOR, eye_color=WHITE, char_name="Cat", facing_right=True)
     return p, plats
 
 
@@ -46,7 +46,7 @@ def test_tail_droops_under_gravity_on_ground():
     for _ in range(120):
         p.update(_empty(), plats, empty)
     base, tip = p.tail.segments[0], p.tail.segments[-1]
-    assert tip.y - base.y > 3.0   # tip hangs BELOW the base (was ~-21 before)
+    assert tip.y - base.y > 3.0  # tip hangs BELOW the base (was ~-21 before)
 
 
 def test_tail_trails_upward_while_falling():
@@ -60,7 +60,7 @@ def test_tail_trails_upward_while_falling():
     for _ in range(20):
         p.update(_empty(), plats, empty)  # falling
     base, tip = p.tail.segments[0], p.tail.segments[-1]
-    assert tip.y < base.y          # trails UP behind the downward motion
+    assert tip.y < base.y  # trails UP behind the downward motion
 
 
 def test_tail_rests_on_thick_platform_without_penetrating():
@@ -70,18 +70,18 @@ def test_tail_rests_on_thick_platform_without_penetrating():
     for _ in range(120):
         p.update(_empty(), plats, empty)
     deepest = max(s.y - plat.rect.top for s in p.tail.segments)
-    assert deepest <= 1.0         # no segment sinks below the solid top surface
+    assert deepest <= 1.0  # no segment sinks below the solid top surface
 
 
 def test_resolver_pushes_segment_out_of_thick_platform():
     plat = Platform(pg.Rect(200, 400, 600, 20), thin=False)
     p, plats = _player(360, plat)
     empty = pg.sprite.Group()
-    p.update(_empty(), plats, empty)   # sets p.platforms
+    p.update(_empty(), plats, empty)  # sets p.platforms
     seg = p.tail.segments[5]
-    seg.x, seg.y = 460, plat.rect.top + 8   # 8px inside the solid platform
+    seg.x, seg.y = 460, plat.rect.top + 8  # 8px inside the solid platform
     p.tail._resolve_platform_collisions(plats)
-    assert seg.y <= plat.rect.top + 0.001   # pushed up to the surface
+    assert seg.y <= plat.rect.top + 0.001  # pushed up to the surface
 
 
 def test_resolver_ignores_thin_platform():
@@ -90,6 +90,6 @@ def test_resolver_ignores_thin_platform():
     empty = pg.sprite.Group()
     p.update(_empty(), plats, empty)
     seg = p.tail.segments[5]
-    seg.x, seg.y = 460, thin.rect.top + 8    # inside a thin (pass-through) platform
+    seg.x, seg.y = 460, thin.rect.top + 8  # inside a thin (pass-through) platform
     p.tail._resolve_platform_collisions(plats)
-    assert seg.y == thin.rect.top + 8        # unchanged — tail passes through thin
+    assert seg.y == thin.rect.top + 8  # unchanged — tail passes through thin

@@ -23,7 +23,7 @@ def test_capture_key_rebinds_the_focused_action():
     assert m.capturing
     ok = m.capture_key(99)
     assert ok is True
-    assert not m.capturing            # capture ends on a successful bind
+    assert not m.capturing  # capture ends on a successful bind
     assert m.binding(0, "attack") == 99
 
 
@@ -31,24 +31,24 @@ def test_capture_key_conflict_does_not_apply_and_reports_the_clash():
     m = _menu()
     m.focus(0, "attack")
     m.begin_capture()
-    ok = m.capture_key(7)             # 7 is already P1's 'shield'
+    ok = m.capture_key(7)  # 7 is already P1's 'shield'
     assert ok is False
-    assert not m.capturing            # capture still ends
-    assert m.binding(0, "attack") == 5   # binding untouched
-    assert "shield" in m.message      # the conflict names the clashing action
+    assert not m.capturing  # capture still ends
+    assert m.binding(0, "attack") == 5  # binding untouched
+    assert "shield" in m.message  # the conflict names the clashing action
 
 
 def test_reset_player_restores_that_players_defaults_only():
     m = _menu()
     m.focus(0, "attack")
     m.begin_capture()
-    m.capture_key(99)   # P1 attack -> 99
+    m.capture_key(99)  # P1 attack -> 99
     m.focus(1, "shield")
     m.begin_capture()
-    m.capture_key(99)   # P2 shield -> 99
+    m.capture_key(99)  # P2 shield -> 99
     m.reset_player(0)
-    assert m.binding(0, "attack") == 5    # P1 restored to factory
-    assert m.binding(1, "shield") == 99   # P2 untouched
+    assert m.binding(0, "attack") == 5  # P1 restored to factory
+    assert m.binding(1, "shield") == 99  # P2 untouched
 
 
 def test_cancel_capture_exits_without_binding():
@@ -57,18 +57,18 @@ def test_cancel_capture_exits_without_binding():
     m.begin_capture()
     m.cancel_capture()
     assert not m.capturing
-    assert m.binding(0, "attack") == 5    # nothing bound
+    assert m.binding(0, "attack") == 5  # nothing bound
 
 
 def test_nav_moves_the_focused_action_and_wraps():
-    m = _menu()                       # actions = [left, right, attack, shield]
-    assert m.action == "left"         # starts on the first action
+    m = _menu()  # actions = [left, right, attack, shield]
+    assert m.action == "left"  # starts on the first action
     m.nav(1)
     assert m.action == "right"
     m.nav(-1)
     assert m.action == "left"
     m.nav(-1)
-    assert m.action == "shield"       # wraps to the last
+    assert m.action == "shield"  # wraps to the last
 
 
 def test_switch_player_toggles_the_focused_player():
@@ -82,7 +82,7 @@ def test_switch_player_toggles_the_focused_player():
 
 def test_activate_begins_capture_on_the_focused_action():
     m = _menu()
-    m.nav(1)                          # focus 'right'
+    m.nav(1)  # focus 'right'
     m.activate()
     assert m.capturing
     m.capture_key(88)

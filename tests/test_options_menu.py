@@ -5,6 +5,7 @@ through settings.py + updates the live runtime accessor; the display rows call
 back into game.py through injected hooks (faked here). Navigation wraps; B backs
 out; the FSM gains an `options` state reachable from and returning to the menu.
 """
+
 import contextlib
 
 import pygame
@@ -16,13 +17,25 @@ from pycats.menu_widgets import menu_button_size
 from pycats.options_menu import ROW_DESCRIPTIONS, OptionsMenu
 from pycats.screen_manager import ScreenStateManager
 
-P1 = {"up": pygame.K_w, "down": pygame.K_s, "left": pygame.K_a, "right": pygame.K_d,
-      "attack": pygame.K_v, "special": pygame.K_c}
-P2 = {"up": pygame.K_UP, "down": pygame.K_DOWN, "left": pygame.K_LEFT,
-      "right": pygame.K_RIGHT, "attack": pygame.K_SLASH, "special": pygame.K_PERIOD}
+P1 = {
+    "up": pygame.K_w,
+    "down": pygame.K_s,
+    "left": pygame.K_a,
+    "right": pygame.K_d,
+    "attack": pygame.K_v,
+    "special": pygame.K_c,
+}
+P2 = {
+    "up": pygame.K_UP,
+    "down": pygame.K_DOWN,
+    "left": pygame.K_LEFT,
+    "right": pygame.K_RIGHT,
+    "attack": pygame.K_SLASH,
+    "special": pygame.K_PERIOD,
+}
 
-ATTACK = pygame.K_v   # "A" / confirm-toggle
-BACK = pygame.K_c     # P1 "special" / B / back
+ATTACK = pygame.K_v  # "A" / confirm-toggle
+BACK = pygame.K_c  # P1 "special" / B / back
 
 
 def _opts(hooks=None):
@@ -106,6 +119,7 @@ def test_nav_down_wraps_within_column():
     # 2-column grid (#389): down steps a full row within the column and wraps.
     # Derived from the live row count so adding a row (e.g. #345 font_scale) is fine.
     from pycats.options_menu import NCOLS
+
     m = _opts()
     nrows = (len(m.rows) + NCOLS - 1) // NCOLS
     expected = [(r % nrows) * NCOLS for r in range(1, nrows + 1)]
@@ -126,10 +140,9 @@ def test_display_rows_inert_without_hooks():
 
 # --- FSM integration ---
 
+
 def _frame(pressed=None, held=None):
-    return InputFrame(
-        held=set(held or []), pressed=set(pressed or []), released=set()
-    )
+    return InputFrame(held=set(held or []), pressed=set(pressed or []), released=set())
 
 
 def test_menu_options_action_transitions_to_options_state():
@@ -187,8 +200,7 @@ def test_caption_never_overlaps_buttons():
                 m.scroll_top = 0
                 placements, meta = m._layout()
                 bw = meta["button_width"]
-                _, bh = menu_button_size(m._row_label(m.rows[0]), MAIN_MENU_OPTION_SIZE,
-                                         focused=True, min_width=bw)
+                _, bh = menu_button_size(m._row_label(m.rows[0]), MAIN_MENU_OPTION_SIZE, focused=True, min_width=bw)
                 button_rects = []
                 for _i, (cx, cy) in placements:
                     r = pygame.Rect(0, 0, bw, bh)
@@ -196,10 +208,13 @@ def test_caption_never_overlaps_buttons():
                     button_rects.append(r)
                 _cap_text, cap_rect = m._caption_layout(meta)
                 assert cap_rect.width <= SCREEN_WIDTH, f"caption wider than screen @{preset}"
-                assert 0 <= cap_rect.left and cap_rect.right <= SCREEN_WIDTH, \
+                assert 0 <= cap_rect.left and cap_rect.right <= SCREEN_WIDTH, (
                     f"caption off-screen horizontally @{preset} sel={sel}: {cap_rect}"
-                assert 0 <= cap_rect.top and cap_rect.bottom <= SCREEN_HEIGHT, \
+                )
+                assert 0 <= cap_rect.top and cap_rect.bottom <= SCREEN_HEIGHT, (
                     f"caption off-screen vertically @{preset} sel={sel}: {cap_rect}"
+                )
                 for br in button_rects:
-                    assert not cap_rect.colliderect(br), \
+                    assert not cap_rect.colliderect(br), (
                         f"caption overlaps a button @{preset} sel={sel}: {cap_rect} vs {br}"
+                    )

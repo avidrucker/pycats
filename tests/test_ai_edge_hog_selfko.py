@@ -15,6 +15,7 @@ Two facets of the #404 edge-hog were flagged by the #417 persona review:
    The real-loop guard below documents that invariant (it stays green today; it
    goes red if a future change lets the walk step off the stage).
 """
+
 import random
 import types
 
@@ -27,15 +28,16 @@ from pycats.sim.controllers import EDGE_HOG_RANGE, LEDGE_HOG_MAX_FRAMES, Attacke
 pg.init()
 
 _CTRL = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6, "shield": 7}
-_LEFT = Ledge("left", ax=60, ay=300)   # off-stage is x < 60
+_LEFT = Ledge("left", ax=60, ay=300)  # off-stage is x < 60
 
 
 def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None):
     s = types.SimpleNamespace()
     s.rect = pg.Rect(0, 0, 40, 60)
     s.rect.center = (cx, cy)
-    s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground, hurt_timer=0,
-                                      stun_timer=0, grabbed_ledge=grabbed_ledge)
+    s.fighter = types.SimpleNamespace(
+        is_alive=alive, on_ground=on_ground, hurt_timer=0, stun_timer=0, grabbed_ledge=grabbed_ledge
+    )
     s.controls = _CTRL
     s.current_move = None
     s.move_frame = 0
@@ -60,7 +62,7 @@ def test_climbs_instead_of_holding_once_the_hog_budget_is_spent():
     # #424/#475: after LEDGE_HOG_MAX_FRAMES of denying, the bot must GET UP (climb to
     # safety) rather than hog forever — even though the opponent is still off-stage.
     c = _hogger()
-    c._hog_frames = LEDGE_HOG_MAX_FRAMES          # budget already spent
+    c._hog_frames = LEDGE_HOG_MAX_FRAMES  # budget already spent
     a = _stub(48, 300, grabbed_ledge=_LEFT)
     off = _stub(30, 320, on_ground=False)
     assert c.decide(a, off, 0, None, [_LEFT]) == {_CTRL["up"]}
@@ -73,6 +75,7 @@ def _run_a_full_hold_to_deny(*, jumps):
     live, and run well past the hog budget. Return (is_alive, lives, climbed) — the bot
     must climb to the stage (grabbed_ledge cleared) rather than hog forever."""
     from pycats.sim import runner
+
     plats = runner.build_stage()
     p1, p2, _ = runner.build_players(p1_char="nalio", p2_char="nalio")
     ledges = ledges_from_platforms(plats)
@@ -88,7 +91,7 @@ def _run_a_full_hold_to_deny(*, jumps):
     c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))  # edge_hog on @ lv9
     attacks = pg.sprite.Group()
     for f in range(LEDGE_HOG_MAX_FRAMES + config.LEDGE_GETUP_FRAMES + 90):
-        p2.rect.center = (left.ax - 60, left.ay + 40)   # keep the opponent off-stage left
+        p2.rect.center = (left.ax - 60, left.ay + 40)  # keep the opponent off-stage left
         p2.fighter.on_ground = False
         p1.update(c1(p1, p2, f, attacks, ledges), plats, attacks)
         if not p1.fighter.is_alive:
@@ -110,6 +113,7 @@ def test_edge_hog_climbs_to_safety_instead_of_hogging_forever():
 # ---- facet 2: real-loop guard (already safe; catches a future regression) ----
 def test_go_to_ledge_walk_never_walks_off_into_a_self_ko():
     from pycats.sim import runner
+
     plats = runner.build_stage()
     p1, p2, _ = runner.build_players(p1_char="nalio", p2_char="nalio")
     ledges = ledges_from_platforms(plats)
@@ -120,12 +124,12 @@ def test_go_to_ledge_walk_never_walks_off_into_a_self_ko():
         p1.fighter.vel.x = 0
         p1.fighter.vel.y = 0
         p1.fighter.grabbed_ledge = None
-        p1.fighter.jumps_remaining = 0          # no recovery net -> a walk-off would be fatal
+        p1.fighter.jumps_remaining = 0  # no recovery net -> a walk-off would be fatal
         p1.fighter.is_alive = True
         p1.fighter.lives = 3
         left.occupied_by = None
         c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
-        c1.recover = False                      # isolate the go-to-ledge walk branch
+        c1.recover = False  # isolate the go-to-ledge walk branch
         attacks = pg.sprite.Group()
         for f in range(180):
             p2.rect.center = (left.ax - 60, left.ay + 40)

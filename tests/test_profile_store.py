@@ -7,6 +7,7 @@ is reserved empty for #442. Pure JSON store under PYCATS_CONFIG_DIR (pointed at
 tmp_path here, the #95 pattern), mirroring keybind_store (#440): missing/corrupt
 files degrade gracefully, never crash.
 """
+
 import json
 import os
 
@@ -53,7 +54,7 @@ def test_load_missing_profile_returns_none():
 
 
 def test_missing_file_lists_no_profiles():
-    assert profile_store.list_profiles() == []          # no file, no crash
+    assert profile_store.list_profiles() == []  # no file, no crash
 
 
 def test_corrupt_file_degrades_to_empty():
@@ -61,7 +62,7 @@ def test_corrupt_file_degrades_to_empty():
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
         fh.write("{ not valid json")
-    assert profile_store.list_profiles() == []          # no crash
+    assert profile_store.list_profiles() == []  # no crash
     assert profile_store.load_profile("ACE") is None
 
 
@@ -69,5 +70,5 @@ def test_keybinding_set_is_referenced_by_name_not_inlined():
     profile_store.save_profile("ACE", _profile("wasd"))
     with open(profile_store._store_path(), encoding="utf-8") as fh:
         raw = json.load(fh)
-    assert raw["ACE"]["keybinding_set"] == "wasd"        # a NAME, not a bindings dict
-    assert raw["ACE"]["stats"] == {}                     # reserved empty for #442
+    assert raw["ACE"]["keybinding_set"] == "wasd"  # a NAME, not a bindings dict
+    assert raw["ACE"]["stats"] == {}  # reserved empty for #442

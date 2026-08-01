@@ -14,7 +14,6 @@ Driven headlessly: the held-source `_esc_held` is monkeypatched so the tests
 don't depend on a live keyboard; the threshold is shrunk for speed.
 """
 
-
 import pygame as pg
 import pytest
 
@@ -46,6 +45,7 @@ def _presenter(hold_frames=4, captions=()):
 
 
 # --- the per-frame service: accumulate a hold, quit at threshold ---------------
+
 
 def test_full_hold_raises_keyboardinterrupt():
     p = _presenter(hold_frames=4)
@@ -84,6 +84,7 @@ def test_tap_esc_does_not_quit():
 
 # --- the timed-dwell loop keeps counting a hold that spans a dwell -------------
 
+
 def test_hold_across_a_dwell_still_quits(monkeypatch):
     # Esc held (already down, so no fresh KEYDOWN edge -> #514's any-key skip does not
     # fire) while a long dwell counts down: the dwell loop services the hold each tick
@@ -97,6 +98,7 @@ def test_hold_across_a_dwell_still_quits(monkeypatch):
 
 
 # --- golden-safety: non-interactive playback never quits ----------------------
+
 
 def test_non_interactive_never_quits(monkeypatch):
     # Real _esc_held reads pygame.key.get_pressed(); headless it is all-released, so a

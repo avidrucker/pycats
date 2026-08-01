@@ -12,16 +12,31 @@ Since #572 the *live* ring is coloured per slot (P1 red / P2 blue), so the actua
 ring colour is asserted via slot_accent_color; FIGHTER_OUTLINE_COLOR is now the
 fallback default, whose >= 3:1 contrast floor test_outline_clears_* still guards.
 """
+
 import pygame
 
 from pycats.battle_screen import BattleScreen
 from pycats.config import BG_COLOR, FIGHTER_OUTLINE_COLOR, FIGHTER_OUTLINE_WIDTH
 from pycats.render_battle import _BODY_PAD_TOP, _BODY_PAD_X, _cat_body_surface, slot_accent_color
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def _lin(c):

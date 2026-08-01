@@ -90,7 +90,8 @@ def test_label_rendered_when_present_absent_when_none(monkeypatch):
     surf = pygame.Surface((400, 400))
     calls = []
     monkeypatch.setattr(
-        rb.text_utils, "render_text",
+        rb.text_utils,
+        "render_text",
         lambda surface, text, *a, **k: calls.append(text),
     )
     rb.draw_timer_bars(surf, p, [_bar(readout="3s", label=None)])
@@ -115,7 +116,7 @@ def test_ratio_clamped(monkeypatch):
         return real_rect(surface, color, rect, *a, **k)
 
     monkeypatch.setattr(pygame.draw, "rect", spy)
-    rb.draw_timer_bars(surf, p, [_bar(ratio=5.0)])   # over-full
+    rb.draw_timer_bars(surf, p, [_bar(ratio=5.0)])  # over-full
     rb.draw_timer_bars(surf, p, [_bar(ratio=-2.0)])  # negative
     assert widths, "no foreground rect drawn for an over-full bar"
     assert all(0 <= w <= rb.STATUS_BAR_WIDTH for w in widths)

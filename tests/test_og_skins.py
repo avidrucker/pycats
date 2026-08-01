@@ -13,17 +13,18 @@ Both are able-to-fail: before the relocation, `og_skins` does not exist (import
 error → red) and once it does but config still re-declares its own dict, the
 identity check is red. Green only when config re-exports the archive.
 """
+
 from pycats.characters.og_skins import OG_SKINS
 from pycats.config import CAT_CHARACTERS
 
 # The canonical six, pinned verbatim from the pre-relocation config.py literals.
 EXPECTED = {
-    "ghost":  {"name": "Ghost",  "color": (255, 255, 255), "stripe_color": (220, 220, 220), "eye_color": (100, 100, 255)},  # noqa: E501
-    "calico": {"name": "Calico", "color": (255, 160, 64),  "stripe_color": (204, 102, 0),   "eye_color": (34, 139, 34)},
-    "tabby":  {"name": "Tabby",  "color": (128, 128, 128), "stripe_color": (64, 64, 64),    "eye_color": (255, 215, 0)},
-    "void":   {"name": "Void",   "color": (20, 20, 20),    "stripe_color": (0, 0, 0),       "eye_color": (0, 255, 0)},
-    "tiger":  {"name": "Tiger",  "color": (255, 140, 0),   "stripe_color": (0, 0, 0),       "eye_color": (255, 215, 0)},
-    "bengal": {"name": "Bengal", "color": (245, 245, 220), "stripe_color": (139, 69, 19),   "eye_color": (0, 191, 255)},
+    "ghost": {"name": "Ghost", "color": (255, 255, 255), "stripe_color": (220, 220, 220), "eye_color": (100, 100, 255)},  # noqa: E501
+    "calico": {"name": "Calico", "color": (255, 160, 64), "stripe_color": (204, 102, 0), "eye_color": (34, 139, 34)},
+    "tabby": {"name": "Tabby", "color": (128, 128, 128), "stripe_color": (64, 64, 64), "eye_color": (255, 215, 0)},
+    "void": {"name": "Void", "color": (20, 20, 20), "stripe_color": (0, 0, 0), "eye_color": (0, 255, 0)},
+    "tiger": {"name": "Tiger", "color": (255, 140, 0), "stripe_color": (0, 0, 0), "eye_color": (255, 215, 0)},
+    "bengal": {"name": "Bengal", "color": (245, 245, 220), "stripe_color": (139, 69, 19), "eye_color": (0, 191, 255)},
 }
 
 

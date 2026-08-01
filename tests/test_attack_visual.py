@@ -1,4 +1,5 @@
 """Attack visuals should reflect resolved hitbox primitives (#154)."""
+
 import pygame
 from helpers import P1
 
@@ -10,8 +11,7 @@ from pycats.entities.attack import Attack
 
 def test_attack_visual_bounds_follow_all_hitbox_circles():
     pygame.init()
-    owner = Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                   char_name="P1", facing_right=True)
+    owner = Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
     hitboxes = (
         Hitbox(circle=Circle(dx=32, dy=30, r=8), damage=3, angle=83),
         Hitbox(circle=Circle(dx=68, dy=30, r=16), damage=3, angle=85),
@@ -32,10 +32,9 @@ def test_attack_renders_reddish_visual_at_hitbox_center():
     red-dominant over a black background. Able-to-fail: corrupt the fill -> not red.
     """
     from pycats.render_battle import render_attacks
-    owner = Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                   char_name="P1", facing_right=True)
-    atk = Attack(owner, hitbox=Hitbox(circle=Circle(dx=20, dy=20, r=10),
-                                      damage=1, angle=0), lifetime=2)
+
+    owner = Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
+    atk = Attack(owner, hitbox=Hitbox(circle=Circle(dx=20, dy=20, r=10), damage=1, angle=0), lifetime=2)
     surf = pygame.Surface((400, 400))
     surf.fill((0, 0, 0))
     render_attacks(surf, [atk])

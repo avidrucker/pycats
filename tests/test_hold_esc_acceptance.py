@@ -1,6 +1,5 @@
 """Acceptance coverage for unresolved hold-ESC-to-quit gaps (#113/#151)."""
 
-
 import pygame
 
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
@@ -44,9 +43,7 @@ def test_main_menu_render_changes_while_esc_hold_progress_is_live(tmp_path, monk
     )
 
 
-def test_main_menu_render_clears_esc_hold_progress_after_early_release(
-    tmp_path, monkeypatch
-):
+def test_main_menu_render_clears_esc_hold_progress_after_early_release(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
     pygame.init()
     sm = ScreenStateManager(P1, P2)

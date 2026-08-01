@@ -9,6 +9,7 @@ Metric: max single-frame movement of any tail segment over the frames right
 after a facing flip (player otherwise stationary) must stay well under the
 2*offset snap — bounded near the per-frame baseline idle motion.
 """
+
 import math
 
 import pygame as pg
@@ -27,8 +28,8 @@ def _physics_only(monkeypatch):
     # expression layers add their own motion and are disabled here to isolate it.
     monkeypatch.setattr(_tail, "TAIL_CURL_STRENGTH", 0)
 
-C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-     "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
+
+C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
 
 
 def _empty():
@@ -46,8 +47,7 @@ def _max_step(prev, cur):
 def _settled_player():
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(200, 400, 600, 20), thin=False))
-    p = Player(x=460, y=400, controls=C, color=P1_COLOR, eye_color=WHITE,
-               char_name="Cat", facing_right=True)
+    p = Player(x=460, y=400, controls=C, color=P1_COLOR, eye_color=WHITE, char_name="Cat", facing_right=True)
     empty = pg.sprite.Group()
     for _ in range(40):
         p.update(_empty(), plats, empty)
@@ -67,7 +67,7 @@ def _max_step_over(p, plats, empty, frames):
 
 def test_facing_flip_does_not_snap_tail():
     p, plats, empty = _settled_player()
-    p.fighter.facing_right = not p.fighter.facing_right              # cat turns around
+    p.fighter.facing_right = not p.fighter.facing_right  # cat turns around
     flip_max = _max_step_over(p, plats, empty, 15)
     # The pre-fix bug teleported the whole tail ~2*TAIL_BASE_OFFSET_X (30px) in a
     # SINGLE frame. The eased anchor + base orientation keep any single-frame move

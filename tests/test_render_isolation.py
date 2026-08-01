@@ -11,6 +11,7 @@ Revert-check: delete the ``pytestmark = pytest.mark.usefixtures(...)`` line belo
 (or empty out the fixture body) and ``test_b`` fails with
 ``pygame.error: Invalid font`` / ``font not initialized``.
 """
+
 import pygame
 import pytest
 

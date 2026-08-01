@@ -6,6 +6,7 @@ A small table maps (direction × ground/air × A-vs-B) -> a canonical move key;
 resolution then falls back to what the character actually defines so partial kits
 (default cat = {"attack"}; Nalio = {"attack","jab","nair"}) behave incrementally.
 """
+
 import pygame as pg
 from helpers import P1
 
@@ -15,6 +16,7 @@ from pycats.core.input import InputFrame
 from pycats.entities.player import Player
 
 # ---- pure: canonical key per context --------------------------------------
+
 
 def test_select_ground_normals():
     assert select_move_key("neutral", on_ground=True, is_special=False) == "jab"
@@ -42,6 +44,7 @@ def test_select_specials():
 
 # ---- pure: resolution with fallback ---------------------------------------
 
+
 def test_resolve_prefers_exact_then_falls_back():
     full = {"jab", "dtilt", "utilt", "ftilt", "nair", "fair", "neutral_b"}
     assert resolve_move_key(full, "down", True, False) == "dtilt"
@@ -51,7 +54,7 @@ def test_resolve_prefers_exact_then_falls_back():
 
 def test_resolve_ground_falls_back_to_attack_alias():
     avail = {"attack", "nair"}  # Nalio today
-    assert resolve_move_key(avail, "down", True, False) == "attack"   # no dtilt key -> attack
+    assert resolve_move_key(avail, "down", True, False) == "attack"  # no dtilt key -> attack
     assert resolve_move_key(avail, "up", True, False) == "attack"
     assert resolve_move_key(avail, "neutral", True, False) == "attack"
 
@@ -67,15 +70,16 @@ def test_resolve_special_is_noop_when_absent():
 
 # ---- behaviour through the Player -----------------------------------------
 
+
 def _mk(char="P1", fighter_data=None):
-    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name=char, facing_right=True, fighter_data=fighter_data)
+    return Player(
+        100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name=char, facing_right=True, fighter_data=fighter_data
+    )
 
 
 def _press(*names, held_extra=()):
     keys = {P1[n] for n in names}
-    return InputFrame(held=keys | {P1[h] for h in held_extra},
-                      pressed=keys, released=set())
+    return InputFrame(held=keys | {P1[h] for h in held_extra}, pressed=keys, released=set())
 
 
 def test_default_cat_neutral_attack_unchanged():
@@ -174,10 +178,18 @@ def test_nalio_airborne_down_uses_dair_not_nair():
 
 def test_b_button_starts_a_defined_special():
     pg.init()
-    sb = MoveData(name="neutral b", in_air=False, startup=3, active=2, recovery=5,
-                  hitboxes=(Hitbox(circle=Circle(20, 30, 12), damage=7, angle=0),))
-    fd = FighterData(hurtbox=Hurtbox(circles=(Circle(20, 30, 14),)),
-                     moves={"attack": _mk().fighter_data.moves["attack"], "neutral_b": sb})
+    sb = MoveData(
+        name="neutral b",
+        in_air=False,
+        startup=3,
+        active=2,
+        recovery=5,
+        hitboxes=(Hitbox(circle=Circle(20, 30, 12), damage=7, angle=0),),
+    )
+    fd = FighterData(
+        hurtbox=Hurtbox(circles=(Circle(20, 30, 14),)),
+        moves={"attack": _mk().fighter_data.moves["attack"], "neutral_b": sb},
+    )
     p = _mk("custom", fighter_data=fd)
     p.fighter.on_ground = True
     p.handle_actions(_press("special"), pg.sprite.Group())
@@ -194,11 +206,12 @@ def test_b_button_noop_when_no_special_defined():
 
 # ---- smash input + routing (#331, slice 1 of #327) ------------------------
 
+
 def test_select_smash_keys():
     s = lambda d: select_move_key(d, on_ground=True, is_special=False, is_smash=True)
     assert s("forward") == "fsmash"
-    assert s("back") == "fsmash"      # back-smash = turnaround f-smash
-    assert s("neutral") == "fsmash"   # no neutral smash → treat as forward
+    assert s("back") == "fsmash"  # back-smash = turnaround f-smash
+    assert s("neutral") == "fsmash"  # no neutral smash → treat as forward
     assert s("up") == "usmash"
     assert s("down") == "dsmash"
 
@@ -226,7 +239,7 @@ def test_smash_through_player_begins_charge_since_slice3a():
     p = _mk("nalio")
     p.fighter.on_ground = True
     p.handle_actions(_press("smash", held_extra=("right",)), pg.sprite.Group())
-    assert p.current_move is None                       # not fired yet — charging
+    assert p.current_move is None  # not fired yet — charging
     assert p.fighter.pending_smash_key == "fsmash"
 
 
@@ -241,10 +254,10 @@ def test_smash_in_air_alone_is_a_noop_this_slice():
 def test_pressed_is_tolerant_of_a_missing_smash_binding():
     # sim keymaps omit "smash" — must not KeyError, just never smash (golden-safe)
     pg.init()
-    no_smash = dict(left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s,
-                    attack=pg.K_v, special=pg.K_c, shield=pg.K_x)  # no "smash"
-    p = Player(100, 100, no_smash, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="nalio", facing_right=True)
+    no_smash = dict(
+        left=pg.K_a, right=pg.K_d, up=pg.K_w, down=pg.K_s, attack=pg.K_v, special=pg.K_c, shield=pg.K_x
+    )  # no "smash"
+    p = Player(100, 100, no_smash, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio", facing_right=True)
     p.fighter.on_ground = True
     # a frame with K_b held (would be smash if bound) must not route a smash
     frame = InputFrame(held={pg.K_b, pg.K_d}, pressed={pg.K_b}, released=set())

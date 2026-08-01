@@ -5,25 +5,24 @@ The key invariant the consolidation protects: facing is restored from
 True/False per player, which is correct only by coincidence on the current
 config and would drift the moment a player is constructed facing the other way).
 """
+
 import pygame as pg
 
 from pycats.config import P1_COLOR, WHITE
 from pycats.entities.player import Player
 
-C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-     "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
+C = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
 
 
 def _player(facing_right):
-    return Player(x=460, y=360, controls=C, color=P1_COLOR, eye_color=WHITE,
-                  char_name="Cat", facing_right=facing_right)
+    return Player(x=460, y=360, controls=C, color=P1_COLOR, eye_color=WHITE, char_name="Cat", facing_right=facing_right)
 
 
 def test_reset_restores_original_facing_left():
-    p = _player(facing_right=False)   # constructed facing LEFT
-    p.fighter.facing_right = True             # turned around during play
+    p = _player(facing_right=False)  # constructed facing LEFT
+    p.fighter.facing_right = True  # turned around during play
     p.reset_to_spawn()
-    assert p.fighter.facing_right is False    # back to original, not a literal
+    assert p.fighter.facing_right is False  # back to original, not a literal
 
 
 def test_reset_restores_original_facing_right():
@@ -71,7 +70,7 @@ def test_fighter_does_not_reach_owner_clock_tail_or_size():
             base = node.value
             reaches_owner = (
                 (isinstance(base, ast.Attribute) and base.attr == "owner")  # self.owner._clock/.tail
-                or (isinstance(base, ast.Name) and base.id == "owner")       # owner.SIZE
+                or (isinstance(base, ast.Name) and base.id == "owner")  # owner.SIZE
             )
             if reaches_owner:
                 offenders.append(f"line {node.lineno}: owner.{node.attr}")
@@ -94,16 +93,11 @@ def test_fighter_has_no_player_back_reference():
     self_owner = [
         f"line {n.lineno}"
         for n in ast.walk(tree)
-        if isinstance(n, ast.Attribute) and n.attr == "owner"
-        and isinstance(n.value, ast.Name) and n.value.id == "self"
+        if isinstance(n, ast.Attribute) and n.attr == "owner" and isinstance(n.value, ast.Name) and n.value.id == "self"
     ]
     assert self_owner == [], "Fighter has a Player back-reference at " + ", ".join(self_owner)
 
-    fighter_cls = next(
-        node for node in ast.walk(tree)
-        if isinstance(node, ast.ClassDef) and node.name == "Fighter"
-    )
-    init = next(n for n in fighter_cls.body
-                if isinstance(n, ast.FunctionDef) and n.name == "__init__")
+    fighter_cls = next(node for node in ast.walk(tree) if isinstance(node, ast.ClassDef) and node.name == "Fighter")
+    init = next(n for n in fighter_cls.body if isinstance(n, ast.FunctionDef) and n.name == "__init__")
     params = [a.arg for a in init.args.args]
     assert "owner" not in params, f"Fighter.__init__ still takes `owner`: {params}"

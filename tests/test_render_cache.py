@@ -1,5 +1,6 @@
 # tests/test_render_cache.py
 """The cat-body composite cache must be pixel-identical to drawing each frame."""
+
 import pygame
 import pytest
 
@@ -34,9 +35,16 @@ def _direct(surface, p):
     ch = rb._BODY_PAD_TOP + h + rb._BODY_PAD_BOT
     comp = pygame.Surface((cw, ch), pygame.SRCALPHA)
     vrect = pygame.Rect(rb._BODY_PAD_X, rb._BODY_PAD_TOP, w, h)
-    shim = rb._CatShim(vrect, p.fighter.facing_right, p.char_color, p.eye_color,
-                       p.stripe_color, p.char_name, nickname=getattr(p, "nickname", None),
-                       tint=overlay)
+    shim = rb._CatShim(
+        vrect,
+        p.fighter.facing_right,
+        p.char_color,
+        p.eye_color,
+        p.stripe_color,
+        p.char_name,
+        nickname=getattr(p, "nickname", None),
+        tint=overlay,
+    )
     body = pygame.Surface((w, h))
     body.fill(rb._blend(p.char_color, overlay))  # softened flash, render-time (#75/#109)
     comp.blit(body, vrect)

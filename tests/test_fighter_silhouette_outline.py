@@ -6,6 +6,7 @@ rect), (b) the body-rect edge is the sprite's own colour, not the outline — th
 outline shows only just *outside* the silhouette, and (c) the tail gets the same
 outline. Each assertion is able-to-fail against the old torso-box outline.
 """
+
 import pygame
 
 from pycats import render_battle as rb

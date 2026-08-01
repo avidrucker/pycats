@@ -1,4 +1,5 @@
 """Unit tests for the authentic Brawl/PM knockback + hitstun formula (#40, #44)."""
+
 import pytest
 
 from pycats.combat.knockback import decay_velocity, hitstun_frames, knockback
@@ -20,7 +21,7 @@ def test_heavier_target_takes_less_knockback():
     neutral = knockback(100.0, 10.0, 100, base_knockback=30.0, knockback_growth=100.0)
     heavy = knockback(100.0, 10.0, 200, base_knockback=30.0, knockback_growth=100.0)
     assert light > neutral > heavy
-    assert heavy == pytest.approx(104.0)   # 200/300=.6667; 60*.6667*1.4=56; +18=74; +30=104
+    assert heavy == pytest.approx(104.0)  # 200/300=.6667; 60*.6667*1.4=56; +18=74; +30=104
 
 
 def test_knockback_growth_scales_the_percent_term():
@@ -29,8 +30,8 @@ def test_knockback_growth_scales_the_percent_term():
 
 
 def test_hitstun_is_floored_product():
-    assert hitstun_frames(132.0) == 52      # floor(52.8)
-    assert hitstun_frames(48.0) == 19       # floor(19.2)
+    assert hitstun_frames(132.0) == 52  # floor(52.8)
+    assert hitstun_frames(48.0) == 19  # floor(19.2)
 
 
 def test_hitstun_never_below_floor():
@@ -43,6 +44,7 @@ def test_hitstun_monotonic_in_knockback():
 
 
 # ---- knockback decay (#44) -------------------------------------------------
+
 
 def test_decay_reduces_positive_velocity_toward_zero():
     assert decay_velocity(5.0, 0.145) == pytest.approx(4.855)
@@ -62,6 +64,6 @@ def test_decay_preserves_sign_until_zero():
     v = 1.0
     for _ in range(100):
         nv = decay_velocity(v, 0.145)
-        assert nv >= 0.0 and nv <= v       # monotonic toward 0, never flips sign
+        assert nv >= 0.0 and nv <= v  # monotonic toward 0, never flips sign
         v = nv
-    assert v == 0.0                         # eventually fully stops
+    assert v == 0.0  # eventually fully stops

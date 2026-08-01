@@ -8,6 +8,7 @@ Pins the two PM-Marth signature mechanics, both pure data on the current engine 
 
 Harness mirrors tests/test_multi_hitbox.py (process_hits + lightweight player stubs).
 """
+
 from __future__ import annotations
 
 import types
@@ -22,9 +23,15 @@ from pycats.systems.combat import process_hits
 
 def _player(rect, *, hurtbox_circles, facing_right=True):
     p = types.SimpleNamespace(
-        rect=rect, facing_right=facing_right, intangible=False, is_alive=True,
+        rect=rect,
+        facing_right=facing_right,
+        intangible=False,
+        is_alive=True,
         fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)), moves={}),
-        hits_received=0, hits_landed=0, last_damage=None, last_angle=None,
+        hits_received=0,
+        hits_landed=0,
+        last_damage=None,
+        last_angle=None,
     )
 
     def receive_hit(atk, is_crouching=False):
@@ -53,8 +60,7 @@ def test_tip_beats_base_when_both_overlap():
     """A defender overlapping BOTH boxes takes the TIP's damage (priority = tuple order)."""
     pygame.init()
     # attacker at origin → Hitbox Circle(dx,dy) resolves to absolute (dx,dy).
-    attacker = _player(pygame.Rect(0, 0, 40, 60),
-                       hurtbox_circles=[Circle(20, 15, 14), Circle(20, 45, 14)])
+    attacker = _player(pygame.Rect(0, 0, 40, 60), hurtbox_circles=[Circle(20, 15, 14), Circle(20, 45, 14)])
     # defender hurtbox circle at absolute (60,30): overlaps tip(72,30,r12) AND base(48,30,r14).
     defender = _player(pygame.Rect(40, 0, 40, 60), hurtbox_circles=[Circle(20, 30, 14)])
     atk = Attack(attacker, hitboxes=_NARZ_FTILT.hitboxes, lifetime=4)
@@ -62,8 +68,9 @@ def test_tip_beats_base_when_both_overlap():
     process_hits([attacker, defender], [atk])
 
     assert defender.hits_received == 1, "two overlapping boxes of one move = one hit"
-    assert defender.last_damage == _NARZ_FTILT.hitboxes[0].damage == 13.0, \
+    assert defender.last_damage == _NARZ_FTILT.hitboxes[0].damage == 13.0, (
         "the TIP (box 0) must win on dual overlap, not the base"
+    )
 
 
 def test_tip_reaches_beyond_the_hurtbox_disjoint():

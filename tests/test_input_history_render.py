@@ -5,7 +5,6 @@ test_battle_screen_render.py, re-baselined when this landed). Confirms the
 strip actually draws and the right-aligned P2 path doesn't crash.
 """
 
-
 import pygame  # noqa: E402
 
 from pycats import render_battle as rb  # noqa: E402

@@ -2,6 +2,7 @@
 
 RED phase: these tests should FAIL before implementation, PASS after.
 """
+
 import os
 import tempfile
 
@@ -28,20 +29,17 @@ class TestSettingsToggle:
     def test_default_is_true(self):
         """esc_hold_to_navigate should default to True (on by default)."""
         prefs = load()
-        assert prefs.get("esc_hold_to_navigate") is True, \
-            "esc_hold_to_navigate should default to True"
+        assert prefs.get("esc_hold_to_navigate") is True, "esc_hold_to_navigate should default to True"
 
     def test_save_and_load_toggle(self):
         """Toggling the setting should persist across load."""
         save({"esc_hold_to_navigate": False})
         prefs = load()
-        assert prefs.get("esc_hold_to_navigate") is False, \
-            "esc_hold_to_navigate=False should persist"
+        assert prefs.get("esc_hold_to_navigate") is False, "esc_hold_to_navigate=False should persist"
 
         save({"esc_hold_to_navigate": True})
         prefs = load()
-        assert prefs.get("esc_hold_to_navigate") is True, \
-            "esc_hold_to_navigate=True should persist"
+        assert prefs.get("esc_hold_to_navigate") is True, "esc_hold_to_navigate=True should persist"
 
     def test_unknown_keys_ignored(self):
         """Unknown keys in settings file should be ignored."""

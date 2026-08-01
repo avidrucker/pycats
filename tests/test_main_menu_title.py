@@ -13,6 +13,7 @@ The render path also calls font-dependent helpers (unicode arrows, mixed text,
 SysFont); those are stubbed so the test is fast and order-independent and only
 exercises the title.
 """
+
 import pygame
 
 from pycats import main_menu
@@ -37,12 +38,8 @@ def test_start_screen_renders_cat_fight_title(monkeypatch):
         "render_text_simple",
         lambda text, *a, **k: simple_calls.append(text),
     )
-    monkeypatch.setattr(
-        main_menu.text_renderer, "render_unicode_char", lambda *a, **k: None
-    )
-    monkeypatch.setattr(
-        main_menu.text_renderer, "render_text_mixed", lambda *a, **k: None
-    )
+    monkeypatch.setattr(main_menu.text_renderer, "render_unicode_char", lambda *a, **k: None)
+    monkeypatch.setattr(main_menu.text_renderer, "render_text_mixed", lambda *a, **k: None)
     monkeypatch.setattr(pygame.font, "SysFont", lambda *a, **k: _DummyFont())
 
     # render() does not read the controls, so empty dicts suffice.
@@ -51,8 +48,7 @@ def test_start_screen_renders_cat_fight_title(monkeypatch):
         menu.render(pygame.Surface((800, 600)))
 
         assert "Cat Fight" in simple_calls, (
-            f"start screen must render the working title 'Cat Fight'; "
-            f"render_text_simple got {simple_calls!r}"
+            f"start screen must render the working title 'Cat Fight'; render_text_simple got {simple_calls!r}"
         )
     finally:
         # This test injects a fake SysFont (_DummyFont). _get_font / sys_font cache

@@ -8,6 +8,7 @@ frames before the knockback slide. SmashWiki Hitlag (Brawl/PM):
 with h = e = c = 1 in this slice. Position, velocity, move-clock and the hitstun
 timer are all held during the freeze, then resume intact.
 """
+
 import pygame
 from helpers import P1
 
@@ -18,16 +19,24 @@ from pycats.entities.attack import Attack
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
-P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-          attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 # ---- pure formula ---------------------------------------------------------
 
+
 def test_hitlag_frames_reference_values():
-    assert hitlag_frames(9) == 8     # floor(9*0.3846154 + 5) = floor(8.46) = 8
-    assert hitlag_frames(12) == 9    # floor(12*0.3846154 + 5) = floor(9.62) = 9
-    assert hitlag_frames(0) == 5     # floor(5) = 5 (base only)
+    assert hitlag_frames(9) == 8  # floor(9*0.3846154 + 5) = floor(8.46) = 8
+    assert hitlag_frames(12) == 9  # floor(12*0.3846154 + 5) = floor(9.62) = 9
+    assert hitlag_frames(0) == 5  # floor(5) = 5 (base only)
 
 
 def test_hitlag_frames_capped_at_30():
@@ -36,14 +45,15 @@ def test_hitlag_frames_capped_at_30():
 
 # ---- behaviour ------------------------------------------------------------
 
+
 def _mk(char, x, facing):
-    return Player(x, 100, P1 if facing else P2, (255, 160, 64),
-                  eye_color=(0, 0, 0), char_name=char, facing_right=facing)
+    return Player(
+        x, 100, P1 if facing else P2, (255, 160, 64), eye_color=(0, 0, 0), char_name=char, facing_right=facing
+    )
 
 
 def _hit(owner, damage):
-    hb = Hitbox(circle=Circle(dx=20, dy=30, r=14), damage=damage, angle=45,
-                base_knockback=30.0, knockback_growth=100.0)
+    hb = Hitbox(circle=Circle(dx=20, dy=30, r=14), damage=damage, angle=45, base_knockback=30.0, knockback_growth=100.0)
     return Attack(owner, hitbox=hb, lifetime=2)
 
 

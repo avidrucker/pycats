@@ -13,6 +13,7 @@ every status source.
   surface in **both** `active_tint` and `timer_bar_specs` with no code edits — the whole
   point of the registry (and the path #531 / #506 take).
 """
+
 import types
 
 import pygame  # noqa: E402
@@ -27,10 +28,18 @@ def st(**kw):
     `p.fighter.*`) and `timer_bar_specs` (reads `p.state` + `p.fighter.*`) are fed by
     one object. Every timer field both functions read is present and defaults inert."""
     fields = dict(
-        state="idle", hurt_timer=0, stun_timer=0, dodge_timer=0,
-        getup_roll_timer=0, getup_attack_timer=0, ledge_intangible_timer=0,
-        shield_hp=rb.SHIELD_MAX_HP, prone_timer=0,
-        ledge_regrab_lockout_timer=0, intangible=False, smash_charge_timer=0,
+        state="idle",
+        hurt_timer=0,
+        stun_timer=0,
+        dodge_timer=0,
+        getup_roll_timer=0,
+        getup_attack_timer=0,
+        ledge_intangible_timer=0,
+        shield_hp=rb.SHIELD_MAX_HP,
+        prone_timer=0,
+        ledge_regrab_lockout_timer=0,
+        intangible=False,
+        smash_charge_timer=0,
     )
     fields.update(kw)
     ns = types.SimpleNamespace(**fields, rect=pygame.Rect(100, 200, 40, 60))
@@ -55,11 +64,9 @@ def _matrix():
         "intangible_dodge": st(intangible=True, dodge_timer=15),
         "intangible_getuproll": st(intangible=True, getup_roll_timer=10),
         "intangible_getupatk": st(intangible=True, getup_attack_timer=12),
-        "intangible_suppressed_hang": st(
-            state="ledge_hang", intangible=True, dodge_timer=15),
+        "intangible_suppressed_hang": st(state="ledge_hang", intangible=True, dodge_timer=15),
         "charge": st(smash_charge_timer=30),
-        "overlay_combo": st(
-            ledge_regrab_lockout_timer=20, intangible=True, dodge_timer=15, smash_charge_timer=30),
+        "overlay_combo": st(ledge_regrab_lockout_timer=20, intangible=True, dodge_timer=15, smash_charge_timer=30),
         "excl+overlays": st(stun_timer=240, ledge_regrab_lockout_timer=20, smash_charge_timer=30),
     }
 
@@ -68,16 +75,31 @@ def _matrix():
 # timer_bar_specs). The registry must reproduce these byte-for-byte. (The CHARGE
 # entries read 30/59 ≈ 0.508 / "51%" since #599 corrected the ramp 60→59 frames.)
 EXPECTED_TINT = {
-    "calm": None, "hurt": (255, 0, 0), "stun_tint": (255, 255, 0), "dodge": (255, 255, 255),
-    "hurt+stun": (255, 0, 0), "stun+dodge": (255, 255, 0), "shield": None, "dizzy": (255, 255, 0),
-    "shield+stun": (255, 255, 0), "hang": None, "prone": None, "lockout": None,
-    "intangible_dodge": (255, 255, 255), "intangible_getuproll": None, "intangible_getupatk": None,
-    "intangible_suppressed_hang": (255, 255, 255), "charge": None,
-    "overlay_combo": (255, 255, 255), "excl+overlays": (255, 255, 0),
+    "calm": None,
+    "hurt": (255, 0, 0),
+    "stun_tint": (255, 255, 0),
+    "dodge": (255, 255, 255),
+    "hurt+stun": (255, 0, 0),
+    "stun+dodge": (255, 255, 0),
+    "shield": None,
+    "dizzy": (255, 255, 0),
+    "shield+stun": (255, 255, 0),
+    "hang": None,
+    "prone": None,
+    "lockout": None,
+    "intangible_dodge": (255, 255, 255),
+    "intangible_getuproll": None,
+    "intangible_getupatk": None,
+    "intangible_suppressed_hang": (255, 255, 255),
+    "charge": None,
+    "overlay_combo": (255, 255, 255),
+    "excl+overlays": (255, 255, 0),
 }
 
 EXPECTED_BARS = {
-    "calm": [], "hurt": [], "dodge": [],
+    "calm": [],
+    "hurt": [],
+    "dodge": [],
     "stun_tint": [(0.01020408163265306, "1s", (210, 90, 220), "DIZZY")],
     "hurt+stun": [(0.01020408163265306, "1s", (210, 90, 220), "DIZZY")],
     "stun+dodge": [(0.01020408163265306, "1s", (210, 90, 220), "DIZZY")],
@@ -95,11 +117,13 @@ EXPECTED_BARS = {
     "overlay_combo": [
         (1.0714285714285714, "1s", (95, 225, 120), "INTANG"),
         (0.6666666666666666, "1s", (230, 70, 70), "LOCKOUT"),
-        (0.5084745762711864, "51%·1s", (255, 205, 40), "CHARGE")],
+        (0.5084745762711864, "51%·1s", (255, 205, 40), "CHARGE"),
+    ],
     "excl+overlays": [
         (0.6666666666666666, "1s", (230, 70, 70), "LOCKOUT"),
         (0.5084745762711864, "51%·1s", (255, 205, 40), "CHARGE"),
-        (0.4897959183673469, "4s", (210, 90, 220), "DIZZY")],
+        (0.4897959183673469, "4s", (210, 90, 220), "DIZZY"),
+    ],
 }
 
 
@@ -125,10 +149,17 @@ def test_new_status_is_a_one_record_add(monkeypatch):
     assert all(b.label != "SYNTH" for b in rb.timer_bar_specs(p))
     # add exactly one record → it drives the tint AND a bar, no code edits
     synth = rb.StatusSource(
-        "synth", 99, active=lambda f, p: getattr(f, "_synth", 0) > 0,
-        tint=(7, 7, 7), bar_color=(9, 9, 9), bar_label="SYNTH", bar_class="overlay",
-        ratio=lambda f, p: f._synth / 100, readout=lambda f, p: "9s",
-        recency=lambda f, p: 0.0)
+        "synth",
+        99,
+        active=lambda f, p: getattr(f, "_synth", 0) > 0,
+        tint=(7, 7, 7),
+        bar_color=(9, 9, 9),
+        bar_label="SYNTH",
+        bar_class="overlay",
+        ratio=lambda f, p: f._synth / 100,
+        readout=lambda f, p: "9s",
+        recency=lambda f, p: 0.0,
+    )
     # Patch the table at its canonical home (#900): both active_tint and
     # timer_bar_specs read status_model.STATUS_SOURCES, so one patch drives both.
     monkeypatch.setattr(status_model, "STATUS_SOURCES", status_model.STATUS_SOURCES + [synth])

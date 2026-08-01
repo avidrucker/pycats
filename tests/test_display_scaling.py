@@ -4,6 +4,7 @@ These are pure-math tests for pycats.display — no pygame surface needed for th
 sizing/mode/cycle logic. A separate test exercises a real surface scale to prove
 the chosen blit mode actually produces the expected dimensions.
 """
+
 import pytest
 
 from pycats import display
@@ -35,11 +36,11 @@ def test_every_preset_yields_integer_dims():
 @pytest.mark.parametrize(
     "scale, mode",
     [
-        (1.0, "flip"),    # no scaling — blit/flip 1:1
+        (1.0, "flip"),  # no scaling — blit/flip 1:1
         (1.5, "smooth"),  # fractional — anti-aliased smoothscale
-        (2.0, "crisp"),   # clean integer — nearest, pixel-perfect
+        (2.0, "crisp"),  # clean integer — nearest, pixel-perfect
         (2.5, "smooth"),  # fractional — anti-aliased smoothscale
-        (3.0, "crisp"),   # any whole multiple is crisp
+        (3.0, "crisp"),  # any whole multiple is crisp
     ],
 )
 def test_blit_mode_for_scale(scale, mode):
@@ -67,10 +68,10 @@ def test_cycle_preset_from_unknown_scale_snaps_to_first():
 @pytest.mark.parametrize(
     "display_size, expected",
     [
-        ((1920, 1080), 2.0),   # 1080p: clean 2x integer fit
-        ((2560, 1440), 2.0),   # 1440p: 2.66x possible, but fit prefers crisp 2x
-        ((1366, 768), 1.0),    # common laptop: only 1x fits as an integer
-        ((960, 540), 1.0),     # exactly the base
+        ((1920, 1080), 2.0),  # 1080p: clean 2x integer fit
+        ((2560, 1440), 2.0),  # 1440p: 2.66x possible, but fit prefers crisp 2x
+        ((1366, 768), 1.0),  # common laptop: only 1x fits as an integer
+        ((960, 540), 1.0),  # exactly the base
     ],
 )
 def test_fit_scale_prefers_largest_integer_that_fits(display_size, expected):
@@ -87,9 +88,9 @@ def test_fit_scale_falls_back_to_fractional_when_smaller_than_base():
 @pytest.mark.parametrize(
     "scale, display_size, expected",
     [
-        (2.5, (1920, 1080), 2.0),   # 2.5x would overflow 1080p -> clamp to fit (2x)
-        (2.5, (2560, 1440), 2.5),   # 2.5x fits on 1440p -> unchanged
-        (1.0, (1920, 1080), 1.0),   # well within -> unchanged
+        (2.5, (1920, 1080), 2.0),  # 2.5x would overflow 1080p -> clamp to fit (2x)
+        (2.5, (2560, 1440), 2.5),  # 2.5x fits on 1440p -> unchanged
+        (1.0, (1920, 1080), 1.0),  # well within -> unchanged
         (1.5, (1366, 768), pytest.approx(768 / 540)),  # clamp to the limiting axis
     ],
 )
@@ -170,8 +171,8 @@ def test_toast_default_duration_is_three_seconds():
 @pytest.mark.parametrize(
     "display_size, expected",
     [
-        ((1920, 1080), [1.0, 1.5, 2.0]),            # 2.5x & fit collapse onto 2x
-        ((2560, 1440), [1.0, 1.5, 2.0, 2.5]),       # fit(2x) dedups with the 2x preset
+        ((1920, 1080), [1.0, 1.5, 2.0]),  # 2.5x & fit collapse onto 2x
+        ((2560, 1440), [1.0, 1.5, 2.0, 2.5]),  # fit(2x) dedups with the 2x preset
         ((3840, 2160), [1.0, 1.5, 2.0, 2.5, 4.0]),  # fit=4x adds a fill step
     ],
 )
@@ -200,7 +201,7 @@ def test_achievable_zoom_scales_have_no_duplicates_and_all_fit():
 
 def test_fullscreen_zoom_label_marks_the_max_as_fit():
     scales = [1.0, 1.5, 2.0]
-    assert display.fullscreen_zoom_label(2.0, scales) == "Fit"   # largest = "as big as fits"
+    assert display.fullscreen_zoom_label(2.0, scales) == "Fit"  # largest = "as big as fits"
     assert display.fullscreen_zoom_label(1.0, scales) == "1×"
     assert display.fullscreen_zoom_label(1.5, scales) == "1.5×"
 

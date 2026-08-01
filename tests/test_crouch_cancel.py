@@ -12,6 +12,7 @@ knockback scaling from the crouch-lowered hurtbox of #124). The crouching
 defender must be launched CROUCH_CANCEL_FACTOR x as far / fast as a standing
 one struck by the identical hit.
 """
+
 from types import SimpleNamespace
 
 import pygame
@@ -22,14 +23,19 @@ from pycats.config import CROUCH_CANCEL_FACTOR
 from pycats.core.input import InputFrame
 from pycats.entities import Player
 
-_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
-                 down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
-                 shield=pygame.K_x)
+_CONTROLS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
 
 
 def _mk():
-    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P", facing_right=True)
+    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="P", facing_right=True)
 
 
 def _frame(*keys):
@@ -52,8 +58,7 @@ def _run(p, plats, frame, n=3):
 def _atk(attacker, damage=10.0, bkb=30.0, kbg=100.0, angle=0):
     # A horizontal (+x) hit with real BKB/KBG so the launch is non-zero. Only the
     # fields receive_hit reads are populated.
-    return SimpleNamespace(owner=attacker, damage=damage, base_knockback=bkb,
-                           knockback_growth=kbg, angle=angle)
+    return SimpleNamespace(owner=attacker, damage=damage, base_knockback=bkb, knockback_growth=kbg, angle=angle)
 
 
 def _struck_launch(crouching: bool):
@@ -104,9 +109,19 @@ from pycats.systems import combat  # noqa: E402
 def _body_attack(owner, cx, cy, r=40):
     # Big radius so the hit overlaps the defender's hurtbox in EITHER posture;
     # real BKB/KBG so the launch is non-zero. Single-circle (legacy) fallback.
-    return SimpleNamespace(active=True, owner=owner, hit_cx=cx, hit_cy=cy, hit_r=r,
-                           disappear_on_hit=False, damage=10.0, base_knockback=30.0,
-                           knockback_growth=100.0, angle=0, set_knockback=None)
+    return SimpleNamespace(
+        active=True,
+        owner=owner,
+        hit_cx=cx,
+        hit_cy=cy,
+        hit_r=r,
+        disappear_on_hit=False,
+        damage=10.0,
+        base_knockback=30.0,
+        knockback_growth=100.0,
+        angle=0,
+        set_knockback=None,
+    )
 
 
 def _launch_via_process_hits(crouching: bool):

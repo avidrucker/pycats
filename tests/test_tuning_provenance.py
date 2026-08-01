@@ -9,6 +9,7 @@ Three able-to-fail assertions:
 Each can fail: flip a `Provenance.value` (1), add/remove a name without its row (2),
 or rot a `derivation` (3), and the corresponding test reds.
 """
+
 from pathlib import Path
 
 from pycats import config
@@ -36,8 +37,7 @@ def test_no_drift_registry_value_matches_config():
             mismatches.append(f"{name}: config={live!r} != provenance={prov.value!r}")
     assert mismatches == [], (
         "tuning constants drifted from their provenance rows (edit the constant AND "
-        "its Provenance.value + status/issue in the same diff — ADR-0003):\n  "
-        + "\n  ".join(mismatches)
+        "its Provenance.value + status/issue in the same diff — ADR-0003):\n  " + "\n  ".join(mismatches)
     )
 
 
@@ -66,10 +66,7 @@ def test_derivation_integrity_reevaluates_to_value():
         got = eval(prov.derivation, {"__builtins__": {"round": round}}, ns)  # noqa: S307
         if got != prov.value:
             bad.append(f"{name}: derivation {prov.derivation!r} -> {got!r} != {prov.value!r}")
-    assert bad == [], (
-        "a recorded derivation no longer yields its value (a derivation rotted):\n  "
-        + "\n  ".join(bad)
-    )
+    assert bad == [], "a recorded derivation no longer yields its value (a derivation rotted):\n  " + "\n  ".join(bad)
 
 
 # --- #575 Tier-1: registry <-> by-category manifest status consistency (#635) ---
@@ -130,13 +127,10 @@ def test_manifest_status_matches_registry():
         want = TUNING_PROVENANCE[key].status
         got = _leading_status(r["Status"])
         if got != want:
-            problems.append(
-                f"{key}: manifest Status {r['Status']!r} (-> {got}) != registry {want!r}"
-            )
+            problems.append(f"{key}: manifest Status {r['Status']!r} (-> {got}) != registry {want!r}")
     assert problems == [], (
         "by-category manifest disagrees with the provenance registry — reconcile the "
-        "Status columns (registry is the value source of truth; ADR-0003):\n  "
-        + "\n  ".join(problems)
+        "Status columns (registry is the value source of truth; ADR-0003):\n  " + "\n  ".join(problems)
     )
 
 
@@ -146,9 +140,7 @@ def test_manifest_status_matches_registry():
 def test_by_status_and_named_views():
     from pycats.combat.provenance import by_status, debt, divergences
 
-    assert set(by_status("GUESS")) == {
-        n for n, p in TUNING_PROVENANCE.items() if p.status == "GUESS"
-    }
+    assert set(by_status("GUESS")) == {n for n, p in TUNING_PROVENANCE.items() if p.status == "GUESS"}
     assert set(by_status("DIVERGENCE", "GUESS")) == {
         n for n, p in TUNING_PROVENANCE.items() if p.status in ("DIVERGENCE", "GUESS")
     }

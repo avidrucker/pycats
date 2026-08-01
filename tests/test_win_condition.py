@@ -4,17 +4,20 @@ The "who is out of lives → who wins" rule lives in one pure place
 (`pycats/systems/win_condition.py`); both the headless `match_engine` and the
 live `game.check_win_condition` delegate to it. These tests pin that rule.
 """
+
 from pycats.systems.win_condition import winner_index, winner_loser
 
 
 class _P:
     """Minimal fighter stand-in: only `.lives` matters to the rule."""
+
     def __init__(self, lives):
         self.lives = lives
         self.fighter = self
 
 
 # ---- winner_index: 0 none / 1 first / 2 second, by lives ----
+
 
 def test_winner_index_no_winner_when_both_alive():
     assert winner_index((_P(3), _P(2))) == 0
@@ -29,6 +32,7 @@ def test_winner_index_first_wins_when_second_out_of_lives():
 
 
 # ---- winner_loser: (winner, loser) refs, or (None, None) ----
+
 
 def test_winner_loser_returns_second_then_first_when_first_out():
     p1, p2 = _P(0), _P(2)

@@ -11,6 +11,7 @@ a genuine double-tap is press → release → press, so the second press is a FR
 single presses stay `walk` (golden-safe); a tap outside the window re-arms rather
 than dashing; and a hit-stunned fighter never dashes off a stale window (#370).
 """
+
 import pygame as pg
 
 from pycats.config import DASH_SPEED, DOUBLE_TAP_WINDOW, P1_COLOR, WHITE
@@ -19,8 +20,12 @@ from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
 CONTROLS = {
-    "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-    "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e,
+    "left": pg.K_a,
+    "right": pg.K_d,
+    "up": pg.K_w,
+    "down": pg.K_s,
+    "shield": pg.K_q,
+    "attack": pg.K_e,
 }
 LEFT, RIGHT = pg.K_a, pg.K_d
 
@@ -33,8 +38,7 @@ def _grounded_player():
     """A player settled on a thick floor (one empty frame to land)."""
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(0, 400, 800, 40), thin=False))
-    p = Player(x=400, y=400, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE,
-               char_name="DashCat", facing_right=True)
+    p = Player(x=400, y=400, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE, char_name="DashCat", facing_right=True)
     p.update(_frame(set(), set()), plats, pg.sprite.Group())  # settle on ground
     return p, plats
 
@@ -50,6 +54,7 @@ def _tap(p, plats, key):
 
 
 # ---- the double-tap fires _start_dash ----
+
 
 def test_double_tap_within_window_starts_dash():
     p, plats = _grounded_player()
@@ -74,6 +79,7 @@ def test_double_tap_left_dashes_left():
 
 # ---- non-double-taps never dash (golden-safe) ----
 
+
 def test_single_press_walks_never_dashes():
     p, plats = _grounded_player()
     _step(p, plats, held={RIGHT}, pressed={RIGHT})
@@ -93,7 +99,7 @@ def test_held_direction_never_dashes():
 def test_two_presses_outside_window_do_not_dash():
     p, plats = _grounded_player()
     _step(p, plats, held={RIGHT}, pressed={RIGHT})  # first tap opens the window
-    for _ in range(DOUBLE_TAP_WINDOW + 2):          # let it expire
+    for _ in range(DOUBLE_TAP_WINDOW + 2):  # let it expire
         _step(p, plats, held=set(), pressed=set())
     _step(p, plats, held={RIGHT}, pressed={RIGHT})  # too late -> re-arm, not dash
     assert p.state != "dash"
@@ -103,18 +109,19 @@ def test_opposite_direction_second_tap_does_not_dash():
     p, plats = _grounded_player()
     _step(p, plats, held={RIGHT}, pressed={RIGHT})  # arm right
     _step(p, plats, held=set(), pressed=set())
-    _step(p, plats, held={LEFT}, pressed={LEFT})    # different direction -> no dash
+    _step(p, plats, held={LEFT}, pressed={LEFT})  # different direction -> no dash
     assert p.state != "dash"
 
 
 # ---- the #370 timer-gate: no dash out of hitstun on a stale window ----
+
 
 def test_no_dash_during_hitstun_via_player_update():
     # Player.update skips handle_actions entirely during hitstun, so an armed
     # window can't produce a dash while hurt_timer is live.
     p, plats = _grounded_player()
     _step(p, plats, held={RIGHT}, pressed={RIGHT})  # arm the window
-    p.fighter.hurt_timer = 10                        # a hit lands (label lags a frame)
+    p.fighter.hurt_timer = 10  # a hit lands (label lags a frame)
     _step(p, plats, held={RIGHT}, pressed={RIGHT})  # second tap during hitstun
     assert p.state != "dash"
     assert p.fighter.dash_timer == 0
@@ -125,9 +132,9 @@ def test_no_dash_when_hurt_timer_live_even_if_label_lags():
     # a live hurt_timer while the label still reads a movement state (the one-frame
     # FSM lag). Gating on the timer — not the label — must block the dash.
     p, plats = _grounded_player()
-    _step(p, plats, held={RIGHT}, pressed={RIGHT})   # arm the window
+    _step(p, plats, held={RIGHT}, pressed={RIGHT})  # arm the window
     assert p.fighter.dash_input_window > 0
-    assert p.state in ("idle", "walk")               # label still a movement state
-    p.fighter.hurt_timer = 10                         # hit lands; label hasn't flipped
+    assert p.state in ("idle", "walk")  # label still a movement state
+    p.fighter.hurt_timer = 10  # hit lands; label hasn't flipped
     p.handle_actions(_frame({RIGHT}, {RIGHT}), pg.sprite.Group())
-    assert p.fighter.dash_timer == 0                 # timer gate blocked the dash
+    assert p.fighter.dash_timer == 0  # timer gate blocked the dash

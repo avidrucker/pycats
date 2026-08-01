@@ -11,7 +11,6 @@ _compose_mixed keyed its cache by the authored size, not the scaled one) and #40
 (button/grid geometry is unscaled — overflow/overlap at large).
 """
 
-
 import contextlib  # noqa: E402
 
 import pygame  # noqa: E402
@@ -23,15 +22,19 @@ from pycats.main_menu import MainMenuManager  # noqa: E402
 from pycats.options_menu import OptionsMenu  # noqa: E402
 from pycats.text_utils import text_renderer  # noqa: E402
 
-_P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d,
-           attack=pygame.K_v, special=pygame.K_c)
-_P2 = dict(up=pygame.K_UP, down=pygame.K_DOWN, left=pygame.K_LEFT, right=pygame.K_RIGHT,
-           attack=pygame.K_SLASH, special=pygame.K_PERIOD)
+_P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d, attack=pygame.K_v, special=pygame.K_c)
+_P2 = dict(
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    attack=pygame.K_SLASH,
+    special=pygame.K_PERIOD,
+)
 
 # Every TextRenderer entry point the menus draw through. sys_font(...).render (the
 # main-menu F11 hint) is keyed by scaled size already, so it isn't part of the bug.
-_RENDER_METHODS = ("render_text_simple", "render_text_mixed",
-                   "render_mixed_centered", "render_unicode_char")
+_RENDER_METHODS = ("render_text_simple", "render_text_mixed", "render_mixed_centered", "render_unicode_char")
 
 
 @contextlib.contextmanager
@@ -48,6 +51,7 @@ def _spy_text_sizes():
             except Exception:
                 pass
             return rect
+
         return wrapper
 
     for n in _RENDER_METHODS:
@@ -106,11 +110,9 @@ def test_mixed_text_resizes_when_font_scale_changes():
     runtime_settings.seed(settings.defaults())
     surf = pygame.Surface((400, 200))
     with _font_scale("standard"):
-        r_std = text_renderer.render_mixed_centered(
-            "► Status Bars: ON", 36, (255, 255, 255), surf, (200, 100))
+        r_std = text_renderer.render_mixed_centered("► Status Bars: ON", 36, (255, 255, 255), surf, (200, 100))
     with _font_scale("large"):
-        r_lg = text_renderer.render_mixed_centered(
-            "► Status Bars: ON", 36, (255, 255, 255), surf, (200, 100))
+        r_lg = text_renderer.render_mixed_centered("► Status Bars: ON", 36, (255, 255, 255), surf, (200, 100))
     assert r_lg.height > r_std.height
 
 

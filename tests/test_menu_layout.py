@@ -1,4 +1,5 @@
 """Pure layout math for scale-aware, scrollable menu grids (#402)."""
+
 from pycats.menu_layout import effective_columns, grid_dims, scroll_to_visible
 
 
@@ -24,7 +25,7 @@ def test_never_returns_zero():
 
 # ---- grid_dims -------------------------------------------------------------- #
 def test_grid_dims_two_columns():
-    assert grid_dims(9, 2) == (2, 5)   # 9 rows over 2 cols -> 5 grid rows
+    assert grid_dims(9, 2) == (2, 5)  # 9 rows over 2 cols -> 5 grid rows
 
 
 def test_grid_dims_one_column():

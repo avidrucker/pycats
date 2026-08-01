@@ -6,7 +6,6 @@ NOT perturb the golden sim path (test_battle_screen_step_matches_runner_sim_path
 still passes). reset() clears the buffers for a fresh match.
 """
 
-
 import pygame  # noqa: E402
 
 from pycats import runtime_settings, settings  # noqa: E402
@@ -15,10 +14,24 @@ from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
 from pycats.core.input import InputFrame  # noqa: E402
 from pycats.sim.runner import build_stage  # noqa: E402
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def _frame(pressed):

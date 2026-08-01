@@ -17,6 +17,7 @@ Regen the golden — only after a *reviewed, intended* screen-flow change — by
 this file with ``PYCATS_UPDATE_GOLDENS=1`` (records from the statechart engine, now the
 sole engine).
 """
+
 import json
 import os
 from pathlib import Path
@@ -43,10 +44,10 @@ def test_screen_engine_fires_first_matching_transition():
     flags = {"go": False, "alt": False, "back": False}
     eng = make_screen_engine(_table(flags), initial="a")
     eng.update(None)
-    assert eng.state == "a"          # no guard true -> stay
+    assert eng.state == "a"  # no guard true -> stay
     flags["go"] = True
     eng.update(None)
-    assert eng.state == "b"          # first transition fires
+    assert eng.state == "b"  # first transition fires
 
 
 def test_screen_engine_transition_order_priority():
@@ -63,18 +64,15 @@ def test_screen_engine_on_enter_and_on_update_fire():
     log = []
     flags = {"go": False}
     transitions = {"a": [("b", lambda ctx: flags["go"])], "b": []}
-    on_enter = {"a": lambda ctx: log.append("enter_a"),
-                "b": lambda ctx: log.append("enter_b")}
-    on_update = {"a": lambda ctx: log.append("update_a"),
-                 "b": lambda ctx: log.append("update_b")}
-    eng = make_screen_engine(transitions, "a",
-                             on_enter=on_enter, on_update=on_update)
+    on_enter = {"a": lambda ctx: log.append("enter_a"), "b": lambda ctx: log.append("enter_b")}
+    on_update = {"a": lambda ctx: log.append("update_a"), "b": lambda ctx: log.append("update_b")}
+    eng = make_screen_engine(transitions, "a", on_enter=on_enter, on_update=on_update)
     # initial state must NOT fire on_enter
     assert "enter_a" not in log
-    eng.update(None)                       # stay in a (guard false)
+    eng.update(None)  # stay in a (guard false)
     assert log == ["update_a"], log
     flags["go"] = True
-    eng.update(None)                       # a -> b: enter_b then update_b
+    eng.update(None)  # a -> b: enter_b then update_b
     assert log == ["update_a", "enter_b", "update_b"], log
 
 
@@ -97,6 +95,7 @@ def test_make_screen_engine_has_no_backend_param():
     select a (nonexistent) legacy engine. Able-to-fail: re-adding the param turns
     this red."""
     import inspect
+
     params = inspect.signature(make_screen_engine).parameters
     assert "backend" not in params, sorted(params)
 
@@ -109,8 +108,7 @@ GOLDEN_PATH = Path(__file__).parent / "golden" / "screen_parity.json"
 
 # A representative input/event trace exercising the real screen-flow graph shape
 # (main_menu/options/char_select/playing/pause/win_screen), one event per step.
-SCRIPT = ["to_opt", "opt_back", "to_cs", "start", "pause",
-          "resume", "ko", "rematch", "noop", "start"]
+SCRIPT = ["to_opt", "opt_back", "to_cs", "start", "pause", "resume", "ko", "rematch", "noop", "start"]
 
 # States the trace must actually visit, so the golden isn't a vacuous "stayed put".
 INTERESTING = {"options", "char_select", "playing", "pause", "win_screen"}
@@ -120,17 +118,16 @@ def _screen_like_table(sig):
     """The real screen-flow graph shape, with guards driven by a single
     controllable signal `sig` (one event per step)."""
     return {
-        "main_menu":   [("char_select", lambda c: sig["v"] == "to_cs"),
-                        ("options",     lambda c: sig["v"] == "to_opt")],
-        "options":     [("main_menu",   lambda c: sig["v"] == "opt_back")],
-        "char_select": [("playing",     lambda c: sig["v"] == "start"),
-                        ("main_menu",   lambda c: sig["v"] == "cs_back")],
-        "playing":     [("pause",       lambda c: sig["v"] == "pause"),
-                        ("win_screen",  lambda c: sig["v"] == "ko")],
-        "pause":       [("playing",     lambda c: sig["v"] == "resume"),
-                        ("win_screen",  lambda c: sig["v"] == "stats"),
-                        ("main_menu",   lambda c: sig["v"] == "quit")],
-        "win_screen":  [("char_select", lambda c: sig["v"] == "rematch")],
+        "main_menu": [("char_select", lambda c: sig["v"] == "to_cs"), ("options", lambda c: sig["v"] == "to_opt")],
+        "options": [("main_menu", lambda c: sig["v"] == "opt_back")],
+        "char_select": [("playing", lambda c: sig["v"] == "start"), ("main_menu", lambda c: sig["v"] == "cs_back")],
+        "playing": [("pause", lambda c: sig["v"] == "pause"), ("win_screen", lambda c: sig["v"] == "ko")],
+        "pause": [
+            ("playing", lambda c: sig["v"] == "resume"),
+            ("win_screen", lambda c: sig["v"] == "stats"),
+            ("main_menu", lambda c: sig["v"] == "quit"),
+        ],
+        "win_screen": [("char_select", lambda c: sig["v"] == "rematch")],
     }
 
 
@@ -148,8 +145,7 @@ def _run_trace():
 
 def _load_golden():
     assert GOLDEN_PATH.exists(), (
-        f"Screen-parity golden missing: {GOLDEN_PATH}\n"
-        "Record it by running this file with PYCATS_UPDATE_GOLDENS=1."
+        f"Screen-parity golden missing: {GOLDEN_PATH}\nRecord it by running this file with PYCATS_UPDATE_GOLDENS=1."
     )
     return json.loads(GOLDEN_PATH.read_text(encoding="utf-8"))
 

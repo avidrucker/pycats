@@ -9,7 +9,6 @@ Default ``pressed=False`` keeps ``draw_menu_button`` byte-identical to before, s
 render goldens / screen-parity are untouched.
 """
 
-
 import pygame  # noqa: E402
 
 from pycats.menu_widgets import (  # noqa: E402
@@ -18,10 +17,24 @@ from pycats.menu_widgets import (  # noqa: E402
     draw_menu_button,
 )
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def _surf(w=400, h=80):

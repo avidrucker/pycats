@@ -11,8 +11,6 @@ rows but the original (too-large) section spacing, green once the spacing is
 tightened.
 """
 
-
-
 import pygame  # noqa: E402  (must follow the dummy-driver env setup)
 import pytest  # noqa: E402
 
@@ -55,8 +53,7 @@ def _record_text_ys(render_call):
 
     def spy(surface, text, position, size, color, center=False, right_align=False):
         drawn.append((position[1], size))
-        return orig(surface, text, position, size, color,
-                    center=center, right_align=right_align)
+        return orig(surface, text, position, size, color, center=center, right_align=right_align)
 
     def spy_mixed(text, size, color, surface, position, center=False):
         drawn.append((position[1], size))
@@ -82,7 +79,4 @@ def test_all_win_screen_text_fits_on_screen():
 
     # Text is center-anchored, so its lowest pixel is ~ center_y + size/2.
     overflowing = [(y, s) for (y, s) in drawn if y + s / 2 > SCREEN_HEIGHT]
-    assert not overflowing, (
-        f"win-screen text runs past the {SCREEN_HEIGHT}px bottom edge: "
-        f"{overflowing}"
-    )
+    assert not overflowing, f"win-screen text runs past the {SCREEN_HEIGHT}px bottom edge: {overflowing}"

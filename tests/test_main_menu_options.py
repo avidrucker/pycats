@@ -4,6 +4,7 @@ The menu was hardcoded to two options (Play/Quit) with a `1 - selected` flip;
 adding Options makes it three, so navigation must wrap over N and selecting
 Options must request the `options` action the screen FSM transitions on.
 """
+
 import pygame
 
 from pycats.main_menu import MainMenuManager

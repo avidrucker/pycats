@@ -3,6 +3,7 @@
 The first Narz `in_air=True` move (the air/ground split, #38): a 2-box tipper sword
 swipe around the body, disjoint. Golden-free: sim loads the default cat.
 """
+
 from __future__ import annotations
 
 import types
@@ -16,9 +17,15 @@ from pycats.systems.combat import process_hits
 
 def _player(rect, *, hurtbox_circles, facing_right=True):
     p = types.SimpleNamespace(
-        rect=rect, facing_right=facing_right, intangible=False, is_alive=True,
+        rect=rect,
+        facing_right=facing_right,
+        intangible=False,
+        is_alive=True,
         fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)), moves={}),
-        hits_received=0, hits_landed=0, last_damage=None, last_angle=None,
+        hits_received=0,
+        hits_landed=0,
+        last_damage=None,
+        last_angle=None,
     )
 
     def receive_hit(atk, is_crouching=False):
@@ -35,7 +42,7 @@ def _player(rect, *, hurtbox_circles, facing_right=True):
 def test_nair_is_an_aerial_two_box_tipper():
     nair = load_fighter_data("narz").moves["nair"]
     assert nair.name == "nair"
-    assert nair.in_air is True                     # the first Narz aerial (air/ground split)
+    assert nair.in_air is True  # the first Narz aerial (air/ground split)
     assert len(nair.hitboxes) == 2
     tip, base = nair.hitboxes
     assert tip.damage > base.damage
@@ -52,8 +59,7 @@ def test_nair_is_disjoint():
 
 def test_nair_tip_beats_base_when_both_overlap():
     pygame.init()
-    attacker = _player(pygame.Rect(0, 0, 40, 60),
-                       hurtbox_circles=[Circle(20, 15, 14), Circle(20, 45, 14)])
+    attacker = _player(pygame.Rect(0, 0, 40, 60), hurtbox_circles=[Circle(20, 15, 14), Circle(20, 45, 14)])
     # defender hurtbox circle at absolute (50,30): overlaps tip(60,30) and base(40,30).
     defender = _player(pygame.Rect(30, 0, 40, 60), hurtbox_circles=[Circle(20, 30, 14)])
     nair = load_fighter_data("narz").moves["nair"]

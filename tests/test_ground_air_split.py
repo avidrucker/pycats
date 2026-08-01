@@ -9,6 +9,7 @@ legacy "attack" alias until each named move lands. The selector lives in
 fighter_input.handle_actions and reads fighter.on_ground; we drive it directly
 with on_ground set.
 """
+
 import pygame
 from helpers import P1
 
@@ -26,8 +27,7 @@ def _press_down_attack():
 
 
 def _player(char_name):
-    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name=char_name, facing_right=True)
+    return Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name=char_name, facing_right=True)
 
 
 def test_grounded_nalio_neutral_attack_is_jab():

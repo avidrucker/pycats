@@ -13,17 +13,30 @@ Two invariants beyond "B behaves like ESC on menus":
     those states. B-as-quit is menu-only.
 """
 
-
 import pygame
 import pytest
 
 from pycats.core.input import InputFrame
 from pycats.screen_manager import ScreenStateManager
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 HOLD = 120  # esc_quit_hold_frames (2s @ 60 FPS)
 
@@ -56,6 +69,7 @@ def _hold(sm, key, frames, battle=None):
 
 
 # --- B behaves like ESC on menu screens ------------------------------------
+
 
 def test_p1_b_hold_quits_at_main_menu():
     sm = _mk("main_menu")
@@ -112,18 +126,19 @@ def test_b_below_threshold_does_not_pop():
 def test_b_release_before_threshold_resets_the_hold():
     sm = _mk("options")
     _hold(sm, _P1["special"], HOLD - 1)
-    sm.update(_empty())                       # release
-    _hold(sm, _P1["special"], HOLD - 1)       # not enough on its own
+    sm.update(_empty())  # release
+    _hold(sm, _P1["special"], HOLD - 1)  # not enough on its own
     assert sm.get_state() == "options"
 
 
 # --- the trigger honors rebinds (no hardcoded key) -------------------------
 
+
 def test_rebound_b_key_drives_the_timer():
     """Rebinding a player's special action moves the quit trigger to the new key.
     Able-to-fail for the rebind path: a hardcoded key would ignore K_j."""
     sm = _mk("options")
-    sm.p1_controls["special"] = pygame.K_j     # rebind P1's B-action
+    sm.p1_controls["special"] = pygame.K_j  # rebind P1's B-action
     _hold(sm, pygame.K_j, HOLD)
     assert sm.get_state() == "main_menu"
 
@@ -131,11 +146,12 @@ def test_rebound_b_key_drives_the_timer():
 def test_old_key_inert_after_rebind():
     sm = _mk("options")
     sm.p1_controls["special"] = pygame.K_j
-    _hold(sm, pygame.K_c, HOLD)                # the pre-rebind key
+    _hold(sm, pygame.K_c, HOLD)  # the pre-rebind key
     assert sm.get_state() == "options"
 
 
 # --- the match is sacred: B is menu-only, never abandons play --------------
+
 
 def test_playing_b_hold_does_not_abandon_match():
     """Holding B (the attack button) during a live match must NOT drop to
@@ -155,6 +171,7 @@ def test_pause_b_hold_does_not_quit():
 
 
 # --- ESC path stays unchanged ----------------------------------------------
+
 
 def test_esc_still_drops_from_playing():
     """Generalising B to menus must not disturb ESC on gameplay screens."""

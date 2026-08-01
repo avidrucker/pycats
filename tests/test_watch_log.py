@@ -4,6 +4,7 @@ main() is made injectable (argv, presenter) so the flag is testable headlessly w
 null presenter (LivePresenter pops SDL_VIDEODRIVER + opens a real window, so it can't
 drive a headless integration test). battle_log_text() is the formatting seam.
 """
+
 import watch
 
 
@@ -16,8 +17,29 @@ class _NullPresenter:
 
 
 def _part(name, state="idle", percent=0.0, lives=3, jumps=2, on_ground=True):
-    return (name, state, 0, 0, 0.0, 0.0, on_ground, float(percent), 0.0, lives,
-            lives > 0, jumps, 0, 0, 0, 0, 0, True, False, "none", 0)
+    return (
+        name,
+        state,
+        0,
+        0,
+        0.0,
+        0.0,
+        on_ground,
+        float(percent),
+        0.0,
+        lives,
+        lives > 0,
+        jumps,
+        0,
+        0,
+        0,
+        0,
+        0,
+        True,
+        False,
+        "none",
+        0,
+    )
 
 
 def _atk(owner):
@@ -30,8 +52,7 @@ def _snap(parts, atk=(), winner=None):
 
 def test_battle_log_text_includes_tally_and_render_lines():
     # frame 1: P1 jumps (2->1) AND starts an attack -> 2 events.
-    snaps = [_snap([_part("P1", jumps=2)]),
-             _snap([_part("P1", jumps=1)], atk=[_atk("P1")])]
+    snaps = [_snap([_part("P1", jumps=2)]), _snap([_part("P1", jumps=1)], atk=[_atk("P1")])]
     text = watch.battle_log_text(snaps)
     assert "battle log: 2 events" in text
     assert "ATTACK:1" in text and "JUMP:1" in text
@@ -45,17 +66,19 @@ def test_battle_log_text_empty_run():
 
 
 def test_log_flag_prints_event_log(capsys):
-    watch.main(["--p1-level", "5", "--p2-level", "5", "--seed", "3",
-                "--frames", "60", "--uncapped", "--log"],
-               presenter=_NullPresenter())
+    watch.main(
+        ["--p1-level", "5", "--p2-level", "5", "--seed", "3", "--frames", "60", "--uncapped", "--log"],
+        presenter=_NullPresenter(),
+    )
     out = capsys.readouterr().out
-    assert "battle log:" in out                       # the --log flag fired
-    assert len(out.strip().splitlines()) >= 2, out    # header + at least one event line
+    assert "battle log:" in out  # the --log flag fired
+    assert len(out.strip().splitlines()) >= 2, out  # header + at least one event line
 
 
 def test_no_log_flag_is_silent(capsys):
-    watch.main(["--p1-level", "5", "--p2-level", "5", "--seed", "3",
-                "--frames", "60", "--uncapped"],
-               presenter=_NullPresenter())
+    watch.main(
+        ["--p1-level", "5", "--p2-level", "5", "--seed", "3", "--frames", "60", "--uncapped"],
+        presenter=_NullPresenter(),
+    )
     out = capsys.readouterr().out
     assert "battle log:" not in out

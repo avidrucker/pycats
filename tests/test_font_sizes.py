@@ -9,6 +9,7 @@ these tests pin the single-source structure so a future re-scatter is caught.
 cat_faces._MONO_SIZE is intentionally NOT centralised (a monospace FACE-render size,
 not a UI text size) — a test pins that it stays local.
 """
+
 import pathlib
 import re
 

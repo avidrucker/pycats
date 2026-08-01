@@ -5,6 +5,7 @@ Reach numbers are the #285 catalogue (center-relative = max(dx+r) − body_width
 computed from live FighterData. Gated behind `reach_aware`; the level-less default
 keeps 45 (golden-safe).
 """
+
 import random
 
 from pycats.combat.data import load_fighter_data
@@ -13,6 +14,7 @@ from pycats.sim.controllers import AttackerController
 from pycats.sim.runner import build_players, run_battle
 
 # ---- move_reach: pure reach from FighterData (the #285 catalogue) --------------
+
 
 def test_move_reach_matches_catalogue_ftilt():
     # forward-tilt center-relative reach, body width 40 (half 20)
@@ -32,6 +34,7 @@ def test_move_reach_none_for_absent_move():
 
 
 # ---- controller effective melee range -----------------------------------------
+
 
 def test_default_controller_not_reach_aware_keeps_45():
     c = AttackerController()
@@ -60,6 +63,7 @@ def test_reach_aware_falls_back_to_attack_range_when_move_absent():
 
 # ---- discriminating: the gate opens at a gap the flat bot rejects --------------
 
+
 def _place(p, cx, cy):
     p.rect.centerx = cx
     p.rect.centery = cy
@@ -79,8 +83,7 @@ def test_reach_aware_bot_attacks_at_a_gap_the_flat_bot_rejects():
         keys = p1.controls
         held = ctrl.decide(p1, p2, 0)
         assert (keys["attack"] in held) is expect_attack, (
-            f"reach_aware={ctrl.reach_aware}: attack-in-held should be {expect_attack} "
-            f"at gap 50 (held={held})"
+            f"reach_aware={ctrl.reach_aware}: attack-in-held should be {expect_attack} at gap 50 (held={held})"
         )
 
 
@@ -96,6 +99,6 @@ def test_reach_aware_changes_leveled_sim_trajectory():
         c1 = AttackerController(attacker_num=1, level=5, rng=rng)
         c2 = AttackerController(attacker_num=2, level=5, rng=rng)
         c1.reach_aware = c2.reach_aware = reach_aware
-        return run_battle(frames=2000, controllers=(c1, c2),
-                          p1_char="nalio", p2_char="birky", stop_on_match_over=True)
+        return run_battle(frames=2000, controllers=(c1, c2), p1_char="nalio", p2_char="birky", stop_on_match_over=True)
+
     assert run(True) != run(False), "reach_aware must change the sim trajectory"

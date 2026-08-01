@@ -11,6 +11,7 @@ reds the test. See ADR-0004.
 `pygame.event`) moved to `pycats/input_poll.py` (present layer, decision #9), so
 the port is now pygame-free.
 """
+
 import ast
 import pathlib
 
@@ -62,10 +63,12 @@ def _framework_refs(path: pathlib.Path) -> list[str]:
                     bad.append(f"{rel}:{node.lineno} from {node.module} import {a.name}")
 
     for node in ast.walk(tree):
-        if (isinstance(node, ast.Attribute)
-                and isinstance(node.value, ast.Name)
-                and node.value.id in aliases
-                and node.attr not in _ALLOWED):
+        if (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id in aliases
+            and node.attr not in _ALLOWED
+        ):
             bad.append(f"{rel}:{node.lineno} {node.value.id}.{node.attr}")
     return bad
 

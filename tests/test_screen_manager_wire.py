@@ -6,6 +6,7 @@ screen engine (the legacy FSM was retired across slices 4a/4b/4c, ADR-0002) — 
 live screen flow correctly. No backend selection remains: the manager constructs the
 statechart engine unconditionally.
 """
+
 import types
 
 import pygame
@@ -13,10 +14,24 @@ import pygame
 from pycats.core.input import InputFrame
 from pycats.screen_manager import ScreenStateManager
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def _mk():
@@ -65,9 +80,8 @@ def test_pause_to_win_screen_wires_stats_from_battle_via_on_enter():
     sm.engine.force("pause")
     assert sm.get_state() == "pause"
     sm.pause_menu.action_requested = "end_match"
-    battle = types.SimpleNamespace(player1=object(), player2=object(),
-                                   reset=lambda: None)
-    sm.update(_empty(), battle)                      # battle now threaded into ctx
+    battle = types.SimpleNamespace(player1=object(), player2=object(), reset=lambda: None)
+    sm.update(_empty(), battle)  # battle now threaded into ctx
     assert sm.get_state() == "win_screen"
     wsm = sm.win_screen_manager
     assert wsm.from_pause is True
@@ -83,13 +97,13 @@ def test_char_select_resets_battle_via_update_action():
     sm.update(_empty())
     assert sm.get_state() == "char_select"
     reset_calls = []
-    battle = types.SimpleNamespace(player1=None, player2=None,
-                                   reset=lambda: reset_calls.append(1))
-    sm.update(_empty(), battle)                      # winner/loser are None
+    battle = types.SimpleNamespace(player1=None, player2=None, reset=lambda: reset_calls.append(1))
+    sm.update(_empty(), battle)  # winner/loser are None
     assert reset_calls, "char_select with no winner should reset the battle"
 
 
 # --- #246: battle.step + winner-set owned by the playing-state update action ---
+
 
 class _FakeBattle:
     """Records step() calls and KOs on a chosen frame, so the seam test can pin the
@@ -126,23 +140,23 @@ def test_playing_update_owns_battle_step_and_winner_set():
     sm = _mk()
     sm.engine.force("playing")
     assert sm.get_state() == "playing"
-    platforms = ["STAGE"]                     # sentinel: must reach battle.step
+    platforms = ["STAGE"]  # sentinel: must reach battle.step
     battle = _FakeBattle(ko_on_step=3)
 
-    sm.update(_empty(), battle, platforms)    # frame 1 — step, no KO
+    sm.update(_empty(), battle, platforms)  # frame 1 — step, no KO
     assert battle.steps == 1
     assert battle.last_platforms is platforms, "platforms must thread to battle.step"
     assert sm.winner is None and sm.get_state() == "playing"
 
-    sm.update(_empty(), battle, platforms)    # frame 2 — step, no KO
+    sm.update(_empty(), battle, platforms)  # frame 2 — step, no KO
     assert battle.steps == 2
     assert sm.winner is None and sm.get_state() == "playing"
 
-    sm.update(_empty(), battle, platforms)    # frame 3 — step KOs; winner set SAME frame
+    sm.update(_empty(), battle, platforms)  # frame 3 — step KOs; winner set SAME frame
     assert battle.steps == 3
     assert sm.winner is battle.player1 and sm.loser is battle.player2
     assert sm.get_state() == "playing", "transition is the NEXT update, not this one"
 
-    sm.update(_empty(), battle, platforms)    # frame 4 — guard sees winner -> win_screen
+    sm.update(_empty(), battle, platforms)  # frame 4 — guard sees winner -> win_screen
     assert sm.get_state() == "win_screen"
     assert battle.steps == 3, "no step on the transition-out frame"

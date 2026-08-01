@@ -6,6 +6,7 @@ a `shield` + away-direction combo (a ground roll, resolved by fighter_input to
 `_start_dodge`). Evade is rolled BEFORE the shield and is mutually exclusive with it.
 `evade_chance` defaults 0.0 → level-less/low levels never roll (golden-safe).
 """
+
 import random
 import types
 
@@ -22,13 +23,13 @@ def _move(startup=4, active=3, recovery=20):
     return types.SimpleNamespace(startup=startup, active=active, recovery=recovery)
 
 
-def _stub(cx, cy, alive=True, on_ground=True, current_move=None, move_frame=0,
-          state="idle", hurt_timer=0, stun_timer=0):
+def _stub(
+    cx, cy, alive=True, on_ground=True, current_move=None, move_frame=0, state="idle", hurt_timer=0, stun_timer=0
+):
     s = types.SimpleNamespace()
     s.rect = pg.Rect(0, 0, 40, 60)
     s.rect.center = (cx, cy)
-    s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground,
-                                      hurt_timer=hurt_timer, stun_timer=stun_timer)
+    s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground, hurt_timer=hurt_timer, stun_timer=stun_timer)
     s.controls = _CTRL
     s.current_move = current_move
     s.move_frame = move_frame
@@ -37,9 +38,17 @@ def _stub(cx, cy, alive=True, on_ground=True, current_move=None, move_frame=0,
 
 
 def _evader(evade_chance=1.0, **kw):
-    base = dict(attacker_num=1, evade_chance=evade_chance, reactive_shield=True,
-                shield_chance=0.0, reaction_delay=0, whiff_punish=False,
-                reactive_spacing=False, follow_through_p=1.0, rng=random.Random(0))
+    base = dict(
+        attacker_num=1,
+        evade_chance=evade_chance,
+        reactive_shield=True,
+        shield_chance=0.0,
+        reaction_delay=0,
+        whiff_punish=False,
+        reactive_spacing=False,
+        follow_through_p=1.0,
+        rng=random.Random(0),
+    )
     base.update(kw)
     return AttackerController(**base)
 
@@ -51,11 +60,12 @@ def _threat(cx=480, cy=300):
 
 # ---- level wiring ----
 
+
 def test_level_params_evade_chance_graded():
     # evade is a higher-skill option: off at/below Lv5, graded up at 7/9.
     assert level_params(1).evade_chance == 0.0
     assert level_params(3).evade_chance == 0.0
-    assert level_params(5).evade_chance == 0.0          # keeps Lv5 tests byte-identical
+    assert level_params(5).evade_chance == 0.0  # keeps Lv5 tests byte-identical
     assert level_params(9).evade_chance > level_params(7).evade_chance > 0.0
 
 
@@ -67,6 +77,7 @@ def test_controller_pulls_evade_chance_from_level():
 
 # ---- roll-away behaviour ----
 # a at cx=400, opponent to the right (dx>0) → away = left.
+
 
 def test_rolls_away_on_a_detected_threat():
     a = _stub(400, 300)
@@ -113,8 +124,7 @@ def test_default_controller_never_rolls():
     # (a roll requires `shield`; the default may still move toward as normal approach —
     # that is not a roll, so assert on the absence of the shield combo.)
     held = AttackerController(attacker_num=1)(a, _threat(), frame=0).held
-    assert _CTRL["shield"] not in held, \
-        f"default controller must never roll (no shield combo, golden-safe), got {held}"
+    assert _CTRL["shield"] not in held, f"default controller must never roll (no shield combo, golden-safe), got {held}"
 
 
 def test_roll_direction_is_away_from_opponent():
@@ -126,6 +136,7 @@ def test_roll_direction_is_away_from_opponent():
 
 
 # ---- discriminating real battle ----
+
 
 def _roll_emissions(evade_on, frames=400):
     """Real loop: a Swinger opponent threatens the bot; count frames where the bot
@@ -160,13 +171,12 @@ def _roll_emissions(evade_on, frames=400):
         c2.evade_chance = 0.0  # discriminating control (shield stays on)
     attacks = pygame.sprite.Group()
     rolls = 0
-    wasted = 0   # rolls emitted while the bot is in hitstun (dropped by Player.update)
+    wasted = 0  # rolls emitted while the bot is in hitstun (dropped by Player.update)
     for f in range(frames):
         f1 = c1(p1, p2, f, attacks)
         f2 = c2(p1, p2, f, attacks)
         held = f2.held
-        if p2.controls["shield"] in held and (
-                p2.controls["left"] in held or p2.controls["right"] in held):
+        if p2.controls["shield"] in held and (p2.controls["left"] in held or p2.controls["right"] in held):
             rolls += 1
             if p2.fighter.hurt_timer > 0 or p2.fighter.stun_timer > 0:
                 wasted += 1
@@ -192,17 +202,18 @@ def test_no_wasted_rolls_during_hitstun_in_a_real_juggle():
 
 # ---- #379: gate the evade on the real actionability timers, not the lagging label ----
 
+
 def test_no_roll_during_hitstun():
     # A bot in hitstun (hurt_timer > 0) can't dodge, but its FSM `state` label lags the
     # timer by a frame (#8/#370), so a dodge-able label is not enough. The controller must
     # not emit a wasted roll — it falls through to shield like the non-dodge-able case.
-    a = _stub(400, 300, hurt_timer=5)          # dodge-able label 'idle', but in hitstun
+    a = _stub(400, 300, hurt_timer=5)  # dodge-able label 'idle', but in hitstun
     held = _evader(evade_chance=1.0, shield_chance=1.0)(a, _threat(), frame=0).held
     assert held == {_CTRL["shield"]}, f"no roll while in hitstun (#379); shield instead, got {held}"
 
 
 def test_no_roll_during_stun():
-    a = _stub(400, 300, stun_timer=8)          # shield-break dizzy
+    a = _stub(400, 300, stun_timer=8)  # shield-break dizzy
     held = _evader(evade_chance=1.0, shield_chance=1.0)(a, _threat(), frame=0).held
     assert held == {_CTRL["shield"]}, f"no roll while stunned (#379), got {held}"
 

@@ -7,6 +7,7 @@ policy becomes `AttackerController`; `ChaseController` stays as a back-compat
 alias. This is a pure refactor — the existing chase-bot golden + full_match suite
 are the byte-identical proof; the tests here pin structure + the attack policy.
 """
+
 from pycats.sim.controllers import (
     AttackerController,
     BaseController,
@@ -28,6 +29,7 @@ def test_base_controller_requires_decide():
     """BaseController is abstract scaffolding — using it directly must error,
     forcing archetypes to supply a decide() policy."""
     import pytest
+
     base = BaseController(attacker_num=1)
     with pytest.raises(NotImplementedError):
         base.decide(None, None, 0)
@@ -50,11 +52,11 @@ def test_attacker_and_chase_alias_emit_identically():
     b = ChaseController(attacker_num=1)
     run_battle(frames=400, controller=a)
     run_battle(frames=400, controller=b)
-    assert [(f.held, f.pressed, f.released) for f in a.emitted] == \
-           [(f.held, f.pressed, f.released) for f in b.emitted]
+    assert [(f.held, f.pressed, f.released) for f in a.emitted] == [(f.held, f.pressed, f.released) for f in b.emitted]
 
 
 # --- Child C (#55): IdlerController, the deterministic baseline opponent ---
+
 
 def test_idler_subclasses_base():
     assert issubclass(IdlerController, BaseController)
@@ -69,8 +71,7 @@ def test_idler_default_is_a_true_noop_baseline():
         "default IdlerController must emit no input"
     )
 
-    dual = run_battle(frames=300,
-                      controllers=(AttackerController(1), IdlerController(2)))
+    dual = run_battle(frames=300, controllers=(AttackerController(1), IdlerController(2)))
     single = run_battle(frames=300, controller=AttackerController(1))
     assert dual == single, "default idler is not a transparent baseline"
 
@@ -93,6 +94,7 @@ def test_idler_periodic_shield_is_deterministic_and_disjoint():
 
 # --- Child D (#57): FollowerController, the shadow/spacing archetype ---
 
+
 def test_follower_subclasses_base():
     assert issubclass(FollowerController, BaseController)
 
@@ -102,9 +104,7 @@ def test_follower_never_attacks_and_emits_no_p1_keys():
     only its own (P2) keycodes."""
     foll = FollowerController(attacker_num=2)
     run_battle(frames=600, controllers=(None, foll))
-    emitted = set().union(
-        *(f.held | f.pressed | f.released for f in foll.emitted)
-    ) if foll.emitted else set()
+    emitted = set().union(*(f.held | f.pressed | f.released for f in foll.emitted)) if foll.emitted else set()
     assert P2_KEYS["attack"] not in emitted, "follower committed to an attack"
     assert emitted.isdisjoint(set(P1_KEYS.values())), "follower leaked P1 keycodes"
     assert emitted, "follower never moved at all"
@@ -126,6 +126,4 @@ def test_follower_settles_at_standoff_distance():
     start_gap = gap(snaps[0])
     final_gap = gap(snaps[-1])
     assert start_gap > 300, f"expected a wide initial gap, got {start_gap}"
-    assert abs(final_gap - standoff) <= 20, (
-        f"follower did not settle at standoff {standoff}: final gap {final_gap}"
-    )
+    assert abs(final_gap - standoff) <= 20, f"follower did not settle at standoff {standoff}: final gap {final_gap}"

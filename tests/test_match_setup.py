@@ -4,6 +4,7 @@ build_players / run_battle take a per-player character (loads its FighterData);
 watch.cpu_controllers builds leveled AttackerControllers. The default path is
 unchanged (golden-safe).
 """
+
 import random
 
 from pycats.sim.controllers import AttackerController
@@ -37,6 +38,5 @@ def test_cpu_controllers_none_for_unset_player():
 
 def test_run_battle_two_nalios_leveled_runs_headless():
     c1, c2 = cpu_controllers(5, 9, random.Random(7))
-    snaps = run_battle(frames=30, controllers=(c1, c2),
-                       p1_char="nalio", p2_char="nalio")
+    snaps = run_battle(frames=30, controllers=(c1, c2), p1_char="nalio", p2_char="nalio")
     assert len(snaps) == 30

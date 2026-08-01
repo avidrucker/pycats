@@ -13,7 +13,6 @@ Able-to-fail: revert render_battle to `tail then merged body composite` and the
 body ring lands back over the tail (~40 px) -> the count is non-zero.
 """
 
-
 import pygame
 import pytest
 

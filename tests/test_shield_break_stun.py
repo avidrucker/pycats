@@ -9,6 +9,7 @@ inputs for a damage-scaled duration, matching Project M / Melee. Three concerns:
    `shield` and exits to idle/fall when the timer expires.
 3. Input lock — while stunned, held inputs neither move nor act on the fighter.
 """
+
 import pygame as pg
 from helpers import mk_player as _mk_player
 
@@ -21,13 +22,13 @@ from pycats.entities.platform import Platform
 # ----------------------------------------------------------------- 1. formula
 def test_formula_matches_melee_pm_at_key_percents():
     # (400 - p) + 90 = 490 - p, clamped [90, 490].
-    assert shield_break_stun_frames(0) == 490      # max at 0%
+    assert shield_break_stun_frames(0) == 490  # max at 0%
     assert shield_break_stun_frames(100) == 390
-    assert shield_break_stun_frames(400) == 90     # floor reached at 400%
+    assert shield_break_stun_frames(400) == 90  # floor reached at 400%
 
 
 def test_formula_is_clamped_and_monotonic_decreasing():
-    assert shield_break_stun_frames(500) == SHIELD_BREAK_STUN_MIN   # >=400% floors
+    assert shield_break_stun_frames(500) == SHIELD_BREAK_STUN_MIN  # >=400% floors
     assert shield_break_stun_frames(0) == SHIELD_BREAK_STUN_MAX
     # strictly non-increasing as damage rises (inverse of normal stun)
     seq = [shield_break_stun_frames(p) for p in range(0, 450, 25)]
@@ -68,12 +69,12 @@ def test_holding_shield_until_drained_to_zero_breaks_it():
     p = _mk_player()
     plats = pg.sprite.Group(Platform(pg.Rect(0, 160, 400, 40), thin=False))
     noop = InputFrame(held=set(), pressed=set(), released=set())
-    for _ in range(30):                             # settle until grounded (falls ~16f)
+    for _ in range(30):  # settle until grounded (falls ~16f)
         p.update(noop, plats, pg.sprite.Group())
         if p.fighter.on_ground:
             break
     assert p.fighter.on_ground, "fighter never landed to shield from"
-    p.fighter.shield_hp = 1.0                       # a few drain ticks from empty (fast)
+    p.fighter.shield_hp = 1.0  # a few drain ticks from empty (fast)
     # HELD (not a fresh press — a press spot-dodges); hold shield until it drains out.
     hold_shield = InputFrame(held={pg.K_x}, pressed=set(), released=set())
     broke = False
@@ -83,7 +84,7 @@ def test_holding_shield_until_drained_to_zero_breaks_it():
             broke = True
             break
     assert broke, "holding shield until shield_hp hit 0 did not break it (#341)"
-    assert p.state == "stun", p.state               # drain-to-0 broke into the dizzy
+    assert p.state == "stun", p.state  # drain-to-0 broke into the dizzy
 
 
 # ------------------------------------------------------- 4. dizzy animation
@@ -98,8 +99,9 @@ def _nonblack_pixel_count(surf, bg=(0, 0, 0)):
 
 def test_draw_dizzy_stars_only_when_stunned():
     from pycats.render_battle import draw_dizzy_stars
+
     p = _mk_player()
-    p.rect.topleft = (60, 60)   # leave room above the head on the surface
+    p.rect.topleft = (60, 60)  # leave room above the head on the surface
 
     blank = pg.Surface((160, 160))
     blank.fill((0, 0, 0))
@@ -116,6 +118,7 @@ def test_draw_dizzy_stars_only_when_stunned():
 
 def test_draw_dizzy_stars_animate_between_frames():
     from pycats.render_battle import draw_dizzy_stars
+
     p = _mk_player()
     p.rect.topleft = (60, 60)
 
@@ -159,10 +162,9 @@ def test_all_inputs_locked_while_stunned():
     noop = InputFrame(held=set(), pressed=set(), released=set())
     for _ in range(5):
         p.update(noop, plats, pg.sprite.Group())
-    p.fighter._start_stun()            # break the shield -> dizzy
+    p.fighter._start_stun()  # break the shield -> dizzy
     x0 = p.rect.x
-    held_right = InputFrame(held={pg.K_d}, pressed={pg.K_d, pg.K_v, pg.K_w},
-                            released=set())
+    held_right = InputFrame(held={pg.K_d}, pressed={pg.K_d, pg.K_v, pg.K_w}, released=set())
     for _ in range(10):
         p.update(held_right, plats, pg.sprite.Group())
     assert p.rect.x == x0, "stunned fighter moved despite locked inputs"

@@ -14,6 +14,7 @@ rebound the fighter. Aerials do not clank (SmashWiki); gated on Attack.in_air.
 Geometry: attacker A at (0,0) facing right, attacker B at (200,100) facing left,
 both with a hitbox resolving to absolute centre (120,130) so they overlap.
 """
+
 from __future__ import annotations
 
 import types
@@ -29,9 +30,13 @@ _HURT = [Circle(dx=20, dy=30, r=14)]
 
 def _player(rect, *, facing_right=True, hurtbox=_HURT):
     p = types.SimpleNamespace(
-        rect=rect, facing_right=facing_right, intangible=False, is_alive=True,
+        rect=rect,
+        facing_right=facing_right,
+        intangible=False,
+        is_alive=True,
         fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox)), moves={}),
-        hits_received=0, hits_landed=0,
+        hits_received=0,
+        hits_landed=0,
     )
     p.receive_hit = lambda atk: setattr(p, "hits_received", p.hits_received + 1)
     p.record_hit_landed = lambda: setattr(p, "hits_landed", p.hits_landed + 1)
@@ -40,16 +45,15 @@ def _player(rect, *, facing_right=True, hurtbox=_HURT):
 
 
 def _atk(owner, dx, dy, r, damage, *, in_air=False):
-    hb = Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=0,
-                base_knockback=30.0, knockback_growth=80.0)
+    hb = Hitbox(circle=Circle(dx=dx, dy=dy, r=r), damage=damage, angle=0, base_knockback=30.0, knockback_growth=80.0)
     return Attack(owner, hitbox=hb, lifetime=4, in_air=in_air)
 
 
 def _two_overlapping(dmg_a, dmg_b, *, a_in_air=False, b_in_air=False):
     a_owner = _player(pygame.Rect(0, 0, 40, 60), facing_right=True)
     b_owner = _player(pygame.Rect(200, 100, 40, 60), facing_right=False)
-    a = _atk(a_owner, 120, 130, 20, dmg_a, in_air=a_in_air)       # abs (120,130)
-    b = _atk(b_owner, 120, 30, 20, dmg_b, in_air=b_in_air)        # abs (120,130)
+    a = _atk(a_owner, 120, 130, 20, dmg_a, in_air=a_in_air)  # abs (120,130)
+    b = _atk(b_owner, 120, 30, 20, dmg_b, in_air=b_in_air)  # abs (120,130)
     return a_owner, b_owner, a, b
 
 

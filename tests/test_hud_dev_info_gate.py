@@ -5,6 +5,7 @@ sees them; the player-facing rows (Damage / Lives / Shield HP / jumps) always re
 ``hud_rows`` is the testable seam ``draw_hud`` iterates — asserting on the row
 strings avoids pixel-diffing while covering exactly the acceptance criteria.
 """
+
 import pygame
 
 from pycats import runtime_settings, settings
@@ -17,10 +18,24 @@ from pycats.render_battle import (
     hud_rows,
 )
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 _DEV_SUBSTRINGS = ("FSM:", "Shield Attempting:")
 _PLAYER_SUBSTRINGS = ("Damage:", "Lives:", "Shield HP:")  # Damage/Lives now the emphasized rows (#550)

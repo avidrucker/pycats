@@ -9,6 +9,7 @@ This file is the deterministic, RNG-free repro. Both cases are now live
 regression guards: the fix for #68 (a vertical-overlap gate in
 resolve_player_push) holds the stationary fighter's displacement at ~0.
 """
+
 import pygame as pg
 
 from pycats.config import P1_COLOR, P2_COLOR, WHITE
@@ -17,10 +18,15 @@ from pycats.core.physics import resolve_player_push
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
-P1K = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-       "down": pg.K_s, "shield": pg.K_x, "attack": pg.K_v}
-P2K = {"left": pg.K_LEFT, "right": pg.K_RIGHT, "up": pg.K_UP,
-       "down": pg.K_DOWN, "shield": pg.K_COMMA, "attack": pg.K_SLASH}
+P1K = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_x, "attack": pg.K_v}
+P2K = {
+    "left": pg.K_LEFT,
+    "right": pg.K_RIGHT,
+    "up": pg.K_UP,
+    "down": pg.K_DOWN,
+    "shield": pg.K_COMMA,
+    "attack": pg.K_SLASH,
+}
 
 
 def _flush_pair():
@@ -28,10 +34,8 @@ def _flush_pair():
     P1 is to the LEFT, P2 to the RIGHT; their bodies (40px wide) touch."""
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(100, 400, 700, 40), thin=False))
-    p1 = Player(x=400, y=340, controls=P1K, color=P1_COLOR, eye_color=WHITE,
-                char_name="P1", facing_right=True)
-    p2 = Player(x=440, y=340, controls=P2K, color=P2_COLOR, eye_color=WHITE,
-                char_name="P2", facing_right=False)
+    p1 = Player(x=400, y=340, controls=P1K, color=P1_COLOR, eye_color=WHITE, char_name="P1", facing_right=True)
+    p2 = Player(x=440, y=340, controls=P2K, color=P2_COLOR, eye_color=WHITE, char_name="P2", facing_right=False)
     players = [p1, p2]
     for _ in range(3):  # settle both onto the platform, flush
         _step(players, plats, set(), set())
@@ -52,7 +56,7 @@ def _p1_jumps_toward_p2(p1, p2, players, plats):
     p2_start = p2.rect.centerx
     _step(players, plats, {pg.K_w, pg.K_d}, {pg.K_w})  # jump + toward
     for _ in range(40):
-        _step(players, plats, {pg.K_d}, set())          # keep drifting toward
+        _step(players, plats, {pg.K_d}, set())  # keep drifting toward
     return abs(p2.rect.centerx - p2_start)
 
 

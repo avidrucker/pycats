@@ -5,6 +5,7 @@ one out among the toggleable HUD extras (status bars #111, hitbox overlay #219,
 input history #21). This makes it a persisted Options toggle, default ON (so a
 fresh config is unchanged). Mirrors the show_input_history chain landed in #21.
 """
+
 import json
 
 import pygame  # noqa: E402
@@ -15,10 +16,24 @@ from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
 from pycats.options_menu import OptionsMenu  # noqa: E402
 from pycats.sim.runner import build_stage  # noqa: E402
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 # ---- settings.py: persisted default-ON + bool coercion --------------------- #

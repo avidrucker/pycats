@@ -9,7 +9,6 @@ Revert check: remove the `max(0, ...)` clamp in `_ko` and
 `test_ko_at_zero_lives_does_not_underflow` goes red (lives == -1).
 """
 
-
 import pygame  # type: ignore
 
 from pycats.config import INITIAL_LIVES, P1_COLOR, WHITE
@@ -17,13 +16,11 @@ from pycats.entities.player import Player
 
 pygame.init()
 
-CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
-                down=pygame.K_s, shield=pygame.K_q, attack=pygame.K_e)
+CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s, shield=pygame.K_q, attack=pygame.K_e)
 
 
 def _player():
-    return Player(x=420, y=400, controls=CONTROLS, color=P1_COLOR,
-                  eye_color=WHITE, char_name="P", facing_right=True)
+    return Player(x=420, y=400, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE, char_name="P", facing_right=True)
 
 
 def test_ko_at_zero_lives_does_not_underflow():

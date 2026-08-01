@@ -20,23 +20,38 @@ import pygame  # noqa: E402  (must follow the dummy-driver env setup)
 
 from pycats.entities.player import Player  # noqa: E402
 
-P1_KEYS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-               attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-P2_KEYS = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP,
-               down=pygame.K_DOWN, attack=pygame.K_SLASH, special=pygame.K_PERIOD,
-               shield=pygame.K_RSHIFT)
+P1_KEYS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+P2_KEYS = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_SLASH,
+    special=pygame.K_PERIOD,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def _mk(char_name, keys, x):
-    return Player(x, 300, keys, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name=char_name, facing_right=True)
+    return Player(x, 300, keys, (255, 160, 64), eye_color=(0, 0, 0), char_name=char_name, facing_right=True)
 
 
 def _hit(owner, damage):
     """A minimal attack satisfying Fighter.receive_hit's read surface."""
     return types.SimpleNamespace(
-        owner=owner, damage=float(damage),
-        base_knockback=0.0, knockback_growth=0.0, angle=0,
+        owner=owner,
+        damage=float(damage),
+        base_knockback=0.0,
+        knockback_growth=0.0,
+        angle=0,
     )
 
 

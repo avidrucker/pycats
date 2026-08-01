@@ -43,9 +43,7 @@ def _expected(fps, is_fullscreen, frame_input):
         WHITE,
         right_align=True,
     )
-    fs_text = "F11: Toggle Fullscreen | " + (
-        "F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size"
-    )
+    fs_text = "F11: Toggle Fullscreen | " + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
     text_utils.render_text(
         s,
         fs_text,
@@ -128,8 +126,6 @@ def test_fullscreen_hud_omits_esc_exit_fullscreen_hint():
     fps = 30.0
     actual = _actual(fps, True, None)  # frame_input=None → no debug-input line
     without_tail = _fs_hud_ref(fps, "F11: Toggle Fullscreen | F10: Fullscreen Zoom")
-    with_tail = _fs_hud_ref(
-        fps, "F11: Toggle Fullscreen | F10: Fullscreen Zoom | ESC: Exit Fullscreen"
-    )
+    with_tail = _fs_hud_ref(fps, "F11: Toggle Fullscreen | F10: Fullscreen Zoom | ESC: Exit Fullscreen")
     assert _raw(actual) == _raw(without_tail)
     assert _raw(actual) != _raw(with_tail)

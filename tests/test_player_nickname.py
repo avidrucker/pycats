@@ -14,4 +14,4 @@ def test_nickname_is_separate_from_char_name():
     p = _mk_player()
     p.nickname = "ACE"
     assert p.nickname == "ACE"
-    assert p.char_name == "P1"          # identity is untouched by a display nickname
+    assert p.char_name == "P1"  # identity is untouched by a display nickname

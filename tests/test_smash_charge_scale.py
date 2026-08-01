@@ -6,6 +6,7 @@ formula (damage is an input) — base_knockback / knockback_growth are NOT scale
 (that would compound; #423/#426). c=0 is an exact identity (uncharged == authored),
 so non-chargeable moves and the default cat are untouched (golden-safe).
 """
+
 import pygame as pg
 from helpers import P1
 from helpers import ground as _ground
@@ -20,20 +21,27 @@ from pycats.entities.player import Player
 
 def _boxes():
     return (
-        Hitbox(circle=Circle(10, 20, 8), damage=14.0, angle=361,
-               base_knockback=25.0, knockback_growth=96.0),
-        Hitbox(circle=Circle(5, 20, 6), damage=10.0, angle=361,
-               base_knockback=20.0, knockback_growth=90.0, active_start=3, active_end=4),
+        Hitbox(circle=Circle(10, 20, 8), damage=14.0, angle=361, base_knockback=25.0, knockback_growth=96.0),
+        Hitbox(
+            circle=Circle(5, 20, 6),
+            damage=10.0,
+            angle=361,
+            base_knockback=20.0,
+            knockback_growth=90.0,
+            active_start=3,
+            active_end=4,
+        ),
     )
 
 
 # ---- pure helper ------------------------------------------------------------
 
+
 def test_factor_endpoints_and_midpoint():
     assert charge_factor(0.0) == 1.0
     assert charge_factor(1.0) == SMASH_CHARGE_SCALE
     assert charge_factor(0.5) == 1.0 + 0.5 * (SMASH_CHARGE_SCALE - 1.0)
-    assert charge_factor(-1.0) == 1.0            # clamped
+    assert charge_factor(-1.0) == 1.0  # clamped
     assert charge_factor(2.0) == SMASH_CHARGE_SCALE  # clamped
 
 
@@ -69,18 +77,17 @@ def test_full_charge_knockback_is_damage_only_not_compounded():
     # equal the formula's response to 1.4x DAMAGE with the authored BKB/KBG — NOT
     # 1.4x that value. Under the old all-three scaling, KB_buggy == 1.4 * KB_correct
     # exactly (derivation: #426 findings §4), so this asserts the fix removed that.
-    authored = _boxes()[0]                      # damage 14, BKB 25, KBG 96
-    hb = scale_hitboxes((authored,), 1.0)[0]    # full charge
+    authored = _boxes()[0]  # damage 14, BKB 25, KBG 96
+    hb = scale_hitboxes((authored,), 1.0)[0]  # full charge
     charged_damage = 14.0 * SMASH_CHARGE_SCALE
     percent, weight = 50.0, 100
 
     got = knockback(percent, hb.damage, weight, hb.base_knockback, hb.knockback_growth)
     kb_damage_only = knockback(percent, charged_damage, weight, 25.0, 96.0)
-    kb_compounded = knockback(percent, charged_damage, weight,
-                              25.0 * SMASH_CHARGE_SCALE, 96.0 * SMASH_CHARGE_SCALE)
+    kb_compounded = knockback(percent, charged_damage, weight, 25.0 * SMASH_CHARGE_SCALE, 96.0 * SMASH_CHARGE_SCALE)
 
-    assert got == kb_damage_only                # fixed: KB from damage-only scaling
-    assert got != kb_compounded                 # not the old compounded value
+    assert got == kb_damage_only  # fixed: KB from damage-only scaling
+    assert got != kb_compounded  # not the old compounded value
     # sanity: the old path was exactly SMASH_CHARGE_SCALE too strong
     assert abs(kb_compounded - SMASH_CHARGE_SCALE * kb_damage_only) < 1e-9
 
@@ -93,16 +100,14 @@ def test_scale_interpolates_at_half():
 
 # ---- integration: a full-charge fsmash spawns a scaled Attack ---------------
 
+
 def _frame(held=(), pressed=(), released=()):
-    return InputFrame(held={P1[k] for k in held},
-                      pressed={P1[k] for k in pressed},
-                      released={P1[k] for k in released})
+    return InputFrame(held={P1[k] for k in held}, pressed={P1[k] for k in pressed}, released={P1[k] for k in released})
 
 
 def _grounded_nalio():
     pg.init()
-    p = Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="nalio", facing_right=True)
+    p = Player(100, 100, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio", facing_right=True)
     plats = _ground()
     grp = pg.sprite.Group()
     for _ in range(3):
@@ -113,7 +118,7 @@ def _grounded_nalio():
 def _charge_full_and_capture_attack(p, plats):
     grp = pg.sprite.Group()
     p.update(_frame(held=("smash", "right"), pressed=("smash", "right")), plats, grp)
-    for _ in range(SMASH_CHARGE_FRAMES + 15):   # hold to max (auto-fire), let the window open
+    for _ in range(SMASH_CHARGE_FRAMES + 15):  # hold to max (auto-fire), let the window open
         p.update(_frame(held=("smash",)), plats, grp)
         if len(grp):
             return next(iter(grp))
@@ -126,7 +131,7 @@ def test_full_charge_fsmash_scales_the_spawned_hitbox():
     assert atk is not None, "no Attack spawned from the charged fsmash"
     authored = load_fighter_data("nalio").moves["fsmash"].hitboxes[0].damage  # 14.0
     assert atk.hitboxes[0].damage == authored * SMASH_CHARGE_SCALE
-    assert atk.damage == authored * SMASH_CHARGE_SCALE   # primary-box mirror
+    assert atk.damage == authored * SMASH_CHARGE_SCALE  # primary-box mirror
 
 
 def test_zero_fraction_spawn_is_authored():
@@ -135,8 +140,8 @@ def test_zero_fraction_spawn_is_authored():
     p, plats = _grounded_nalio()
     grp = pg.sprite.Group()
     p.update(_frame(held=("smash", "right"), pressed=("smash", "right")), plats, grp)
-    p.update(_frame(released=("smash",)), plats, grp)   # fires (recomputes fraction)
-    p.fighter.smash_charge_fraction = 0.0               # pin c=0 for the spawn
+    p.update(_frame(released=("smash",)), plats, grp)  # fires (recomputes fraction)
+    p.fighter.smash_charge_fraction = 0.0  # pin c=0 for the spawn
     for _ in range(12):
         p.update(_frame(), plats, grp)
         if len(grp):

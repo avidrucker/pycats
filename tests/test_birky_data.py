@@ -6,6 +6,7 @@ and body geometry are placeholders reused from the default cat until slice 2; th
 slice pins only the stat differentiation. All assertions go through
 load_fighter_data("birky") — the loader is the seam (#229).
 """
+
 import pygame
 
 from pycats.battle_screen import BattleScreen
@@ -13,24 +14,37 @@ from pycats.combat.data import load_fighter_data
 from pycats.config import PLAYER_SIZE
 
 # #229 PM-Kirby -> pycats stat table (proportional-to-Mario; pin/playtest later).
-_EXPECTED = dict(weight=70, gravity=0.42, max_fall_speed=12, move_speed=5,
-                 max_jumps=6, jump_vel=-11)
+_EXPECTED = dict(weight=70, gravity=0.42, max_fall_speed=12, move_speed=5, max_jumps=6, jump_vel=-11)
 
 # Birky's Kirby-proportioned body (#275): shorter than the default 40x60 (playtest).
 _BIRKY_BODY = (40, 44)
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def test_birky_stand_size_is_a_smaller_kirby_body():
     birky = load_fighter_data("birky")
     default = load_fighter_data("default")
     assert birky.stand_size == _BIRKY_BODY
-    assert default.stand_size is None          # default cat keeps the global PLAYER_SIZE
-    assert _BIRKY_BODY[1] < PLAYER_SIZE[1]      # shorter than the 60-tall default
+    assert default.stand_size is None  # default cat keeps the global PLAYER_SIZE
+    assert _BIRKY_BODY[1] < PLAYER_SIZE[1]  # shorter than the 60-tall default
 
 
 def test_birky_fighter_body_is_smaller_than_default():
@@ -67,12 +81,23 @@ def test_birky_diverges_from_default_on_every_scalar():
 def test_birky_has_own_body_and_no_placeholder_moves():
     birky = load_fighter_data("birky")
     default = load_fighter_data("default")
-    assert birky.hurtbox != default.hurtbox   # body-matched hurtbox now (#275)
+    assert birky.hurtbox != default.hurtbox  # body-matched hurtbox now (#275)
     # Both moves are now Birky's own (attack = d-tilt #245, jab #240) — no placeholder.
     assert birky.moves["attack"] != default.moves["attack"]
-    assert set(birky.moves) == {"attack", "jab", "ftilt", "utilt", "nair", "fair",
-                                "bair", "uair", "dair",
-                                "fsmash", "usmash", "dsmash"}  # smashes added (#459)
+    assert set(birky.moves) == {
+        "attack",
+        "jab",
+        "ftilt",
+        "utilt",
+        "nair",
+        "fair",
+        "bair",
+        "uair",
+        "dair",
+        "fsmash",
+        "usmash",
+        "dsmash",
+    }  # smashes added (#459)
 
 
 def test_birky_attack_slot_is_kirby_down_tilt():
@@ -87,7 +112,7 @@ def test_birky_attack_slot_is_kirby_down_tilt():
     assert hb.damage == 10.0
     assert hb.angle == 20
     assert hb.base_knockback == 40.0 and hb.knockback_growth == 30.0
-    assert hb.circle.dy > 30   # low (below body centre) — it's a down-tilt
+    assert hb.circle.dy > 30  # low (below body centre) — it's a down-tilt
 
 
 def test_birky_ftilt_is_authored():
@@ -131,7 +156,7 @@ def test_birky_jab_is_authored_short_range_and_weak():
     assert jab.hitboxes, "jab must have at least one hitbox"
     hb = jab.hitboxes[0]
     assert hb.damage == 3.0
-    assert hb.angle == 361                 # Sakurai-angle sentinel
+    assert hb.angle == 361  # Sakurai-angle sentinel
     assert hb.base_knockback == 8.0 and hb.knockback_growth == 50.0
     # short reach: jab sits closer to the body than the default attack (dx=46)
     assert hb.circle.dx < default.moves["attack"].hitboxes[0].circle.dx
@@ -205,8 +230,7 @@ def test_birky_dair_is_looping_spike_drill():
     assert dair.startup + dair.active + dair.recovery == 50  # PM3.6 IASA
     assert dair.rehit_rate == 3
     assert dair.hitboxes
-    assert all(h.damage == 3.0 and h.angle == 270 and h.base_knockback == 10.0
-               for h in dair.hitboxes)
+    assert all(h.damage == 3.0 and h.angle == 270 and h.base_knockback == 10.0 for h in dair.hitboxes)
 
 
 # --- Zone-anchored hitbox dy on the 40x44 body (#309) -------------------------
@@ -214,6 +238,7 @@ def test_birky_dair_is_looping_spike_drill():
 # sat too low — worst case the d-tilt centre hung below the feet, into the floor.
 # After zone-anchoring, every hitbox centre resolves ON the body (dy <= height)
 # except the d-air, the one deliberate (bounded) below-feet spike.
+
 
 def test_no_birky_hitbox_center_below_feet_except_dair():
     """#309: every Birky hitbox centre lands on the body (dy <= stand_size height),
@@ -225,8 +250,7 @@ def test_no_birky_hitbox_center_below_feet_except_dair():
         if key == "dair":
             continue
         for hb in move.hitboxes:
-            assert hb.circle.dy <= height, (
-                f"{key} hitbox dy={hb.circle.dy} is below the feet (height={height})")
+            assert hb.circle.dy <= height, f"{key} hitbox dy={hb.circle.dy} is below the feet (height={height})"
 
 
 def test_birky_dair_is_a_bounded_below_feet_spike():
@@ -235,7 +259,7 @@ def test_birky_dair_is_a_bounded_below_feet_spike():
     birky = load_fighter_data("birky")
     height = birky.stand_size[1]
     dair = birky.moves["dair"]
-    assert all(hb.circle.dy > height for hb in dair.hitboxes)        # below the feet
+    assert all(hb.circle.dy > height for hb in dair.hitboxes)  # below the feet
     assert all(hb.circle.dy <= height + 10 for hb in dair.hitboxes)  # but just below
 
 
@@ -248,7 +272,7 @@ def test_birky_moves_land_in_intended_vertical_zones():
     for key in ("utilt", "uair"):
         for hb in birky.moves[key].hitboxes:
             assert hb.circle.dy < height * 0.3, f"{key} not overhead"
-    for hb in birky.moves["attack"].hitboxes:      # attack slot == d-tilt
+    for hb in birky.moves["attack"].hitboxes:  # attack slot == d-tilt
         assert hb.circle.dy > height * 0.6, "d-tilt not low near the feet"
     for key in ("jab", "ftilt", "nair", "fair", "bair"):
         for hb in birky.moves[key].hitboxes:

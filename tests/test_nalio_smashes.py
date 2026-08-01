@@ -8,6 +8,7 @@ seam; the charge scaling is slice 3.
 Golden-safety is structural: the sim path loads the default cat, which has no
 smash move, so these never touch a golden. A test pins that.
 """
+
 from pycats.combat.data import load_fighter_data
 from pycats.combat.move_select import resolve_move_key
 from pycats.combat.units import u
@@ -20,19 +21,19 @@ _TESTCAT = load_fighter_data("testcat")
 def test_fsmash_frames_and_hitboxes():
     m = _NALIO.moves["fsmash"]
     assert m.in_air is False
-    assert (m.startup, m.active, m.recovery) == (7, 5, 26)   # AttackS4S 8-12, IASA 38
+    assert (m.startup, m.active, m.recovery) == (7, 5, 26)  # AttackS4S 8-12, IASA 38
     dmgs = [h.damage for h in m.hitboxes]
-    assert dmgs == [14.0, 19.0, 10.0]                        # id0 fist / id1 sweetspot / id2 inner
-    assert all(h.angle == 361 for h in m.hitboxes)           # Sakurai sentinel (#203)
+    assert dmgs == [14.0, 19.0, 10.0]  # id0 fist / id1 sweetspot / id2 inner
+    assert all(h.angle == 361 for h in m.hitboxes)  # Sakurai sentinel (#203)
     sweet = m.hitboxes[1]
     assert (sweet.base_knockback, sweet.knockback_growth) == (30.0, 97.0)
-    assert sweet.circle.r == u(3.94)                         # radius = round(size × PX_PER_UNIT)
+    assert sweet.circle.r == u(3.94)  # radius = round(size × PX_PER_UNIT)
 
 
 def test_usmash_two_windows():
     m = _NALIO.moves["usmash"]
     assert m.in_air is False
-    assert (m.startup, m.active, m.recovery) == (2, 4, 33)   # AttackHi4 3-6; FAF 39 (⚠ playtest)
+    assert (m.startup, m.active, m.recovery) == (2, 4, 33)  # AttackHi4 3-6; FAF 39 (⚠ playtest)
     # Up-hit window [3,4] (angle 83) then late window [5,6] (angle 259).
     up = [h for h in m.hitboxes if h.angle == 83]
     late = [h for h in m.hitboxes if h.angle == 259]

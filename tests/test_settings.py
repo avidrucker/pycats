@@ -3,6 +3,7 @@
 All tests redirect the config dir to a tmp_path via PYCATS_CONFIG_DIR, so they
 never read or write the real ~/.config/pycats file.
 """
+
 import json
 
 from pycats import settings
@@ -31,9 +32,7 @@ def test_load_corrupt_file_falls_back_to_defaults(tmp_path, monkeypatch):
 
 def test_load_snaps_invalid_windowed_scale_to_a_valid_preset(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    (tmp_path / "settings.json").write_text(
-        json.dumps({"version": 1, "windowed_scale": 3.7, "fullscreen": False})
-    )
+    (tmp_path / "settings.json").write_text(json.dumps({"version": 1, "windowed_scale": 3.7, "fullscreen": False}))
     from pycats.display import WINDOWED_SCALE_PRESETS
 
     assert settings.load()["windowed_scale"] in WINDOWED_SCALE_PRESETS
@@ -41,9 +40,7 @@ def test_load_snaps_invalid_windowed_scale_to_a_valid_preset(tmp_path, monkeypat
 
 def test_load_coerces_fullscreen_to_bool(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    (tmp_path / "settings.json").write_text(
-        json.dumps({"windowed_scale": 1.0, "fullscreen": 1})
-    )
+    (tmp_path / "settings.json").write_text(json.dumps({"windowed_scale": 1.0, "fullscreen": 1}))
     assert settings.load()["fullscreen"] is True
 
 
@@ -64,6 +61,7 @@ def test_saved_file_includes_a_version(tmp_path, monkeypatch):
 
 # --- #121: status-timer-bars HUD toggle now persisted here ---
 
+
 def test_show_status_timer_bars_defaults_on(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
     assert settings.defaults()["show_status_timer_bars"] is True
@@ -74,9 +72,7 @@ def test_show_status_timer_bars_round_trips_and_coerces_bool(tmp_path, monkeypat
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
     settings.save({"show_status_timer_bars": False})
     assert settings.load()["show_status_timer_bars"] is False
-    (tmp_path / "settings.json").write_text(
-        json.dumps({"windowed_scale": 1.0, "show_status_timer_bars": 0})
-    )
+    (tmp_path / "settings.json").write_text(json.dumps({"windowed_scale": 1.0, "show_status_timer_bars": 0}))
     assert settings.load()["show_status_timer_bars"] is False  # coerced from 0
 
 

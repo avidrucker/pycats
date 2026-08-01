@@ -7,6 +7,7 @@ those timers — so the respawned fighter re-entered the hurt/stun FSM state and
 frozen (in_hitstun) for several frames at the start of its new life. reset_game()
 already zeroes these timers; _respawn() must match it.
 """
+
 import pygame as pg
 
 from pycats.combat.data import Circle, Hitbox
@@ -17,8 +18,7 @@ from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 from pycats.render_battle import body_tint
 
-CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-            "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
+CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
 
 
 def _empty():
@@ -28,10 +28,10 @@ def _empty():
 def _ko_while_damaged_then_respawn(kind):
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(200, 400, 600, 20), thin=False))
-    attacker = Player(x=360, y=400, controls=CONTROLS, color=P1_COLOR,
-                      eye_color=WHITE, char_name="A", facing_right=True)
-    victim = Player(x=420, y=400, controls=CONTROLS, color=P2_COLOR,
-                    eye_color=WHITE, char_name="V", facing_right=True)
+    attacker = Player(
+        x=360, y=400, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE, char_name="A", facing_right=True
+    )
+    victim = Player(x=420, y=400, controls=CONTROLS, color=P2_COLOR, eye_color=WHITE, char_name="V", facing_right=True)
     empty = pg.sprite.Group()
     for _ in range(2):
         attacker.update(_empty(), plats, empty)
@@ -41,8 +41,7 @@ def _ko_while_damaged_then_respawn(kind):
         # Give the hit real knockback so computed hitstun (#40) exceeds 1 frame;
         # zero BKB/KBG would leave only the HITSTUN_FLOOR, which one update()
         # would consume before the assertion below.
-        hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=10,
-                    angle=0, base_knockback=30.0, knockback_growth=100.0)
+        hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=10, angle=0, base_knockback=30.0, knockback_growth=100.0)
         victim.fighter.receive_hit(Attack(owner=attacker, hitbox=hb, lifetime=1))
     else:  # stun
         victim.fighter._start_stun()
@@ -55,7 +54,7 @@ def _ko_while_damaged_then_respawn(kind):
     victim.update(_empty(), plats, empty)
     assert victim.fighter.hurt_timer > 0 or victim.fighter.stun_timer > 0  # genuinely damaged
 
-    victim.rect.center = (5000, 400)          # outside the blast zone -> KO
+    victim.rect.center = (5000, 400)  # outside the blast zone -> KO
     victim.update(_empty(), plats, empty)
     assert not victim.fighter.is_alive
 

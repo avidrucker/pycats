@@ -5,6 +5,7 @@ ground-bounce); `Attack` stays the static melee hitbox. Per #263 research the fl
 projectile (vy=0) sailed over foes on lower terrain — a Mario fireball arcs down and
 bounces along the ground. Numbers (gravity/restitution/max_bounces) are tuning guesses.
 """
+
 import types
 
 import pygame as pg
@@ -14,8 +15,7 @@ from pycats.entities.attack import Attack, Projectile
 
 pg.init()
 
-_FB = next(v for v in vars(nalio).values()
-           if getattr(v, "projectile_speed", None) is not None)
+_FB = next(v for v in vars(nalio).values() if getattr(v, "projectile_speed", None) is not None)
 
 
 def _owner(facing_right=True):
@@ -26,8 +26,15 @@ def _owner(facing_right=True):
 
 
 def _proj(cx, cy, vx=8, vy=0, gravity=0.5, restitution=0.6, max_bounces=3):
-    p = Projectile(_owner(), hitboxes=_FB.hitboxes, velocity=(vx, vy), lifetime=500,
-                   gravity=gravity, restitution=restitution, max_bounces=max_bounces)
+    p = Projectile(
+        _owner(),
+        hitboxes=_FB.hitboxes,
+        velocity=(vx, vy),
+        lifetime=500,
+        gravity=gravity,
+        restitution=restitution,
+        max_bounces=max_bounces,
+    )
     # Pin to a deterministic single-circle position for predictable physics asserts.
     r = p.hit_r
     p.hit_cx, p.hit_cy = float(cx), float(cy)
@@ -71,7 +78,7 @@ def test_projectile_bounces_off_platform_top():
     bounced = False
     for _ in range(80):
         p.update([plat])
-        if p.velocity[1] < 0:          # moving upward ⇒ it bounced
+        if p.velocity[1] < 0:  # moving upward ⇒ it bounced
             bounced = True
             break
     assert bounced, "projectile should bounce (vy turns negative) off the platform top"
@@ -89,8 +96,9 @@ def test_bounce_loses_vertical_momentum():
             speed_before, speed_after = prev_vy, -p.velocity[1]
             break
     assert speed_before is not None, "expected a bounce"
-    assert speed_after < speed_before, \
+    assert speed_after < speed_before, (
         f"restitution<1 should lose vertical speed: after={speed_after} before={speed_before}"
+    )
 
 
 def test_projectile_expires_after_max_bounces():
@@ -108,7 +116,7 @@ def test_static_attack_update_accepts_platforms_arg():
     # Attack must accept and ignore it (golden-safe).
     a = Attack(_owner(), hitboxes=_FB.hitboxes, lifetime=5)
     before = (a.hit_cx, a.hit_cy)
-    a.update([_plat(0, 300)])           # must not raise, must not move (static)
+    a.update([_plat(0, 300)])  # must not raise, must not move (static)
     assert (a.hit_cx, a.hit_cy) == before
 
 

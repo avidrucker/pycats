@@ -10,6 +10,7 @@ Guards the acceptance criteria:
 The emphasized block is drawn by ``draw_hud_emphasis`` (split from ``draw_hud``'s
 secondary loop, #550), so a rendered pixel bbox isolates it cleanly.
 """
+
 import pygame
 import pytest
 
@@ -35,10 +36,24 @@ from pycats.render_battle import (
 # change in one test can't leave a cached glyph behind for the next.
 pytestmark = pytest.mark.usefixtures("render_isolation")
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 _BLACK = (0, 0, 0)
 
@@ -112,6 +127,5 @@ def test_emphasized_size_scales_with_font_scale():
     large = _text_bbox(lambda s: draw_hud_emphasis(s, p))
 
     assert large.height > std.height, (
-        "emphasized rows must grow with font_scale (size must flow through "
-        "scaled_font_size, not be a fixed literal)"
+        "emphasized rows must grow with font_scale (size must flow through scaled_font_size, not be a fixed literal)"
     )

@@ -10,6 +10,7 @@ Same capture harness as test_controls_smash_row.py: monkeypatch render_text_mixe
 collect the emitted lines. Able-to-fail: with the old `'?'` fallback the rebound-key
 rows read `Attack: ?` / `Shield: ?`, so these assertions go red.
 """
+
 import pygame
 
 from pycats import text_utils
@@ -22,8 +23,16 @@ class _Player:
 
 
 # Default P1 keymap (game.py), then rebound below to keys OUTSIDE the glyph dict.
-_FULL = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-             attack=pygame.K_v, shield=pygame.K_x, special=pygame.K_c, smash=pygame.K_b)
+_FULL = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    shield=pygame.K_x,
+    special=pygame.K_c,
+    smash=pygame.K_b,
+)
 
 
 def _capture_lines(monkeypatch, controls, topright=False):
@@ -54,8 +63,7 @@ def test_rebound_punctuation_key_renders_by_name(monkeypatch):
 
 def test_glyph_overrides_still_win_over_raw_name(monkeypatch):
     # Arrow keys keep their glyph, not pygame's 'left'/'right' names.
-    lines = _capture_lines(monkeypatch,
-                           dict(_FULL, left=pygame.K_LEFT, right=pygame.K_RIGHT))
+    lines = _capture_lines(monkeypatch, dict(_FULL, left=pygame.K_LEFT, right=pygame.K_RIGHT))
     assert "Move: ←/→" in lines  # ← / →
 
 

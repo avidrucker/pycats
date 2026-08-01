@@ -5,6 +5,7 @@ file that doesn't exist. This is deliberately NOT a heading-presence test (that
 guards nothing behavioural and churns on renames); it only fails when a linked
 file is actually missing or was renamed without updating the link.
 """
+
 import re
 from pathlib import Path
 
@@ -28,10 +29,7 @@ def test_project_docs_section_links_resolve():
 
 
 def test_links_cover_context_and_adr():
-    targets = {
-        t.split("#", 1)[0].rstrip("/").removeprefix("./")
-        for t in _project_docs_links()
-    }
+    targets = {t.split("#", 1)[0].rstrip("/").removeprefix("./") for t in _project_docs_links()}
     assert "CONTEXT.md" in targets, "README must link CONTEXT.md"
     assert "docs/adr" in targets, "README must link docs/adr/"
 

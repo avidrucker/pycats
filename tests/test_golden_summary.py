@@ -5,6 +5,7 @@ digest (frame count, phase/winner, attack activity, per-player states / lives /
 percent / KO frames). The digest is the artifact a reviewer reads before
 accepting a `PYCATS_UPDATE_GOLDENS=1` regen — see tests/golden/REGEN_PROTOCOL.md.
 """
+
 from tests.golden_util import summarize
 
 
@@ -47,10 +48,8 @@ def test_summarize_detects_ko_frames_and_lives_arc():
 
 def test_summarize_counts_attack_frames_and_final_phase_winner():
     snaps = [
-        _snap([_player("P1", "attack"), _player("P2", "idle")],
-              atk=[(0, 0, 3, "P1", True, 0, 0, 12)]),
-        _snap([_player("P1", "idle"), _player("P2", "ko")],
-              atk=(), phase="match_over", winner=1),
+        _snap([_player("P1", "attack"), _player("P2", "idle")], atk=[(0, 0, 3, "P1", True, 0, 0, 12)]),
+        _snap([_player("P1", "idle"), _player("P2", "ko")], atk=(), phase="match_over", winner=1),
     ]
     s = summarize(snaps)
     assert s["attack_active_frames"] == 1  # only the first frame has an attack

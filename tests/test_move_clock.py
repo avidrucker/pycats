@@ -4,14 +4,14 @@
 These pin the exact frame semantics the old triple-tracked Player clock had, so
 the extraction stays behaviour-preserving (parity + goldens are the integration
 net; these are the direct unit net)."""
+
 from pycats.combat.data import Circle, Hitbox, MoveData
 from pycats.combat.move_clock import MoveClock, MoveTick
 
 
 def _move(startup=3, active=3, recovery=6):
     hb = Hitbox(circle=Circle(dx=10, dy=10, r=5), damage=1.0, angle=0)
-    return MoveData(name="t", in_air=False, startup=startup, active=active,
-                    recovery=recovery, hitboxes=(hb,))
+    return MoveData(name="t", in_air=False, startup=startup, active=active, recovery=recovery, hitboxes=(hb,))
 
 
 def test_idle_clock_is_inactive_and_zero():

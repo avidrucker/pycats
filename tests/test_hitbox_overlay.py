@@ -6,6 +6,7 @@ fighter's hurtbox circles as coloured outlines, reading the SAME data
 combat.process_hits resolves (``atk.resolved`` + ``resolve_circle`` on the
 fighter hurtbox). Combat is untouched; ``Attack.rect`` is untouched (Attack.image was removed in #326).
 """
+
 import json
 import types
 
@@ -57,8 +58,7 @@ def test_runtime_hitbox_overlay_set():
 # options_menu.py — Options row toggles live + persists (mirrors status_bars)
 # --------------------------------------------------------------------------- #
 P1 = {"up": pygame.K_w, "down": pygame.K_s, "attack": pygame.K_v, "special": pygame.K_c}
-P2 = {"up": pygame.K_UP, "down": pygame.K_DOWN, "attack": pygame.K_SLASH,
-      "special": pygame.K_PERIOD}
+P2 = {"up": pygame.K_UP, "down": pygame.K_DOWN, "attack": pygame.K_SLASH, "special": pygame.K_PERIOD}
 ATTACK = pygame.K_v
 
 
@@ -69,8 +69,8 @@ def test_hitbox_overlay_row_toggles_runtime_and_persists(tmp_path, monkeypatch):
     m = OptionsMenu(P1, P2)
     m.selected_option = m.rows.index("hitbox_overlay")
     m.update({ATTACK})
-    assert runtime_settings.show_hitbox_overlay() is True   # live flip
-    assert settings.load()["show_hitbox_overlay"] is True   # persisted
+    assert runtime_settings.show_hitbox_overlay() is True  # live flip
+    assert settings.load()["show_hitbox_overlay"] is True  # persisted
 
 
 def test_hitbox_overlay_row_label_reflects_state():
@@ -85,25 +85,36 @@ def test_hitbox_overlay_row_label_reflects_state():
 # --------------------------------------------------------------------------- #
 # render_battle.render_hitbox_overlay — the drawing itself
 # --------------------------------------------------------------------------- #
-def _fake_player(x=100, y=100, w=40, h=60, facing_right=True, alive=True,
-                 state="idle", hurtbox=None, crouch_hurtbox=None,
-                 prone_hurtbox=None):
+def _fake_player(
+    x=100,
+    y=100,
+    w=40,
+    h=60,
+    facing_right=True,
+    alive=True,
+    state="idle",
+    hurtbox=None,
+    crouch_hurtbox=None,
+    prone_hurtbox=None,
+):
     hb = hurtbox or Hurtbox(circles=(Circle(dx=20, dy=30, r=25),))
     fighter = types.SimpleNamespace(
-        is_alive=alive, facing_right=facing_right,
-        crouch_hurtbox=crouch_hurtbox, prone_hurtbox=prone_hurtbox,
+        is_alive=alive,
+        facing_right=facing_right,
+        crouch_hurtbox=crouch_hurtbox,
+        prone_hurtbox=prone_hurtbox,
     )
     return types.SimpleNamespace(
-        rect=pygame.Rect(x, y, w, h), state=state, fighter=fighter,
+        rect=pygame.Rect(x, y, w, h),
+        state=state,
+        fighter=fighter,
         fighter_data=types.SimpleNamespace(hurtbox=hb),
     )
 
 
 def _fake_attack(circles):
     # circles: list of (cx, cy, r); box payload is irrelevant to the overlay.
-    return types.SimpleNamespace(
-        resolved=[(cx, cy, r, object()) for (cx, cy, r) in circles]
-    )
+    return types.SimpleNamespace(resolved=[(cx, cy, r, object()) for (cx, cy, r) in circles])
 
 
 def _spy_circles(monkeypatch):
@@ -133,8 +144,7 @@ def test_overlay_on_draws_hit_and_hurtbox_outlines(monkeypatch):
     captured = _spy_circles(monkeypatch)
     surf = pygame.Surface((400, 400))
 
-    player = _fake_player(x=100, y=100, w=40, facing_right=True,
-                          hurtbox=Hurtbox(circles=(Circle(dx=20, dy=30, r=25),)))
+    player = _fake_player(x=100, y=100, w=40, facing_right=True, hurtbox=Hurtbox(circles=(Circle(dx=20, dy=30, r=25),)))
     attack = _fake_attack([(200, 150, 12)])
     rb.render_hitbox_overlay(surf, [player], [attack])
 
@@ -144,12 +154,10 @@ def test_overlay_on_draws_hit_and_hurtbox_outlines(monkeypatch):
     assert rb.HITBOX_OVERLAY_COLOR != rb.HURTBOX_OVERLAY_COLOR  # distinct
 
     # Hitbox drawn at the resolved attack circle.
-    assert any(c[0] == rb.HITBOX_OVERLAY_COLOR and c[1] == (200, 150) and c[2] == 12
-               for c in captured)
+    assert any(c[0] == rb.HITBOX_OVERLAY_COLOR and c[1] == (200, 150) and c[2] == 12 for c in captured)
     # Hurtbox drawn at resolve_circle(dx=20,dy=30) for a right-facer at (100,100):
     # cx = 100 + 20, cy = 100 + 30, r = 25.
-    assert any(c[0] == rb.HURTBOX_OVERLAY_COLOR and c[1] == (120, 130) and c[2] == 25
-               for c in captured)
+    assert any(c[0] == rb.HURTBOX_OVERLAY_COLOR and c[1] == (120, 130) and c[2] == 25 for c in captured)
     # Every circle is an OUTLINE (positive line width), never a filled disc.
     assert all(c[3] > 0 for c in captured)
 
@@ -174,10 +182,11 @@ def test_overlay_uses_active_crouch_hurtbox(monkeypatch):
     surf = pygame.Surface((400, 400))
 
     crouch = Hurtbox(circles=(Circle(dx=20, dy=50, r=15),))
-    player = _fake_player(x=100, y=100, state="crouch", crouch_hurtbox=crouch,
-                          hurtbox=Hurtbox(circles=(Circle(dx=20, dy=30, r=25),)))
+    player = _fake_player(
+        x=100, y=100, state="crouch", crouch_hurtbox=crouch, hurtbox=Hurtbox(circles=(Circle(dx=20, dy=30, r=25),))
+    )
     rb.render_hitbox_overlay(surf, [player], [])
 
     hurt = [c for c in captured if c[0] == rb.HURTBOX_OVERLAY_COLOR]
     assert hurt and all(c[2] == 15 for c in hurt)  # crouch radius, not stand's 25
-    assert any(c[1] == (120, 150) for c in hurt)   # crouch dy=50 → cy=150
+    assert any(c[1] == (120, 150) for c in hurt)  # crouch dy=50 → cy=150

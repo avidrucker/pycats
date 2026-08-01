@@ -7,6 +7,7 @@ in #371/#377. Values are PM3.6-Marth-shaped (⚠ playtest, like the rest of the 
 Golden-safe: the sim path loads the default cat (no smash, not chargeable); Narz is
 never the golden cat. A test pins that.
 """
+
 from pycats.combat.data import load_fighter_data
 from pycats.combat.move_select import resolve_move_key
 
@@ -32,7 +33,7 @@ def test_fsmash_is_a_disjoint_tipper():
     tip, base = m.hitboxes[0], m.hitboxes[1]
     # tipper: the FIRST box (priority) is the far, strong tip
     assert tip.damage > base.damage
-    assert tip.circle.dx > base.circle.dx           # tip reaches farther forward
+    assert tip.circle.dx > base.circle.dx  # tip reaches farther forward
     assert tip.base_knockback > base.base_knockback  # ...and hits harder
     # disjoint: the tip's near edge is beyond the hurtbox's forward extent
     assert tip.circle.dx - tip.circle.r > _forward_hurtbox_extent()
@@ -43,7 +44,7 @@ def test_usmash_tip_is_higher_and_stronger():
     m = _NARZ.moves["usmash"]
     tip, base = m.hitboxes[0], m.hitboxes[1]
     assert tip.damage > base.damage
-    assert tip.circle.dy < base.circle.dy    # tip is higher (smaller dy = up)
+    assert tip.circle.dy < base.circle.dy  # tip is higher (smaller dy = up)
     assert all(h.angle == 90 for h in m.hitboxes)  # launches up
 
 

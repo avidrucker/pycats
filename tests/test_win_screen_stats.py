@@ -22,8 +22,7 @@ from pycats.domain import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTe
 
 
 class _FakePlayer:
-    def __init__(self, char_name, lives, suicides, hits_landed=0, attacks_made=0,
-                 damage_given=0.0, damage_taken=0.0):
+    def __init__(self, char_name, lives, suicides, hits_landed=0, attacks_made=0, damage_given=0.0, damage_taken=0.0):
         self.char_name = char_name
         _n = 1 if char_name == "P1" else 2
         self.identity = PlayerIdentity(
@@ -89,10 +88,8 @@ def test_damage_given_taken_rows():
     In a 1v1 a player's Damage Given equals the opponent's Damage Taken, so the
     rows must mirror across columns; values are formatted as integer percents.
     """
-    p1 = _FakePlayer("P1", lives=2, suicides=0,
-                     damage_given=312.0, damage_taken=188.0)
-    p2 = _FakePlayer("P2", lives=0, suicides=1,
-                     damage_given=188.0, damage_taken=312.0)
+    p1 = _FakePlayer("P1", lives=2, suicides=0, damage_given=312.0, damage_taken=188.0)
+    p2 = _FakePlayer("P2", lives=0, suicides=1, damage_given=188.0, damage_taken=312.0)
     rows = _rows_by_name(winner=p1, loser=p2)
 
     assert "Damage Given" in rows and "Damage Taken" in rows

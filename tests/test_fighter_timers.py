@@ -7,22 +7,27 @@ Able-to-fail: drop the `> 0` floor guard and `test_tick_timers_floors_at_zero`
 goes red (0 → -1).
 """
 
-
 import pygame  # noqa: E402
 
 from pycats.entities.player import Player  # noqa: E402
 
-CONTROLS = {"left": pygame.K_a, "right": pygame.K_d, "up": pygame.K_w,
-            "down": pygame.K_s, "shield": pygame.K_q, "attack": pygame.K_e}
+CONTROLS = {
+    "left": pygame.K_a,
+    "right": pygame.K_d,
+    "up": pygame.K_w,
+    "down": pygame.K_s,
+    "shield": pygame.K_q,
+    "attack": pygame.K_e,
+}
 
-PURE_TIMERS = ("hurt_timer", "stun_timer", "landing_lag_timer",
-               "ledge_regrab_lockout_timer", "shieldstun_timer")
+PURE_TIMERS = ("hurt_timer", "stun_timer", "landing_lag_timer", "ledge_regrab_lockout_timer", "shieldstun_timer")
 
 
 def _fighter():
     pygame.init()
-    p = Player(x=100, y=100, controls=CONTROLS, color=(10, 200, 30),
-               eye_color=(0, 0, 200), char_name="P1", facing_right=True)
+    p = Player(
+        x=100, y=100, controls=CONTROLS, color=(10, 200, 30), eye_color=(0, 0, 200), char_name="P1", facing_right=True
+    )
     return p.fighter
 
 
@@ -61,8 +66,8 @@ def test_tick_action_timers_decrements_and_reports_no_expiry_above_zero():
 
 def test_tick_action_timers_reports_only_this_frames_expiries():
     f = _fighter()
-    f.prone_timer = 1   # hits 0
-    f.dodge_timer = 5   # decrements but stays > 0
+    f.prone_timer = 1  # hits 0
+    f.dodge_timer = 5  # decrements but stays > 0
     expired = f.tick_action_timers()
     assert expired == {"prone_timer"}
     assert f.prone_timer == 0 and f.dodge_timer == 4
@@ -102,6 +107,7 @@ def test_tick_respawn_decrements_unfloored():
     f.respawn_timer = 0
     f.tick_respawn()
     assert f.respawn_timer == -1
+
 
 # (test_tick_ledge_hang_decrements_and_floors removed — the ledge-hang timeout and
 #  its tick_ledge_hang() are gone in #475: PM has no hang timer.)

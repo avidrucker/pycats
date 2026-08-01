@@ -7,6 +7,7 @@ it was logged. Simultaneous new-presses in one frame join into a single entry
 right, independent of facing). The HUD render + Options toggle are exercised
 elsewhere (test_battle_screen_render / a runtime_settings toggle test).
 """
+
 from pycats.input_history import (
     INPUT_HISTORY_MAX,
     INPUT_HISTORY_TTL_FRAMES,
@@ -98,21 +99,22 @@ def test_tick_expires_entry_after_ttl():
 
 def test_record_ticks_existing_then_pushes_fresh():
     h = InputHistory(ttl_frames=2)
-    h.record({5}, CONTROLS)          # frame 1: push "A" (ttl 2)
-    h.record(set(), CONTROLS)        # frame 2: tick A -> 1, no new press
+    h.record({5}, CONTROLS)  # frame 1: push "A" (ttl 2)
+    h.record(set(), CONTROLS)  # frame 2: tick A -> 1, no new press
     assert h.entries() == ["A"]
-    h.record(set(), CONTROLS)        # frame 3: tick A -> 0, expired
+    h.record(set(), CONTROLS)  # frame 3: tick A -> 0, expired
     assert h.entries() == []
 
 
 def test_record_fresh_entry_survives_full_ttl():
     h = InputHistory(ttl_frames=2)
-    h.record({5}, CONTROLS)          # push "A" this frame; not decremented same frame
+    h.record({5}, CONTROLS)  # push "A" this frame; not decremented same frame
     assert h.entries() == ["A"]
 
 
 def test_config_constants_wired():
     from pycats.config import FPS
+
     assert INPUT_HISTORY_TTL_FRAMES == 5 * FPS
     assert INPUT_HISTORY_MAX == 10
 

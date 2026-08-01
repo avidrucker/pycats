@@ -13,6 +13,7 @@ Every takeoff cause collapses to the same clamp, without knowing which:
 `ledges` is deliberately NOT passed to `update()` (defaults to `()`), so a walk-off is a
 clean ground→air transition with no ledge-grab intercepting it.
 """
+
 import pygame as pg
 
 from pycats.config import P1_COLOR, WHITE
@@ -21,8 +22,12 @@ from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
 CONTROLS = {
-    "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-    "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e,
+    "left": pg.K_a,
+    "right": pg.K_d,
+    "up": pg.K_w,
+    "down": pg.K_s,
+    "shield": pg.K_q,
+    "attack": pg.K_e,
 }
 RIGHT, UP, DOWN = pg.K_d, pg.K_w, pg.K_s
 
@@ -36,8 +41,15 @@ def _grounded(plat_rect, spawn_x, thin=False):
     onto the platform. Returns (player, platforms) with full jumps confirmed."""
     plats = pg.sprite.Group()
     plats.add(Platform(plat_rect, thin=thin))
-    p = Player(x=spawn_x, y=plat_rect.top - 80, controls=CONTROLS,
-               color=P1_COLOR, eye_color=WHITE, char_name="JumpCat", facing_right=True)
+    p = Player(
+        x=spawn_x,
+        y=plat_rect.top - 80,
+        controls=CONTROLS,
+        color=P1_COLOR,
+        eye_color=WHITE,
+        char_name="JumpCat",
+        facing_right=True,
+    )
     for _ in range(90):
         p.update(_frame(), plats, pg.sprite.Group())
         if p.fighter.on_ground:
@@ -57,8 +69,8 @@ def _step_until_airborne(p, plats, held=(), max_frames=180):
 
 def test_walk_off_forfeits_grounded_jump():
     """Walk off the edge (no jump press) → only the midair jump remains."""
-    plat = pg.Rect(200, 400, 180, 40)            # spans x=200..380
-    p, plats = _grounded(plat, spawn_x=360)      # near the right lip
+    plat = pg.Rect(200, 400, 180, 40)  # spans x=200..380
+    p, plats = _grounded(plat, spawn_x=360)  # near the right lip
     _step_until_airborne(p, plats, held={RIGHT})
     assert p.fighter.jumps_remaining == p.fighter.max_jumps - 1, (
         "walking off the ground forfeits the grounded jump (midair jump only)"
@@ -82,8 +94,8 @@ def test_launched_off_keeps_midair_jump():
     """A launch off the ground (upward velocity, no jump press) → max_jumps-1."""
     plat = pg.Rect(100, 400, 500, 40)
     p, plats = _grounded(plat, spawn_x=350)
-    p.fighter.hurt_timer = 20          # in hitstun: input is gated, jumps stay max
-    p.fighter.vel.y = -22              # launched upward
+    p.fighter.hurt_timer = 20  # in hitstun: input is gated, jumps stay max
+    p.fighter.vel.y = -22  # launched upward
     _step_until_airborne(p, plats)
     assert p.fighter.jumps_remaining == p.fighter.max_jumps - 1, (
         "a launched fighter forfeits the grounded jump but keeps its midair jump"
@@ -105,8 +117,9 @@ def test_fresh_airborne_spawn_keeps_full_jumps():
     max_jumps — there is no ground→air transition, so the clamp must not fire (#480)."""
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(0, 600, 960, 40), thin=False))
-    p = Player(x=300, y=100, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE,
-               char_name="SpawnCat", facing_right=True)
+    p = Player(
+        x=300, y=100, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE, char_name="SpawnCat", facing_right=True
+    )
     assert not p.fighter.on_ground, "today's model: spawns airborne"
     assert p.fighter.jumps_remaining == p.fighter.max_jumps, "fresh spawn keeps full jumps"
     # a couple of airborne frames must not erode the count (was_airborne stays True)

@@ -21,6 +21,7 @@ WHAT TO DO:
 - When the count hits 0, delete only the ``@pytest.mark.xfail(...)`` line above
   the test (and update this note). See RULES.md → "The test must be able to fail".
 """
+
 import pathlib
 import re
 
@@ -60,7 +61,4 @@ def _free_form_todos():
 )
 def test_no_free_form_todos_in_pycats():
     hits = _free_form_todos()
-    assert hits == [], (
-        f"{len(hits)} free-form `#### TODO:` comment(s) in pycats/ (#50 wants 0):\n"
-        + "\n".join(hits)
-    )
+    assert hits == [], f"{len(hits)} free-form `#### TODO:` comment(s) in pycats/ (#50 wants 0):\n" + "\n".join(hits)

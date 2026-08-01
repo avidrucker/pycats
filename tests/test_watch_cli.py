@@ -5,6 +5,7 @@ stay synced to the real selectable roster (`pycats.characters.roster.ARCHETYPE_R
 so a newly-built archetype (e.g. Birky #228) can't be silently left unselectable. Was
 a hardcoded `["nalio"]` that drifted.
 """
+
 import watch
 from pycats.characters.roster import ARCHETYPE_ROSTER
 

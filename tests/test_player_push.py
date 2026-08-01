@@ -8,6 +8,7 @@ repositioned / velocity-cancelled on Y.
 
 Repro/proof of the original defect: repros/repro_issue_1.py.
 """
+
 import pygame
 from helpers import P1, P2
 
@@ -19,25 +20,24 @@ from pycats.entities.player import Player
 
 PW = PLAYER_SIZE[0]  # player width (40)
 
+
 def _floor():
     # A wide thick (solid) platform; top at y=410.
     return [Platform(pygame.Rect(0, 410, 960, 80), thin=False)]
 
 
 def _two_players():
-    p1 = Player(0, 0, P1, (255, 160, 64), eye_color=(0, 0, 0),
-                char_name="P1", facing_right=True)
-    p2 = Player(0, 0, P2, (160, 160, 160), eye_color=(0, 0, 0),
-                char_name="P2", facing_right=False)
+    p1 = Player(0, 0, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
+    p2 = Player(0, 0, P2, (160, 160, 160), eye_color=(0, 0, 0), char_name="P2", facing_right=False)
     return p1, p2
 
 
 def _drop_on_same_spot(p1, p2, top):
-    p2.rect.midbottom = (482, top)         # settled on the floor, centre
+    p2.rect.midbottom = (482, top)  # settled on the floor, centre
     p2.fighter.vel = pygame.Vector2(0, 0)
     p2.fighter.on_ground = True
-    p1.rect.midbottom = (478, top - 70)    # just above, almost identical x
-    p1.fighter.vel = pygame.Vector2(0, 3)          # falling onto P2
+    p1.rect.midbottom = (478, top - 70)  # just above, almost identical x
+    p1.fighter.vel = pygame.Vector2(0, 3)  # falling onto P2
 
 
 def _noop():
@@ -73,10 +73,12 @@ def test_landing_players_rest_on_floor_not_stacked():
     _drop_on_same_spot(p1, p2, top)
     _settle(p1, p2, floor)
 
-    assert p1.rect.bottom == top and p2.rect.bottom == top, \
+    assert p1.rect.bottom == top and p2.rect.bottom == top, (
         "a player did not settle on the floor (left stacked on a head)"
-    assert p1.rect.bottom != p2.rect.top - 1 and p2.rect.bottom != p1.rect.top - 1, \
+    )
+    assert p1.rect.bottom != p2.rect.top - 1 and p2.rect.bottom != p1.rect.top - 1, (
         "a player is Y-locked onto the other's head"
+    )
 
 
 def test_push_never_touches_vertical_velocity():
@@ -84,7 +86,7 @@ def test_push_never_touches_vertical_velocity():
     # it). Overlap two players and call the push once with sentinel Y velocities.
     p1, p2 = _two_players()
     p1.rect.midbottom = (480, 410)
-    p2.rect.midbottom = (490, 410)   # overlaps p1 on X and Y
+    p2.rect.midbottom = (490, 410)  # overlaps p1 on X and Y
     p1.fighter.vel = pygame.Vector2(0, 7.0)
     p2.fighter.vel = pygame.Vector2(0, -3.0)
     assert p1.rect.colliderect(p2.rect)  # guard: scenario actually triggers push
@@ -98,6 +100,7 @@ class _FakeFighter:
     """Minimal stand-in: resolve_player_push only reads .state/.rect/.vel.
     Used because Player.state is a read-only property we can't force to 'dodge'
     without a full dodge input sequence."""
+
     def __init__(self, midbottom, state="idle"):
         self.rect = pygame.Rect(0, 0, *PLAYER_SIZE)
         self.rect.midbottom = midbottom
@@ -124,7 +127,7 @@ def test_perfectly_stacked_separates_deterministically():
     def push_once():
         a, b = _two_players()
         a.rect.midbottom = (480, 410)
-        b.rect.midbottom = (480, 410)   # exactly stacked
+        b.rect.midbottom = (480, 410)  # exactly stacked
         resolve_player_push([a, b])
         return a.rect.centerx, b.rect.centerx
 

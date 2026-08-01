@@ -12,7 +12,6 @@ Driven headlessly by faking `pygame.key.get_pressed()` so the tests don't depend
 on a live keyboard; the threshold is shrunk for speed (mirrors test_cli_hold_esc).
 """
 
-
 import pygame as pg
 import pytest
 

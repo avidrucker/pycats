@@ -6,6 +6,7 @@ Owner decision (recorded on #572): the exact accent blue is used for P2's ring s
 it matches the label, accepting that P2's ring measures 2.50:1 vs the dark bg
 (below the #546 3:1 target). P1 red stays at 3.77:1.
 """
+
 import pygame
 import pytest
 
@@ -26,10 +27,24 @@ pytestmark = pytest.mark.usefixtures("render_isolation")
 _RED = tuple(P1_UI_COLOR)
 _BLUE = tuple(P2_UI_COLOR)
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def _players():

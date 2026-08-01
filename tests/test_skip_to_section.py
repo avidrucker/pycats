@@ -15,7 +15,6 @@ Golden-safe: with no boundaries a skip intent is ignored -> show() every frame -
 byte-identical path. Runner tests use a spy presenter; presenter tests use __new__.
 """
 
-
 import pygame as pg
 import pytest
 
@@ -32,6 +31,7 @@ def _pg():
 
 
 # --- the runner seam: boundaries + the unrendered fast-forward loop ------------
+
 
 class _SpyPresenter:
     """Records which frames it was asked to render, and reports a skip intent on a
@@ -85,6 +85,7 @@ def test_skip_targets_the_nearest_boundary_even_if_unsorted():
 
 
 # --- the presenter intent: → reports "skip", other keys do not ----------------
+
 
 def _presenter(captions=()):
     p = LivePresenter.__new__(LivePresenter)
@@ -141,6 +142,7 @@ def test_other_key_during_a_dwell_does_not_report_skip(monkeypatch):
 
 
 # --- watch.py wiring: demo mode passes caption-start boundaries ----------------
+
 
 class _StubPresenter:
     """Stands in for LivePresenter so watch.main runs headless (no window)."""

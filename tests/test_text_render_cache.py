@@ -8,7 +8,6 @@ cached surface thereafter. Output must stay byte-identical (glyphs are
 non-overlapping side-by-side blits, so one-step vs two-step compositing match).
 """
 
-
 import pygame  # noqa: E402
 
 from pycats.text_utils import TextRenderer  # noqa: E402
@@ -27,7 +26,8 @@ def _direct_blit_reference(tr, text, size, color, surface, position, center):
     regular_font = tr._get_font(None, size)
     font_info = tr.unicode_font_name
     assert isinstance(font_info, dict) and font_info["name"] != "default", (
-        "reference assumes the common dict-with-named-font config")
+        "reference assumes the common dict-with-named-font config"
+    )
     unicode_font = tr._get_font(font_info["name"], size)
     supported = font_info["supported_chars"]
     text = str(text)
@@ -82,15 +82,13 @@ def test_distinct_key_recomposes():
     s = pygame.Surface((400, 80))
     tr.render_text_mixed("Play", 24, (255, 0, 0), s, (200, 40))
     m = tr.mixed_cache_misses
-    tr.render_text_mixed("Play", 24, (0, 255, 0), s, (200, 40))   # new colour
-    tr.render_text_mixed("Quit", 24, (255, 0, 0), s, (200, 40))   # new text
+    tr.render_text_mixed("Play", 24, (0, 255, 0), s, (200, 40))  # new colour
+    tr.render_text_mixed("Quit", 24, (255, 0, 0), s, (200, 40))  # new text
     assert tr.mixed_cache_misses == m + 2
 
 
 def test_cached_output_is_byte_identical_to_direct_blit():
-    for txt, center in [("Use W/S or ↑/↓ to navigate", True),
-                        ("Options ► ON", True),
-                        ("Status Bars: ON", False)]:
+    for txt, center in [("Use W/S or ↑/↓ to navigate", True), ("Options ► ON", True), ("Status Bars: ON", False)]:
         tr = _tr()
         a = pygame.Surface((520, 90))
         a.fill((10, 10, 20))

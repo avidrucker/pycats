@@ -6,6 +6,7 @@ hang->getup (#291) returns it once #14's auto-grab catches. On at level >= 5;
 off by default → level-less/low never runs (golden-safe). Deliberately imperfect
 (the PM CPU weakness, #251 Q4).
 """
+
 import random
 import types
 
@@ -23,9 +24,9 @@ def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None):
     s = types.SimpleNamespace()
     s.rect = pg.Rect(0, 0, 40, 60)
     s.rect.center = (cx, cy)
-    s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground,
-                                      hurt_timer=0, stun_timer=0,
-                                      grabbed_ledge=grabbed_ledge)
+    s.fighter = types.SimpleNamespace(
+        is_alive=alive, on_ground=on_ground, hurt_timer=0, stun_timer=0, grabbed_ledge=grabbed_ledge
+    )
     s.controls = _CTRL
     s.current_move = None
     s.move_frame = 0
@@ -39,41 +40,44 @@ def _recoverer():
 
 
 def _default():
-    return AttackerController(attacker_num=1, rng=random.Random(0))   # level=None
+    return AttackerController(attacker_num=1, rng=random.Random(0))  # level=None
 
 
-_LEFT = Ledge("left", ax=60, ay=300)     # off-stage is x < 60
+_LEFT = Ledge("left", ax=60, ay=300)  # off-stage is x < 60
 
 
 # ---- detection (pure) -------------------------------------------------------
 
+
 def test_self_recover_target_detects_own_off_stage():
     c = _recoverer()
-    off = _stub(30, 330, on_ground=False)          # airborne, past ax=60 to the left
+    off = _stub(30, 330, on_ground=False)  # airborne, past ax=60 to the left
     assert c._self_recover_target(off, [_LEFT]) is _LEFT
-    assert c._self_recover_target(_stub(30, 330, on_ground=True), [_LEFT]) is None   # grounded
+    assert c._self_recover_target(_stub(30, 330, on_ground=True), [_LEFT]) is None  # grounded
     assert c._self_recover_target(_stub(200, 330, on_ground=False), [_LEFT]) is None  # inbounds
-    assert c._self_recover_target(off, None) is None                # no ledges (golden-safe)
+    assert c._self_recover_target(off, None) is None  # no ledges (golden-safe)
 
 
 # ---- decision ---------------------------------------------------------------
 
+
 def test_off_stage_bot_moves_inward_and_jumps():
     c = _recoverer()
-    a = _stub(30, 330, on_ground=False)            # bot off-stage left, airborne
-    t = _stub(300, 300, on_ground=True)            # opponent safely on stage
+    a = _stub(30, 330, on_ground=False)  # bot off-stage left, airborne
+    t = _stub(300, 300, on_ground=True)  # opponent safely on stage
     # inward toward ax=60 (to the RIGHT of x=30) + jump for height.
     assert c.decide(a, t, 0, None, [_LEFT]) == {_CTRL["right"], _CTRL["up"]}
 
 
 def test_on_stage_bot_does_not_trigger_recovery():
     c = _recoverer()
-    a = _stub(120, 300, on_ground=True)            # grounded → no recovery override
+    a = _stub(120, 300, on_ground=True)  # grounded → no recovery override
     t = _stub(300, 300, on_ground=True)
     assert c.decide(a, t, 0, None, [_LEFT]) != {_CTRL["right"], _CTRL["up"]}
 
 
 # ---- golden-safety ----------------------------------------------------------
+
 
 def test_level_less_default_unaffected_by_ledges():
     a = _stub(30, 330, on_ground=False)
@@ -82,6 +86,7 @@ def test_level_less_default_unaffected_by_ledges():
 
 
 # ---- real loop (the #248 gotcha — recoverable scenario) ---------------------
+
 
 def _recovery_signals(recover_on):
     """Launch the bot off-stage just below the ledge lip (a recoverable spot, per the
@@ -99,10 +104,10 @@ def _recovery_signals(recover_on):
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
     ledges = ledges_from_platforms(plats)
     left = min(ledges, key=lambda L: L.ax)
-    p1.rect.center = (left.ax - 30, left.ay + 20)     # just off + just below the lip
+    p1.rect.center = (left.ax - 30, left.ay + 20)  # just off + just below the lip
     p1.fighter.on_ground = False
-    p1.fighter.vel.update(0, 2)                       # a gentle downward launch
-    p2.rect.center = (left.ax + 200, left.ay - 30)    # opponent safe, inboard
+    p1.fighter.vel.update(0, 2)  # a gentle downward launch
+    p2.rect.center = (left.ax + 200, left.ay - 30)  # opponent safe, inboard
     c1 = _recoverer() if recover_on else _default()
     attacks = pygame.sprite.Group()
     jumped_off_stage = reached_safety = False
@@ -110,7 +115,7 @@ def _recovery_signals(recover_on):
         off_stage_before = (not p1.fighter.on_ground) and p1.rect.centerx < left.ax
         fi = c1(p1, p2, f, attacks, ledges)
         if off_stage_before and p1.controls["up"] in fi.held:
-            jumped_off_stage = True             # recovery decision fired IN the loop
+            jumped_off_stage = True  # recovery decision fired IN the loop
         p1.update(fi, plats, attacks)
         if p1.fighter.grabbed_ledge is not None or p1.fighter.on_ground:
             reached_safety = True

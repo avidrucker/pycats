@@ -4,6 +4,7 @@ Mirrors the show_hitbox_overlay / show_status_timer_bars toggle chain:
 settings default + coercion, runtime live accessor, Options row label + activate.
 Default ON preserves the (new) always-visible strip; a user can hide it.
 """
+
 import json
 
 import pygame  # noqa: E402
@@ -11,10 +12,24 @@ import pygame  # noqa: E402
 from pycats import runtime_settings, settings  # noqa: E402
 from pycats.options_menu import OptionsMenu  # noqa: E402
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 # ---- settings.py: persisted default-ON + bool coercion --------------------- #

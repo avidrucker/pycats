@@ -30,8 +30,7 @@ _JAB_DAMAGE = 10
 _JAB_BKB = 30.0
 _JAB_KBG = 100.0
 
-CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-            "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
+CONTROLS = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e}
 RIGHT = pg.K_d
 
 
@@ -42,10 +41,12 @@ def _frame(held):
 def _setup(defender_vel_x=0.0):
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(200, 400, 600, 20), thin=False))
-    attacker = Player(x=360, y=400, controls=CONTROLS, color=P1_COLOR,
-                      eye_color=WHITE, char_name="Atk", facing_right=True)
-    defender = Player(x=420, y=400, controls=CONTROLS, color=P2_COLOR,
-                      eye_color=WHITE, char_name="Def", facing_right=True)
+    attacker = Player(
+        x=360, y=400, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE, char_name="Atk", facing_right=True
+    )
+    defender = Player(
+        x=420, y=400, controls=CONTROLS, color=P2_COLOR, eye_color=WHITE, char_name="Def", facing_right=True
+    )
     empty = pg.sprite.Group()
     for _ in range(2):  # settle on platform
         attacker.update(_frame([]), plats, empty)
@@ -61,8 +62,13 @@ def _expected_launch(defender):
 
 
 def _jab(attacker):
-    hb = Hitbox(circle=Circle(dx=27, dy=30, r=12), damage=_JAB_DAMAGE,
-                angle=0, base_knockback=_JAB_BKB, knockback_growth=_JAB_KBG)
+    hb = Hitbox(
+        circle=Circle(dx=27, dy=30, r=12),
+        damage=_JAB_DAMAGE,
+        angle=0,
+        base_knockback=_JAB_BKB,
+        knockback_growth=_JAB_KBG,
+    )
     return Attack(owner=attacker, hitbox=hb, lifetime=1)  # horizontal +x
 
 
@@ -84,6 +90,7 @@ def test_stationary_knockback_unchanged():
 def test_hitstun_is_computed_from_knockback_not_fixed():
     """#40: hurt_timer comes from hitstun_frames(KB), not the old fixed 12."""
     from pycats.combat.knockback import hitstun_frames, knockback
+
     attacker, defender, *_ = _setup(defender_vel_x=0.0)
     defender.fighter.receive_hit(_jab(attacker))
     kb = knockback(defender.fighter.percent, _JAB_DAMAGE, defender.fighter.weight, _JAB_BKB, _JAB_KBG)
@@ -112,6 +119,7 @@ def test_launch_decays_each_hitstun_frame_not_constant():
     """#44: the launch must EASE OUT — vel.x strictly decreases every hitstun
     frame — instead of sliding at constant speed (the #43 'too hot' bug)."""
     from pycats.config import KNOCKBACK_DECAY
+
     attacker, defender, plats, empty = _setup(defender_vel_x=0.0)
     defender.platforms = plats
     defender.fighter.receive_hit(_jab(attacker))
@@ -128,5 +136,5 @@ def test_launch_decays_each_hitstun_frame_not_constant():
         defender.update(_frame([]), plats, empty)
         # within hitstun, only knockback decay touches vel.x (friction is skipped)
         assert defender.fighter.vel.x == pytest.approx(max(0.0, prev - KNOCKBACK_DECAY))
-        assert defender.fighter.vel.x < prev           # strictly eases out, not constant
+        assert defender.fighter.vel.x < prev  # strictly eases out, not constant
         prev = defender.fighter.vel.x

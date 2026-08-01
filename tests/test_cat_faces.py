@@ -6,6 +6,7 @@ emoji `🐱`) and replaced them with the pure-ASCII #110 heads: a profile head
 (flipped per facing) and a 3/4 head, drawn by a multi-line monospace block
 renderer that falls back to primitives when no monospace font is available.
 """
+
 import pygame
 
 from pycats import cat_faces
@@ -36,8 +37,8 @@ def test_face_style_label_is_bounds_safe():
 
 
 def test_ink_for_contrasts_with_the_body():
-    assert cat_faces.ink_for((255, 160, 64))[0] < 60   # light cat -> dark ink
-    assert cat_faces.ink_for((20, 20, 20))[0] > 200     # dark (void) cat -> light ink
+    assert cat_faces.ink_for((255, 160, 64))[0] < 60  # light cat -> dark ink
+    assert cat_faces.ink_for((20, 20, 20))[0] > 200  # dark (void) cat -> light ink
 
 
 def test_render_face_primitives_and_unknown_are_none():

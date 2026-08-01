@@ -7,6 +7,7 @@ lifetime equals the move's `active`, that current_move clears at move end, that
 player.state == "attack" throughout startup->active->recovery, and that the
 chart sub-phases progress as move_frame advances.
 """
+
 import pygame
 from helpers import P1
 from helpers import ground as _ground
@@ -42,8 +43,9 @@ def test_attack_press_sets_current_move_and_zero_frame():
     assert p.current_move is p.fighter_data.moves["attack"]
     # attack_timer set to full move duration for legacy/label classification
     m = p.current_move
-    assert p.attack_timer == m.startup + m.active + m.recovery - 1 or \
-        p.attack_timer == m.startup + m.active + m.recovery
+    assert (
+        p.attack_timer == m.startup + m.active + m.recovery - 1 or p.attack_timer == m.startup + m.active + m.recovery
+    )
     assert p.done_attacking is False
 
 
@@ -91,8 +93,7 @@ def test_hitbox_spawns_once_only_in_active_window():
     # startup < move_frame <= startup + active
     sf = spawned_frames[0]
     assert m.startup < sf <= m.startup + m.active, (
-        f"spawn at move_frame={sf} outside active window "
-        f"({m.startup}, {m.startup + m.active}]"
+        f"spawn at move_frame={sf} outside active window ({m.startup}, {m.startup + m.active}]"
     )
 
 
@@ -126,9 +127,7 @@ def test_attack_lifetime_equals_active():
     for _ in range(total):
         if len(grp) > 0 and atk is None:
             atk = next(iter(grp))
-            assert atk.frames_left == m.active, (
-                f"lifetime {atk.frames_left} != active {m.active}"
-            )
+            assert atk.frames_left == m.active, f"lifetime {atk.frames_left} != active {m.active}"
             break
         p.update(_noop(), platforms, grp)
     assert atk is not None, "Attack was never spawned"
@@ -146,10 +145,7 @@ def test_current_move_clears_at_move_end():
     # Run exactly enough frames for the move to complete.
     for _ in range(total - 1):
         p.update(_noop(), platforms, grp)
-    assert p.current_move is None, (
-        f"current_move not cleared after {total} frames; "
-        f"move_frame={p.move_frame}"
-    )
+    assert p.current_move is None, f"current_move not cleared after {total} frames; move_frame={p.move_frame}"
 
 
 def test_state_is_attack_throughout_move():
@@ -165,9 +161,7 @@ def test_state_is_attack_throughout_move():
     # Throughout startup, active, recovery the flat label stays "attack".
     for _ in range(total - 2):
         p.update(_noop(), platforms, grp)
-        assert p.state == "attack", (
-            f"state={p.state} at move_frame={p.move_frame}"
-        )
+        assert p.state == "attack", f"state={p.state} at move_frame={p.move_frame}"
 
 
 def test_chart_subphases_progress():

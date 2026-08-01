@@ -19,6 +19,7 @@ crouch/prone numbers), so these tests pin the *mechanism* — monotonic, the two
 extremes, airborne-fixed, and the end-to-end launch through receive_hit — not
 brittle magic angles.
 """
+
 import math
 from types import SimpleNamespace
 
@@ -37,12 +38,19 @@ from pycats.config import (
 from pycats.core.input import InputFrame
 from pycats.entities import Player
 
-_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
-                 down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
-                 shield=pygame.K_x)
+_CONTROLS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
 
 
 # ---------------------------------------------------------------- pure formula
+
 
 def test_sentinel_is_361():
     assert SAKURAI_ANGLE_CODE == 361
@@ -61,8 +69,7 @@ def test_grounded_weak_is_flat():
 
 def test_grounded_strong_is_capped_at_max():
     """A strong grounded hit (above the high threshold) caps at the max angle."""
-    assert (sakurai_angle(SAKURAI_GROUNDED_HIGH_KB + 1.0, on_ground=True)
-            == SAKURAI_GROUNDED_MAX_DEG)
+    assert sakurai_angle(SAKURAI_GROUNDED_HIGH_KB + 1.0, on_ground=True) == SAKURAI_GROUNDED_MAX_DEG
 
 
 def test_grounded_scales_monotonically_between_thresholds():
@@ -83,9 +90,9 @@ def test_grounded_max_is_pm_starting_value():
 
 # ----------------------------------------------------------- end-to-end launch
 
+
 def _mk():
-    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P", facing_right=True)
+    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="P", facing_right=True)
 
 
 def _settle(p, plats, n=3):
@@ -95,8 +102,7 @@ def _settle(p, plats, n=3):
 
 
 def _atk(attacker, damage=10.0, bkb=30.0, kbg=100.0, angle=0):
-    return SimpleNamespace(owner=attacker, damage=damage, base_knockback=bkb,
-                           knockback_growth=kbg, angle=angle)
+    return SimpleNamespace(owner=attacker, damage=damage, base_knockback=bkb, knockback_growth=kbg, angle=angle)
 
 
 def _launch_angle_deg(vx, vy):

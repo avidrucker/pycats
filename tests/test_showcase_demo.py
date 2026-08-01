@@ -19,7 +19,6 @@ also doesn't emit STATE events for `ledge_hang`, so those states are read from t
 snapshot state (part index 1), not the event-log.
 """
 
-
 import pytest
 
 from pycats.config import SHIELD_DRAIN_PER_FRAME
@@ -31,8 +30,9 @@ from pycats.sim.runner import KEYMAPS, build_stage, run_battle
 
 def _run_showcase():
     d = DEMOS["showcase"]
-    snaps = run_battle(frame_inputs=demo_timeline(d, KEYMAPS), frames=demo_frames(d),
-                       p1_char=d.p1_char, p2_char=d.p2_char)
+    snaps = run_battle(
+        frame_inputs=demo_timeline(d, KEYMAPS), frames=demo_frames(d), p1_char=d.p1_char, p2_char=d.p2_char
+    )
     return d, snaps
 
 
@@ -115,9 +115,9 @@ def test_beat1_approach_closes_the_distance(showcase_run):
 def test_beat2_double_jump_is_airborne_in_window(showcase_run):
     _d, snaps, caps = showcase_run
     airborne_jump = any(
-        _snap(snaps, f, 0)[_JUMPS] < _snap(snaps, f - 1, 0)[_JUMPS]
-        and not _snap(snaps, f - 1, 0)[_ON_GROUND]
-        for f in _frames(caps, snaps, 1, lo=1))
+        _snap(snaps, f, 0)[_JUMPS] < _snap(snaps, f - 1, 0)[_JUMPS] and not _snap(snaps, f - 1, 0)[_ON_GROUND]
+        for f in _frames(caps, snaps, 1, lo=1)
+    )
     assert airborne_jump, "an airborne (second) jump should occur inside the double-jump beat's window"
 
 
@@ -136,9 +136,9 @@ def test_beat4_shield_blocks_a_hit_in_window(showcase_run):
     # frame drop beyond passive, while shielding, is therefore a block.
     blocked = any(
         _snap(snaps, f - 1, 0)[_STATE] == "shield"
-        and (_snap(snaps, f - 1, 0)[_SHIELD_HP] - _snap(snaps, f, 0)[_SHIELD_HP])
-        > SHIELD_DRAIN_PER_FRAME + 0.1
-        for f in _frames(caps, snaps, 3, lo=1))
+        and (_snap(snaps, f - 1, 0)[_SHIELD_HP] - _snap(snaps, f, 0)[_SHIELD_HP]) > SHIELD_DRAIN_PER_FRAME + 0.1
+        for f in _frames(caps, snaps, 3, lo=1)
+    )
     assert blocked, "the shield beat should show P1 blocking a hit (shield_hp drops beyond passive) in its window"
 
 
@@ -158,10 +158,7 @@ def test_beat6_fireball_projectile_in_flight_in_window(showcase_run):
     idx = fire[0]
     p1_name = snaps[0][0][0][0]  # P1 (Nalio)'s char_name — ties the projectile to its owner
     # snaps[f] = (players, atk, phase, winner); atk entry = (x,y,frames_left,owner,active,cx,cy,r)
-    active = any(
-        any(a[3] == p1_name and a[4] for a in snaps[f][1])
-        for f in _frames(caps, snaps, idx)
-    )
+    active = any(any(a[3] == p1_name and a[4] for a in snaps[f][1]) for f in _frames(caps, snaps, idx))
     assert active, "Nalio's fireball projectile should be active in the fireball beat's window"
 
 
@@ -179,7 +176,8 @@ def test_beat8_ledge_hang_is_held_in_window(showcase_run):
     _d, snaps, caps = showcase_run
     held = sum(1 for f in _frames(caps, snaps, 7) if _snap(snaps, f, 0)[_STATE] == "ledge_hang")
     assert held >= _LEDGE_HANG_MIN_FRAMES, (
-        f"the edge-grab beat should hold the ledge >= {_LEDGE_HANG_MIN_FRAMES} frames (got {held})")
+        f"the edge-grab beat should hold the ledge >= {_LEDGE_HANG_MIN_FRAMES} frames (got {held})"
+    )
 
 
 def test_beat9_ledge_recovery_climbs_onto_stage(showcase_run):
@@ -197,7 +195,8 @@ def test_beat9_ledge_recovery_climbs_onto_stage(showcase_run):
     assert last[_STATE] != "ledge_hang", "P1 should be off the ledge by the end of the recovery beat"
     assert last[_IS_ALIVE] and last[_LIVES] == snaps[0][0][0][_LIVES], "P1 should recover without losing a stock"
     assert plat.left <= last[_RECT_X] <= plat.right, (
-        f"P1 should end on the platform (x={last[_RECT_X]} within [{plat.left}, {plat.right}])")
+        f"P1 should end on the platform (x={last[_RECT_X]} within [{plat.left}, {plat.right}])"
+    )
 
 
 def test_late_payoff_beats_freeze_on_their_action_frame(showcase_run):

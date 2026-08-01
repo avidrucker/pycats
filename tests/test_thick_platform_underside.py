@@ -9,6 +9,7 @@ This drives the real `Player.update` loop: a fighter stands on a floor and jumps
 straight up into a thick platform acting as a ceiling, and we assert it never
 penetrates above the ceiling's bottom face.
 """
+
 import pygame
 from helpers import P1
 
@@ -28,8 +29,7 @@ def _stage():
 def _jump_into_ceiling():
     platforms, ceiling, floor = _stage()
     # Stand centred under the ceiling (x-band); midbottom on the floor top (y=300).
-    p = Player(300, 300, P1, (255, 160, 64), eye_color=(0, 0, 0),
-               char_name="P1", facing_right=True)
+    p = Player(300, 300, P1, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
     attacks = pygame.sprite.Group()
     noop = InputFrame(set(), set(), set())
     jump = InputFrame(held={P1["up"]}, pressed={P1["up"]}, released=set())
@@ -41,8 +41,8 @@ def _jump_into_ceiling():
 
     min_top = p.rect.top
     penetrated = False
-    p.update(jump, platforms, attacks)            # launch
-    for _ in range(30):                           # rise, hit ceiling, fall back
+    p.update(jump, platforms, attacks)  # launch
+    for _ in range(30):  # rise, hit ceiling, fall back
         p.update(noop, platforms, attacks)
         min_top = min(min_top, p.rect.top)
         # penetration = the body crossed ABOVE the ceiling's bottom face
@@ -55,8 +55,7 @@ def test_thick_platform_underside_blocks_upward_entry():
     p, ceiling, min_top, penetrated = _jump_into_ceiling()
     # Non-vacuous: the jump must actually carry the head up to the ceiling.
     assert min_top <= ceiling.rect.bottom + 4, (
-        f"jump never reached the ceiling (min_top={min_top}, "
-        f"ceiling bottom={ceiling.rect.bottom}) — fixture too weak")
+        f"jump never reached the ceiling (min_top={min_top}, ceiling bottom={ceiling.rect.bottom}) — fixture too weak"
+    )
     # The body must never clip up through the underside.
-    assert not penetrated, (
-        "fighter clipped up through the thick platform underside")
+    assert not penetrated, "fighter clipped up through the thick platform underside"

@@ -7,6 +7,7 @@ it lands. (Wavedash — air dodge into the ground → traction slide — is defe
 #184b.) Velocity-magnitude assertions also live in tests/test_dodge_mechanics.py;
 this file pins the helpless state machine + the SET (not add) semantics.
 """
+
 import pygame as pg
 
 from pycats.config import DODGE_AIR_SPEED, DODGE_TIME, P1_COLOR, WHITE
@@ -15,8 +16,12 @@ from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
 CONTROLS = {
-    "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-    "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e,
+    "left": pg.K_a,
+    "right": pg.K_d,
+    "up": pg.K_w,
+    "down": pg.K_s,
+    "shield": pg.K_q,
+    "attack": pg.K_e,
 }
 SHIELD, RIGHT, LEFT, UP, ATTACK = pg.K_q, pg.K_d, pg.K_a, pg.K_w, pg.K_e
 
@@ -30,8 +35,7 @@ def _high_airborne(floor_y=2000):
     helpless window plays out before landing)."""
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(0, floor_y, 960, 40), thin=False))
-    p = Player(x=300, y=100, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE,
-               char_name="AirCat", facing_right=True)
+    p = Player(x=300, y=100, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE, char_name="AirCat", facing_right=True)
     for _ in range(3):
         p.update(_frame(set(), set()), plats, pg.sprite.Group())
     assert not p.fighter.on_ground, "fixture precondition: airborne"

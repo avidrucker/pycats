@@ -8,6 +8,7 @@ draw_controls, so adding a row changes both sides identically and stays byte-equ
 This capture test is the able-to-fail guard: without the #462 row no 'Smash:' line
 is emitted, so test_smash_row_present_after_special fails.
 """
+
 import pygame
 
 from pycats import text_utils
@@ -20,8 +21,16 @@ class _Player:
 
 
 # A full default-style P1 keymap incl. the smash binding (game.py P1 smash = K_b).
-_FULL = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-             attack=pygame.K_v, shield=pygame.K_x, special=pygame.K_c, smash=pygame.K_b)
+_FULL = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    shield=pygame.K_x,
+    special=pygame.K_c,
+    smash=pygame.K_b,
+)
 
 
 def _capture_lines(monkeypatch, controls, topright=False):

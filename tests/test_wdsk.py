@@ -9,6 +9,7 @@ with `percent=10, damage=s`.
 A `Hitbox` may carry `set_knockback` (the WDSK value); None = normal percent
 scaling (today's behavior). Opt-in, so goldens stay byte-identical.
 """
+
 from types import SimpleNamespace
 
 import pygame
@@ -18,12 +19,19 @@ from pycats.combat.data import Circle, Hitbox
 from pycats.combat.knockback import knockback, set_knockback
 from pycats.entities import Player
 
-_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
-                 down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
-                 shield=pygame.K_x)
+_CONTROLS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
 
 
 # ---------------------------------------------------------------- Cycle 1: schema
+
 
 def test_hitbox_set_knockback_defaults_to_none():
     hb = Hitbox(circle=Circle(0, 0, 10), damage=3.0, angle=85)
@@ -36,6 +44,7 @@ def test_hitbox_accepts_set_knockback():
 
 
 # ---------------------------------------------------------- Cycle 2: pure formula
+
 
 def test_set_knockback_equals_normal_formula_at_percent_10():
     """Set knockback IS the normal formula with percent fixed at 10 and damage =
@@ -53,15 +62,20 @@ def test_set_knockback_is_weight_dependent():
 
 # ------------------------------------------------- Cycle 3: through receive_hit
 
+
 def _mk():
-    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P", facing_right=True)
+    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="P", facing_right=True)
 
 
 def _atk(attacker, damage=3.0, bkb=0.0, kbg=100.0, angle=0, set_knockback=None):
-    return SimpleNamespace(owner=attacker, damage=damage, base_knockback=bkb,
-                           knockback_growth=kbg, angle=angle,
-                           set_knockback=set_knockback)
+    return SimpleNamespace(
+        owner=attacker,
+        damage=damage,
+        base_knockback=bkb,
+        knockback_growth=kbg,
+        angle=angle,
+        set_knockback=set_knockback,
+    )
 
 
 def _struck_vx(set_knockback, victim_percent, weight=100):

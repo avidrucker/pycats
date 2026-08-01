@@ -3,6 +3,7 @@
 runtime_settings mirrors the persisted schema but holds the *live* values the
 render path / game loop read so the Options menu can change them mid-session.
 """
+
 from pycats import runtime_settings, settings
 
 

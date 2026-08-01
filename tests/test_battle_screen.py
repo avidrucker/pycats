@@ -6,14 +6,29 @@ These tests pin its construction and deterministic stepping; a separate cross-ch
 (test_battle_screen_runner_parity) proves step() matches the golden-covered
 sim/runner.py path.
 """
+
 import pygame
 
 from pycats.battle_screen import BattleScreen
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 
 def test_battle_screen_create_from_selection_builds_two_players():
@@ -47,7 +62,7 @@ def test_battle_screen_step_matches_runner_sim_path():
     runner_snaps = run_battle(frames=n, frame_inputs=frame_inputs)
 
     bs = BattleScreen(P1_KEYS, P2_KEYS)
-    bs.create_from_selection("calico", "tabby")   # == build_players() fighters
+    bs.create_from_selection("calico", "tabby")  # == build_players() fighters
     platforms = build_stage()
 
     class _M:  # BattleScreen owns no match engine; stub the match part of snapshot
@@ -68,6 +83,7 @@ def test_battle_screen_reset_restores_lives_and_clears_attacks():
     bs.player1.fighter.percent = 88.0
     bs.reset()
     from pycats.config import INITIAL_LIVES
+
     assert bs.player1.fighter.lives == INITIAL_LIVES
     assert bs.player1.fighter.percent == 0.0
     assert len(bs.attacks) == 0

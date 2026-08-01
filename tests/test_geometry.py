@@ -16,6 +16,7 @@ from pycats.combat.geometry import circle_overlap, circles_overlap, resolve_circ
 # circle_overlap — two absolute circles
 # ---------------------------------------------------------------------------
 
+
 class TestCircleOverlap:
     def test_clearly_overlapping_circles_return_true(self):
         # Two circles with centers 3 apart, radii 5 and 5 → dist(3) < sum(10)
@@ -109,6 +110,7 @@ class TestResolveCircle:
 # ---------------------------------------------------------------------------
 # circles_overlap — one circle vs list of absolute circles
 # ---------------------------------------------------------------------------
+
 
 class TestCirclesOverlap:
     def test_empty_list_returns_false(self):

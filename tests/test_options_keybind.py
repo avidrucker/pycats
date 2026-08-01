@@ -4,7 +4,6 @@ Drives OptionsMenu.update with synthetic `pressed` sets (the same edge set the g
 feeds it) and asserts the KeybindMenu state / bindings change. Headless (no render).
 """
 
-
 from pycats.core.keymap import Keymap
 from pycats.options_menu import OptionsMenu
 
@@ -28,10 +27,10 @@ def test_submode_attack_begins_capture_then_next_key_binds():
     om, p1, _p2 = _options()
     om.keybind_mode = True
     om.keybind.focus(0, "attack")
-    om.update({5})            # 'attack' key -> begin capture
+    om.update({5})  # 'attack' key -> begin capture
     assert om.keybind.capturing
-    om.input_cooldown = 0     # clear the nav cooldown for the next frame
-    om.update({99})           # a fresh key -> binds
+    om.input_cooldown = 0  # clear the nav cooldown for the next frame
+    om.update({99})  # a fresh key -> binds
     assert p1["attack"] == 99
     assert not om.keybind.capturing
 
@@ -42,7 +41,7 @@ def test_submode_conflict_is_flagged_and_not_applied():
     om.keybind.focus(0, "attack")
     om.update({5})
     om.input_cooldown = 0
-    om.update({7})            # 7 is already P1's 'shield' -> conflict
+    om.update({7})  # 7 is already P1's 'shield' -> conflict
     assert p1["attack"] == 5  # untouched
     assert "shield" in om.keybind.message
 
@@ -52,32 +51,54 @@ def test_submode_shield_resets_the_focused_player():
     om.keybind_mode = True
     om.keybind.focus(0, "attack")
     om.keybind.begin_capture()
-    om.keybind.capture_key(99)   # P1 attack -> 99
+    om.keybind.capture_key(99)  # P1 attack -> 99
     assert p1["attack"] == 99
     om.input_cooldown = 0
-    om.update({7})               # 'shield' key -> reset player 0
-    assert p1["attack"] == 5     # restored to factory
+    om.update({7})  # 'shield' key -> reset player 0
+    assert p1["attack"] == 5  # restored to factory
 
 
 def test_submode_special_exits_back_to_options():
     om, _p1, _p2 = _options()
     om.keybind_mode = True
-    om.update({6})               # 'special' key -> back
+    om.update({6})  # 'special' key -> back
     assert om.keybind_mode is False
 
 
 def test_keybind_view_renders_without_error():
     import pygame
+
     pygame.init()
     from pycats.config import MAIN_MENU_BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH
-    p1 = Keymap(dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-                     attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x, smash=pygame.K_b))
-    p2 = Keymap(dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-                     attack=pygame.K_SLASH, special=pygame.K_PERIOD, shield=pygame.K_COMMA, smash=pygame.K_QUOTE))
+
+    p1 = Keymap(
+        dict(
+            left=pygame.K_a,
+            right=pygame.K_d,
+            up=pygame.K_w,
+            down=pygame.K_s,
+            attack=pygame.K_v,
+            special=pygame.K_c,
+            shield=pygame.K_x,
+            smash=pygame.K_b,
+        )
+    )
+    p2 = Keymap(
+        dict(
+            left=pygame.K_LEFT,
+            right=pygame.K_RIGHT,
+            up=pygame.K_UP,
+            down=pygame.K_DOWN,
+            attack=pygame.K_SLASH,
+            special=pygame.K_PERIOD,
+            shield=pygame.K_COMMA,
+            smash=pygame.K_QUOTE,
+        )
+    )
     om = OptionsMenu(p1, p2)
     om.keybind_mode = True
     om.keybind.focus(0, "attack")
     om.keybind.begin_capture()
     surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    om.render(surf)                                  # must not raise
-    assert surf.get_at((5, 5))[:3] == MAIN_MENU_BG_COLOR   # the view filled the bg
+    om.render(surf)  # must not raise
+    assert surf.get_at((5, 5))[:3] == MAIN_MENU_BG_COLOR  # the view filled the bg

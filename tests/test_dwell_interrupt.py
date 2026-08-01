@@ -13,7 +13,6 @@ tick -> the dwell always runs its full `caption_hold_frames` -> identical to tod
 Hold-Esc-2s exit is #515 (out of scope here); this slice only permits an early exit.
 """
 
-
 import pygame as pg
 import pytest
 
@@ -46,6 +45,7 @@ def _timed_presenter(captions, cap_fps=False):
 
 # --- the pure any-key/quit classifier -----------------------------------------
 
+
 def test_dwell_interrupt_skips_on_any_keydown():
     # "Any key" is literal: Space, a letter, Esc — every KEYDOWN ends the dwell.
     assert LivePresenter._dwell_interrupt([pg.event.Event(pg.KEYDOWN, key=pg.K_SPACE)]) == "skip"
@@ -63,6 +63,7 @@ def test_dwell_interrupt_none_on_no_events():
 
 
 # --- the timed-dwell loop: full count untouched, early exit on a key ----------
+
 
 def _event_source(trigger_call, events):
     """A drop-in for pygame.event.get that returns `events` only on the
@@ -95,9 +96,7 @@ def test_any_key_ends_remaining_dwell_early(monkeypatch):
     p = _timed_presenter([Caption("beat", frames=(0, 5), dwell=10)])
     ticks = {"n": 0}
     p._tick = lambda: ticks.__setitem__("n", ticks["n"] + 1)
-    monkeypatch.setattr(
-        pr.pygame.event, "get", _event_source(3, [pg.event.Event(pg.KEYDOWN, key=pg.K_j)])
-    )
+    monkeypatch.setattr(pr.pygame.event, "get", _event_source(3, [pg.event.Event(pg.KEYDOWN, key=pg.K_j)]))
 
     p._hold(0)
     assert ticks["n"] == 3, "any key must end the remaining dwell at once"
@@ -107,8 +106,6 @@ def test_window_close_during_dwell_still_quits(monkeypatch):
     # QUIT must keep quitting the run (raise KeyboardInterrupt) — #514 doesn't weaken it.
     p = _timed_presenter([Caption("beat", frames=(0, 5), dwell=10)])
     p._tick = lambda: None
-    monkeypatch.setattr(
-        pr.pygame.event, "get", _event_source(0, [pg.event.Event(pg.QUIT)])
-    )
+    monkeypatch.setattr(pr.pygame.event, "get", _event_source(0, [pg.event.Event(pg.QUIT)]))
     with pytest.raises(KeyboardInterrupt):
         p._hold(0)

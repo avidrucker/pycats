@@ -8,6 +8,7 @@ reduction) is a separate follow-up.
 The golden replay never presses 'down', so existing goldens are unaffected;
 these tests pin the new behaviour.
 """
+
 import pygame
 from helpers import ground as _ground
 
@@ -15,14 +16,19 @@ from pycats.combat.data import Circle, FighterData, Hurtbox, load_fighter_data
 from pycats.core.input import InputFrame
 from pycats.entities import Player
 
-_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
-                 down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
-                 shield=pygame.K_x)
+_CONTROLS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
 
 
 def _mk():
-    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True)
+    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
 
 
 def _frame(*keys):
@@ -44,6 +50,7 @@ def _run(p, plats, frame, n=3):
 
 # --- Slice 1: per-cat crouch geometry on FighterData -------------------------
 
+
 def test_fighter_data_crouch_defaults_none():
     """A FighterData that doesn't define crouch can't crouch (crouch_size None)."""
     fd = FighterData(hurtbox=Hurtbox(circles=(Circle(0, 0, 1),)), moves={})
@@ -56,7 +63,7 @@ def test_nalio_has_crouch_geometry():
     fd = load_fighter_data("nalio")
     assert fd.crouch_size is not None
     w, h = fd.crouch_size
-    assert h < 60 and w == 40           # shorter than the 40x60 stand box
+    assert h < 60 and w == 40  # shorter than the 40x60 stand box
     assert isinstance(fd.crouch_hurtbox, Hurtbox)
     # crouch hurtbox sits lower than the standing one (top circle is lower)
     stand_top = min(c.dy - c.r for c in fd.hurtbox.circles)
@@ -65,6 +72,7 @@ def test_nalio_has_crouch_geometry():
 
 
 # --- Slices 2+3: crouch state + collision-Rect resize ------------------------
+
 
 def test_down_on_solid_ground_enters_crouch():
     p = _mk()
@@ -83,8 +91,8 @@ def test_crouch_resizes_collision_rect_feet_planted():
     assert p.rect.height == 60
     _run(p, plats, _frame("down"))
     assert p.state == "crouch"
-    assert p.rect.height == 40                 # squarish crouch box
-    assert p.rect.bottom == stand_bottom       # feet planted
+    assert p.rect.height == 40  # squarish crouch box
+    assert p.rect.bottom == stand_bottom  # feet planted
 
 
 def test_release_down_stands_back_up():
@@ -94,7 +102,7 @@ def test_release_down_stands_back_up():
     bottom = p.rect.bottom
     _run(p, plats, _frame("down"))
     assert p.state == "crouch"
-    _run(p, plats, _frame())                   # release down
+    _run(p, plats, _frame())  # release down
     assert p.state == "idle"
     assert p.rect.height == 60
     assert p.rect.bottom == bottom
@@ -111,15 +119,27 @@ def test_shield_plus_down_is_not_crouch():
 
 # --- Slice 4: crouching lowers the hurtbox (high attacks whiff) ---------------
 
+
 def _high_attack(owner, cx, cy, r=8):
     from types import SimpleNamespace
-    return SimpleNamespace(active=True, owner=owner, hit_cx=cx, hit_cy=cy,
-                           hit_r=r, disappear_on_hit=False, damage=10.0,
-                           base_knockback=0.0, knockback_growth=0.0, angle=0)
+
+    return SimpleNamespace(
+        active=True,
+        owner=owner,
+        hit_cx=cx,
+        hit_cy=cy,
+        hit_r=r,
+        disappear_on_hit=False,
+        damage=10.0,
+        base_knockback=0.0,
+        knockback_growth=0.0,
+        angle=0,
+    )
 
 
 def test_crouch_lowers_hurtbox_high_attack_whiffs():
     from pycats.systems import combat
+
     plats = _ground()
     attacker = _mk()
 
@@ -141,14 +161,14 @@ def test_crouch_lowers_hurtbox_high_attack_whiffs():
 
 # --- Slice 5: crouch scenario reaches the crouch state in the sim ------------
 
+
 def test_crouch_scenario_reaches_crouch():
     """A down-holding scenario actually reaches the crouch state through the full
     sim loop (the golden in test_golden.py guards byte-stability)."""
     from pycats.sim.input_script import InputSpan, compile_timeline
     from pycats.sim.runner import KEYMAPS, run_battle
+
     spans = [InputSpan(start=10, end=120, player=1, action="down")]
     frame_inputs = compile_timeline(spans, KEYMAPS)
     snaps = run_battle(frames=len(frame_inputs), frame_inputs=frame_inputs)
-    assert any(p[1] == "crouch" for snap in snaps for p in snap[0]), (
-        "scenario never reached crouch"
-    )
+    assert any(p[1] == "crouch" for snap in snaps for p in snap[0]), "scenario never reached crouch"

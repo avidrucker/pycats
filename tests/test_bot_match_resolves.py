@@ -23,6 +23,7 @@ stock is slow to close out for this particular seed (a separate difficulty-tunin
 concern), whereas KO *conversion* — the thing #292 was about — is immediate and
 robust.
 """
+
 import random
 
 from pycats.sim.controllers import AttackerController
@@ -43,8 +44,7 @@ def _run_l5_nalio_vs_birky(frames):
     rng = random.Random(3)  # the #292 report's seed
     c1 = AttackerController(attacker_num=1, level=5, rng=rng)
     c2 = AttackerController(attacker_num=2, level=5, rng=rng)
-    return run_battle(frames=frames, controllers=(c1, c2),
-                      p1_char="nalio", p2_char="birky", stop_on_match_over=True)
+    return run_battle(frames=frames, controllers=(c1, c2), p1_char="nalio", p2_char="birky", stop_on_match_over=True)
 
 
 def test_l5_bot_converts_a_ko():
@@ -67,6 +67,5 @@ def test_no_fighter_is_juggled_past_a_sane_percent():
     snaps = _run_l5_nalio_vs_birky(_FRAME_BUDGET)
     worst = max(max(s[0][0][_PERCENT], s[0][1][_PERCENT]) for s in snaps)
     assert worst < _SANE_PERCENT_CEILING, (
-        f"#292: a fighter was juggled to {worst:.0f}% without a KO "
-        f"(ceiling {_SANE_PERCENT_CEILING:.0f}%)"
+        f"#292: a fighter was juggled to {worst:.0f}% without a KO (ceiling {_SANE_PERCENT_CEILING:.0f}%)"
     )

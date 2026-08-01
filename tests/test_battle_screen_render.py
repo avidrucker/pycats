@@ -9,6 +9,7 @@ test_battle_screen_step_matches_runner_sim_path.
 draw_hud / draw_controls are imported from pycats.render_battle (their slice-2b
 home, beside their sibling drawers render_battle / render_attacks).
 """
+
 import pygame
 
 from pycats import runtime_settings, settings, text_utils
@@ -30,10 +31,24 @@ from pycats.render_battle import (
     render_hitbox_overlay,
 )
 
-_P1 = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w, down=pygame.K_s,
-           attack=pygame.K_v, special=pygame.K_c, shield=pygame.K_x)
-_P2 = dict(left=pygame.K_LEFT, right=pygame.K_RIGHT, up=pygame.K_UP, down=pygame.K_DOWN,
-           attack=pygame.K_PERIOD, special=pygame.K_SLASH, shield=pygame.K_RSHIFT)
+_P1 = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
+_P2 = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_PERIOD,
+    special=pygame.K_SLASH,
+    shield=pygame.K_RSHIFT,
+)
 
 _SENTINEL = (1, 2, 3)  # != BG_COLOR and != any fighter color; render() must paint over it
 
@@ -52,8 +67,11 @@ def _battle():
 def _draw_pause_hint(surface):
     """The static 'P: Pause Game' battle-HUD hint (#279 moved it into render())."""
     text_utils.render_text(
-        surface, "P: Pause Game",
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3), 24, WHITE,
+        surface,
+        "P: Pause Game",
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3),
+        24,
+        WHITE,
         right_align=True,
     )
 

@@ -3,6 +3,7 @@
 A demo composes input-script spans with captions over one timeline; captions can also
 come from an editable SRT file. All pure data + pure functions (no sim run needed).
 """
+
 from pycats.sim.captions import TOP_CENTER
 from pycats.sim.demo import (
     DEMOS,
@@ -18,15 +19,15 @@ from pycats.sim.runner import KEYMAPS
 
 # --- SRT captions --------------------------------------------------------------
 
+
 def test_captions_from_srt_maps_timestamps_to_frame_windows():
-    srt = ("1\n00:00:00,000 --> 00:00:01,000\nHello\n\n"
-           "2\n00:00:01,000 --> 00:00:02,500\nWorld\n")
+    srt = "1\n00:00:00,000 --> 00:00:01,000\nHello\n\n2\n00:00:01,000 --> 00:00:02,500\nWorld\n"
     caps = captions_from_srt(srt, fps=60)
     assert len(caps) == 2
     assert caps[0].text == "Hello"
-    assert caps[0].frames == (0, 59)      # [0s, 1s) -> frames 0..59 at 60fps
+    assert caps[0].frames == (0, 59)  # [0s, 1s) -> frames 0..59 at 60fps
     assert caps[1].text == "World"
-    assert caps[1].frames == (60, 149)    # [1s, 2.5s) -> 60..149
+    assert caps[1].frames == (60, 149)  # [1s, 2.5s) -> 60..149
 
 
 def test_captions_from_srt_joins_multiline_text():
@@ -43,9 +44,10 @@ def test_captions_from_srt_honors_anchor_default():
 
 # --- demo segment / composition ------------------------------------------------
 
+
 def test_segment_window_derived_from_spans():
     seg = DemoSegment("jump", spans=(InputSpan(50, 55, 1, "up"),))
-    assert seg.window() == (50, 54)       # [start, end) -> inclusive last frame
+    assert seg.window() == (50, 54)  # [start, end) -> inclusive last frame
 
 
 def test_segment_window_explicit_overrides():
@@ -54,12 +56,15 @@ def test_segment_window_explicit_overrides():
 
 
 def test_demo_captions_one_per_segment_with_windows():
-    demo = Demo("t", segments=(
-        DemoSegment("A", start=0, end=10, anchor=TOP_CENTER),
-        DemoSegment("B", start=11, end=20),
-    ))
+    demo = Demo(
+        "t",
+        segments=(
+            DemoSegment("A", start=0, end=10, anchor=TOP_CENTER),
+            DemoSegment("B", start=11, end=20),
+        ),
+    )
     caps = demo_captions(demo)
-    assert [c.text for c in caps] == ["1/2 — A", "2/2 — B"]   # numbered (#356)
+    assert [c.text for c in caps] == ["1/2 — A", "2/2 — B"]  # numbered (#356)
     assert caps[0].anchor == TOP_CENTER and caps[0].frames == (0, 10)
     assert caps[1].frames == (11, 20)
 
@@ -68,19 +73,21 @@ def test_demo_captions_are_numbered():
     """#356: each demo caption is prefixed with its 1-based position `i/n — ` so the
     viewer can track the beat; the numbering derives from segment order + count, so
     reordering/adding a segment renumbers automatically."""
-    demo = Demo("t", segments=(
-        DemoSegment("Approach", start=0, end=10),
-        DemoSegment("Jump", start=11, end=20),
-        DemoSegment("Attack", start=21, end=30),
-    ))
-    assert [c.text for c in demo_captions(demo)] == [
-        "1/3 — Approach", "2/3 — Jump", "3/3 — Attack"]
+    demo = Demo(
+        "t",
+        segments=(
+            DemoSegment("Approach", start=0, end=10),
+            DemoSegment("Jump", start=11, end=20),
+            DemoSegment("Attack", start=21, end=30),
+        ),
+    )
+    assert [c.text for c in demo_captions(demo)] == ["1/3 — Approach", "2/3 — Jump", "3/3 — Attack"]
 
 
 def test_srt_captions_are_not_numbered():
     """#356: numbering is demo-choreography only — SRT/--captions overlays stay raw."""
     caps = captions_from_srt("1\n00:00:00,000 --> 00:00:01,000\nHello\n")
-    assert caps[0].text == "Hello"   # no "1/1 — " prefix
+    assert caps[0].text == "Hello"  # no "1/1 — " prefix
 
 
 def test_showcase_captions_are_numbered():
@@ -91,15 +98,18 @@ def test_showcase_captions_are_numbered():
 
 
 def test_demo_timeline_compiles_all_segment_spans():
-    demo = Demo("t", segments=(
-        DemoSegment("walk", spans=(InputSpan(0, 5, 1, "right"),)),
-        DemoSegment("jump", spans=(InputSpan(10, 11, 1, "up"),)),
-    ))
+    demo = Demo(
+        "t",
+        segments=(
+            DemoSegment("walk", spans=(InputSpan(0, 5, 1, "right"),)),
+            DemoSegment("jump", spans=(InputSpan(10, 11, 1, "up"),)),
+        ),
+    )
     tl = demo_timeline(demo, KEYMAPS)
-    assert len(tl) == 11                  # max span end
-    assert tl[0].held and tl[4].held      # P1 walking frames 0..4
-    assert not tl[7].held                 # gap
-    assert tl[10].held                    # P1 jump frame 10
+    assert len(tl) == 11  # max span end
+    assert tl[0].held and tl[4].held  # P1 walking frames 0..4
+    assert not tl[7].held  # gap
+    assert tl[10].held  # P1 jump frame 10
     assert demo_frames(demo) == 11
 
 

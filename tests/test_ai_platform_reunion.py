@@ -6,6 +6,7 @@ ran the seed-3 `nalio` L5 vs `birky` L9 match the full 30s (1800f) with no engag
 The fix PULSES the jump-up so a fresh press re-fires the jump and the bot climbs. This
 asserts the sustained x-aligned / different-platform standstill is gone.
 """
+
 import random
 
 from pycats.sim.controllers import AttackerController
@@ -17,14 +18,13 @@ def _longest_standoff(p1_char, p2_char, l1, l2, seed=3, frames=1800):
     different platforms (a not-engaging vertical standstill)."""
     rng = random.Random(seed)
     cs = (AttackerController(1, level=l1, rng=rng), AttackerController(2, level=l2, rng=rng))
-    snaps = run_battle(frames=frames, controllers=cs, p1_char=p1_char, p2_char=p2_char,
-                       stop_on_match_over=True)
+    snaps = run_battle(frames=frames, controllers=cs, p1_char=p1_char, p2_char=p2_char, stop_on_match_over=True)
     best = cur = 0
     for sn in snaps:
-        a, b = sn[0][0], sn[0][1]          # P1, P2 parts: (name, state, x, y, ...)
+        a, b = sn[0][0], sn[0][1]  # P1, P2 parts: (name, state, x, y, ...)
         dx = abs((a[2] + 20) - (b[2] + 20))
         dy = abs(a[3] - b[3])
-        if dx < 60 and dy > 80:            # x-aligned but on different platforms
+        if dx < 60 and dy > 80:  # x-aligned but on different platforms
             cur += 1
             best = max(best, cur)
         else:

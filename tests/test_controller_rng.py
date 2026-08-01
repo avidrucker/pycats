@@ -11,20 +11,22 @@ so a seed change visibly changes shield timing while a fixed seed repeats.
 Revert-the-fix check: if IdlerController.decide() ignores self.rng (no jitter
 wired), the two-distinct-seeds-diverge test goes red (both streams identical).
 """
+
 import random
 from types import SimpleNamespace
 
 from pycats.sim.controllers import AttackerController, BaseController, IdlerController
 
-CONTROLS = {"left": "L", "right": "R", "up": "U", "down": "D",
-            "shield": "S", "attack": "A"}
+CONTROLS = {"left": "L", "right": "R", "up": "U", "down": "D", "shield": "S", "attack": "A"}
 
 
 def _idle_player():
     # IdlerController.decide only reads a.controls["shield"]; position-independent.
-    return SimpleNamespace(controls=CONTROLS,
-                           fighter=SimpleNamespace(is_alive=True, on_ground=True),
-                           rect=SimpleNamespace(centerx=400, centery=400))
+    return SimpleNamespace(
+        controls=CONTROLS,
+        fighter=SimpleNamespace(is_alive=True, on_ground=True),
+        rect=SimpleNamespace(centerx=400, centery=400),
+    )
 
 
 def _run_idler(seed, *, chance=0.5, n=80, rng="seed"):
@@ -38,6 +40,7 @@ def _run_idler(seed, *, chance=0.5, n=80, rng="seed"):
 
 
 # --- the seam: injected, seeded, repeatable -----------------------------------
+
 
 def test_same_seed_same_inputs_give_identical_emitted_stream():
     assert _run_idler(7) == _run_idler(7)
@@ -66,6 +69,7 @@ def test_default_idler_without_jitter_is_still_a_noop():
 
 # --- RNG stays at the edge: a non-consuming archetype is seed-invariant --------
 
+
 def _attacker_player(cx):
     return SimpleNamespace(
         controls=CONTROLS,
@@ -89,5 +93,4 @@ def test_attacker_ignores_rng_so_goldens_are_seed_invariant():
 
 
 def test_base_controller_accepts_rng_kwarg():
-    assert isinstance(BaseController(attacker_num=1, rng=random.Random(1)).rng,
-                      random.Random)
+    assert isinstance(BaseController(attacker_num=1, rng=random.Random(1)).rng, random.Random)

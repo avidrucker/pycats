@@ -9,20 +9,26 @@ landing-velocity trigger is #145; getup-roll / getup-attack are #146.
 The golden replay never forces prone, so existing goldens are unaffected; these
 tests pin the new behaviour.
 """
+
 import pygame
 from helpers import ground as _ground
 
 from pycats.core.input import InputFrame
 from pycats.entities import Player
 
-_CONTROLS = dict(left=pygame.K_a, right=pygame.K_d, up=pygame.K_w,
-                 down=pygame.K_s, attack=pygame.K_v, special=pygame.K_c,
-                 shield=pygame.K_x)
+_CONTROLS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+)
 
 
 def _mk():
-    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0),
-                  char_name="P1", facing_right=True)
+    return Player(100, 100, _CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="P1", facing_right=True)
 
 
 def _frame(*keys):
@@ -44,6 +50,7 @@ def _run(p, plats, frame, n=1):
 
 # --- Slice 1: force-entry into prone -----------------------------------------
 
+
 def test_force_prone_enters_prone():
     p = _mk()
     plats = _ground()
@@ -54,6 +61,7 @@ def test_force_prone_enters_prone():
 
 
 # --- Slice 2: getup window — prone persists, then stands to idle --------------
+
 
 def test_prone_persists_then_stands_up():
     p = _mk()
@@ -70,6 +78,7 @@ def test_prone_persists_then_stands_up():
 
 
 # --- Slice 3: only stand-up is allowed — actions are locked out --------------
+
 
 def test_prone_locks_out_actions():
     p = _mk()
@@ -88,6 +97,7 @@ def test_prone_locks_out_actions():
 
 # --- Slice 4: prone runtime drives a stable state sequence -------------------
 
+
 def test_prone_state_sequence_reaches_prone_then_stands():
     """A force_prone + getup scenario produces a prone run that stands back up
     (the golden in test_golden.py guards byte-stability)."""
@@ -105,6 +115,7 @@ def test_prone_state_sequence_reaches_prone_then_stands():
 
 # --- #146: getup-roll — a directional getup with intangibility ----------------
 
+
 def test_getup_roll_when_direction_held_rolls_out_intangible():
     """Holding a direction as the getup window ends rolls out — an intangible,
     displaced getup — instead of the neutral stand to idle."""
@@ -113,11 +124,11 @@ def test_getup_roll_when_direction_held_rolls_out_intangible():
     _settle(p, plats)
     x0 = p.fighter.rect.x
     p.force_prone(3)
-    for _ in range(3):                      # hold 'right' through the prone window
+    for _ in range(3):  # hold 'right' through the prone window
         _run(p, plats, _frame("right"))
     assert p.state == "getup_roll", "a held direction at getup should roll, not stand"
     assert p.fighter.intangible, "getup-roll grants intangibility"
-    for _ in range(30):                     # roll plays out -> recovers to idle
+    for _ in range(30):  # roll plays out -> recovers to idle
         _run(p, plats, _frame())
         if p.state == "idle":
             break
@@ -133,11 +144,12 @@ def test_neutral_getup_still_stands_without_direction():
     _settle(p, plats)
     p.force_prone(3)
     for _ in range(4):
-        _run(p, plats, _frame())            # no direction
+        _run(p, plats, _frame())  # no direction
     assert p.state == "idle"
 
 
 # --- #225 (#146 slice 2): getup-attack — a wake-up attack out of prone ---------
+
 
 def test_getup_attack_when_attack_held_swings_intangible_and_spawns_hitbox():
     """Holding attack as the getup window ends performs a wake-up attack — a
@@ -147,12 +159,12 @@ def test_getup_attack_when_attack_held_swings_intangible_and_spawns_hitbox():
     _settle(p, plats)
     grp = pygame.sprite.Group()
     p.force_prone(3)
-    for _ in range(3):                       # hold attack through the prone window
+    for _ in range(3):  # hold attack through the prone window
         p.update(_frame("attack"), plats, grp)
     assert p.state == "getup_attack", "attack held at getup should swing, not stand"
     assert p.fighter.intangible, "getup-attack has getup intangibility"
     spawned = len(grp) > 0
-    for _ in range(30):                      # the swing spawns a hitbox, then recovers
+    for _ in range(30):  # the swing spawns a hitbox, then recovers
         p.update(_frame(), plats, grp)
         spawned = spawned or len(grp) > 0
         if p.state == "idle":
@@ -175,6 +187,7 @@ def test_getup_roll_beats_getup_attack_when_both_held():
 
 # --- #173: prone posture geometry — body lowers, high attacks whiff -----------
 
+
 def test_prone_resizes_collision_rect_feet_planted():
     """While prone the body Rect is shorter than the 40x60 stand box AND shorter
     than the 40x40 crouch box (lying-down posture), with the bottom unchanged."""
@@ -184,10 +197,10 @@ def test_prone_resizes_collision_rect_feet_planted():
     stand_bottom = p.rect.bottom
     assert p.rect.height == 60
     p.force_prone(20)
-    _run(p, plats, _frame())                   # one update applies the resize
+    _run(p, plats, _frame())  # one update applies the resize
     assert p.state == "prone"
-    assert p.rect.height < 40                   # lower than the crouch box (40)
-    assert p.rect.bottom == stand_bottom        # feet planted
+    assert p.rect.height < 40  # lower than the crouch box (40)
+    assert p.rect.bottom == stand_bottom  # feet planted
 
 
 def test_prone_stands_back_up_restores_box():
@@ -197,7 +210,7 @@ def test_prone_stands_back_up_restores_box():
     _settle(p, plats)
     bottom = p.rect.bottom
     p.force_prone(3)
-    for _ in range(6):                          # run past the getup window
+    for _ in range(6):  # run past the getup window
         _run(p, plats, _frame())
     assert p.state == "idle"
     assert p.rect.height == 60
@@ -206,15 +219,26 @@ def test_prone_stands_back_up_restores_box():
 
 def _high_attack(owner, cx, cy, r=8):
     from types import SimpleNamespace
-    return SimpleNamespace(active=True, owner=owner, hit_cx=cx, hit_cy=cy,
-                           hit_r=r, disappear_on_hit=False, damage=10.0,
-                           base_knockback=0.0, knockback_growth=0.0, angle=0)
+
+    return SimpleNamespace(
+        active=True,
+        owner=owner,
+        hit_cx=cx,
+        hit_cy=cy,
+        hit_r=r,
+        disappear_on_hit=False,
+        damage=10.0,
+        base_knockback=0.0,
+        knockback_growth=0.0,
+        angle=0,
+    )
 
 
 def test_prone_lowers_hurtbox_high_attack_whiffs():
     """A high hit that connects on a standing fighter whiffs over a prone one
     (mirrors test_crouch_lowers_hurtbox_high_attack_whiffs)."""
     from pycats.systems import combat
+
     plats = _ground()
     attacker = _mk()
 
@@ -240,6 +264,7 @@ def test_prone_uses_purpose_built_hurtbox_not_resized_standing():
     but INSIDE the tall standing hurtbox mis-resolved against the shrunk prone Rect.
     It must whiff — so disabling the combat.py prone branch makes this connect."""
     from pycats.systems import combat
+
     plats = _ground()
     attacker = _mk()
     downed = _mk()
@@ -248,11 +273,9 @@ def test_prone_uses_purpose_built_hurtbox_not_resized_standing():
     _run(downed, plats, _frame())
     assert downed.state == "prone"
     near_ground_cy = downed.rect.bottom + 6
-    combat.process_hits(
-        [downed], [_high_attack(attacker, downed.rect.centerx, near_ground_cy, r=2)])
+    combat.process_hits([downed], [_high_attack(attacker, downed.rect.centerx, near_ground_cy, r=2)])
     assert downed.fighter.percent == 0.0, (
-        "near-ground hit must whiff the short prone hurtbox (not the mis-resolved "
-        "standing box)"
+        "near-ground hit must whiff the short prone hurtbox (not the mis-resolved standing box)"
     )
 
 
@@ -260,10 +283,11 @@ def test_nalio_has_prone_geometry():
     """Nalio (Mario archetype) defines a prone box lower than its crouch box, with
     a hurtbox that sits lower than the standing one (mirrors the crouch data test)."""
     from pycats.combat.data import Hurtbox, load_fighter_data
+
     fd = load_fighter_data("nalio")
     assert fd.prone_size is not None
     w, h = fd.prone_size
-    assert w == 40 and h < fd.crouch_size[1]      # lower than the crouch box
+    assert w == 40 and h < fd.crouch_size[1]  # lower than the crouch box
     assert isinstance(fd.prone_hurtbox, Hurtbox)
     stand_top = min(c.dy - c.r for c in fd.hurtbox.circles)
     prone_top = min(c.dy - c.r for c in fd.prone_hurtbox.circles)
@@ -275,6 +299,7 @@ def test_prone_pose_renders_without_error():
     import pygame
 
     from pycats import render_battle
+
     p = _mk()
     plats = _ground()
     _settle(p, plats)
@@ -287,12 +312,13 @@ def test_prone_pose_renders_without_error():
 
 # --- #145: auto landing-velocity knockdown -> prone --------------------------
 
+
 def _land_in_hitstun(vy, hurt, frames=8):
     """Drop a fighter onto the ground from just above it, airborne, with the given
     downward velocity and hitstun, then run a few frames. Returns (player, states)."""
     p = _mk()
-    plats = _ground()                 # solid platform, top at y=100
-    p.rect.bottom = 90                # airborne, just above the platform top
+    plats = _ground()  # solid platform, top at y=100
+    p.rect.bottom = 90  # airborne, just above the platform top
     p.fighter.on_ground = False
     p.fighter.vel.y = vy
     p.fighter.hurt_timer = hurt
@@ -336,13 +362,14 @@ def test_hard_landing_in_hitstun_forces_prone_through_update():
     if Player drops the force_prone after step_physics, the fighter won't be prone.
     """
     from pycats.config import KNOCKDOWN_VY_THRESHOLD
+
     plats = _ground()
     p = _mk()
     p.fighter.on_ground = False
-    p.rect.bottom = plats[0].rect.top - 2     # just above the ground
+    p.rect.bottom = plats[0].rect.top - 2  # just above the ground
     p.fighter.vel.y = KNOCKDOWN_VY_THRESHOLD + 4  # hard downward impact
-    p.fighter.hurt_timer = 10                  # in hitstun / tumble
-    _run(p, plats, _frame())                   # one update -> land -> knockdown
+    p.fighter.hurt_timer = 10  # in hitstun / tumble
+    _run(p, plats, _frame())  # one update -> land -> knockdown
     assert p.state == "prone"
 
 

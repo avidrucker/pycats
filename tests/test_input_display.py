@@ -9,6 +9,7 @@ Two able-to-fail layers:
 - a headless `ScreenshotPresenter(show_inputs=True)` smoke test proving the strip
   renders inside `run_battle` and that default-off leaves the render untouched.
 """
+
 import types
 
 from pycats.core.input import InputFrame
@@ -34,8 +35,8 @@ def test_records_press_edge_into_each_players_history_via_controls():
     h1, h2 = InputHistory(), InputHistory()
     # P1 presses left + attack this frame.
     record_player_histories([h1, h2], [p1, p2], _pressed(P1_KEYS["left"], P1_KEYS["attack"]))
-    assert h1.entries() == ["←A"]          # _GLYPHS order: directions then buttons
-    assert h2.entries() == []              # disjoint keymap: P2 sees nothing
+    assert h1.entries() == ["←A"]  # _GLYPHS order: directions then buttons
+    assert h2.entries() == []  # disjoint keymap: P2 sees nothing
 
 
 def test_recording_is_keymap_specific_disjoint_players():

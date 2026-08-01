@@ -19,6 +19,7 @@ with `escapeair_force` = 3.1 u/f → `DODGE_AIR_SPEED` = round(3.1 × 5.4) = 17 
 These tests assert magnitude *relative to* DODGE_AIR_SPEED, so they pin the model, not a
 literal — robust across a future tuning change.
 """
+
 import math
 
 import pygame as pg
@@ -35,8 +36,12 @@ from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
 CONTROLS = {
-    "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-    "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e,
+    "left": pg.K_a,
+    "right": pg.K_d,
+    "up": pg.K_w,
+    "down": pg.K_s,
+    "shield": pg.K_q,
+    "attack": pg.K_e,
 }
 SHIELD, RIGHT, LEFT, UP, DOWN = pg.K_q, pg.K_d, pg.K_a, pg.K_w, pg.K_s
 
@@ -49,8 +54,7 @@ def _airborne(floor_y, x=300, y=100):
     """An airborne player with the floor `floor_y` px down."""
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(0, floor_y, 960, 40), thin=False))
-    p = Player(x=x, y=y, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE,
-               char_name="WaveCat", facing_right=True)
+    p = Player(x=x, y=y, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE, char_name="WaveCat", facing_right=True)
     for _ in range(3):
         p.update(_frame(set(), set()), plats, pg.sprite.Group())
     assert not p.fighter.on_ground, "fixture precondition: airborne"
@@ -69,8 +73,7 @@ def _step_until_landed(p, plats, max_frames=120):
 def test_diagonal_down_air_dodge_sets_angled_burst():
     """A shield+right+down air dodge sets velocity DOWN-and-right (angled), not flat."""
     p, plats = _airborne(floor_y=2000)  # lots of room: dodge plays out in the air
-    p.update(_frame({SHIELD, RIGHT, DOWN}, {SHIELD, RIGHT, DOWN}),
-             plats, pg.sprite.Group())
+    p.update(_frame({SHIELD, RIGHT, DOWN}, {SHIELD, RIGHT, DOWN}), plats, pg.sprite.Group())
     assert p.state == "dodge"
     expected_vy = DODGE_AIR_SPEED * math.sin(math.radians(WAVEDASH_ANGLE_DEG))  # ≈ 4.1
     expected_vx = DODGE_AIR_SPEED * math.cos(math.radians(WAVEDASH_ANGLE_DEG))  # ≈ 13.4
@@ -91,8 +94,7 @@ def test_wavedash_produces_grounded_slide_that_decays():
     """Diagonal-down air dodge into the ground → a grounded horizontal slide whose
     speed decays each frame under ground friction (not an instant stop)."""
     p, plats = _airborne(floor_y=190)  # close floor: lands mid-dodge, momentum intact
-    p.update(_frame({SHIELD, RIGHT, DOWN}, {SHIELD, RIGHT, DOWN}),
-             plats, pg.sprite.Group())
+    p.update(_frame({SHIELD, RIGHT, DOWN}, {SHIELD, RIGHT, DOWN}), plats, pg.sprite.Group())
     _step_until_landed(p, plats)
     assert p.fighter.on_ground
     slide0 = p.fighter.vel.x
@@ -111,12 +113,9 @@ def test_waveland_locks_actions_for_landing_lag_then_recovers():
     """After a waveland the fighter is in landing-lag (actions locked) for the lag
     window, then recovers to idle. A jump during the lag is ignored."""
     p, plats = _airborne(floor_y=190)
-    p.update(_frame({SHIELD, RIGHT, DOWN}, {SHIELD, RIGHT, DOWN}),
-             plats, pg.sprite.Group())
+    p.update(_frame({SHIELD, RIGHT, DOWN}, {SHIELD, RIGHT, DOWN}), plats, pg.sprite.Group())
     landed_state = _step_until_landed(p, plats)
-    assert landed_state == "landing_lag", (
-        f"landing from a wavedash should enter landing_lag, got {landed_state!r}"
-    )
+    assert landed_state == "landing_lag", f"landing from a wavedash should enter landing_lag, got {landed_state!r}"
     # a jump press during landing lag is ignored and consumes no jump
     jumps_before = p.fighter.jumps_remaining
     p.update(_frame({UP}, {UP}), plats, pg.sprite.Group())

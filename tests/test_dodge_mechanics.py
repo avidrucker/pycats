@@ -15,6 +15,7 @@ Two dodge families:
     dodge, and exits into `helpless` (special-fall) until landing. Gravity still
     acts over the dodge frames. (Helpless behaviour: tests/test_air_dodge_helpless.py.)
 """
+
 import pygame as pg
 
 from pycats.config import DODGE_AIR_SPEED, DODGE_SPEED, DODGE_TIME, P1_COLOR, WHITE
@@ -23,8 +24,12 @@ from pycats.entities.platform import Platform
 from pycats.entities.player import Player
 
 CONTROLS = {
-    "left": pg.K_a, "right": pg.K_d, "up": pg.K_w,
-    "down": pg.K_s, "shield": pg.K_q, "attack": pg.K_e,
+    "left": pg.K_a,
+    "right": pg.K_d,
+    "up": pg.K_w,
+    "down": pg.K_s,
+    "shield": pg.K_q,
+    "attack": pg.K_e,
 }
 LEFT, RIGHT, DOWN, SHIELD = pg.K_a, pg.K_d, pg.K_s, pg.K_q
 
@@ -37,9 +42,15 @@ def _grounded_player(plat_rect, thin):
     """A player settled on the given platform (one empty frame to land)."""
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(*plat_rect), thin=thin))
-    p = Player(x=plat_rect[0] + plat_rect[2] // 2, y=plat_rect[1],
-               controls=CONTROLS, color=P1_COLOR, eye_color=WHITE,
-               char_name="DodgeCat", facing_right=True)
+    p = Player(
+        x=plat_rect[0] + plat_rect[2] // 2,
+        y=plat_rect[1],
+        controls=CONTROLS,
+        color=P1_COLOR,
+        eye_color=WHITE,
+        char_name="DodgeCat",
+        facing_right=True,
+    )
     p.update(_frame(set(), set()), plats, pg.sprite.Group())  # settle on ground
     return p, plats
 
@@ -48,8 +59,7 @@ def _airborne_player():
     """A player a few frames into a fall (clearly airborne) over a thick floor."""
     plats = pg.sprite.Group()
     plats.add(Platform(pg.Rect(100, 500, 600, 40), thin=False))
-    p = Player(x=300, y=200, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE,
-               char_name="AirCat", facing_right=True)
+    p = Player(x=300, y=200, controls=CONTROLS, color=P1_COLOR, eye_color=WHITE, char_name="AirCat", facing_right=True)
     for _ in range(3):
         p.update(_frame(set(), set()), plats, pg.sprite.Group())
     assert not p.fighter.on_ground, "fixture precondition: player should be airborne"
@@ -57,6 +67,7 @@ def _airborne_player():
 
 
 # ----------------------------------------------------------- ground spot dodge
+
 
 def test_spot_dodge_on_thin_platform_does_not_fall_through():
     """A spot dodge (shield+down) on a THIN platform uses special physics: the
@@ -85,6 +96,7 @@ def test_spot_dodge_returns_to_shield_while_shield_held():
 
 
 # ----------------------------------------------------------------- air dodge
+
 
 def test_right_air_dodge_applies_positive_dodge_speed():
     p, plats = _airborne_player()
@@ -128,9 +140,7 @@ def test_air_dodge_halts_vertical_velocity():
     vy_before = p.fighter.vel.y
     assert vy_before > 0
     p.update(_frame({SHIELD, RIGHT}, {SHIELD, RIGHT}), plats, pg.sprite.Group())
-    assert p.fighter.vel.y < vy_before, (
-        f"air dodge should halt vel.y below {vy_before}, got {p.fighter.vel.y}"
-    )
+    assert p.fighter.vel.y < vy_before, f"air dodge should halt vel.y below {vy_before}, got {p.fighter.vel.y}"
 
 
 def test_air_dodge_is_not_a_ground_spot_dodge():
@@ -150,6 +160,7 @@ def test_air_dodge_consumes_air_dodge_ok():
 
 
 # ------------------------------------------------------------- ground roll
+
 
 def test_ground_side_dodge_rolls_at_full_dodge_speed():
     """A grounded side dodge (shield+direction) rolls at the full DODGE_SPEED for
@@ -187,6 +198,7 @@ def test_ground_side_dodge_left_mirrors_right_at_full_speed():
 
 # ------------------------------------------- shield-then-direction (documented)
 
+
 def test_shield_then_direction_air_dodge_is_neutral():
     """CURRENT behavior: the air dodge commits on the shield-press frame (consuming
     air_dodge_ok), so a direction pressed on a LATER frame does not redirect it —
@@ -197,7 +209,7 @@ def test_shield_then_direction_air_dodge_is_neutral():
     direction to apply velocity; whether shield-then-direction *should* redirect is
     a separate design question, not current behavior.)"""
     p, plats = _airborne_player()
-    p.update(_frame({SHIELD}, {SHIELD}), plats, pg.sprite.Group())       # shield first
+    p.update(_frame({SHIELD}, {SHIELD}), plats, pg.sprite.Group())  # shield first
     p.update(_frame({SHIELD, RIGHT}, {RIGHT}), plats, pg.sprite.Group())  # then direction
     assert p.state == "dodge"
     assert p.fighter.vel.x == 0, f"shield-then-direction redirected to vel.x={p.fighter.vel.x} (was neutral)"

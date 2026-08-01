@@ -15,6 +15,7 @@ def test_runner_produces_one_snapshot_per_frame():
 
 # --- Task 6: new snapshot field tests ---
 
+
 def test_snapshot_player_tuple_carries_defensive_status_move_frame_and_character():
     """PlayerSnap carries defensive_status (str), move_frame (int), and the appended
     character (str, #672 Phase 2a). Read BY NAME so a later field append can't silently
@@ -32,15 +33,14 @@ def test_snapshot_player_tuple_carries_defensive_status_move_frame_and_character
         assert isinstance(ps.move_frame, int), (
             f"expected int for move_frame, got {type(ps.move_frame)}: {ps.move_frame!r}"
         )
-        assert isinstance(ps.character, str), (
-            f"expected str for character, got {type(ps.character)}: {ps.character!r}"
-        )
+        assert isinstance(ps.character, str), f"expected str for character, got {type(ps.character)}: {ps.character!r}"
 
 
 def test_snapshot_attack_tuple_ends_with_hitbox_circle():
     """Per-attack tuples must end with hit_cx, hit_cy, hit_r (float or int)."""
     from pycats.sim.input_script import COMBAT_SCRIPT, compile_timeline
     from pycats.sim.runner import KEYMAPS
+
     frame_inputs = compile_timeline(COMBAT_SCRIPT, KEYMAPS)
     # Run enough frames that attacks actually appear
     snaps = run_battle(frames=len(frame_inputs), frame_inputs=frame_inputs)
@@ -68,5 +68,6 @@ def test_run_battle_has_no_backend_arg():
     one engine (statechart), so run_battle() no longer accepts a `backend` arg.
     """
     import pytest
+
     with pytest.raises(TypeError):
         run_battle(backend="statechart", frames=1)
