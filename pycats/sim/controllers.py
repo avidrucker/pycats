@@ -73,6 +73,32 @@ JUMP_UP_NEAR_ADX = 120
 # (standoff - IN_RANGE_NEAR_MARGIN) so the bot commits at the edge of reach (#444).
 IN_RANGE_NEAR_MARGIN = 18
 
+# #970 (child of #925): leveled-CPU smoothing, root-caused in #966
+# (docs/research/cpu-jitter-jump-v2-findings.md). These replace, for LEVELED bots
+# only, the flat behaviors that read as "jumpy + jittery"; the level-less path is
+# unchanged (golden-safe). No canon source — frame-level CPU cadence is a documented
+# [GAP] (#928 Axis 1) — so all five are DIVERGENCE, ratified by the game designer on
+# #970 and judged against repros/jitter_metrics.py + the eyeball.
+#
+# Spacing hysteresis (the "jittery" facet). Two thresholds, not one line:
+#  * STOP moving once the gap is within SPACING_STOP px of `standoff` — a WIDE settle
+#    band (same half-width as the old flat deadband) so mutual approach lands in it and
+#    both bots stop in attack range, stable against a 1-frame phase offset between them.
+#  * START a new move only once the gap has drifted beyond the WIDER SPACING_START band.
+# The gap between the two (|Δ| in [STOP, START]) is the hysteresis margin the bot coasts
+# through without re-deciding — that margin is what the old one-line ±8 deadband lacked,
+# so it re-triggered every frame (the 119-toggles/600f flap). A chosen direction also
+# holds >= SPACING_DWELL frames before it may reverse (damps knockback flip-flops).
+SPACING_STOP = 8
+SPACING_START = 16
+SPACING_DWELL = 6
+# Jump purpose gate + takeoff cooldown (the "jumpy" facet): only jump-chase a foe
+# genuinely on a higher platform (>= JUMP_PURPOSE_DY px above, vs the permissive
+# FOE_ABOVE_DY that fires at any slightly-elevated foe), and pause JUMP_COOLDOWN
+# grounded frames after a takeoff so the bot stops re-hopping on every landing.
+JUMP_PURPOSE_DY = 60
+JUMP_COOLDOWN = 30
+
 # Sentinel "no attack yet" timestamp — far in the past so the first attack's cadence
 # gate always passes (#444: named from the -10_000 magic).
 NEVER_ATTACKED = -10_000
@@ -441,6 +467,17 @@ class AttackerController(BaseController):
         # jumps and brief blips are byte-identical (goldens/seeded battles safe). Only
         # a PROLONGED grounded-hold (the standoff limit cycle, #367) trips the pulse.
         self._jump_up_stuck = 0
+        # #970 leveled-smoothing state (the level-less path never reads these, so it
+        # stays byte-identical). Spacing hysteresis: persisted movement intent, the
+        # last committed direction, and frames since it changed (dwell). Jump throttle:
+        # whether `up` was pressed by the jump gate last frame (eaten-press re-arm),
+        # the takeoff cooldown counter, and last frame's on_ground (landing detector).
+        self._spacing_intent = None  # "toward" | "away" | None
+        self._spacing_last_dir = None  # last non-None intent, for the dwell guard
+        self._spacing_dwell = 0  # frames since _spacing_last_dir last changed
+        self._jump_up_held_last = False
+        self._jump_cooldown = 0
+        self._was_on_ground = True
         # #368: no-progress detector state. `_noprog_ref` = (centre_x, centre_y, own %,
         # target %) reference; `_noprog` = consecutive frames within ANTI_STALL_MOVE_PX
         # of it with no percent change (a lock). Only the leveled path arms it.
@@ -762,6 +799,15 @@ class AttackerController(BaseController):
         lo, hi = self.safe_x
         toward = keys["right"] if dx > 0 else keys["left"]
         away = keys["left"] if dx > 0 else keys["right"]
+        # #970: a grounded LEVELED bot always faces its target. Facing is otherwise set
+        # only by a movement press (systems.movement.step_horizontal), so a bot that
+        # backed off (faced away) and is now coasting at standoff would keep facing away
+        # and attack the wrong direction — the "back-to-back, attacking away" bug. Set it
+        # directly here; step_horizontal runs later in the frame and still turns the bot
+        # on a live toward/away press, so this only governs the no-press (coast) frames.
+        # Level-gated → the level-less golden path is byte-identical.
+        if self.level is not None and a.fighter.on_ground:
+            a.fighter.facing_right = dx > 0
         # Maintain a standoff gap: close in if too far, back off if stacked
         # on top of the target (adx ~ 0 would otherwise deadlock).
         # #277 (model A): press the advantage — when `reactive_spacing` and the
@@ -773,10 +819,49 @@ class AttackerController(BaseController):
         # helpers and is byte-identical (golden-safe); deterministic (no rng).
         press_in = self.reactive_spacing and self._whiff_open(a, t) and not self._threat_incoming(a, t, attacks)
         move = None
-        if adx > self.standoff + 8:
-            move = toward
-        elif adx < self.standoff - 8 and not press_in:
-            move = away
+        if self.level is None:
+            # Level-less default: flat ±8 deadband, re-decided each frame (unchanged,
+            # golden-safe).
+            if adx > self.standoff + 8:
+                move = toward
+            elif adx < self.standoff - 8 and not press_in:
+                move = away
+        else:
+            # #970 leveled: hysteresis + dwell. Keep a persisted intent; STOP once the
+            # gap is within SPACING_STOP of standoff (a wide settle band, so mutual
+            # approach lands in attack range and is stable against a phase offset), and
+            # only START a new move once the gap has drifted beyond the wider
+            # SPACING_START band. Don't reverse to the opposite direction until
+            # SPACING_DWELL frames after the last change. Coasting through the margin
+            # between the two bands is what kills the one-line re-trigger flap (#966).
+            intent = self._spacing_intent
+            if intent is not None and abs(adx - self.standoff) <= SPACING_STOP:
+                intent = None
+            if intent is None:
+                want = None
+                if adx > self.standoff + SPACING_START:
+                    want = "toward"
+                elif adx < self.standoff - SPACING_START and not press_in:
+                    want = "away"
+                reversing = (want == "toward" and self._spacing_last_dir == "away") or (
+                    want == "away" and self._spacing_last_dir == "toward"
+                )
+                if reversing and self._spacing_dwell < SPACING_DWELL:
+                    want = None  # too soon to reverse — hold position this frame
+                intent = want
+            # Suppress a live back-off while pressing an advantage (mirror the
+            # level-less `and not press_in`, which can flip mid-hold).
+            if intent == "away" and press_in:
+                intent = None
+            if intent is not None and intent != self._spacing_last_dir:
+                self._spacing_last_dir = intent
+                self._spacing_dwell = 0
+            self._spacing_dwell += 1
+            self._spacing_intent = intent
+            if intent == "toward":
+                move = toward
+            elif intent == "away":
+                move = away
         # Clamp: allow moving back toward centre from outside, but never
         # press further past a blast-zone-side bound.
         if move == keys["right"] and cx >= hi:
@@ -798,16 +883,39 @@ class AttackerController(BaseController):
         # own — those are unchanged. Only when the bot held `up` last frame yet is
         # STILL grounded (the jump didn't take) do we skip this frame, forcing a
         # release so a fresh press re-fires the jump next frame and the bot climbs.
-        if dy < -FOE_ABOVE_DY and a.fighter.on_ground and adx < JUMP_UP_NEAR_ADX:
-            self._jump_up_stuck += 1
-            # Held for the first JUMP_UP_STUCK_MAX frames (byte-identical to the
-            # old always-hold, so normal jumps + short blips are unchanged); once
-            # the bot has been grounded-and-wanting-up that long it is genuinely
-            # stuck, so release on odd counts -> a fresh press re-fires the jump.
-            if self._jump_up_stuck <= JUMP_UP_STUCK_MAX or self._jump_up_stuck % 2 == 0:
-                held.add(keys["up"])
+        # #970: takeoff-cooldown bookkeeping (leveled only) — start the cooldown when
+        # the bot LANDS, so hops are spaced by a grounded pause instead of re-firing
+        # every landing. Runs before the gate so it sees the current cooldown.
+        if self.level is not None:
+            if a.fighter.on_ground and not self._was_on_ground:
+                self._jump_cooldown = JUMP_COOLDOWN
+            elif self._jump_cooldown > 0:
+                self._jump_cooldown -= 1
+            self._was_on_ground = a.fighter.on_ground
+        if self.level is None:
+            # Level-less default: pulse via _jump_up_stuck (unchanged, golden-safe).
+            if dy < -FOE_ABOVE_DY and a.fighter.on_ground and adx < JUMP_UP_NEAR_ADX:
+                self._jump_up_stuck += 1
+                # Held for the first JUMP_UP_STUCK_MAX frames (byte-identical to the
+                # old always-hold, so normal jumps + short blips are unchanged); once
+                # the bot has been grounded-and-wanting-up that long it is genuinely
+                # stuck, so release on odd counts -> a fresh press re-fires the jump.
+                if self._jump_up_stuck <= JUMP_UP_STUCK_MAX or self._jump_up_stuck % 2 == 0:
+                    held.add(keys["up"])
+            else:
+                self._jump_up_stuck = 0
         else:
-            self._jump_up_stuck = 0
+            # #970 leveled: stricter purpose gate (JUMP_PURPOSE_DY — chase a foe on a
+            # HIGHER platform, not one barely overhead) + takeoff cooldown, with an
+            # eaten-press re-arm so a dodge/hitstun-eaten press still re-fires (#927)
+            # without the reflexive spam #959 D1 caused.
+            if dy < -JUMP_PURPOSE_DY and a.fighter.on_ground and adx < JUMP_UP_NEAR_ADX and self._jump_cooldown == 0:
+                press = not self._jump_up_held_last
+                if press:
+                    held.add(keys["up"])
+                self._jump_up_held_last = press
+            else:
+                self._jump_up_held_last = False
         # Drop through thin platforms when target is below.  Pressing 'down'
         # while grounded on a thin platform causes solve_vertical to let the
         # player fall through it, putting them on the same y-level as the
