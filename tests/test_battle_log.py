@@ -153,11 +153,11 @@ def test_events_from_real_seeded_run():
 
     rng = random.Random(3)
     cs = (AttackerController(attacker_num=1, level=5, rng=rng), AttackerController(attacker_num=2, level=5, rng=rng))
-    # 2000f window: #309 zone-anchored Birky's hitboxes, re-placing its move
-    # geometry and perturbing this deterministic seed-3 trajectory (the first KO
-    # now converts around frame ~1428). The window is sized past that so the log
-    # has a KO event to derive.
-    snaps = run_battle(frames=2000, controllers=cs, p1_char="nalio", p2_char="birky", stop_on_match_over=True)
+    # 3000f window: #911 flattened the lingering aerials (ruling #893), lowering their
+    # knockback, so this deterministic seed-3 KO now converts later (around frame ~2567,
+    # up from ~1428 pre-flatten). The window is sized past that so the log has a KO event
+    # to derive. (#309 zone-anchored Birky's hitboxes originally set this trajectory.)
+    snaps = run_battle(frames=3000, controllers=cs, p1_char="nalio", p2_char="birky", stop_on_match_over=True)
     ev = events_from_snaps(snaps)
     kinds = {e.type for e in ev}
     assert JUMP in kinds and ATTACK in kinds, kinds

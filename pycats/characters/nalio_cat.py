@@ -248,35 +248,24 @@ _FORWARD_AIR = MoveData(
 
 
 # --- Back-air, mapped to the canonical "bair" key (PM3.6 Mario AttackAirB) ------
-# A clean->late "sex kick" that consumes BOTH gates: the late hit uses the Sakurai
-# sentinel 361 (#203) and the two stages use temporal windows (#204). rukaidata
-# AttackAirB: active 6-17 -> startup 5 / active 12; IASA 29 -> recovery 12.
-#   - CLEAN [6,8]:  angle 28 (literal), both dmg 11 / BKB 43 / KBG 65; r 25/19.
-#   - LATE  [9,17]: angle 361 (Sakurai), both dmg 9 / BKB 20 / KBG 100; r 25/19.
-# All WDSK 0. Radii = round(size u × PX_PER_UNIT): 4.69->25, 3.52->19. Positions
-# approximated BEHIND the body (negative dx — facing-right-relative; b-air hits
-# backward), same x/y for clean and late (same bones 16/17). Landing-lag/L-cancel
-# deferred (no landing-lag system — as n-air/f-air).
-def _bair_clean(dx, dy, r):
+# FLATTENED to a single window for V1 (#911, ruling on #893): the sex-kick mechanic
+# (clean [6,8] dmg11/BKB43/KBG65/ang28 -> late [9,17] dmg9/BKB20/KBG100/Sakurai 361)
+# is deferred post-V1. One window spans the full active duration f6-17; each numeric
+# field is the average of the old clean+late values, and the angle keeps the CLEAN
+# window's 28 (the windows differed — clean 28 vs Sakurai sentinel 361, which is not a
+# literal degree — so the angle is NOT averaged). Spatial layout (positions + radii)
+# is the clean window's, applied across the whole span (both windows shared bones
+# 16/17, so nothing spatial changes here). All WDSK 0. Landing-lag/L-cancel deferred.
+# human-designer-temporary-placeholder-values-for-v1-only — NO parity claim; the basis
+# is the #893 designer decision, restored to the two-window falloff post-V1.
+def _bair_flat(dx, dy, r):
     return Hitbox(
         circle=Circle(dx=dx, dy=dy, r=r),
-        damage=11.0,
-        angle=28,
-        base_knockback=43.0,
-        knockback_growth=65.0,
+        damage=10.0,  # avg(11, 9)
+        angle=28,  # clean window's angle (late was Sakurai 361 — not averaged)
+        base_knockback=31.5,  # avg(43, 20)
+        knockback_growth=82.5,  # avg(65, 100)
         active_start=6,
-        active_end=8,
-    )
-
-
-def _bair_late(dx, dy, r):
-    return Hitbox(
-        circle=Circle(dx=dx, dy=dy, r=r),
-        damage=9.0,
-        angle=361,
-        base_knockback=20.0,
-        knockback_growth=100.0,
-        active_start=9,
         active_end=17,
     )
 
@@ -288,31 +277,29 @@ _BACK_AIR = MoveData(
     active=12,
     recovery=12,
     hitboxes=(
-        _bair_clean(dx=-12, dy=30, r=25),  # clean id0 (bone 16)
-        _bair_clean(dx=-2, dy=34, r=19),  # clean id1 (bone 17)
-        _bair_late(dx=-12, dy=30, r=25),  # late id0 (bone 16) — Sakurai
-        _bair_late(dx=-2, dy=34, r=19),  # late id1 (bone 17) — Sakurai
+        _bair_flat(dx=-12, dy=30, r=25),  # id0 (bone 16)
+        _bair_flat(dx=-2, dy=34, r=19),  # id1 (bone 17)
     ),
 )
 
 
 # --- Up-air, mapped to the canonical "uair" key (PM3.6 Mario AttackAirHi) -------
-# A two-window upward juggle (#204). rukaidata AttackAirHi: active 4-9 -> startup 3
-# / active 6; IASA 28 -> recovery 19. Both windows angle 55 (up-and-forward flip),
-# BKB 0 (pure-growth — a combo/juggle tool), KBG 100; they differ only in damage:
-#   - CLEAN [4,5]: dmg 11.   - LATE [6,9]: dmg 10.
-# All WDSK 0. Radii = round(size u × PX_PER_UNIT): 3.52->19, 4.69->25. Positions
-# approximated above the head (small dy), same x/y for clean and late (bones
-# 16/17). Landing-lag/L-cancel deferred (no system — as the other aerials).
-def _uair_box(dx, dy, r, damage, start, end):
+# FLATTENED to a single window for V1 (#911, ruling on #893): the two-window juggle
+# (clean [4,5] dmg 11 -> late [6,9] dmg 10; both angle 55, BKB 0, KBG 100) is deferred
+# post-V1. One window spans f4-9; damage is the average of the two windows (10.5).
+# Angle/BKB/KBG were already equal across the windows, so they carry through unchanged
+# (nothing to average). Spatial layout (bones 16/17) is unchanged. All WDSK 0.
+# human-designer-temporary-placeholder-values-for-v1-only — NO parity claim; the basis
+# is the #893 designer decision, restored to the two-window falloff post-V1.
+def _uair_box(dx, dy, r):
     return Hitbox(
         circle=Circle(dx=dx, dy=dy, r=r),
-        damage=damage,
+        damage=10.5,  # avg(11, 10)
         angle=55,
         base_knockback=0.0,
         knockback_growth=100.0,
-        active_start=start,
-        active_end=end,
+        active_start=4,
+        active_end=9,
     )
 
 
@@ -323,10 +310,8 @@ _UP_AIR = MoveData(
     active=6,
     recovery=19,
     hitboxes=(
-        _uair_box(dx=22, dy=4, r=19, damage=11.0, start=4, end=5),  # clean id0
-        _uair_box(dx=14, dy=8, r=25, damage=11.0, start=4, end=5),  # clean id1 (big)
-        _uair_box(dx=22, dy=4, r=19, damage=10.0, start=6, end=9),  # late id0
-        _uair_box(dx=14, dy=8, r=25, damage=10.0, start=6, end=9),  # late id1 (big)
+        _uair_box(dx=22, dy=4, r=19),  # id0
+        _uair_box(dx=14, dy=8, r=25),  # id1 (big)
     ),
 )
 

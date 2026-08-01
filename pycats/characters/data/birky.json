@@ -147,21 +147,13 @@
       "recovery": 14,
       "hitboxes": [
         {
-          "damage": 12.0,
+          "damage": 10.5,
           "angle": 55,
-          "base_knockback": 15.0,
+          "base_knockback": 7.5,
           "knockback_growth": 100.0,
           "active_start": 3,
-          "active_end": 6,
-          "circle": [20, 22, 22]
-        },
-        {
-          "damage": 9.0,
-          "angle": 55,
-          "knockback_growth": 100.0,
-          "active_start": 7,
           "active_end": 29,
-          "circle": [20, 22, 14]
+          "circle": [20, 22, 22]
         }
       ]
     },
@@ -234,38 +226,22 @@
       "recovery": 16,
       "hitboxes": [
         {
-          "damage": 14.0,
+          "damage": 12.0,
           "angle": 361,
-          "base_knockback": 10.0,
+          "base_knockback": 5.0,
           "knockback_growth": 100.0,
           "active_start": 6,
-          "active_end": 8,
+          "active_end": 20,
           "circle": [-12, 22, 30]
         },
         {
-          "damage": 14.0,
+          "damage": 12.0,
           "angle": 361,
-          "base_knockback": 10.0,
+          "base_knockback": 5.0,
           "knockback_growth": 100.0,
           "active_start": 6,
-          "active_end": 8,
+          "active_end": 20,
           "circle": [-2, 25, 32]
-        },
-        {
-          "damage": 10.0,
-          "angle": 361,
-          "knockback_growth": 100.0,
-          "active_start": 9,
-          "active_end": 20,
-          "circle": [-12, 22, 27]
-        },
-        {
-          "damage": 10.0,
-          "angle": 361,
-          "knockback_growth": 100.0,
-          "active_start": 9,
-          "active_end": 20,
-          "circle": [-2, 25, 23]
         }
       ]
     },
@@ -277,31 +253,22 @@
       "recovery": 21,
       "hitboxes": [
         {
-          "damage": 15.0,
+          "damage": 13.5,
           "angle": 75,
-          "base_knockback": 5.0,
-          "knockback_growth": 115.0,
+          "base_knockback": 7.5,
+          "knockback_growth": 102.5,
           "active_start": 10,
-          "active_end": 12,
+          "active_end": 15,
           "circle": [20, 7, 23]
         },
         {
-          "damage": 15.0,
+          "damage": 13.5,
           "angle": 75,
-          "base_knockback": 5.0,
-          "knockback_growth": 115.0,
+          "base_knockback": 7.5,
+          "knockback_growth": 102.5,
           "active_start": 10,
-          "active_end": 12,
-          "circle": [28, 7, 23]
-        },
-        {
-          "damage": 12.0,
-          "angle": 30,
-          "base_knockback": 10.0,
-          "knockback_growth": 90.0,
-          "active_start": 13,
           "active_end": 15,
-          "circle": [24, 7, 23]
+          "circle": [28, 7, 23]
         }
       ]
     },

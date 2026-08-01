@@ -200,11 +200,14 @@ _BIRKY_UTILT = MoveData(
     ),
 )
 
-# --- Neutral-air (slice 3, #255): PM3.6 Kirby AttackAirN — a lingering sex-kick ----
-# rukaidata PM3.6 Kirby AttackAirN: 56f total, IASA 43, active 3-29. Two windows
-# (per-hitbox active_start/active_end): early f3-6 (dmg 12, BKB 15), late f7-29
-# (dmg 9, BKB 0); both angle 55, KBG 100; radii 4.0/2.5u × PX_PER_UNIT ≈ 22/14, centred
-# (offset 0). 4 identical boxes per window collapse to one. Approximated/playtest.
+# --- Neutral-air (slice 3, #255): PM3.6 Kirby AttackAirN — was a lingering sex-kick -
+# FLATTENED to a single window for V1 (#911, ruling on #893): the sex kick (early f3-6
+# dmg 12/BKB 15 -> late f7-29 dmg 9/BKB 0; both angle 55, KBG 100) is deferred post-V1.
+# One window spans the full active duration f3-29; damage=avg(12,9)=10.5,
+# BKB=avg(15,0)=7.5; angle/KBG were equal across the windows, so they carry through.
+# Spatial layout keeps the CLEAN box (r=22; the late box was the smaller r=14).
+# human-designer-temporary-placeholder-values-for-v1-only — NO parity claim; the basis
+# is the #893 designer decision, restored to the two-window falloff post-V1.
 _BIRKY_NAIR = MoveData(
     name="nair",
     in_air=True,
@@ -214,20 +217,11 @@ _BIRKY_NAIR = MoveData(
     hitboxes=(
         Hitbox(
             circle=Circle(dx=20, dy=zone_dy("center", _H), r=22),
-            damage=12.0,
+            damage=10.5,  # avg(12, 9)
             angle=55,
-            base_knockback=15.0,
+            base_knockback=7.5,  # avg(15, 0)
             knockback_growth=100.0,
             active_start=3,
-            active_end=6,
-        ),
-        Hitbox(
-            circle=Circle(dx=20, dy=zone_dy("center", _H), r=14),
-            damage=9.0,
-            angle=55,
-            base_knockback=0.0,
-            knockback_growth=100.0,
-            active_start=7,
             active_end=29,
         ),
     ),
@@ -271,20 +265,23 @@ _BIRKY_FAIR = MoveData(
 )
 
 
-# --- Back-air (slice 3, #258): PM3.6 Kirby AttackAirB — 2-window backward hit ------
-# rukaidata PM3.6 Kirby AttackAirB: 41f total, IASA 36, active 6-20. Early f6-8
-# (dmg 14, BKB 10), late f9-20 (dmg 10, BKB 0); both angle 361, KBG 100; radii
-# round(size×PX_PER_UNIT) for 5.5/5.99/5.08/4.3u ≈ 30/32/27/23. Behind the cat (dx < 0,
-# mirroring nalio_cat.py bair). Approximated/playtest per #120.
-def _bair_box(dx, dy, r, damage, bkb, start, end):
+# --- Back-air (slice 3, #258): PM3.6 Kirby AttackAirB — was a 2-window backward hit -
+# FLATTENED to a single window for V1 (#911, ruling on #893): the sex kick (early f6-8
+# dmg 14/BKB 10 -> late f9-20 dmg 10/BKB 0; both angle 361, KBG 100) is deferred
+# post-V1. One window spans f6-20; damage=avg(14,10)=12, BKB=avg(10,0)=5; angle/KBG
+# were equal across the windows. Spatial layout keeps the CLEAN boxes (r=30/32; the
+# late boxes were the smaller r=27/23). Behind the cat (dx < 0).
+# human-designer-temporary-placeholder-values-for-v1-only — NO parity claim; the basis
+# is the #893 designer decision, restored to the two-window falloff post-V1.
+def _bair_box(dx, dy, r):
     return Hitbox(
         circle=Circle(dx=dx, dy=dy, r=r),
-        damage=damage,
+        damage=12.0,  # avg(14, 10)
         angle=361,
-        base_knockback=bkb,
+        base_knockback=5.0,  # avg(10, 0)
         knockback_growth=100.0,
-        active_start=start,
-        active_end=end,
+        active_start=6,
+        active_end=20,
     )
 
 
@@ -295,17 +292,20 @@ _BIRKY_BAIR = MoveData(
     active=15,
     recovery=16,  # active f6-20; 5 + 15 + 16 = 36 (PM3.6 IASA)
     hitboxes=(
-        _bair_box(dx=-12, dy=zone_dy("center", _H), r=30, damage=14.0, bkb=10.0, start=6, end=8),
-        _bair_box(dx=-2, dy=zone_dy("center", _H, 3), r=32, damage=14.0, bkb=10.0, start=6, end=8),
-        _bair_box(dx=-12, dy=zone_dy("center", _H), r=27, damage=10.0, bkb=0.0, start=9, end=20),
-        _bair_box(dx=-2, dy=zone_dy("center", _H, 3), r=23, damage=10.0, bkb=0.0, start=9, end=20),
+        _bair_box(dx=-12, dy=zone_dy("center", _H), r=30),
+        _bair_box(dx=-2, dy=zone_dy("center", _H, 3), r=32),
     ),
 )
 
-# --- Up-air (slice 3, #259): PM3.6 Kirby AttackAirHi — 2-window juggle -------------
-# rukaidata PM3.6 Kirby AttackAirHi: 48f total, IASA 36, active 10-15. Early f10-12
-# (dmg 15, angle 75, BKB 5, KBG 115), late f13-15 (dmg 12, angle 30, BKB 10, KBG 90);
-# radius round(4.32×PX_PER_UNIT) ≈ 23. Above the cat (low dy). Approximated/playtest per #120.
+# --- Up-air (slice 3, #259): PM3.6 Kirby AttackAirHi — was a 2-window juggle --------
+# FLATTENED to a single window for V1 (#911, ruling on #893): the juggle (early f10-12
+# dmg 15/ang 75/BKB 5/KBG 115 -> late f13-15 dmg 12/ang 30/BKB 10/KBG 90) is deferred
+# post-V1. One window spans f10-15; damage=avg(15,12)=13.5, BKB=avg(5,10)=7.5,
+# KBG=avg(115,90)=102.5; angle keeps the CLEAN window's 75 (the windows differed
+# 75 vs 30 — not averaged). Spatial layout keeps the CLEAN two-box pair (dx=20, dx=28;
+# the late window was a single box at dx=24). Above the cat (low dy).
+# human-designer-temporary-placeholder-values-for-v1-only — NO parity claim; the basis
+# is the #893 designer decision, restored to the two-window falloff post-V1.
 _BIRKY_UAIR = MoveData(
     name="uair",
     in_air=True,
@@ -315,29 +315,20 @@ _BIRKY_UAIR = MoveData(
     hitboxes=(
         Hitbox(
             circle=Circle(dx=20, dy=zone_dy("head", _H), r=23),
-            damage=15.0,
-            angle=75,
-            base_knockback=5.0,
-            knockback_growth=115.0,
+            damage=13.5,  # avg(15, 12)
+            angle=75,  # clean window's angle (late was 30 — not averaged)
+            base_knockback=7.5,  # avg(5, 10)
+            knockback_growth=102.5,  # avg(115, 90)
             active_start=10,
-            active_end=12,
+            active_end=15,
         ),
         Hitbox(
             circle=Circle(dx=28, dy=zone_dy("head", _H), r=23),
-            damage=15.0,
-            angle=75,
-            base_knockback=5.0,
-            knockback_growth=115.0,
+            damage=13.5,  # avg(15, 12)
+            angle=75,  # clean window's angle (late was 30 — not averaged)
+            base_knockback=7.5,  # avg(5, 10)
+            knockback_growth=102.5,  # avg(115, 90)
             active_start=10,
-            active_end=12,
-        ),
-        Hitbox(
-            circle=Circle(dx=24, dy=zone_dy("head", _H), r=23),
-            damage=12.0,
-            angle=30,
-            base_knockback=10.0,
-            knockback_growth=90.0,
-            active_start=13,
             active_end=15,
         ),
     ),

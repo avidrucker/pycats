@@ -178,38 +178,20 @@
       "recovery": 12,
       "hitboxes": [
         {
-          "damage": 11.0,
+          "damage": 10.0,
           "angle": 28,
-          "base_knockback": 43.0,
-          "knockback_growth": 65.0,
+          "base_knockback": 31.5,
+          "knockback_growth": 82.5,
           "active_start": 6,
-          "active_end": 8,
-          "circle": [-12, 30, 25]
-        },
-        {
-          "damage": 11.0,
-          "angle": 28,
-          "base_knockback": 43.0,
-          "knockback_growth": 65.0,
-          "active_start": 6,
-          "active_end": 8,
-          "circle": [-2, 34, 19]
-        },
-        {
-          "damage": 9.0,
-          "angle": 361,
-          "base_knockback": 20.0,
-          "knockback_growth": 100.0,
-          "active_start": 9,
           "active_end": 17,
           "circle": [-12, 30, 25]
         },
         {
-          "damage": 9.0,
-          "angle": 361,
-          "base_knockback": 20.0,
-          "knockback_growth": 100.0,
-          "active_start": 9,
+          "damage": 10.0,
+          "angle": 28,
+          "base_knockback": 31.5,
+          "knockback_growth": 82.5,
+          "active_start": 6,
           "active_end": 17,
           "circle": [-2, 34, 19]
         }
@@ -223,34 +205,18 @@
       "recovery": 19,
       "hitboxes": [
         {
-          "damage": 11.0,
+          "damage": 10.5,
           "angle": 55,
           "knockback_growth": 100.0,
           "active_start": 4,
-          "active_end": 5,
-          "circle": [22, 4, 19]
-        },
-        {
-          "damage": 11.0,
-          "angle": 55,
-          "knockback_growth": 100.0,
-          "active_start": 4,
-          "active_end": 5,
-          "circle": [14, 8, 25]
-        },
-        {
-          "damage": 10.0,
-          "angle": 55,
-          "knockback_growth": 100.0,
-          "active_start": 6,
           "active_end": 9,
           "circle": [22, 4, 19]
         },
         {
-          "damage": 10.0,
+          "damage": 10.5,
           "angle": 55,
           "knockback_growth": 100.0,
-          "active_start": 6,
+          "active_start": 4,
           "active_end": 9,
           "circle": [14, 8, 25]
         }

@@ -208,41 +208,27 @@ def test_nalio_fair_spawns_two_windows_through_player_update():
     assert appeared == [(16, 60), (18, 280)], "early then meteor, separate Attacks"
 
 
-def test_nalio_bair_is_pm_attackairb_two_windows():
-    """Nalio's b-air is PM3.6 Mario AttackAirB (rukaidata) — a clean→late sex-kick
-    using BOTH gates. Active 6-17 (startup 5 / active 12), IASA 29 (recovery 12).
-    Clean [6,8]: angle 28, dmg 11, BKB 43, KBG 65. Late [9,17]: angle 361 (the
-    Sakurai sentinel, #203), dmg 9, BKB 20, KBG 100. Able-to-fail: an absent key
-    falls back to nair; collapsing the windows breaks the per-box timing."""
+def test_nalio_bair_is_flattened_single_window():
+    """Nalio's b-air = PM3.6 Mario AttackAirB, FLATTENED for V1 (#911, ruling #893):
+    the clean→late sex kick (clean [6,8] dmg 11/ang 28/BKB 43/KBG 65 -> late [9,17]
+    dmg 9/Sakurai 361/BKB 20/KBG 100) is ONE window f6-17 with placeholder averages
+    dmg 10/BKB 31.5/KBG 82.5; angle keeps the clean 28 (361 was not averaged). Timing
+    (5/12/12) and radii (25/19) unchanged."""
     move = load_fighter_data("nalio").moves["bair"]
     assert move.in_air is True
     assert (move.startup, move.active, move.recovery) == (5, 12, 12)
-    assert len(move.hitboxes) == 4
-
-    clean = [hb for hb in move.hitboxes if hb.active_start == 6]
-    late = [hb for hb in move.hitboxes if hb.active_start == 9]
-    assert len(clean) == 2 and len(late) == 2
-
-    # Clean window [6, 8].
-    assert all(hb.active_end == 8 for hb in clean)
-    assert tuple(hb.damage for hb in clean) == (11.0, 11.0)
-    assert all(hb.angle == 28 for hb in clean)
-    assert all(hb.base_knockback == 43.0 for hb in clean)
-    assert all(hb.knockback_growth == 65.0 for hb in clean)
-    assert tuple(hb.circle.r for hb in clean) == (25, 19)
-
-    # Late window [9, 17] — the Sakurai-angle (361) weak hit.
-    assert all(hb.active_end == 17 for hb in late)
-    assert tuple(hb.damage for hb in late) == (9.0, 9.0)
-    assert all(hb.angle == 361 for hb in late)
-    assert all(hb.base_knockback == 20.0 for hb in late)
-    assert all(hb.knockback_growth == 100.0 for hb in late)
-    assert tuple(hb.circle.r for hb in late) == (25, 19)
+    assert len(move.hitboxes) == 2
+    assert {(hb.active_start, hb.active_end) for hb in move.hitboxes} == {(6, 17)}
+    assert all(hb.damage == 10.0 for hb in move.hitboxes)
+    assert all(hb.angle == 28 for hb in move.hitboxes)
+    assert all(hb.base_knockback == 31.5 for hb in move.hitboxes)
+    assert all(hb.knockback_growth == 82.5 for hb in move.hitboxes)
+    assert tuple(hb.circle.r for hb in move.hitboxes) == (25, 19)
 
 
-def test_nalio_bair_spawns_two_windows_through_player_update():
-    """End-to-end (#204): the clean window spawns one Attack on frame 6 and the
-    Sakurai late window a SEPARATE Attack on frame 9."""
+def test_nalio_bair_spawns_one_window_through_player_update():
+    """End-to-end (#204): the flattened b-air spawns exactly ONE Attack (on frame 6),
+    not the old clean/late pair — the #890 double-hit is gone (#911, ruling #893)."""
     from pycats.core.input import InputFrame
 
     p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio", facing_right=True)
@@ -259,42 +245,30 @@ def test_nalio_bair_spawns_two_windows_through_player_update():
                 seen.add(id(atk))
                 appeared.append((frame, atk.hitboxes[0].angle))
 
-    assert appeared == [(6, 28), (9, 361)], "clean then Sakurai late, separate Attacks"
+    assert appeared == [(6, 28)], "one flattened Attack, no separate late window"
 
 
-def test_nalio_uair_is_pm_attackairhi_two_windows():
-    """Nalio's u-air is PM3.6 Mario AttackAirHi (rukaidata) — a two-window upward
-    juggle. Active 4-9 (startup 3 / active 6), IASA 28 (recovery 19). Clean [4,5]
-    dmg 11, late [6,9] dmg 10; both angle 55, BKB 0 (pure-growth), KBG 100, r 19/25.
-    Able-to-fail: an absent key falls back to nair; collapsing the windows breaks
-    the per-box timing."""
+def test_nalio_uair_is_flattened_single_window():
+    """Nalio's u-air = PM3.6 Mario AttackAirHi, FLATTENED for V1 (#911, ruling #893):
+    the two-window juggle (clean [4,5] dmg 11 -> late [6,9] dmg 10; both angle 55,
+    BKB 0, KBG 100) is ONE window f4-9 with placeholder average dmg 10.5; angle/BKB/KBG
+    were equal so they carry through. Timing (3/6/19) and radii (19/25) unchanged."""
     move = load_fighter_data("nalio").moves["uair"]
     assert move.in_air is True
     assert (move.startup, move.active, move.recovery) == (3, 6, 19)
-    assert len(move.hitboxes) == 4
-
-    clean = [hb for hb in move.hitboxes if hb.active_start == 4]
-    late = [hb for hb in move.hitboxes if hb.active_start == 6]
-    assert len(clean) == 2 and len(late) == 2
-
-    # Clean window [4, 5].
-    assert all(hb.active_end == 5 for hb in clean)
-    assert tuple(hb.damage for hb in clean) == (11.0, 11.0)
-    # Late window [6, 9].
-    assert all(hb.active_end == 9 for hb in late)
-    assert tuple(hb.damage for hb in late) == (10.0, 10.0)
-    # Shared across both windows.
+    assert len(move.hitboxes) == 2
+    assert {(hb.active_start, hb.active_end) for hb in move.hitboxes} == {(4, 9)}
+    assert all(hb.damage == 10.5 for hb in move.hitboxes)
     for hb in move.hitboxes:
         assert hb.angle == 55
         assert hb.base_knockback == 0.0
         assert hb.knockback_growth == 100.0
-    assert tuple(hb.circle.r for hb in clean) == (19, 25)
-    assert tuple(hb.circle.r for hb in late) == (19, 25)
+    assert tuple(hb.circle.r for hb in move.hitboxes) == (19, 25)
 
 
-def test_nalio_uair_spawns_two_windows_through_player_update():
-    """End-to-end (#204): the clean window spawns one Attack on frame 4 and the
-    late window a SEPARATE Attack on frame 6."""
+def test_nalio_uair_spawns_one_window_through_player_update():
+    """End-to-end (#204): the flattened u-air spawns exactly ONE Attack (on frame 4),
+    not the old clean/late pair — the #890 double-hit is gone (#911, ruling #893)."""
     from pycats.core.input import InputFrame
 
     p = Player(100, 100, P1_CONTROLS, (255, 160, 64), eye_color=(0, 0, 0), char_name="nalio", facing_right=True)
@@ -311,7 +285,7 @@ def test_nalio_uair_spawns_two_windows_through_player_update():
                 seen.add(id(atk))
                 appeared.append((frame, atk.hitboxes[0].damage))
 
-    assert appeared == [(4, 11.0), (6, 10.0)], "clean then late, separate Attacks"
+    assert appeared == [(4, 10.5)], "one flattened Attack, no separate late window"
 
 
 def test_nalio_dair_is_pm_attackairlw():

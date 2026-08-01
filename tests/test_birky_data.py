@@ -162,19 +162,17 @@ def test_birky_jab_is_authored_short_range_and_weak():
     assert hb.circle.dx < default.moves["attack"].hitboxes[0].circle.dx
 
 
-def test_birky_nair_is_two_window_sex_kick():
-    """Birky's nair = PM3.6 Kirby AttackAirN: IASA 43, lingering — early f3-6
-    (dmg 12, BKB 15) and late f7-29 (dmg 9, BKB 0), both angle 55."""
+def test_birky_nair_is_flattened_single_window():
+    """Birky's nair = PM3.6 Kirby AttackAirN, FLATTENED for V1 (#911, ruling #893):
+    the sex kick (early f3-6 dmg 12/BKB 15 -> late f7-29 dmg 9/BKB 0) is one window
+    f3-29 with placeholder averages dmg 10.5 / BKB 7.5; angle 55, IASA 43 unchanged."""
     birky = load_fighter_data("birky")
     nair = birky.moves["nair"]
     assert nair.in_air is True
-    assert nair.startup + nair.active + nair.recovery == 43  # PM3.6 IASA
-    early = [h for h in nair.hitboxes if h.active_end == 6]
-    late = [h for h in nair.hitboxes if h.active_start == 7]
-    assert early and late
-    assert all(h.damage == 12.0 and h.base_knockback == 15.0 for h in early)
-    assert all(h.damage == 9.0 and h.base_knockback == 0.0 for h in late)
-    assert all(h.angle == 55 for h in nair.hitboxes)
+    assert nair.startup + nair.active + nair.recovery == 43  # PM3.6 IASA (unchanged)
+    assert {(h.active_start, h.active_end) for h in nair.hitboxes} == {(3, 29)}
+    assert all(h.damage == 10.5 and h.base_knockback == 7.5 for h in nair.hitboxes)
+    assert all(h.angle == 55 and h.knockback_growth == 100.0 for h in nair.hitboxes)
 
 
 def test_birky_fair_is_three_window_multihit():
@@ -192,33 +190,32 @@ def test_birky_fair_is_three_window_multihit():
     assert all(h.active_start == 22 for h in finisher)
 
 
-def test_birky_bair_is_two_window():
-    """Birky's bair = PM3.6 Kirby AttackAirB: IASA 36, early f6-8 (dmg 14, BKB 10)
-    + late f9-20 (dmg 10, BKB 0), both angle 361, behind the cat (dx < 0)."""
+def test_birky_bair_is_flattened_single_window():
+    """Birky's bair = PM3.6 Kirby AttackAirB, FLATTENED for V1 (#911, ruling #893):
+    the sex kick (early f6-8 dmg 14/BKB 10 -> late f9-20 dmg 10/BKB 0) is one window
+    f6-20 with placeholder averages dmg 12 / BKB 5; angle 361, behind the cat (dx < 0),
+    IASA 36 unchanged."""
     birky = load_fighter_data("birky")
     bair = birky.moves["bair"]
     assert bair.in_air is True
-    assert bair.startup + bair.active + bair.recovery == 36  # PM3.6 IASA
-    early = [h for h in bair.hitboxes if h.active_end == 8]
-    late = [h for h in bair.hitboxes if h.active_start == 9]
-    assert early and late
-    assert all(h.damage == 14.0 for h in early)
-    assert all(h.damage == 10.0 for h in late)
+    assert bair.startup + bair.active + bair.recovery == 36  # PM3.6 IASA (unchanged)
+    assert {(h.active_start, h.active_end) for h in bair.hitboxes} == {(6, 20)}
+    assert all(h.damage == 12.0 and h.base_knockback == 5.0 for h in bair.hitboxes)
     assert all(h.angle == 361 and h.circle.dx < 0 for h in bair.hitboxes)
 
 
-def test_birky_uair_is_two_window_juggle():
-    """Birky's uair = PM3.6 Kirby AttackAirHi: IASA 36, early f10-12 (dmg 15,
-    angle 75) + late f13-15 (dmg 12, angle 30)."""
+def test_birky_uair_is_flattened_single_window():
+    """Birky's uair = PM3.6 Kirby AttackAirHi, FLATTENED for V1 (#911, ruling #893):
+    the juggle (early f10-12 dmg 15/ang 75 -> late f13-15 dmg 12/ang 30) is one window
+    f10-15 with placeholder averages dmg 13.5 / BKB 7.5 / KBG 102.5; angle keeps the
+    clean 75 (30 was not averaged), IASA 36 unchanged."""
     birky = load_fighter_data("birky")
     uair = birky.moves["uair"]
     assert uair.in_air is True
-    assert uair.startup + uair.active + uair.recovery == 36  # PM3.6 IASA
-    early = [h for h in uair.hitboxes if h.active_end == 12]
-    late = [h for h in uair.hitboxes if h.active_start == 13]
-    assert early and late
-    assert all(h.damage == 15.0 and h.angle == 75 for h in early)
-    assert all(h.damage == 12.0 and h.angle == 30 for h in late)
+    assert uair.startup + uair.active + uair.recovery == 36  # PM3.6 IASA (unchanged)
+    assert {(h.active_start, h.active_end) for h in uair.hitboxes} == {(10, 15)}
+    assert all(h.damage == 13.5 and h.angle == 75 for h in uair.hitboxes)
+    assert all(h.base_knockback == 7.5 and h.knockback_growth == 102.5 for h in uair.hitboxes)
 
 
 def test_birky_dair_is_looping_spike_drill():
