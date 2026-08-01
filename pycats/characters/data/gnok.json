@@ -377,6 +377,106 @@
           "circle": [58, 66, 25]
         }
       ]
+    },
+    "fsmash": {
+      "name": "fsmash",
+      "in_air": false,
+      "startup": 7,
+      "active": 2,
+      "recovery": 31,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 21.0,
+          "angle": 361,
+          "base_knockback": 30.0,
+          "knockback_growth": 94.0,
+          "circle": [92, 42, 30]
+        },
+        {
+          "damage": 20.0,
+          "angle": 361,
+          "base_knockback": 30.0,
+          "knockback_growth": 94.0,
+          "circle": [78, 42, 25]
+        },
+        {
+          "damage": 19.0,
+          "angle": 361,
+          "base_knockback": 18.0,
+          "knockback_growth": 100.0,
+          "circle": [62, 42, 18]
+        },
+        {
+          "damage": 18.0,
+          "angle": 361,
+          "base_knockback": 18.0,
+          "knockback_growth": 100.0,
+          "circle": [50, 42, 13]
+        }
+      ]
+    },
+    "usmash": {
+      "name": "usmash",
+      "in_air": false,
+      "startup": 7,
+      "active": 3,
+      "recovery": 31,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 18.0,
+          "angle": 90,
+          "base_knockback": 40.0,
+          "knockback_growth": 98.0,
+          "circle": [38, -6, 46]
+        },
+        {
+          "damage": 16.0,
+          "angle": 90,
+          "base_knockback": 40.0,
+          "knockback_growth": 98.0,
+          "circle": [38, 14, 34]
+        }
+      ]
+    },
+    "dsmash": {
+      "name": "dsmash",
+      "in_air": false,
+      "startup": 7,
+      "active": 4,
+      "recovery": 41,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 17.0,
+          "angle": 115,
+          "base_knockback": 35.0,
+          "knockback_growth": 100.0,
+          "circle": [46, 66, 27]
+        },
+        {
+          "damage": 17.0,
+          "angle": 115,
+          "base_knockback": 35.0,
+          "knockback_growth": 100.0,
+          "circle": [-46, 66, 27]
+        },
+        {
+          "damage": 16.0,
+          "angle": 98,
+          "base_knockback": 35.0,
+          "knockback_growth": 100.0,
+          "circle": [30, 66, 22]
+        },
+        {
+          "damage": 16.0,
+          "angle": 98,
+          "base_knockback": 35.0,
+          "knockback_growth": 100.0,
+          "circle": [-30, 66, 22]
+        }
+      ]
     }
   },
   "crouch_hurtbox": {

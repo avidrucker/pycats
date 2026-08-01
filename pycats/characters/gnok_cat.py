@@ -23,10 +23,12 @@ Slice 1 authored the scalars + measured body only. Slice 2 (#824) added the **ja
 windows. Slice 3 (#841) added the three **tilts** — f-tilt (`AttackS3S`), u-tilt (`AttackHi3`),
 d-tilt (`AttackLw3`). Slices 5-6 (#914) added the five **aerials** — n-air (`AttackAirN`, a sex
 kick), f-air (`AttackAirF`, an overhead smash with a late spike), b-air (`AttackAirB`, a Sakurai
-sex kick), u-air (`AttackAirHi`, an upward juggle), d-air (`AttackAirLw`, the downward spike);
-the remaining slots (dash attack slice 4, smashes slice 7) still reuse the default cat until
-those slices land. Deferred (NOT V1, need engine): grabs/throws, Giant Punch armor, Spinning
-Kong recovery (spec §3/§5).
+sex kick), u-air (`AttackAirHi`, an upward juggle), d-air (`AttackAirLw`, the downward spike).
+Slice 7 (#947) adds the three **smashes** — f-smash (`AttackS4S`, a two-hand forward clap),
+u-smash (`AttackHi4`, an overhead double-arm clap), d-smash (`AttackLw4`, a two-sided ground
+pound); all `chargeable=True`. The remaining slot (dash attack, slice 4) still reuses the
+default cat until it lands. Deferred (NOT V1, need engine): grabs/throws, Giant Punch armor,
+Spinning Kong recovery (spec §3/§5).
 
 Faithful-physics caveat (#785/#816): pycats' shipped velocity globals are *game-tuned px*,
 not rukaidata × 5.4 (e.g. MAX_FALL_SPEED = 13 vs Mario's real ~9.2). Gnok's `vel()` values
@@ -500,10 +502,122 @@ _GNOK_DAIR = MoveData(
     ),
 )
 
+# --- Smashes (slice 7, #947): DK's chargeable KO tools (AttackS4S/Hi4/Lw4) -----
+# The last V1 striking moves. All three are `chargeable=True` — the charge mechanic is
+# live (#371/#377, proven by Narz), so no new engine work; the angled f-smash is engine-side
+# too (global FSMASH_ANGLE_UP/DOWN applied to any move keyed "fsmash", #383/#327) — no
+# per-character angle field. Each is a SINGLE active window (no #204 early/late decay in the
+# DK smash data), so — like nalio's usmash/dsmash and narz's fsmash/usmash — no `set_id` is
+# needed: the engine already resolves overlapping same-window boxes to one hit per target per
+# move, and each side of the two-sided d-smash is a distinct target.
+#
+# Datamined at DEV time from the brawllib_rs PM3.6 dump (`-f Donkey -a AttackS4S|AttackHi4|
+# AttackLw4`, high_level_frame_data -l subaction; env #614). Frames / % / angle / BKB / KBG
+# entered RAW (#120). Radii = round(size u × PX_PER_UNIT) as for every other Gnok move.
+# Positions dx/dy APPROXIMATED (no skeleton modeled) — ⚠🔬 playtest starting points (ADR-0003).
+
+
+# Forward-smash (AttackS4S): DK's two-hand forward clap — the heavy KO poke. FOUR same-angle
+# boxes (rukaidata id 0→3), all trajectory 361 (Sakurai #203). The two big fists (id0/id1)
+# hit hardest (dmg 20/21, BKB 30, KBG 94); the two inner boxes (id2/id3) are the weaker link
+# (dmg 19/18, BKB 18, KBG 100). Datamine: IASA 40, active frames 8-9 → startup 7 / active 2 /
+# recovery 31. Radii: 5.47→30, 4.69→25, 3.33→18, 2.34→13. Ordered by reach (biggest fist first
+# = tuple priority on overlap).
+def _fsmash_box(dx, r, damage, bkb, kbg):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=42, r=r),
+        damage=damage,
+        angle=361,
+        base_knockback=bkb,
+        knockback_growth=kbg,
+    )
+
+
+_GNOK_FSMASH = MoveData(
+    name="fsmash",
+    in_air=False,
+    chargeable=True,
+    startup=7,  # AttackS4S first active frame 8 (1-indexed) → 7 startup frames
+    active=2,  # active frames 8-9
+    recovery=31,  # IASA 40 → 40 - 7 - 2 = 31
+    hitboxes=(
+        _fsmash_box(dx=92, r=30, damage=21.0, bkb=30.0, kbg=94.0),  # id1 (size 5.47) — big fist, furthest
+        _fsmash_box(dx=78, r=25, damage=20.0, bkb=30.0, kbg=94.0),  # id0 (size 4.69) — fist
+        _fsmash_box(dx=62, r=18, damage=19.0, bkb=18.0, kbg=100.0),  # id2 (size 3.33) — inner link
+        _fsmash_box(dx=50, r=13, damage=18.0, bkb=18.0, kbg=100.0),  # id3 (size 2.34) — innermost link
+    ),
+)
+
+
+# Up-smash (AttackHi4): a big overhead double-arm clap straight up — the anti-air/juggle KO.
+# TWO boxes (rukaidata id 0→1), both trajectory 90 (straight up), BKB 40, KBG 98; the main
+# box (id0, dmg 18) is huge, the inner (id1, dmg 16) slightly weaker. Datamine: IASA 41,
+# active frames 8-10 → startup 7 / active 3 / recovery 31. Radii: 8.5→46 (a wide overhead
+# sweep), 6.25→34. Centered over the 76-wide body (dx ≈ 38).
+_GNOK_USMASH = MoveData(
+    name="usmash",
+    in_air=False,
+    chargeable=True,
+    startup=7,  # AttackHi4 first active frame 8 (1-indexed) → 7 startup frames
+    active=3,  # active frames 8-10
+    recovery=31,  # IASA 41 → 41 - 7 - 3 = 31
+    hitboxes=(
+        Hitbox(
+            circle=Circle(dx=38, dy=-6, r=46),
+            damage=18.0,
+            angle=90,
+            base_knockback=40.0,
+            knockback_growth=98.0,
+        ),  # id0 (size 8.5) — main overhead
+        Hitbox(
+            circle=Circle(dx=38, dy=14, r=34),
+            damage=16.0,
+            angle=90,
+            base_knockback=40.0,
+            knockback_growth=98.0,
+        ),  # id1 (size 6.25) — inner
+    ),
+)
+
+
+# Down-smash (AttackLw4): DK's two-sided ground pound — hits FRONT and BACK together (a single
+# window, unlike Marth/narz's front-then-back split). FOUR boxes, a big pair (id0/id1, dmg 17,
+# trajectory 115, r27) and a small pair (id2/id3, dmg 16, trajectory 98, r22), BKB 35, KBG 100,
+# both trajectories near-vertical (the move pops opponents up). Placed front (dx>0) + back
+# (dx<0); the sim mirror-flips dx with facing and flips the launch x by attacker facing.
+# Datamine: IASA 52, active frames 8-11 → startup 7 / active 4 / recovery 41. Radii: 5.0→27,
+# 4.0→22. Low along the ground (large dy).
+def _dsmash_box(dx, r, damage, angle):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=66, r=r),
+        damage=damage,
+        angle=angle,
+        base_knockback=35.0,
+        knockback_growth=100.0,
+    )
+
+
+_GNOK_DSMASH = MoveData(
+    name="dsmash",
+    in_air=False,
+    chargeable=True,
+    startup=7,  # AttackLw4 first active frame 8 (1-indexed) → 7 startup frames
+    active=4,  # active frames 8-11
+    recovery=41,  # IASA 52 → 52 - 7 - 4 = 41
+    hitboxes=(
+        _dsmash_box(dx=46, r=27, damage=17.0, angle=115),  # id0 (size 5.0) — front, big
+        _dsmash_box(dx=-46, r=27, damage=17.0, angle=115),  # id1 (size 5.0) — back, big
+        _dsmash_box(dx=30, r=22, damage=16.0, angle=98),  # id2 (size 4.0) — front, inner
+        _dsmash_box(dx=-30, r=22, damage=16.0, angle=98),  # id3 (size 4.0) — back, inner
+    ),
+)
+
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
-    # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
-    # jab (DK's 1-2); the other slots reuse the default cat until their slices (#779) land.
+    # PM3.6 velocity scalars authored raw-first via vel() (#785). The full V1 striking kit is
+    # now authored — jab (#824), 3 tilts (#841), 5 aerials (#914), 3 smashes (#947); only the
+    # dash-attack slot (slice 4) still reuses the default cat until it lands (#779).
     hurtbox=_HURTBOX,
     stand_size=_STAND_SIZE,
     moves={
@@ -517,6 +631,9 @@ GNOK_FIGHTER_DATA = FighterData(
         "bair": _GNOK_BAIR,
         "uair": _GNOK_UAIR,
         "dair": _GNOK_DAIR,
+        "fsmash": _GNOK_FSMASH,
+        "usmash": _GNOK_USMASH,
+        "dsmash": _GNOK_DSMASH,
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
