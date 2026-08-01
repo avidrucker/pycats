@@ -75,8 +75,9 @@ def test_gnok_differs_from_default_on_scalars_and_body():
 
 
 # The moves Gnok has authored so far (grows one slice at a time under #779): slice 2 the
-# jab, slice 3 (#841) the three tilts. Every OTHER slot still reuses the default cat.
-_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt"}
+# jab, slice 3 (#841) the three tilts, slices 5-6 (#914) the aerials (one per commit).
+# Every OTHER slot still reuses the default cat.
+_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair"}
 
 
 def test_gnok_authored_moves_are_its_own_the_rest_reuse_default():
@@ -206,3 +207,32 @@ def test_gnok_is_in_the_selectable_roster():
     assert roster.ARCHETYPE_DEFAULT_SKIN["gnok"] == "brown-tan"  # Gnok's DK-brown base theme (#779)
     assert roster.ARCHETYPE_EXTRA_SKINS["gnok"] == ("brown-tan",)  # Gnok owns it (not a shared skin)
     assert roster.palette_for("gnok") is not None  # never raises; real palette set
+
+
+def test_gnok_nair_is_a_sex_kick_early_strong_late_weak():
+    # Slices 5-6 (#914) n-air: DK's AttackAirN — a "sex kick" with two temporal windows
+    # (#204). EARLY [7,10] is the strong hit (dmg 14, angle 361 Sakurai, BKB 20); LATE
+    # [11,24] is the long weak lingering hit (dmg 10, angle 50, BKB 10). startup 6 / active
+    # 18 / recovery 12 (datamine FAF 36, active frames 7-24). Able-to-fail: a single-window
+    # nair, or early/late not decaying, collapses this.
+    nair = load_fighter_data("gnok").moves["nair"]
+    assert (nair.startup, nair.active, nair.recovery) == (6, 18, 12)
+    windows = sorted({(hb.active_start, hb.active_end) for hb in nair.hitboxes})
+    assert windows == [(7, 10), (11, 24)], "n-air must fire an early then a late window"
+    early = [hb for hb in nair.hitboxes if hb.active_start == 7]
+    late = [hb for hb in nair.hitboxes if hb.active_start == 11]
+    assert early and late
+    assert all(hb.damage == 14.0 and hb.angle == 361 and hb.base_knockback == 20.0 for hb in early)
+    assert all(hb.damage == 10.0 and hb.angle == 50 and hb.base_knockback == 10.0 for hb in late)
+    assert max(hb.damage for hb in early) > max(hb.damage for hb in late)  # sex-kick decay
+
+
+def test_gnok_nair_maps_to_air_neutral_a():
+    # The "nair" key is what move-select picks for airborne neutral-A, so authoring it under
+    # that key means it fires in-game. Able-to-fail: without a "nair" move the seam falls
+    # back to the "attack" alias.
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    key = resolve_move_key(gnok.moves, direction="neutral", on_ground=False, is_special=False)
+    assert key == "nair"

@@ -288,6 +288,58 @@ _GNOK_DTILT = MoveData(
     ),
 )
 
+
+# --- N-air (slices 5-6, #914): DK's AttackAirN — a "sex kick" -----------------
+# Gnok's neutral aerial is the classic DK sex kick: one strong EARLY window then a long
+# WEAK lingering window, authored as two #204 temporal windows (the same seam bair/fair use).
+# Datamined at DEV time from the brawllib_rs PM3.6 dump (`-f Donkey -a AttackAirN`,
+# `high_level_frame_data -l subaction`; env #614):
+#   FAF 36; first active frame 7, last active frame 24 → startup 6 / active 18 / recovery 12.
+#   EARLY [7,10]:  3 boxes, damage 14, trajectory 361 (Sakurai), BKB 20, KBG 100, WDSK 0.
+#   LATE  [11,24]: damage 10, trajectory 50 (up-forward), BKB 10, KBG 100 — the lingering hit.
+# Frames / % / angle / BKB / KBG entered RAW (#120). The 3 raw boxes collapse to 2 distinct
+# sizes per window (id0/id1 share a size); radii = round(size u × PX_PER_UNIT): early 6.0→32,
+# 7.0→38; late 5.0→27, 6.0→32 (DK's big limbs → big radii). Positions dx/dy APPROXIMATED
+# around the spinning body (no skeleton modeled) — a front box + a low sweep; ⚠🔬 playtest
+# starting points (ADR-0003).
+def _nair_early(dx, dy, r):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=14.0,
+        angle=361,
+        base_knockback=20.0,
+        knockback_growth=100.0,
+        active_start=7,
+        active_end=10,
+    )
+
+
+def _nair_late(dx, dy, r):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=10.0,
+        angle=50,
+        base_knockback=10.0,
+        knockback_growth=100.0,
+        active_start=11,
+        active_end=24,
+    )
+
+
+_GNOK_NAIR = MoveData(
+    name="neutral air",
+    in_air=True,
+    startup=6,
+    active=18,
+    recovery=12,
+    hitboxes=(
+        _nair_early(dx=78, dy=40, r=32),  # early — front limb
+        _nair_early(dx=52, dy=64, r=38),  # early — low sweep (bigger box)
+        _nair_late(dx=78, dy=40, r=27),  # late — front limb (weak)
+        _nair_late(dx=52, dy=64, r=32),  # late — low sweep (weak)
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
@@ -300,6 +352,7 @@ GNOK_FIGHTER_DATA = FighterData(
         "ftilt": _GNOK_FTILT,
         "utilt": _GNOK_UTILT,
         "dtilt": _GNOK_DTILT,
+        "nair": _GNOK_NAIR,
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,
