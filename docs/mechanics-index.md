@@ -43,7 +43,7 @@ number. Owner today is the #605 inventory (the section named in `§`); #604 supe
 
 ## B. Value divergences (config constants)
 
-The invented / departed tuning numbers. Each lives as a plain literal in `pycats/config.py`
+The invented / departed tuning numbers. Each lives as a plain literal in the `pycats/config/` package (physics / stage / render submodules)
 and carries a provenance row in `pycats/combat/provenance.py` (owner) with its `source`,
 `status`, and derivation. The **status** here (`DIVERGENCE` = intentional departure from a
 known canon value; `TUNED` = deliberate design value not seeking canon) is the exact token
@@ -54,35 +54,35 @@ playtest starts) rows are out of scope — read them straight from the registry.
 
 | Constant | Landmark | Status | Owner | Note |
 |---|---|---|---|---|
-| `MAX_FALL_SPEED` | `pycats/config.py::MAX_FALL_SPEED` | DIVERGENCE | `pycats/combat/provenance.py` | single global fall speed; no base/fast-fall split |
-| `KNOCKBACK_LAUNCH_FACTOR` | `pycats/config.py::KNOCKBACK_LAUNCH_FACTOR` | DIVERGENCE | `pycats/combat/provenance.py` | scaled to the 960px stage |
-| `KNOCKBACK_DECAY` | `pycats/config.py::KNOCKBACK_DECAY` | DIVERGENCE | `pycats/combat/provenance.py` | 960px-scaled, preserves 1.7 decay/launch ratio |
-| `GETUP_ROLL_FRAMES` | `pycats/config.py::GETUP_ROLL_FRAMES` | DIVERGENCE | `pycats/combat/provenance.py` | shorter roll; duration == intangibility window |
-| `DODGE_SPEED` | `pycats/config.py::DODGE_SPEED` | TUNED | `pycats/combat/provenance.py` | ground-roll boost; no single canon |
-| `JOSTLE_MIN_VOVERLAP_FRAC` | `pycats/config.py::JOSTLE_MIN_VOVERLAP_FRAC` | TUNED | `pycats/combat/provenance.py` | vertical-overlap gate for X-only push |
-| `SHIELD_MAX_HP` | `pycats/config.py::SHIELD_MAX_HP` | TUNED | `pycats/combat/provenance.py` | pycats shield-HP model |
-| `SHIELD_DRAIN_PER_FRAME` | `pycats/config.py::SHIELD_DRAIN_PER_FRAME` | TUNED | `pycats/combat/provenance.py` | shield drain/regain rate, no canon |
-| `HITSTUN_FLOOR` | `pycats/config.py::HITSTUN_FLOOR` | TUNED | `pycats/combat/provenance.py` | ≥1f floor for any clean hit |
-| `SAKURAI_AIRBORNE_DEG` | `pycats/config.py::SAKURAI_AIRBORNE_DEG` | TUNED | `pycats/combat/provenance.py` | keyed to pycats knockback magnitude |
-| `SAKURAI_GROUNDED_MAX_DEG` | `pycats/config.py::SAKURAI_GROUNDED_MAX_DEG` | TUNED | `pycats/combat/provenance.py` | grounded max angle at HIGH_KB |
-| `SAKURAI_GROUNDED_LOW_KB` | `pycats/config.py::SAKURAI_GROUNDED_LOW_KB` | TUNED | `pycats/combat/provenance.py` | grounded angle flat below this KB |
-| `SAKURAI_GROUNDED_HIGH_KB` | `pycats/config.py::SAKURAI_GROUNDED_HIGH_KB` | TUNED | `pycats/combat/provenance.py` | grounded angle maxes at this KB |
-| `KNOCKDOWN_VY_THRESHOLD` | `pycats/config.py::KNOCKDOWN_VY_THRESHOLD` | TUNED | `pycats/combat/provenance.py` | auto-knockdown impact-speed gate |
-| `KNOCKDOWN_PRONE_FRAMES` | `pycats/config.py::KNOCKDOWN_PRONE_FRAMES` | TUNED | `pycats/combat/provenance.py` | fixed ~0.5s getup window |
-| `GETUP_ROLL_SPEED` | `pycats/config.py::GETUP_ROLL_SPEED` | TUNED | `pycats/combat/provenance.py` | getup-roll horizontal speed |
-| `LEDGE_GETUP_FRAMES` | `pycats/config.py::LEDGE_GETUP_FRAMES` | TUNED | `pycats/combat/provenance.py` | neutral ledge-getup climb |
-| `GROUND_FRICTION` | `pycats/config.py::GROUND_FRICTION` | TUNED | `pycats/combat/provenance.py` | friction knob (1.0=ice); no PM equivalent |
-| `AIR_FRICTION` | `pycats/config.py::AIR_FRICTION` | TUNED | `pycats/combat/provenance.py` | air friction knob; no PM equivalent |
-| `HURT_TIME` | `pycats/config.py::HURT_TIME` | TUNED | `pycats/combat/provenance.py` | hurt/flinch timer; no PM canon |
-| `LEDGE_REGRAB_LOCKOUT_FRAMES` | `pycats/config.py::LEDGE_REGRAB_LOCKOUT_FRAMES` | TUNED | `pycats/combat/provenance.py` | post-release regrab-suppression window |
-| `PLAYER_ATTACK_DURATION` | `pycats/config.py::PLAYER_ATTACK_DURATION` | TUNED | `pycats/combat/provenance.py` | default attack duration; no PM canon |
-| `INITIAL_LIVES` | `pycats/config.py::INITIAL_LIVES` | TUNED | `pycats/combat/provenance.py` | ruleset stock count, not a physics value |
-| `RESPAWN_DELAY_FRAMES` | `pycats/config.py::RESPAWN_DELAY_FRAMES` | TUNED | `pycats/combat/provenance.py` | ~2s respawn freeze; ruleset value |
-| `PLAYER_SIZE` | `pycats/config.py::PLAYER_SIZE` | TUNED | `pycats/combat/provenance.py` | default collision box (render→collision, #598) |
-| `LEDGE_CATCH_W` | `pycats/config.py::LEDGE_CATCH_W` | TUNED | `pycats/combat/provenance.py` | ledge-grab catch-region width |
-| `LEDGE_CATCH_H` | `pycats/config.py::LEDGE_CATCH_H` | TUNED | `pycats/combat/provenance.py` | ledge-grab catch-region height |
-| `BLAST_PADDING` | `pycats/config.py::BLAST_PADDING` | TUNED | `pycats/combat/provenance.py` | KO boundary px beyond screen edge (bottom + L/R baseline) |
-| `BLAST_PADDING_TOP` | `pycats/config.py::BLAST_PADDING_TOP` | TUNED | `pycats/combat/provenance.py` | top KO line 100px higher than bottom (#823) |
+| `MAX_FALL_SPEED` | `pycats/config/physics.py::MAX_FALL_SPEED` | DIVERGENCE | `pycats/combat/provenance.py` | single global fall speed; no base/fast-fall split |
+| `KNOCKBACK_LAUNCH_FACTOR` | `pycats/config/physics.py::KNOCKBACK_LAUNCH_FACTOR` | DIVERGENCE | `pycats/combat/provenance.py` | scaled to the 960px stage |
+| `KNOCKBACK_DECAY` | `pycats/config/physics.py::KNOCKBACK_DECAY` | DIVERGENCE | `pycats/combat/provenance.py` | 960px-scaled, preserves 1.7 decay/launch ratio |
+| `GETUP_ROLL_FRAMES` | `pycats/config/physics.py::GETUP_ROLL_FRAMES` | DIVERGENCE | `pycats/combat/provenance.py` | shorter roll; duration == intangibility window |
+| `DODGE_SPEED` | `pycats/config/physics.py::DODGE_SPEED` | TUNED | `pycats/combat/provenance.py` | ground-roll boost; no single canon |
+| `JOSTLE_MIN_VOVERLAP_FRAC` | `pycats/config/physics.py::JOSTLE_MIN_VOVERLAP_FRAC` | TUNED | `pycats/combat/provenance.py` | vertical-overlap gate for X-only push |
+| `SHIELD_MAX_HP` | `pycats/config/physics.py::SHIELD_MAX_HP` | TUNED | `pycats/combat/provenance.py` | pycats shield-HP model |
+| `SHIELD_DRAIN_PER_FRAME` | `pycats/config/physics.py::SHIELD_DRAIN_PER_FRAME` | TUNED | `pycats/combat/provenance.py` | shield drain/regain rate, no canon |
+| `HITSTUN_FLOOR` | `pycats/config/physics.py::HITSTUN_FLOOR` | TUNED | `pycats/combat/provenance.py` | ≥1f floor for any clean hit |
+| `SAKURAI_AIRBORNE_DEG` | `pycats/config/physics.py::SAKURAI_AIRBORNE_DEG` | TUNED | `pycats/combat/provenance.py` | keyed to pycats knockback magnitude |
+| `SAKURAI_GROUNDED_MAX_DEG` | `pycats/config/physics.py::SAKURAI_GROUNDED_MAX_DEG` | TUNED | `pycats/combat/provenance.py` | grounded max angle at HIGH_KB |
+| `SAKURAI_GROUNDED_LOW_KB` | `pycats/config/physics.py::SAKURAI_GROUNDED_LOW_KB` | TUNED | `pycats/combat/provenance.py` | grounded angle flat below this KB |
+| `SAKURAI_GROUNDED_HIGH_KB` | `pycats/config/physics.py::SAKURAI_GROUNDED_HIGH_KB` | TUNED | `pycats/combat/provenance.py` | grounded angle maxes at this KB |
+| `KNOCKDOWN_VY_THRESHOLD` | `pycats/config/physics.py::KNOCKDOWN_VY_THRESHOLD` | TUNED | `pycats/combat/provenance.py` | auto-knockdown impact-speed gate |
+| `KNOCKDOWN_PRONE_FRAMES` | `pycats/config/physics.py::KNOCKDOWN_PRONE_FRAMES` | TUNED | `pycats/combat/provenance.py` | fixed ~0.5s getup window |
+| `GETUP_ROLL_SPEED` | `pycats/config/physics.py::GETUP_ROLL_SPEED` | TUNED | `pycats/combat/provenance.py` | getup-roll horizontal speed |
+| `LEDGE_GETUP_FRAMES` | `pycats/config/physics.py::LEDGE_GETUP_FRAMES` | TUNED | `pycats/combat/provenance.py` | neutral ledge-getup climb |
+| `GROUND_FRICTION` | `pycats/config/physics.py::GROUND_FRICTION` | TUNED | `pycats/combat/provenance.py` | friction knob (1.0=ice); no PM equivalent |
+| `AIR_FRICTION` | `pycats/config/physics.py::AIR_FRICTION` | TUNED | `pycats/combat/provenance.py` | air friction knob; no PM equivalent |
+| `HURT_TIME` | `pycats/config/physics.py::HURT_TIME` | TUNED | `pycats/combat/provenance.py` | hurt/flinch timer; no PM canon |
+| `LEDGE_REGRAB_LOCKOUT_FRAMES` | `pycats/config/physics.py::LEDGE_REGRAB_LOCKOUT_FRAMES` | TUNED | `pycats/combat/provenance.py` | post-release regrab-suppression window |
+| `PLAYER_ATTACK_DURATION` | `pycats/config/physics.py::PLAYER_ATTACK_DURATION` | TUNED | `pycats/combat/provenance.py` | default attack duration; no PM canon |
+| `INITIAL_LIVES` | `pycats/config/stage.py::INITIAL_LIVES` | TUNED | `pycats/combat/provenance.py` | ruleset stock count, not a physics value |
+| `RESPAWN_DELAY_FRAMES` | `pycats/config/stage.py::RESPAWN_DELAY_FRAMES` | TUNED | `pycats/combat/provenance.py` | ~2s respawn freeze; ruleset value |
+| `PLAYER_SIZE` | `pycats/config/render.py::PLAYER_SIZE` | TUNED | `pycats/combat/provenance.py` | default collision box (render→collision, #598) |
+| `LEDGE_CATCH_W` | `pycats/config/physics.py::LEDGE_CATCH_W` | TUNED | `pycats/combat/provenance.py` | ledge-grab catch-region width |
+| `LEDGE_CATCH_H` | `pycats/config/physics.py::LEDGE_CATCH_H` | TUNED | `pycats/combat/provenance.py` | ledge-grab catch-region height |
+| `BLAST_PADDING` | `pycats/config/stage.py::BLAST_PADDING` | TUNED | `pycats/combat/provenance.py` | KO boundary px beyond screen edge (bottom + L/R baseline) |
+| `BLAST_PADDING_TOP` | `pycats/config/stage.py::BLAST_PADDING_TOP` | TUNED | `pycats/combat/provenance.py` | top KO line 100px higher than bottom (#823) |
 
 > The GUESS rows (`DODGE_FRAMES`, `DODGE_TIME`, `PROJECTILE_GRAVITY`, `PROJECTILE_RESTITUTION`,
 > `PROJECTILE_MAX_BOUNCES`, `DASH_DURATION`, `FSMASH_ANGLE_UP`, `FSMASH_ANGLE_DOWN`) are
@@ -104,7 +104,7 @@ findings, kept for provenance, not a live spec.
 | `RULES.md` | project conventions, filing/closing discipline | authoritative |
 | `CLAUDE.md` | agent front door (auto-loaded), links the critical rules | authoritative |
 | `docs/mechanics-index.md` | **this router** — where each invented/divergent mechanic lives | authoritative |
-| `pycats/config.py` | the tuning-value SSOT (plain literals, no loader — ADR-0003) | authoritative |
+| `pycats/config/` | the tuning-value SSOT package — plain literals across physics/stage/render submodules, no loader — ADR-0003 (#934) | authoritative |
 | `pycats/combat/provenance.py` | *why* each value is what it is (source/status/derivation) | authoritative |
 | `docs/decisions-ledger.md` | ratified design/decision record | authoritative |
 | `docs/glossary.md` | project term definitions | authoritative |

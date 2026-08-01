@@ -274,7 +274,7 @@
   self-correcting.
   - **Code** → the **function / method / class name** + the **file path**
     (`build_stage()` in `pycats/sim/runner.py`), or the bare **symbol** when there's no
-    enclosing definition (`LEDGE_GETUP_FRAMES` in `pycats/config.py`) — never
+    enclosing definition (`LEDGE_GETUP_FRAMES` in `pycats/config/physics.py`) — never
     `runner.py:73` / `config.py:142`.
   - **Markdown docs** → the **section heading** (under `## Filing work` in RULES.md) —
     never `RULES.md:47`.

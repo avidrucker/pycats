@@ -16,7 +16,9 @@ import re
 import pycats.cat_faces as cat_faces
 from pycats import config, render_battle, text_utils
 
-_PKG = pathlib.Path(config.__file__).parent
+# pycats/ package dir. Anchored on render_battle (a top-level module) rather than
+# config, which is now a package (config.__file__ -> config/__init__.py) (#934).
+_PKG = pathlib.Path(render_battle.__file__).parent
 
 
 def test_config_holds_the_font_sizes():

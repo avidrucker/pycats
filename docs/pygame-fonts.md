@@ -6,7 +6,7 @@ claim points at a code landmark you can open.
 
 The whole stack funnels through one module — **`pycats/text_utils.py`** — and one process-
 wide singleton, **`text_renderer = TextRenderer()`**. Sizes come from one place —
-**`pycats/config.py`** — and are scaled at one chokepoint. Learn those three facts and the
+**`pycats/config/menu.py`** — and are scaled at one chokepoint. Learn those three facts and the
 rest follows.
 
 ---
@@ -14,7 +14,7 @@ rest follows.
 ## 1. Font sizes live in one place
 
 Every UI/HUD text size is a named constant in the **"font sizes (single source, #344)"**
-block of `pycats/config.py` — `GAME_HUD_FONT_SIZE`, `HUD_EMPHASIS_SIZE`,
+block of `pycats/config/menu.py` — `GAME_HUD_FONT_SIZE`, `HUD_EMPHASIS_SIZE`,
 `STATUS_BAR_SECONDS_SIZE`, `STATUS_BAR_LABEL_SIZE`, `TEXT_PROBE_SIZE` — alongside the
 per-screen families (`WIN_SCREEN_*_SIZE`, `CHAR_SELECT_*_SIZE`, `MAIN_MENU_*_SIZE`). The
 point of one home is that a size change — and the global font-scale scalar (§2) — has a
@@ -182,7 +182,7 @@ diff never touched, and only on some collection orders.
 
 ## Landmarks
 
-- `pycats/config.py` — the "font sizes (single source, #344)" block; `FONT_SCALES`, `MIN_FONT_PX`.
+- `pycats/config/menu.py` — the "font sizes (single source, #344)" block; `FONT_SCALES`, `MIN_FONT_PX`.
 - `pycats/runtime_settings.py::scaled_font_size` / `font_scale` — the scale chokepoint (#345).
 - `pycats/text_utils.py` — `TextRenderer` (`_get_font`, `sys_font`, `_select_mixed_fonts`,
   `_compose_mixed`, `render_text_mixed`, `render_mixed_centered`, `render_text_simple`) and the

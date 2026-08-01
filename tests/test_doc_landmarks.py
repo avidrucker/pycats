@@ -9,7 +9,7 @@ column. This guard keeps the router from silently rotting, the way
                      (AST, no import); a rename/move/delete reds it.
   (b) completeness — no divergence silently drops out of the index:
                        - value rows: every DIVERGENCE/TUNED constant in the provenance
-                         registry appears as a `pycats/config.py::NAME` landmark
+                         registry appears as a `pycats/config/<sub>.py::NAME` landmark
                          (machine-anchored to provenance.py — drift-proof);
                        - architectural rows: every curated #605 mechanic anchor (§X.Y) has
                          a row.
@@ -101,7 +101,7 @@ def test_a_landmarks_resolve_at_module_scope():
 def test_b_value_divergences_are_all_indexed():
     text = _router_text()
     registered = {name for name, prov in TUNING_PROVENANCE.items() if prov.status in ("DIVERGENCE", "TUNED")}
-    indexed = {sym for mod, sym in _LANDMARK.findall(text) if mod == "pycats/config.py"}
+    indexed = {sym for mod, sym in _LANDMARK.findall(text) if mod.startswith("pycats/config/")}
     missing = registered - indexed
     orphan = indexed - registered
     assert not missing, (

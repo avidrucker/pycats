@@ -180,7 +180,7 @@ Cheapest of the three candidates: because the schema mirrors the dataclasses and
 
 ## 3. Coordinate mapping (px ↔ `Circle(dx,dy,r)`)
 
-Ground truth from `pycats/combat/geometry.py` and `pycats/config.py`:
+Ground truth from `pycats/combat/geometry.py` and `pycats/config/physics.py` (`PX_PER_UNIT`):
 
 - `Circle(dx, dy, r)` are **pixels**, offset from the fighter's **top-left origin**, **facing-RIGHT-relative**.
 - `resolve_circle(circle, origin_x, origin_y, facing_right, width)` → absolute center:
