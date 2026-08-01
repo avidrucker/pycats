@@ -562,8 +562,26 @@ class AttackerController(BaseController):
 
     def decide(self, a, t, frame, attacks=None, ledges=None) -> set:
         keys = a.controls
-        held = set()
 
+        # Pre-combat guards (each returns a decisive key-set, or None to fall through):
+        # a held smash charge (#714), ledge recovery (#291/#902), deliberate self-
+        # recovery when off-stage (#409).
+        recovery = self._decide_recovery(a, t, keys, ledges)
+        if recovery is not None:
+            return recovery
+
+        # Combat cascade (only vs a live target), then the leveled anti-stall backstop.
+        held = self._decide_combat(a, t, keys, attacks, ledges)
+        self._apply_anti_stall(a, t, keys, held)
+        return held
+
+    def _decide_recovery(self, a, t, keys, ledges):
+        """Pre-combat guards: smash-charge hold (#714), ledge recovery (#291/#902),
+        deliberate self-recover off-stage (#409).
+
+        Returns a decisive key-set to emit this frame, or None to fall through to
+        combat. Also resets the hang/hog counters on the not-hanging fall-through path
+        (so the next grab starts clean)."""
         # #714 kill-confirm smash — keep a smash we started held until it auto-fires.
         # Pressing `smash`+direction puts the engine in the `smash_charge` state, which
         # roots the fighter; holding `smash` there accumulates the charge and the engine
@@ -619,7 +637,13 @@ class AttackerController(BaseController):
             if rec is not None:
                 inward = keys["left"] if rec.ax < a.rect.centerx else keys["right"]
                 return {inward, keys["up"]}
+        return None
 
+    def _decide_combat(self, a, t, keys, attacks, ledges):
+        """Decide vs a live opponent: edge-guard/hog poke, ranged poke, shield, and
+        whiff-punish may each return immediately; otherwise engage — spacing,
+        jump-chase, drop-through, and a cadenced attack — accumulated into `held`."""
+        held = set()
         if t.fighter.is_alive:
             dx = t.rect.centerx - a.rect.centerx
             dy = t.rect.centery - a.rect.centery
@@ -725,129 +749,146 @@ class AttackerController(BaseController):
                 if self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p:
                     self._last_attack = self._f
                     return {keys["attack"]}
-            lo, hi = self.safe_x
-            toward = keys["right"] if dx > 0 else keys["left"]
-            away = keys["left"] if dx > 0 else keys["right"]
-            # Maintain a standoff gap: close in if too far, back off if stacked
-            # on top of the target (adx ~ 0 would otherwise deadlock).
-            # #277 (model A): press the advantage — when `reactive_spacing` and the
-            # opponent is in move recovery (vulnerable, no incoming threat) and the bot
-            # is within melee range (`_whiff_open`), SUPPRESS the back-off so it holds/
-            # presses instead of retreating from a punishable opponent. NOT footsies —
-            # `standoff` is never widened (Smash CPUs approach committally, #343).
-            # Gated on `reactive_spacing`, so the level-less default never evaluates the
-            # helpers and is byte-identical (golden-safe); deterministic (no rng).
-            press_in = self.reactive_spacing and self._whiff_open(a, t) and not self._threat_incoming(a, t, attacks)
-            move = None
-            if adx > self.standoff + 8:
-                move = toward
-            elif adx < self.standoff - 8 and not press_in:
-                move = away
-            # Clamp: allow moving back toward centre from outside, but never
-            # press further past a blast-zone-side bound.
-            if move == keys["right"] and cx >= hi:
-                move = None
-            elif move == keys["left"] and cx <= lo:
-                move = None
-            if move is not None:
-                held.add(move)
-            # Jump toward an elevated target, but only when roughly underneath it
-            # (else jumping straight up never reaches the platform -> bounce loop).
-            # The horizontal window is wide enough to chase a target knocked onto
-            # a neighbouring platform (Task 4's data-driven attack times can leave
-            # the target on a different level after knockback).
-            # PULSED when stuck (#369, mechanism #367): the jump fires on a fresh
-            # press edge (`pressed = held - prev`), so HOLDING `up` every frame gives
-            # exactly ONE press -> one jump -> then the bot sits idle holding `up`
-            # forever (a stable standoff limit cycle). A NORMAL jump-up leaves the
-            # ground immediately, so `on_ground` goes False and `up` releases on its
-            # own — those are unchanged. Only when the bot held `up` last frame yet is
-            # STILL grounded (the jump didn't take) do we skip this frame, forcing a
-            # release so a fresh press re-fires the jump next frame and the bot climbs.
-            if dy < -FOE_ABOVE_DY and a.fighter.on_ground and adx < JUMP_UP_NEAR_ADX:
-                self._jump_up_stuck += 1
-                # Held for the first JUMP_UP_STUCK_MAX frames (byte-identical to the
-                # old always-hold, so normal jumps + short blips are unchanged); once
-                # the bot has been grounded-and-wanting-up that long it is genuinely
-                # stuck, so release on odd counts -> a fresh press re-fires the jump.
-                if self._jump_up_stuck <= JUMP_UP_STUCK_MAX or self._jump_up_stuck % 2 == 0:
-                    held.add(keys["up"])
-            else:
-                self._jump_up_stuck = 0
-            # Drop through thin platforms when target is below.  Pressing 'down'
-            # while grounded on a thin platform causes solve_vertical to let the
-            # player fall through it, putting them on the same y-level as the
-            # target.  Only activate when dy exceeds the policy threshold so the
-            # bot doesn't perpetually fall through the main platform.
-            if self.drop_threshold > 0 and dy > self.drop_threshold and a.fighter.on_ground:
-                held.add(keys["down"])
-            # Attack on a cadence when at standoff range and roughly level. The
-            # vertical tolerance is wide enough to keep engaging after knockback
-            # nudges the target a platform up/down, avoiding a positional
-            # deadlock under the post-startup hitbox timing.
-            in_range = (self.standoff - IN_RANGE_NEAR_MARGIN) <= adx <= self._melee_range(a) and abs(dy) < POKE_DY_BAND
-            # #232: reaction_delay — wait this many frames after entering range
-            # before the first attack (a higher level reacts faster). With the
-            # default reaction_delay=0 this is always satisfied → unchanged.
-            if in_range:
-                if self._in_range_since is None:
-                    self._in_range_since = self._f
-                reacted = (self._f - self._in_range_since) >= self.reaction_delay
-            else:
-                self._in_range_since = None
-                reacted = False
-            if in_range and reacted and (self._f - self._last_attack) >= self.attack_period:
-                # #238: follow-through — commit the attack only with probability
-                # follow_through_p (seeded). p >= 1.0 skips the roll (always commit,
-                # golden-safe default); a failed roll hesitates and retries later.
-                commit = self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p
-                if commit:
-                    # #714 kill-confirm: at/above SMASH_KILL_PERCENT, throw a fully-
-                    # charged FORWARD-smash (press smash+toward → fsmash charge) instead
-                    # of the low-knockback tilt/jab — the finisher #706 found missing.
-                    # PLACEHOLDER_MECHANIC_DECISION (#714/#915): a single flat threshold
-                    # for every level; lower levels smash less often only via the shared
-                    # follow_through_p roll above, not a designed policy — the per-level
-                    # PM-faithful usage policy is research #915. fsmash only for V1 (up/
-                    # down deferred to #916); the #588-sanctioned side-blast finisher.
-                    # Skipped when up/down already steer a jump/drop (mirrors the #292
-                    # tilt gate) so no smash is injected mid-air-movement. Gated on level
-                    # + "smashes" so the level-less default / Lv1-4 are byte-identical
-                    # (never evaluated, no extra rng draw) → golden-safe.
-                    if (
-                        self.level is not None
-                        and "smashes" in self.enabled_moves
-                        and a.fighter.on_ground
-                        and getattr(t.fighter, "percent", 0) >= SMASH_KILL_PERCENT
-                        and keys["up"] not in held
-                        and keys["down"] not in held
-                    ):
-                        self._last_attack = self._f
-                        return {keys["smash"], toward}
-                    held.add(keys["attack"])
-                    self._last_attack = self._f
-                    # #292: convert a NEUTRAL grounded attack into a forward-tilt.
-                    # The bot converges to `standoff` and strikes from rest, so the
-                    # move-select seam always resolved the neutral **jab** — a
-                    # set-knockback move (WDSK) whose launch is fixed regardless of
-                    # the victim's percent, so it can NEVER KO. No bot match could
-                    # end by KO (the loser juggled past 1400% with all stocks). A
-                    # leveled tilt-capable bot instead holds "toward" so a
-                    # percent-scaling **f-tilt** lands — the only launch that grows
-                    # with damage and can finish. Gated to leveled bots with tilts
-                    # enabled, so the level-less golden-safe default and the
-                    # jab-only Lv1 are byte-identical. Skipped when up/down already
-                    # steer an intended u-tilt/d-tilt (both also scaling moves), so
-                    # no sideways drift is injected into a jump/drop.
-                    if (
-                        self.level is not None
-                        and "tilts" in self.enabled_moves
-                        and a.fighter.on_ground
-                        and keys["up"] not in held
-                        and keys["down"] not in held
-                    ):
-                        held.add(toward)
+            return self._decide_engage(a, t, keys, dx, dy, adx, cx, attacks)
+        return held
 
+    def _decide_engage(self, a, t, keys, dx, dy, adx, cx, attacks):
+        """Engage a live, non-recovering opponent: maintain the standoff gap,
+        jump-chase an elevated target, drop through thin platforms, and throw a
+        cadenced attack (kill-confirm smash / f-tilt convert for leveled bots).
+        Accumulates and returns the held key-set; deterministic except the
+        follow-through / evade rng draws, whose order is preserved."""
+        held = set()
+        lo, hi = self.safe_x
+        toward = keys["right"] if dx > 0 else keys["left"]
+        away = keys["left"] if dx > 0 else keys["right"]
+        # Maintain a standoff gap: close in if too far, back off if stacked
+        # on top of the target (adx ~ 0 would otherwise deadlock).
+        # #277 (model A): press the advantage — when `reactive_spacing` and the
+        # opponent is in move recovery (vulnerable, no incoming threat) and the bot
+        # is within melee range (`_whiff_open`), SUPPRESS the back-off so it holds/
+        # presses instead of retreating from a punishable opponent. NOT footsies —
+        # `standoff` is never widened (Smash CPUs approach committally, #343).
+        # Gated on `reactive_spacing`, so the level-less default never evaluates the
+        # helpers and is byte-identical (golden-safe); deterministic (no rng).
+        press_in = self.reactive_spacing and self._whiff_open(a, t) and not self._threat_incoming(a, t, attacks)
+        move = None
+        if adx > self.standoff + 8:
+            move = toward
+        elif adx < self.standoff - 8 and not press_in:
+            move = away
+        # Clamp: allow moving back toward centre from outside, but never
+        # press further past a blast-zone-side bound.
+        if move == keys["right"] and cx >= hi:
+            move = None
+        elif move == keys["left"] and cx <= lo:
+            move = None
+        if move is not None:
+            held.add(move)
+        # Jump toward an elevated target, but only when roughly underneath it
+        # (else jumping straight up never reaches the platform -> bounce loop).
+        # The horizontal window is wide enough to chase a target knocked onto
+        # a neighbouring platform (Task 4's data-driven attack times can leave
+        # the target on a different level after knockback).
+        # PULSED when stuck (#369, mechanism #367): the jump fires on a fresh
+        # press edge (`pressed = held - prev`), so HOLDING `up` every frame gives
+        # exactly ONE press -> one jump -> then the bot sits idle holding `up`
+        # forever (a stable standoff limit cycle). A NORMAL jump-up leaves the
+        # ground immediately, so `on_ground` goes False and `up` releases on its
+        # own — those are unchanged. Only when the bot held `up` last frame yet is
+        # STILL grounded (the jump didn't take) do we skip this frame, forcing a
+        # release so a fresh press re-fires the jump next frame and the bot climbs.
+        if dy < -FOE_ABOVE_DY and a.fighter.on_ground and adx < JUMP_UP_NEAR_ADX:
+            self._jump_up_stuck += 1
+            # Held for the first JUMP_UP_STUCK_MAX frames (byte-identical to the
+            # old always-hold, so normal jumps + short blips are unchanged); once
+            # the bot has been grounded-and-wanting-up that long it is genuinely
+            # stuck, so release on odd counts -> a fresh press re-fires the jump.
+            if self._jump_up_stuck <= JUMP_UP_STUCK_MAX or self._jump_up_stuck % 2 == 0:
+                held.add(keys["up"])
+        else:
+            self._jump_up_stuck = 0
+        # Drop through thin platforms when target is below.  Pressing 'down'
+        # while grounded on a thin platform causes solve_vertical to let the
+        # player fall through it, putting them on the same y-level as the
+        # target.  Only activate when dy exceeds the policy threshold so the
+        # bot doesn't perpetually fall through the main platform.
+        if self.drop_threshold > 0 and dy > self.drop_threshold and a.fighter.on_ground:
+            held.add(keys["down"])
+        # Attack on a cadence when at standoff range and roughly level. The
+        # vertical tolerance is wide enough to keep engaging after knockback
+        # nudges the target a platform up/down, avoiding a positional
+        # deadlock under the post-startup hitbox timing.
+        in_range = (self.standoff - IN_RANGE_NEAR_MARGIN) <= adx <= self._melee_range(a) and abs(dy) < POKE_DY_BAND
+        # #232: reaction_delay — wait this many frames after entering range
+        # before the first attack (a higher level reacts faster). With the
+        # default reaction_delay=0 this is always satisfied → unchanged.
+        if in_range:
+            if self._in_range_since is None:
+                self._in_range_since = self._f
+            reacted = (self._f - self._in_range_since) >= self.reaction_delay
+        else:
+            self._in_range_since = None
+            reacted = False
+        if in_range and reacted and (self._f - self._last_attack) >= self.attack_period:
+            # #238: follow-through — commit the attack only with probability
+            # follow_through_p (seeded). p >= 1.0 skips the roll (always commit,
+            # golden-safe default); a failed roll hesitates and retries later.
+            commit = self.follow_through_p >= 1.0 or self.rng.random() < self.follow_through_p
+            if commit:
+                # #714 kill-confirm: at/above SMASH_KILL_PERCENT, throw a fully-
+                # charged FORWARD-smash (press smash+toward → fsmash charge) instead
+                # of the low-knockback tilt/jab — the finisher #706 found missing.
+                # PLACEHOLDER_MECHANIC_DECISION (#714/#915): a single flat threshold
+                # for every level; lower levels smash less often only via the shared
+                # follow_through_p roll above, not a designed policy — the per-level
+                # PM-faithful usage policy is research #915. fsmash only for V1 (up/
+                # down deferred to #916); the #588-sanctioned side-blast finisher.
+                # Skipped when up/down already steer a jump/drop (mirrors the #292
+                # tilt gate) so no smash is injected mid-air-movement. Gated on level
+                # + "smashes" so the level-less default / Lv1-4 are byte-identical
+                # (never evaluated, no extra rng draw) → golden-safe.
+                if (
+                    self.level is not None
+                    and "smashes" in self.enabled_moves
+                    and a.fighter.on_ground
+                    and getattr(t.fighter, "percent", 0) >= SMASH_KILL_PERCENT
+                    and keys["up"] not in held
+                    and keys["down"] not in held
+                ):
+                    self._last_attack = self._f
+                    return {keys["smash"], toward}
+                held.add(keys["attack"])
+                self._last_attack = self._f
+                # #292: convert a NEUTRAL grounded attack into a forward-tilt.
+                # The bot converges to `standoff` and strikes from rest, so the
+                # move-select seam always resolved the neutral **jab** — a
+                # set-knockback move (WDSK) whose launch is fixed regardless of
+                # the victim's percent, so it can NEVER KO. No bot match could
+                # end by KO (the loser juggled past 1400% with all stocks). A
+                # leveled tilt-capable bot instead holds "toward" so a
+                # percent-scaling **f-tilt** lands — the only launch that grows
+                # with damage and can finish. Gated to leveled bots with tilts
+                # enabled, so the level-less golden-safe default and the
+                # jab-only Lv1 are byte-identical. Skipped when up/down already
+                # steer an intended u-tilt/d-tilt (both also scaling moves), so
+                # no sideways drift is injected into a jump/drop.
+                if (
+                    self.level is not None
+                    and "tilts" in self.enabled_moves
+                    and a.fighter.on_ground
+                    and keys["up"] not in held
+                    and keys["down"] not in held
+                ):
+                    held.add(toward)
+        return held
+
+    def _apply_anti_stall(self, a, t, keys, held):
+        """#368 anti-stall backstop (leveled-only, deterministic, no rng): detect a
+        no-progress lock and inject one toward-target action, mutating `held` in place.
+
+        A legit spacing/engaging bot moves > ANTI_STALL_MOVE_PX or lands a hit within
+        ~1.5s, resetting the reference, so this never fires then."""
         # --- #368 anti-stall backstop (leveled-only, deterministic, no rng) --------
         # Detect a no-progress lock and inject one toward-target action. A legit-
         # spacing / engaging bot moves > ANTI_STALL_MOVE_PX or lands a hit (percent
@@ -882,8 +923,6 @@ class AttackerController(BaseController):
                     held.add(keys["up"])
                 elif dy > ANTI_STALL_MOVE_PX:
                     held.add(keys["down"])
-
-        return held
 
 
 # Back-compat alias: the original single controller was the attacker policy.
