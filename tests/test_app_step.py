@@ -91,12 +91,15 @@ def test_speed_is_stored_from_constructor():
     assert app.speed == 0.25
 
 
-def _tick_arg_for_speed(monkeypatch, speed):
-    """Run one inert frame at `speed` and return the argument App.step passed to
-    clock.tick (the present-rate pacing target)."""
+def _tick_arg_for_speed(monkeypatch, speed, state="playing"):
+    """Run one inert frame at `speed` in FSM `state` and return the argument App.step
+    passed to clock.tick (the present-rate pacing target). `--speed` slows only the
+    battle (`playing`) — every menu state paces at full 60 FPS (#938) — so the state
+    the frame is in decides whether the factor applies."""
     pygame.init()
     app = App(prefs=dict(_PREFS), poll=_poll_once(), speed=speed)
     app.clock = _FakeClock()
+    monkeypatch.setattr(app.screen_manager, "get_state", lambda: state)
     monkeypatch.setattr(app.screen_manager, "update", lambda *a, **k: None)
     monkeypatch.setattr(app.screen_manager, "should_quit_game", lambda: False)
     monkeypatch.setattr(app_mod.screen_render, "render_active_screen", lambda *a, **k: None)
@@ -107,16 +110,39 @@ def _tick_arg_for_speed(monkeypatch, speed):
 
 def test_step_paces_clock_to_full_fps_at_default_speed(monkeypatch):
     # Able-to-fail: revert step to clock.tick(FPS) leaves this at 60 (still passes), but
-    # the 0.5/0.25 tests below flip — together they pin tick_fps(self.speed) wiring.
-    assert _tick_arg_for_speed(monkeypatch, 1.0) == [60]
+    # the 0.5/0.25 playing tests below flip — together they pin the tick_fps wiring.
+    assert _tick_arg_for_speed(monkeypatch, 1.0, state="playing") == [60]
 
 
-def test_step_paces_clock_to_half_fps_at_half_speed(monkeypatch):
-    assert _tick_arg_for_speed(monkeypatch, 0.5) == [30]
+def test_step_paces_battle_to_half_fps_at_half_speed(monkeypatch):
+    # The battle (playing state) IS slowed by --speed.
+    assert _tick_arg_for_speed(monkeypatch, 0.5, state="playing") == [30]
 
 
-def test_step_paces_clock_to_quarter_fps_at_quarter_speed(monkeypatch):
-    assert _tick_arg_for_speed(monkeypatch, 0.25) == [15]
+def test_step_paces_battle_to_quarter_fps_at_quarter_speed(monkeypatch):
+    assert _tick_arg_for_speed(monkeypatch, 0.25, state="playing") == [15]
+
+
+# --- #938: --speed must NOT slow the menus (only the battle) --------------------------
+# The menu hold-to-quit/back timers are frame-counted (EscHoldTimer(120) = "2s @ 60fps"),
+# ticked once per App.step; if a menu ran at 30 FPS those 120 frames would take 4s. So
+# every non-playing state paces at full 60 FPS regardless of --speed. Able-to-fail today:
+# the current always-tick_fps(self.speed) line yields 30/15 here.
+def test_step_keeps_main_menu_at_full_fps_at_half_speed(monkeypatch):
+    assert _tick_arg_for_speed(monkeypatch, 0.5, state="main_menu") == [60]
+
+
+def test_step_keeps_main_menu_at_full_fps_at_quarter_speed(monkeypatch):
+    assert _tick_arg_for_speed(monkeypatch, 0.25, state="main_menu") == [60]
+
+
+def test_step_keeps_pause_at_full_fps_at_half_speed(monkeypatch):
+    # Pause is a menu overlay (its own hold-timers), not the battle: full speed.
+    assert _tick_arg_for_speed(monkeypatch, 0.5, state="pause") == [60]
+
+
+def test_step_keeps_char_select_at_full_fps_at_half_speed(monkeypatch):
+    assert _tick_arg_for_speed(monkeypatch, 0.5, state="char_select") == [60]
 
 
 def _update_args_at_speed(monkeypatch, speed):

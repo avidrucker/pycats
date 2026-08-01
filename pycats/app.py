@@ -80,8 +80,9 @@ class App:
         # Present-rate slow-motion factor (#932): 1.0 = real time (default, unchanged),
         # 0.5 = half speed, etc. Paces only how long each already-computed frame is
         # DISPLAYED (via tick_fps in step) — never the sim step, so outcomes/goldens are
-        # identical at any speed (the sim is fixed-timestep). Set at launch from a CLI arg;
-        # the in-app Options picker is the post-v1 sibling (#933).
+        # identical at any speed (the sim is fixed-timestep). Applies to the BATTLE only
+        # (#938, see _present_speed). Set at launch from a CLI arg; the in-app Options
+        # picker is the post-v1 sibling (#933).
         self.speed = speed
 
         # Players get a single stage for v1: "Starting Point", pycats' flat Final
@@ -127,11 +128,25 @@ class App:
         self.dm.toggle_fullscreen()
         self.save_prefs()
 
+    # ------------------------------------------------ present-rate gating
+    # `--speed` slow-motion applies to the BATTLE only (#938). The menu hold-to-quit/back
+    # timers are FRAME-counted (EscHoldTimer(120) = "2s @ 60fps", esc_hold.py), ticked once
+    # per step(); if a menu ran at the reduced rate, a 120-frame hold would take 2x/4x the
+    # wall-clock. So the factor is gated on the playing FSM state — every menu/non-battle
+    # state paces at full FPS. An allowlist of one (not a denylist) so `pause` and any
+    # future menu state stay full-speed by default.
+    _BATTLE_STATE = "playing"
+
+    def _present_speed(self):
+        """The speed factor to pace this frame at: `self.speed` while the FSM is in the
+        battle (`playing`) state, else 1.0 (full 60 FPS) in every menu state (#938)."""
+        return self.speed if self.screen_manager.get_state() == self._BATTLE_STATE else 1.0
+
     # ------------------------------------------------ one frame
     def step(self):
         """Run exactly one frame: poll → dispatch events → update → quit-check → render →
         present. Sets `self.running = False` on QUIT or when the FSM asks to quit."""
-        self.clock.tick(tick_fps(self.speed))  # cap the frame rate at the current speed
+        self.clock.tick(tick_fps(self._present_speed()))  # slow the battle only (#938)
         frame_input, events = self._poll()
 
         for ev in events:
