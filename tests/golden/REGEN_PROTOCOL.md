@@ -5,7 +5,7 @@ baseline under `tests/golden/`:
 
 | Module | Golden(s) | Sidecar? |
 |---|---|---|
-| `tests/test_golden.py` | sim per-frame snapshots — `combat`, `default`, `full_match`, `two_npc` (`<name>.json`) | yes — `<name>.summary.json` |
+| `tests/test_golden.py` | sim per-frame snapshots — `combat`, `default`, `two_npc` (`<name>.json`) | yes — `<name>.summary.json` |
 | `tests/test_golden_summary.py` | asserts those `.summary.json` sidecars stay in lock-step with the run | (the sidecars themselves) |
 | `tests/test_screen_parity.py` | statechart screen-flow trace — `screen_parity.json` | no (single FSM-trace blob) |
 

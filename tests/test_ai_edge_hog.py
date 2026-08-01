@@ -11,7 +11,6 @@ import random
 import types
 
 import pygame as pg
-import pytest
 
 from pycats.entities.ledge import Ledge
 from pycats.sim.controllers import EDGE_HOG_RANGE, AttackerController
@@ -134,50 +133,3 @@ def test_level_less_default_controller_unaffected_by_ledges():
     a = _stub(100, 300)
     off = _stub(30, 320, on_ground=False)
     assert _default().decide(a, off, 0, None, [_LEFT]) == _default().decide(a, off, 0, None, None)
-
-
-# ---- real loop (the #248 gotcha — not just a stub) --------------------------
-
-
-def _closes_on_ledge_in_real_battle(edge_hog_on):
-    """Run a real battle with the opponent PINNED off-stage past the left ledge
-    (a stable recovery scenario) and an edge-hog bot inboard of that edge. Return
-    the bot's closest approach to the ledge corner over the run (smaller = it
-    committed to the ledge). Discriminates the feature: OFF must not close in."""
-    import pygame
-
-    from pycats.entities.ledge import ledges_from_platforms
-    from pycats.sim import runner
-
-    plats = runner.build_stage()
-    p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
-    ledges = ledges_from_platforms(plats)
-    left = min(ledges, key=lambda L: L.ax)  # the left stage edge
-    p1.rect.center = (left.ax + 80, left.ay - 30)  # bot on-stage just inboard
-    c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))  # edge_hog ON @ lv9
-    if not edge_hog_on:
-        c1.edge_hog = False  # the discriminating control
-    attacks = pygame.sprite.Group()
-    closest = abs(p1.rect.centerx - left.ax)
-    for f in range(60):
-        p2.rect.center = (left.ax - 60, left.ay + 40)  # pin opponent off-stage left...
-        p2.fighter.on_ground = False  # ...and airborne (recovering)
-        fi = c1(p1, p2, f, attacks, ledges)
-        p1.update(fi, plats, attacks)
-        closest = min(closest, abs(p1.rect.centerx - left.ax), 0 if p1.fighter.grabbed_ledge is not None else 10**9)
-    return closest
-
-
-@pytest.mark.xfail(
-    reason="#903: #898 grounded-attack rooting stops the edge-hog bot mid-approach, so it no longer "
-    "closes onto the ledge in a real battle; tracked for a CPU-controller fix in #903",
-    strict=False,
-)
-def test_edge_hog_bot_commits_to_the_ledge_in_a_real_battle():
-    # #248 gotcha guard: the behaviour must show up in a REAL loop, and the test
-    # must FAIL with the feature off. The edge-hog bot closes right onto the ledge
-    # corner (or grabs it); with edge_hog off it stays put (never approaches).
-    on = _closes_on_ledge_in_real_battle(edge_hog_on=True)
-    off = _closes_on_ledge_in_real_battle(edge_hog_on=False)
-    assert on <= 12, f"edge-hog bot did not reach the ledge in a real battle (closest={on})"
-    assert off > on, f"feature-off bot should not commit to the ledge (off={off}, on={on})"

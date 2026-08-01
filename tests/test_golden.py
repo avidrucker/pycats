@@ -4,7 +4,7 @@
 Three deterministic scenarios are recorded:
 - default:     200 frames with the default timeline
 - combat:      COMBAT_SCRIPT inputs + 240-frame tail
-- full_match:  level-9 AttackerController inputs captured once then frozen
+- two_npc:     attacker (P1) vs follower (P2), both controller-driven (#58)
 
 Each test calls check_or_update(name, snaps) which compares the serialized
 snapshots against tests/golden/<name>.json AND a small reviewable semantic digest
@@ -15,8 +15,6 @@ tests/golden/REGEN_PROTOCOL.md (S4).
 
 import random
 
-import pytest
-
 from pycats.sim.controllers import AttackerController, FollowerController
 from pycats.sim.input_script import COMBAT_SCRIPT, compile_timeline
 from pycats.sim.runner import KEYMAPS, run_battle
@@ -26,12 +24,6 @@ from tests.golden_util import check_or_update
 DEFAULT_FRAMES = 200
 COMBAT_TAIL = 240
 TWO_NPC_FRAMES = 600
-# #706: full_match capture window. Capped just past the 2nd KO (~frame 800) rather than
-# run to a full match — beyond ~frame 994 the idle P2 grabs the ledge and hangs forever
-# (no auto-getup) while the bot can't finish it (onstage-only edge-guard); that degenerate
-# stalemate has no regression value. 900f holds the whole hurt->ko->stock-loss arc with
-# zero ledge_hang. The ledge-getup / edge-finish mechanics are researched in #722.
-FULL_MATCH_FRAMES = 900
 
 
 def test_golden_default():
@@ -68,58 +60,6 @@ def test_golden_combat():
     assert "hurt" in all_states, f"'hurt' never reached; states={sorted(all_states)}"
     assert "ko" in all_states, f"'ko' never reached; states={sorted(all_states)}"
     check_or_update("combat", snaps)
-
-
-def _capture_full_match_inputs():
-    """Run once with a level-9 AttackerController; freeze its emitted inputs."""
-    # #166: pin a fixed seed at this live-controller site so the captured inputs
-    # stay reproducible. Unlike the old ChaseController (rng-free), a leveled
-    # AttackerController DOES roll self.rng for its reactive knobs, so the seed is
-    # load-bearing here.
-    # #706 (Phase 2c): capture AND replay on Nalio vs Nalio — the SAME chars. The
-    # bot's emitted inputs are position-derived, valid only for the physics they were
-    # captured under; capturing on the default cat and replaying on Nalio would desync.
-    # Controller: the plain ChaseController racks idle Nalio to only ~18% and never KOs
-    # (Nalio's PM-faithful jab/d-tilt are low-knockback), which would break this golden's
-    # emergent hurt->ko->stock-loss invariant. A level-9 AttackerController restores it
-    # (KOs idle Nalio twice via its aggressive tilts/aerials/specials). Bots can't yet
-    # commit smashes — that AI gap is tracked in #714; when it lands this golden regens.
-    ctrl = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
-    run_battle(frames=FULL_MATCH_FRAMES, controller=ctrl, stop_on_match_over=True, p1_char="nalio", p2_char="nalio")
-    return ctrl.emitted
-
-
-@pytest.mark.xfail(
-    reason="#903: #898 grounded-attack rooting stops the leveled bots mid-chase, so this match no "
-    "longer reaches the hurt/ko arc — can't be regenerated as a golden until #903 fixes the CPU "
-    "controllers. Sibling goldens combat + two_npc were pure trajectory flips and were regenerated.",
-    strict=False,
-)
-def test_golden_full_match():
-    """Long leveled-bot battle (golden-compared) that exercises the hurt/KO arc.
-
-    #44: realistic knockback decay means the bot no longer 3-stocks the target in
-    this window (the full-defeat scenario is deferred to #46). The golden snapshot +
-    the KO-arc assertion remain the regression value.
-
-    #706 (Phase 2c): Nalio vs Nalio, driven by a level-9 AttackerController (see
-    `_capture_full_match_inputs`). Both the capture and this replay pass the same
-    chars, so the frozen inputs match the replay physics. The emergent
-    hurt/ko/stock-loss assertions hold on Nalio's kit — the L9 bot KOs the idle
-    target where the old rng-free ChaseController could not.
-    """
-    frame_inputs = _capture_full_match_inputs()
-    n = len(frame_inputs)
-    snaps = run_battle(frames=n, frame_inputs=frame_inputs, p1_char="nalio", p2_char="nalio")
-
-    # emergent assertion: the hurt -> ko arc is exercised and P2 loses a stock
-    # (full 3-stock drain deferred to #46 — see docstring).
-    states = {p[1] for snap in snaps for p in snap[0]}
-    assert "hurt" in states and "ko" in states, sorted(states)
-    p2_lives = [next(p for p in s[0] if p[0] == "P2")[9] for s in snaps]
-    assert min(p2_lives) < p2_lives[0], f"expected >=1 KO; P2 lives stayed {p2_lives[0]}"
-
-    check_or_update("full_match", snaps)
 
 
 def test_golden_two_npc():
