@@ -391,6 +391,55 @@ _GNOK_FAIR = MoveData(
     ),
 )
 
+
+# --- B-air (slices 5-6, #914): DK's AttackAirB — a Sakurai-angle sex kick -----
+# Behind-the-body back kick; both windows launch at the 361 Sakurai sentinel, decaying in
+# damage/knockback (a #204 clean→late sex kick). Datamined (`-f Donkey -a AttackAirB`,
+# high_level_frame_data -l subaction; env #614):
+#   FAF 31; active frames 7-20 → startup 6 / active 14 / recovery 11.
+#   CLEAN [7,8]:  2 boxes, damage 13, angle 361, BKB 20, KBG 100.
+#   LATE  [9,20]: damage 9, angle 361, BKB 10, KBG 100 — the long lingering hit.
+# Frames/%/angle/BKB/KBG RAW (#120); radii = round(size u × PX_PER_UNIT): clean 5.86→32,
+# 3.91→21; late 5.47→30, 3.52→19. Positions APPROXIMATED behind the body (dx < body width —
+# b-air hits backward; the sim mirror-flips with facing) — ⚠🔬 playtest (ADR-0003).
+def _bair_clean(dx, dy, r):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=13.0,
+        angle=361,
+        base_knockback=20.0,
+        knockback_growth=100.0,
+        active_start=7,
+        active_end=8,
+    )
+
+
+def _bair_late(dx, dy, r):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=9.0,
+        angle=361,
+        base_knockback=10.0,
+        knockback_growth=100.0,
+        active_start=9,
+        active_end=20,
+    )
+
+
+_GNOK_BAIR = MoveData(
+    name="back air",
+    in_air=True,
+    startup=6,
+    active=14,
+    recovery=11,
+    hitboxes=(
+        _bair_clean(dx=-10, dy=40, r=32),  # clean — rear foot (bigger)
+        _bair_clean(dx=6, dy=42, r=21),  # clean — inner leg
+        _bair_late(dx=-10, dy=40, r=30),  # late — rear foot (weak)
+        _bair_late(dx=6, dy=42, r=19),  # late — inner leg (weak)
+    ),
+)
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). Slice 2 (#824) adds the
@@ -405,6 +454,7 @@ GNOK_FIGHTER_DATA = FighterData(
         "dtilt": _GNOK_DTILT,
         "nair": _GNOK_NAIR,
         "fair": _GNOK_FAIR,
+        "bair": _GNOK_BAIR,
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,

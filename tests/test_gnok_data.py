@@ -77,7 +77,7 @@ def test_gnok_differs_from_default_on_scalars_and_body():
 # The moves Gnok has authored so far (grows one slice at a time under #779): slice 2 the
 # jab, slice 3 (#841) the three tilts, slices 5-6 (#914) the aerials (one per commit).
 # Every OTHER slot still reuses the default cat.
-_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair", "fair"}
+_GNOK_AUTHORED = {"jab", "ftilt", "utilt", "dtilt", "nair", "fair", "bair"}
 
 
 def test_gnok_authored_moves_are_its_own_the_rest_reuse_default():
@@ -264,3 +264,28 @@ def test_gnok_fair_maps_to_air_forward_a():
     gnok = load_fighter_data("gnok")
     key = resolve_move_key(gnok.moves, direction="forward", on_ground=False, is_special=False)
     assert key == "fair"
+
+
+def test_gnok_bair_is_a_sakurai_sex_kick():
+    # Slices 5-6 (#914) b-air: DK's AttackAirB — a Sakurai-angle (361) sex kick, both
+    # windows launching at 361 but decaying in damage/knockback. startup 6 / active 14 /
+    # recovery 11 (datamine FAF 31, active frames 7-20). CLEAN [7,8]: dmg 13, BKB 20; LATE
+    # [9,20]: dmg 9, BKB 10. Able-to-fail: a single-window bair or no decay collapses this.
+    bair = load_fighter_data("gnok").moves["bair"]
+    assert (bair.startup, bair.active, bair.recovery) == (6, 14, 11)
+    windows = sorted({(hb.active_start, hb.active_end) for hb in bair.hitboxes})
+    assert windows == [(7, 8), (9, 20)]
+    clean = [hb for hb in bair.hitboxes if hb.active_start == 7]
+    late = [hb for hb in bair.hitboxes if hb.active_start == 9]
+    assert clean and late
+    assert all(hb.angle == 361 and hb.knockback_growth == 100.0 for hb in bair.hitboxes)
+    assert all(hb.damage == 13.0 and hb.base_knockback == 20.0 for hb in clean)
+    assert all(hb.damage == 9.0 and hb.base_knockback == 10.0 for hb in late)
+
+
+def test_gnok_bair_maps_to_air_back_a():
+    from pycats.combat.move_select import resolve_move_key
+
+    gnok = load_fighter_data("gnok")
+    key = resolve_move_key(gnok.moves, direction="back", on_ground=False, is_special=False)
+    assert key == "bair"
