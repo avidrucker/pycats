@@ -40,12 +40,12 @@ run-cmd:
 
 # ruff format --check + ruff check on pycats/ (mirrors the close-gate)
 lint:
-	"$(RUFF)" format --check pycats/
-	"$(RUFF)" check pycats/
+	"$(RUFF)" format --check pycats/ tests/
+	"$(RUFF)" check pycats/ tests/
 
 # apply ruff formatting (write-twin of lint's --check)
 format:
-	"$(RUFF)" format pycats/
+	"$(RUFF)" format pycats/ tests/
 
 # bench.py headless; extra flags via ARGS
 bench:

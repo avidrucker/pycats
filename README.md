@@ -138,7 +138,7 @@ git clone https://github.com/avidrucker/statecharts-py.git   # ../statecharts-py
 Lint + format (ruff; config in `ruff.toml` and `.pre-commit-config.yaml`):
 
 ```bash
-make lint                          # ruff format --check + ruff check on pycats/ (the close-gate)
+make lint                          # ruff format --check + ruff check on pycats/ + tests/ (the close-gate)
 make format                        # apply ruff formatting (write-twin of lint's --check)
 .venv/bin/pre-commit install       # one-time: run both on each commit
 ```
@@ -146,6 +146,14 @@ make format                        # apply ruff formatting (write-twin of lint's
 The lint hook is ruff-only so it stays fast; `pytest` remains the on-demand source of
 truth (there is no CI gate). Legacy debug scripts that once masqueraded as tests now
 live in `scripts/`, so a bare `pytest` collects only real assert-based tests.
+
+The whole tree (`pycats/` **and** `tests/`) is ruff-formatted and the close-gate checks
+both (#910). The one-time reflow of `tests/` is a mechanical commit listed in
+`.git-blame-ignore-revs`; tell `git blame` to skip it so line authorship survives:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs   # one-time, per clone
+```
 
 ### Benchmark
 
