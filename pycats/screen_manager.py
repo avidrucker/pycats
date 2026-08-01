@@ -37,7 +37,7 @@ class ScreenStateManager:
 
         # Back to menu timer for character select
         self.back_timer = 0
-        self.back_hold_frames = 60  # 1 second at 60 FPS
+        self.back_hold_frames = 120  # 2 seconds at 60 FPS (#905: match the shared esc-hold 2s)
 
         # Hold-ESC-to-navigate (#113, generalised #453): a 2-second hold on ESC pops
         # one level up the screen ladder (guards read esc_hold_complete()); at

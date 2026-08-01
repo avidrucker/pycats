@@ -76,6 +76,24 @@ def test_p1_b_hold_backs_out_options_to_main_menu():
     assert sm.get_state() == "main_menu"
 
 
+def test_char_select_b_hold_backs_out_at_2s():
+    """#905: char_select B-hold backs out to main_menu at the shared 2s threshold
+    (a T-frame hold pops on frame T+1, so hold past HOLD)."""
+    sm = _mk("char_select")
+    _hold(sm, _P1["special"], HOLD + 5)
+    assert sm.get_state() == "main_menu"
+
+
+def test_char_select_b_hold_below_2s_does_not_back_out():
+    """#905 regression (able-to-fail): holding B for just under 2 seconds
+    (HOLD - 1 frames) on char_select must NOT return to main menu — the hold is a
+    full 2s, consistent with every other hold-to-back. Red while
+    back_hold_frames == 60 (pops at ~1s), green once it is 120."""
+    sm = _mk("char_select")
+    _hold(sm, _P1["special"], HOLD - 1)
+    assert sm.get_state() == "char_select"
+
+
 def test_b_hold_win_screen_bypasses_confirm_to_char_select():
     sm = _mk()
     sm.set_winner(object(), object())

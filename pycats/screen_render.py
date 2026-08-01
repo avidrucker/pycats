@@ -56,7 +56,7 @@ def render_active_screen(current_state, screen_manager, surface, *, battle, plat
         # show_screen_hints toggle (#681). The F11/F10 display hints above stay
         # always-on (they are display-mode affordances, not per-screen action hints).
         if runtime_settings.show_screen_hints():
-            back_text = "Hold B for 1 second to return to main menu"
+            back_text = "Hold B for 2 seconds to return to main menu"
             text_utils.render_text(
                 surface,
                 back_text,
