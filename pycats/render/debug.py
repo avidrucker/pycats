@@ -18,7 +18,7 @@ OVERLAY_LINE_WIDTH = 2  # >0 → pygame draws an outline, not a disc
 
 
 def _active_hurtbox(p):
-    """The hurtbox combat.process_hits actually tests against `p` this frame.
+    """The hurtbox hit_resolution.process_hits actually tests against `p` this frame.
 
     Mirrors that resolver's selection (#124 crouch / #173 prone lower the box so
     high attacks whiff) so the overlay shows the *true* vulnerable region, not a
@@ -26,7 +26,7 @@ def _active_hurtbox(p):
     `crouch_hurtbox`/`prone_hurtbox`/`state`."""
     hurtbox = p.fighter_data.hurtbox
     # Per-move hurtbox override (#835, R2): mirror the sim resolver
-    # (combat.process_hits) — an executing move's own Hurtbox REPLACES the
+    # (hit_resolution.process_hits) — an executing move's own Hurtbox REPLACES the
     # posture box, so the overlay shows the true region. Kept in lockstep with
     # the sim; a divergence is a bug.
     active_move = getattr(p, "current_move", None)
@@ -43,7 +43,7 @@ def _active_hurtbox(p):
 def render_hitbox_overlay(surface, players, attacks):
     """Draw the hit/hurtbox debug overlay (#219), gated on the live toggle.
 
-    Render-only: reads the SAME data combat.process_hits resolves — `atk.resolved`
+    Render-only: reads the SAME data hit_resolution.process_hits resolves — `atk.resolved`
     for active hitbox circles, `resolve_circle` on each fighter's active hurtbox —
     and outlines them in two distinct colours. Default OFF, so the live game and
     goldens are untouched until a dev flips it on from Options."""

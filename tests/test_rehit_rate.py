@@ -1,7 +1,7 @@
 """Rehit-rate / looping multi-hit (#213, a #142 gate, d-air prerequisite).
 
 Today every Attack hits a given target at most once per instance (#130:
-`combat.process_hits` sets `atk.active=False` after a hit). A looping move (the
+`hit_resolution.process_hits` sets `atk.active=False` after a hit). A looping move (the
 Mario d-air drill) needs a hitbox to re-hit the same target on a cadence.
 
 A `MoveData` may carry `rehit_rate` (frames between re-hits); the spawned Attack
@@ -17,7 +17,7 @@ import pygame
 
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
 from pycats.entities.attack import Attack
-from pycats.systems.combat import process_hits
+from pycats.systems.hit_resolution import process_hits
 
 
 def _player(rect, *, hurtbox_circles, facing_right=True):

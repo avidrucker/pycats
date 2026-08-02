@@ -3,7 +3,7 @@
 Birky's 44-tall stand made the inherited default crouch (40,40) drop only 4px —
 "not really crouching". The owner ratified Kirby-low crouch (40,24) / prone (40,14),
 which also needs Birky-own posture hurtboxes: combat tests the hurtbox *circles*
-(systems/combat.py), and the inherited default circles reach below the shorter boxes.
+(systems/hit_resolution.py), and the inherited default circles reach below the shorter boxes.
 """
 
 from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA as BIRKY

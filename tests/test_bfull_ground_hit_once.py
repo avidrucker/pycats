@@ -30,7 +30,7 @@ import pytest
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData, load_fighter_data
 from pycats.combat.move_clock import MoveClock
 from pycats.entities.attack import Attack
-from pycats.systems.combat import process_hits
+from pycats.systems.hit_resolution import process_hits
 
 GROUND_MOVES = ["utilt", "fsmash", "usmash", "dsmash"]
 

@@ -3,7 +3,7 @@
 A render-only DEV tool: a persisted, default-OFF toggle (mirroring the #111
 status-bars toggle) that draws every active attack's hitbox circles and every
 fighter's hurtbox circles as coloured outlines, reading the SAME data
-combat.process_hits resolves (``atk.resolved`` + ``resolve_circle`` on the
+hit_resolution.process_hits resolves (``atk.resolved`` + ``resolve_circle`` on the
 fighter hurtbox). Combat is untouched; ``Attack.rect`` is untouched (Attack.image was removed in #326).
 """
 
@@ -175,7 +175,7 @@ def test_overlay_skips_dead_fighters(monkeypatch):
 
 @pytest.mark.usefixtures("render_isolation")
 def test_overlay_uses_active_crouch_hurtbox(monkeypatch):
-    """Mirrors combat.process_hits: a crouching fighter shows its crouch box."""
+    """Mirrors hit_resolution.process_hits: a crouching fighter shows its crouch box."""
     runtime_settings.seed(settings.defaults())
     runtime_settings.set("show_hitbox_overlay", True)
     captured = _spy_circles(monkeypatch)

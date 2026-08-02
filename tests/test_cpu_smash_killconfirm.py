@@ -100,7 +100,7 @@ def test_leveled_bot_smashes_and_kos_a_high_percent_opponent():
     plats = runner.build_stage()
     ledges = runner.ledges_from_platforms(plats)
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="birky")
-    from pycats.systems import combat
+    from pycats.systems import hit_resolution
 
     attacks = pygame.sprite.Group()
     empty = merge_frames([])  # no-input frame
@@ -126,7 +126,7 @@ def test_leveled_bot_smashes_and_kos_a_high_percent_opponent():
         for p in players:
             p.update(fi, plats, attacks, ledges)
         attacks.update(plats)
-        combat.process_hits(players, attacks)
+        hit_resolution.process_hits(players, attacks)
         if p2.fighter.lives < lives0:
             ko = True
             break

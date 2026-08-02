@@ -30,7 +30,7 @@ import pytest
 from pycats.combat.data import Circle, FighterData, Hurtbox, load_fighter_data
 from pycats.combat.move_clock import MoveClock
 from pycats.entities.attack import Attack
-from pycats.systems.combat import process_hits
+from pycats.systems.hit_resolution import process_hits
 
 # (cat, move-key, avg damage, avg bkb, avg kbg, angle, window, box-count) — the #893 ruling
 # table (raw averages; angle = clean-window value where the two windows differed).

@@ -41,7 +41,7 @@ class Attack(pygame.sprite.Sprite):
     Task 5: Attack carries absolute hitbox circles resolved from the move's
     Hitbox.circle(s) at spawn time using the owner's rect top-left as origin and
     their facing direction. The circles are fixed at spawn (Phase 0: static
-    hitbox — they do not follow the owner once launched). combat.process_hits
+    hitbox — they do not follow the owner once launched). hit_resolution.process_hits
     uses these circles for hit detection instead of the rect; the rect is kept
     for rendering only and bounds all resolved hitbox circles.
 
@@ -164,7 +164,7 @@ class Projectile(Attack):
     """A MOVING hit-box with physics (#266): gravity pulls it down and it bounces off
     platform tops, losing momentum each bounce, until it expires (max_bounces or
     lifetime). Mario-faithful per #263 — a *flat* projectile is the Luigi model, so
-    pass ``gravity=0`` for that. It IS an ``Attack``, so ``combat.process_hits`` treats
+    pass ``gravity=0`` for that. It IS an ``Attack``, so ``hit_resolution.process_hits`` treats
     it exactly like any other hit-box; only the per-frame motion differs.
 
     ``gravity`` / ``restitution`` / ``max_bounces`` are ⚠ GUESS tuning starting points

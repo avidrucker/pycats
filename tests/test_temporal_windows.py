@@ -26,7 +26,7 @@ from pycats.combat.move_clock import MoveClock
 from pycats.core.input import InputFrame
 from pycats.entities import Player
 from pycats.entities.platform import Platform
-from pycats.systems.combat import process_hits
+from pycats.systems.hit_resolution import process_hits
 
 _CONTROLS = dict(
     left=pygame.K_a,

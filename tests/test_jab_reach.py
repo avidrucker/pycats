@@ -13,7 +13,7 @@ import pygame as pg
 from pycats.config import P1_COLOR, P2_COLOR, WHITE
 from pycats.entities.attack import Attack
 from pycats.entities.player import Player
-from pycats.systems import combat
+from pycats.systems import hit_resolution
 
 P1K = {"left": pg.K_a, "right": pg.K_d, "up": pg.K_w, "down": pg.K_s, "shield": pg.K_x, "attack": pg.K_v}
 P2K = {
@@ -42,7 +42,7 @@ def _jab_lands_on_flush_defender(defender_facing_right):
     jab = attacker.fighter_data.moves["attack"].hitboxes[0]
     attacks = pg.sprite.Group()
     attacks.add(Attack(attacker, hitbox=jab, lifetime=3))
-    combat.process_hits([attacker, defender], attacks)
+    hit_resolution.process_hits([attacker, defender], attacks)
     return defender.fighter.percent
 
 

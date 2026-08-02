@@ -24,7 +24,7 @@ import types
 import pygame
 
 from pycats.combat.data import Circle, FighterData, Hurtbox
-from pycats.systems.combat import process_hits
+from pycats.systems.hit_resolution import process_hits
 
 # ---------------------------------------------------------------------------
 # Stub helpers

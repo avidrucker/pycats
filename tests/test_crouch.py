@@ -138,7 +138,7 @@ def _high_attack(owner, cx, cy, r=8):
 
 
 def test_crouch_lowers_hurtbox_high_attack_whiffs():
-    from pycats.systems import combat
+    from pycats.systems import hit_resolution
 
     plats = _ground()
     attacker = _mk()
@@ -147,7 +147,7 @@ def test_crouch_lowers_hurtbox_high_attack_whiffs():
     _settle(standing, plats)
     # A small hitbox up at the head connects with the standing hurtbox.
     cx, cy = standing.rect.centerx, standing.rect.top + 5
-    combat.process_hits([standing], [_high_attack(attacker, cx, cy)])
+    hit_resolution.process_hits([standing], [_high_attack(attacker, cx, cy)])
     assert standing.fighter.percent == 10.0, "high hit should connect standing"
 
     crouched = _mk()
@@ -155,7 +155,7 @@ def test_crouch_lowers_hurtbox_high_attack_whiffs():
     _run(crouched, plats, _frame("down"))
     assert crouched.state == "crouch"
     # Same world-space point now sits above the lowered crouch hurtbox -> whiff.
-    combat.process_hits([crouched], [_high_attack(attacker, cx, cy)])
+    hit_resolution.process_hits([crouched], [_high_attack(attacker, cx, cy)])
     assert crouched.fighter.percent == 0.0, "high hit should whiff over the crouch"
 
 

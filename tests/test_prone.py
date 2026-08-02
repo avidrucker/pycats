@@ -237,7 +237,7 @@ def _high_attack(owner, cx, cy, r=8):
 def test_prone_lowers_hurtbox_high_attack_whiffs():
     """A high hit that connects on a standing fighter whiffs over a prone one
     (mirrors test_crouch_lowers_hurtbox_high_attack_whiffs)."""
-    from pycats.systems import combat
+    from pycats.systems import hit_resolution
 
     plats = _ground()
     attacker = _mk()
@@ -245,7 +245,7 @@ def test_prone_lowers_hurtbox_high_attack_whiffs():
     standing = _mk()
     _settle(standing, plats)
     cx, cy = standing.rect.centerx, standing.rect.top + 5
-    combat.process_hits([standing], [_high_attack(attacker, cx, cy)])
+    hit_resolution.process_hits([standing], [_high_attack(attacker, cx, cy)])
     assert standing.fighter.percent == 10.0, "high hit should connect standing"
 
     downed = _mk()
@@ -254,16 +254,16 @@ def test_prone_lowers_hurtbox_high_attack_whiffs():
     _run(downed, plats, _frame())
     assert downed.state == "prone"
     # Same world-space point now sits above the lowered prone hurtbox -> whiff.
-    combat.process_hits([downed], [_high_attack(attacker, cx, cy)])
+    hit_resolution.process_hits([downed], [_high_attack(attacker, cx, cy)])
     assert downed.fighter.percent == 0.0, "high hit should whiff over the prone fighter"
 
 
 def test_prone_uses_purpose_built_hurtbox_not_resized_standing():
-    """Load-bearing on the prone_hurtbox SELECTION (#173 combat.py branch): a hit
+    """Load-bearing on the prone_hurtbox SELECTION (#173 hit_resolution.py branch): a hit
     just below the planted feet falls OUTSIDE the short purpose-built prone hurtbox
     but INSIDE the tall standing hurtbox mis-resolved against the shrunk prone Rect.
-    It must whiff — so disabling the combat.py prone branch makes this connect."""
-    from pycats.systems import combat
+    It must whiff — so disabling the hit_resolution.py prone branch makes this connect."""
+    from pycats.systems import hit_resolution
 
     plats = _ground()
     attacker = _mk()
@@ -273,7 +273,7 @@ def test_prone_uses_purpose_built_hurtbox_not_resized_standing():
     _run(downed, plats, _frame())
     assert downed.state == "prone"
     near_ground_cy = downed.rect.bottom + 6
-    combat.process_hits([downed], [_high_attack(attacker, downed.rect.centerx, near_ground_cy, r=2)])
+    hit_resolution.process_hits([downed], [_high_attack(attacker, downed.rect.centerx, near_ground_cy, r=2)])
     assert downed.fighter.percent == 0.0, (
         "near-ground hit must whiff the short prone hurtbox (not the mis-resolved standing box)"
     )

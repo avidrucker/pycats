@@ -30,7 +30,7 @@ from pycats.combat.data import (
 # Narz's signature: a sword poke that reaches BEYOND the hurtbox (disjoint) and rewards
 # spacing (tipper — the far tip hits harder than the near base). Both are pure data on
 # the current engine (#290): the tip box is FIRST in the tuple, so when a defender
-# overlaps both, priority = tuple order (attack.py:36; combat.py:141) makes the tip win.
+# overlaps both, priority = tuple order (attack.py:36; hit_resolution.py:141) makes the tip win.
 #
 # PM3.6 Marth `AttackS3` (forward-tilt), ⚠🔬 playtest / rukaidata-confirm later. #120 units:
 # frames / % / angle / BKB / KBG entered RAW; radii are px (the blade is thin → small r).
@@ -68,7 +68,7 @@ _NARZ_JAB = MoveData(
 
 # --- Down-tilt (slice 4, #303): a low, disjoint, tippered edgeguard poke ----------
 # Marth's low spacing tool: the same 2-box tipper shape as the f-tilt (tip box FIRST,
-# stronger; priority = tuple order, attack.py:36 / combat.py:141), but near the feet
+# stronger; priority = tuple order, attack.py:36 / hit_resolution.py:141), but near the feet
 # (high dy) and at a LOW launch angle (sends low/outward — the edgeguard / 2-frame use),
 # unlike the f-tilt's 361 sentinel. PM3.6 Marth `AttackLw3`, ⚠🔬 playtest / rukaidata-confirm.
 # Tip at dx 56..76 (disjoint past the hurtbox 6..34).

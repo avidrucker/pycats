@@ -156,7 +156,7 @@ def _roll_emissions(evade_on, frames=400):
     from pycats.core.input import merge_frames
     from pycats.sim import runner
     from pycats.sim.controllers import BaseController
-    from pycats.systems import combat
+    from pycats.systems import hit_resolution
 
     class Swinger(BaseController):
         def decide(self, a, t, frame, attacks=None, ledges=None):  # ledges: protocol (#404)
@@ -189,7 +189,7 @@ def _roll_emissions(evade_on, frames=400):
         for p in players:
             p.update(fi, plats, attacks)
         attacks.update(plats)
-        combat.process_hits(players, attacks)
+        hit_resolution.process_hits(players, attacks)
     return rolls, wasted, hitstun_frames
 
 

@@ -344,7 +344,7 @@ class Fighter:
     def receive_hit(self, atk, is_crouching=False):
         """Called by combat system when this player is struck.
 
-        `is_crouching` is passed in by `combat.process_hits` (#283/S2) — the domain
+        `is_crouching` is passed in by `hit_resolution.process_hits` (#283/S2) — the domain
         rule no longer reaches up into the adapter's FSM state label. Defaults
         False so the "no `.state` ⇒ not crouching" contract holds for minimal
         combat stand-ins and non-crouch callers."""
@@ -436,7 +436,7 @@ class Fighter:
         (series-universal): "the attacker will still experience hitlag … the opponent
         will otherwise be unaffected." The PM-3.6 step is `[inference]`; no PM primary
         exists. Contrast `receive_hit` (TANGIBLE, full resolution) and the INTANGIBLE
-        skip in `combat.process_hits` (pass-through, no attacker hitlag)."""
+        skip in `hit_resolution.process_hits` (pass-through, no attacker hitlag)."""
         # Attacker freezes exactly as on a normal hit; the invincible defender is left
         # untouched — no percent, knockback, hitstun, or hitlag applied to it.
         atk.owner.fighter.hitlag_timer = hitlag_frames(atk.damage)

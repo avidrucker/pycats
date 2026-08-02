@@ -19,7 +19,7 @@ from pycats.sim.runner import (
     build_players,
     build_stage,
 )
-from pycats.systems import combat
+from pycats.systems import hit_resolution
 from pycats.systems.match_engine import make_match_engine
 
 BUDGET_US = 1_000_000 / 60  # 16,667 us per frame at 60 FPS
@@ -50,7 +50,7 @@ def benchmark(frames=10_000):
             p.update(fi, platforms, attacks)
         resolve_player_push(list(players), platforms)
         attacks.update()
-        combat.process_hits(players, attacks)
+        hit_resolution.process_hits(players, attacks)
         match.tick()
         per_frame.append((time.perf_counter() - t0) * 1e6)
     total_s = sum(per_frame) / 1e6
@@ -90,7 +90,7 @@ def bucketed(frames=10_000):
         resolve_player_push(plist, platforms)
         t2 = time.perf_counter()
         attacks.update()
-        combat.process_hits(players, attacks)
+        hit_resolution.process_hits(players, attacks)
         match.tick()
         t3 = time.perf_counter()
         phys.append((t1 - t0) * 1e6)

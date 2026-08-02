@@ -100,10 +100,10 @@ def test_crouch_cancel_factor_is_pm_starting_value():
     assert 0.6 <= CROUCH_CANCEL_FACTOR <= 0.75
 
 
-# --- S2/#283: crouch-cancel must survive going THROUGH combat.process_hits ----
-# The tests above call receive_hit directly; they would NOT catch combat.py
+# --- S2/#283: crouch-cancel must survive going THROUGH hit_resolution.process_hits ----
+# The tests above call receive_hit directly; they would NOT catch hit_resolution.py
 # forgetting to pass the crouch flag. This guard runs the real process_hits path.
-from pycats.systems import combat  # noqa: E402
+from pycats.systems import hit_resolution  # noqa: E402
 
 
 def _body_attack(owner, cx, cy, r=40):
@@ -135,13 +135,13 @@ def _launch_via_process_hits(crouching: bool):
         assert defender.state == "crouch"
     defender.fighter.vel.x = 0.0
     cx, cy = defender.rect.centerx, defender.rect.centery
-    combat.process_hits([attacker, defender], [_body_attack(attacker, cx, cy)])
+    hit_resolution.process_hits([attacker, defender], [_body_attack(attacker, cx, cy)])
     assert defender.fighter.percent == 10.0, "setup: the hit must connect this posture"
     return defender.fighter.vel.x
 
 
 def test_crouch_cancel_applies_through_process_hits():
-    """Wiring guard: combat.process_hits must pass the crouch flag into receive_hit.
+    """Wiring guard: hit_resolution.process_hits must pass the crouch flag into receive_hit.
     Able-to-fail: drop the `is_crouching=` argument at the call site and crouch ==
     stand here."""
     stand_vx = _launch_via_process_hits(crouching=False)

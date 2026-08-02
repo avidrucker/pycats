@@ -40,7 +40,7 @@ from .render_battle import (
     render_battle,
     render_hitbox_overlay,
 )
-from .systems import combat
+from .systems import hit_resolution
 from .systems.win_condition import winner_loser
 
 
@@ -149,7 +149,7 @@ class BattleScreen:
             p.update(frame_input, platforms, self.attacks, self._ledges)
         resolve_player_push(list(self.players), platforms)
         self.attacks.update(platforms)  # #266: projectiles need platforms to bounce
-        combat.process_hits(self.players, self.attacks)
+        hit_resolution.process_hits(self.players, self.attacks)
 
     def winner(self):
         """(winner, loser) or (None, None) — the shared win-condition rule."""

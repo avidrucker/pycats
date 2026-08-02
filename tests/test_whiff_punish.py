@@ -134,7 +134,7 @@ def _off_cadence_recovery_attack(whiff_punish_on, frames=200):
     from pycats.core.input import merge_frames
     from pycats.sim import runner
     from pycats.sim.controllers import BaseController
-    from pycats.systems import combat
+    from pycats.systems import hit_resolution
 
     class Swinger(BaseController):
         """Swings a melee move periodically so it cycles through recovery windows."""
@@ -164,7 +164,7 @@ def _off_cadence_recovery_attack(whiff_punish_on, frames=200):
         for p in players:
             p.update(fi, plats, attacks)
         attacks.update(plats)
-        combat.process_hits(players, attacks)
+        hit_resolution.process_hits(players, attacks)
     return False
 
 

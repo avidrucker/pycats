@@ -2,7 +2,7 @@
 
 Pins the two PM-Marth signature mechanics, both pure data on the current engine (#290):
 - **Tipper:** when a defender overlaps BOTH boxes, the TIP (box 0) wins — priority is
-  tuple order (`entities/attack.py:36`; `systems/combat.py:141`). Able-to-fail: swap the
+  tuple order (`entities/attack.py:36`; `systems/hit_resolution.py:141`). Able-to-fail: swap the
   tuple order or equalize the boxes and the tip-damage assertion fails.
 - **Disjoint reach:** the tip hitbox sits beyond Narz's hurtbox.
 
@@ -18,7 +18,7 @@ import pygame
 from pycats.characters.narz_cat import _NARZ_FTILT, NARZ_FIGHTER_DATA
 from pycats.combat.data import Circle, FighterData, Hurtbox, load_fighter_data
 from pycats.entities.attack import Attack
-from pycats.systems.combat import process_hits
+from pycats.systems.hit_resolution import process_hits
 
 
 def _player(rect, *, hurtbox_circles, facing_right=True):

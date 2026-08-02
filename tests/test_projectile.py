@@ -163,7 +163,7 @@ def test_fireball_reaches_lower_platform_foe_in_real_battle():
     from pycats.core.input import merge_frames
     from pycats.sim import runner
     from pycats.sim.controllers import BaseController, IdlerController
-    from pycats.systems import combat
+    from pycats.systems import hit_resolution
 
     class Thrower(BaseController):
         def __init__(self, *a, **k):
@@ -191,7 +191,7 @@ def test_fireball_reaches_lower_platform_foe_in_real_battle():
         for p in players:
             p.update(fi, plats, attacks)
         attacks.update(plats)
-        combat.process_hits(players, attacks)
+        hit_resolution.process_hits(players, attacks)
         if p2.fighter.percent > start_pct:
             hit = True
             break

@@ -2,7 +2,7 @@
 
 `MoveData.hurtbox` (added inert in #831) is now READ at the two sites that
 resolve a fighter's active hurtbox:
-  - the sim hit-resolution — `systems/combat.py` `process_hits`;
+  - the sim hit-resolution — `systems/hit_resolution.py` `process_hits`;
   - the debug overlay      — `render_battle._active_hurtbox`.
 
 When the DEFENDER is executing a move that carries a `hurtbox` override, that
@@ -21,7 +21,7 @@ from helpers import ground as _ground
 from pycats.combat.data import Circle, Hurtbox, MoveData
 from pycats.core.input import InputFrame
 from pycats.entities import Player
-from pycats.systems import combat
+from pycats.systems import hit_resolution
 
 _CONTROLS = dict(
     left=pygame.K_a,
@@ -83,7 +83,7 @@ def test_move_override_replaces_posture_hurtbox_in_sim():
     d._clock.start(_override_move(override))
     assert d.current_move is not None and d.current_move.hurtbox is override
 
-    combat.process_hits([d], [_high_attack(attacker, body_cx, body_cy)])
+    hit_resolution.process_hits([d], [_high_attack(attacker, body_cx, body_cy)])
     assert d.fighter.percent == 0.0, "body hit must whiff — the override replaced the posture box"
 
 
@@ -100,7 +100,7 @@ def test_move_override_region_connects_in_sim():
     override = Hurtbox(circles=(Circle(dx=d.rect.width // 2, dy=d.rect.height + 20, r=10),))
     d._clock.start(_override_move(override))
 
-    combat.process_hits([d], [_high_attack(attacker, ox, oy, r=8)])
+    hit_resolution.process_hits([d], [_high_attack(attacker, ox, oy, r=8)])
     assert d.fighter.percent > 0.0, "a hit on the override region should connect"
 
 
@@ -112,7 +112,7 @@ def test_sim_no_override_uses_posture_box_unchanged():
     d = _mk()
     _settle(d, plats)
     assert d.current_move is None
-    combat.process_hits([d], [_high_attack(attacker, d.rect.centerx, d.rect.top + 5)])
+    hit_resolution.process_hits([d], [_high_attack(attacker, d.rect.centerx, d.rect.top + 5)])
     assert d.fighter.percent == 10.0, "no-override path must resolve the posture box as before"
 
 

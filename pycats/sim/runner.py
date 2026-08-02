@@ -36,7 +36,7 @@ from ..domain import (  # noqa: E402
 from ..entities import Player  # noqa: E402
 from ..entities.ledge import ledges_from_platforms  # noqa: E402
 from ..entities.stages import BATTLEFIELD  # noqa: E402
-from ..systems import combat  # noqa: E402
+from ..systems import hit_resolution  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
 from .input_script import default_timeline  # noqa: E402
 
@@ -266,7 +266,7 @@ def run_battle(
             p.update(fi, platforms, attacks, ledges)
         resolve_player_push(list(players), platforms)
         attacks.update(platforms)  # #266: projectiles need platforms to bounce
-        combat.process_hits(players, attacks)
+        hit_resolution.process_hits(players, attacks)
         match.tick()
         snaps.append(snapshot(players, attacks, match))
         if presenter is not None:

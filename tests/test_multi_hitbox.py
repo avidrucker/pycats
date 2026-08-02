@@ -25,7 +25,7 @@ import pygame
 
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox
 from pycats.entities.attack import Attack
-from pycats.systems.combat import process_hits
+from pycats.systems.hit_resolution import process_hits
 
 
 def _player(rect, *, hurtbox_circles, facing_right=True, intangible=False, is_alive=True):
