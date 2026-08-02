@@ -20,8 +20,8 @@ def _frozen_pair():
     p1, p2, _ = build_players("nalio", "birky")
     for p in (p1, p2):
         p.fighter.on_ground = True
-    p1.rect.x, p1.rect.y = 300, 300
-    p2.rect.x, p2.rect.y = 320, 300  # adx≈20, p2 to p1's right, same level
+    p1.rect = p1.rect.with_x(300).with_y(300)
+    p2.rect = p2.rect.with_x(320).with_y(300)  # adx≈20, p2 to p1's right, same level
     p1.fighter.facing_right, p2.fighter.facing_right = True, False
     return p1, p2
 
@@ -61,7 +61,7 @@ def test_backstop_stays_silent_while_moving():
     c = AttackerController(attacker_num=1, level=5, rng=random.Random(0))
     p1, p2 = _frozen_pair()
     for f in range(ANTI_STALL_MAX * 3):
-        p1.rect.x += (ANTI_STALL_MOVE_PX + 4) * (1 if f % 2 == 0 else -1)
+        p1.rect = p1.rect.with_x(p1.rect.x + ((ANTI_STALL_MOVE_PX + 4) * (1 if f % 2 == 0 else -1)))
         c.decide(p1, p2, f)
     assert c._noprog < ANTI_STALL_MAX, "backstop tripped despite the bot moving"
 

@@ -39,7 +39,7 @@ def _proj(cx, cy, vx=8, vy=0, gravity=0.5, restitution=0.6, max_bounces=3):
     r = p.hit_r
     p.hit_cx, p.hit_cy = float(cx), float(cy)
     p.resolved = [(float(cx), float(cy), r, _FB.hitboxes[0])]
-    p.rect.center = (cx, cy)
+    p.rect = p.rect.with_center((cx, cy))
     return p
 
 
@@ -180,8 +180,8 @@ def test_fireball_reaches_lower_platform_foe_in_real_battle():
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
     # p1 on the left thin platform (high); p2 grounded on the main platform (low),
     # to p1's right within the fireball's travel + descent.
-    p1.rect.center = (280, 260)
-    p2.rect.center = (560, 380)
+    p1.rect = p1.rect.with_center((280, 260))
+    p2.rect = p2.rect.with_center((560, 380))
     c1, c2 = Thrower(attacker_num=1), IdlerController(attacker_num=2)
     attacks = pygame.sprite.Group()
     start_pct = p2.fighter.percent

@@ -38,7 +38,7 @@ def test_gravity_droop_is_substantial_and_stable():
     p = Player(x=460, y=200, controls=C, color=P1_COLOR, eye_color=WHITE, char_name="Cat", facing_right=True)
     droop = {}
     for f in range(1, 401):
-        p.rect.midbottom = (460, 300)  # pin so it settles without falling away
+        p.rect = p.rect.with_midbottom((460, 300))  # pin so it settles without falling away
         p.fighter.vel.update(0, 0)
         p.update(_empty(), far, pg.sprite.Group())
         if f in (200, 400):

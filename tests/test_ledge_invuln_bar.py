@@ -42,7 +42,7 @@ def _stage():
 
 
 def _grab_left(p, plats, ledges):
-    p.rect.topleft = (80 - 40, 420)  # body just left of the left lip
+    p.rect = p.rect.with_topleft((80 - 40, 420))  # body just left of the left lip
     p.fighter.vel.x, p.fighter.vel.y = 0, 5  # descending
     p.fighter.on_ground = False
     p.update(_empty_frame(), plats, pygame.sprite.Group(), ledges)

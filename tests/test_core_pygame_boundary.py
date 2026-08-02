@@ -96,13 +96,14 @@ def test_rules_core_uses_no_pygame_framework():
 # the allowed value-type imports pulling pygame in). It is the executable form of
 # the ADR-0004 aspiration, complementing the read-only AST check with a run check.
 #
-# Scope note: `systems` is NOT yet gated — `systems.status_model` reaches pygame
-# transitively (status_model -> runtime_settings -> settings -> display), a
-# structural coupling tracked as a follow-up of #833 §6. `combat` is already fully
-# import-clean; `core` becomes clean once `core/physics.py` drops its dead
-# `import pygame` (annotations are stringized via `from __future__ import
-# annotations`, so nothing in the module needs pygame at import time).
-_IMPORT_GATE_PACKAGES = ("combat", "core")
+# `systems` joined the gate in #975 (§6 move 2): the transitive pygame leak
+# (status_model -> runtime_settings -> settings -> display) was cut by making
+# `display.py` import pygame lazily (inside scale_surface) and `systems.movement`
+# stringize its pygame annotations. `combat`/`core` were already import-clean;
+# `core/physics.py` carries pygame only under `TYPE_CHECKING`. Every listed package
+# must import with pygame absent — only value-type USE is allowed, never an
+# import-time dependency (ADR-0004).
+_IMPORT_GATE_PACKAGES = ("combat", "core", "systems")
 
 _IMPORT_GATE_SCRIPT = textwrap.dedent(
     """
@@ -141,12 +142,13 @@ _IMPORT_GATE_SCRIPT = textwrap.dedent(
 
 
 def test_rules_core_imports_without_pygame_framework():
-    """Every submodule of `combat`/`core` imports with pygame absent from sys.modules.
+    """Every submodule of `combat`/`core`/`systems` imports with pygame absent from sys.modules.
 
     Runs in a subprocess so the pygame-blocking meta-path finder and the fresh
     imports never touch the pytest session's own `sys.modules` (ADR-0004, #833 §6).
     Able-to-fail: adding a top-level `import pygame` to any guarded submodule (or
-    reverting `core/physics.py`'s dead-import removal) makes the subprocess exit 1.
+    re-coupling `systems.status_model` to the display->pygame chain) makes the
+    subprocess exit 1.
     """
     script = _IMPORT_GATE_SCRIPT.format(packages=_IMPORT_GATE_PACKAGES)
     proc = subprocess.run(

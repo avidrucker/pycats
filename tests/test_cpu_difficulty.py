@@ -9,8 +9,7 @@ starting points).
 import random
 import types
 
-import pygame as pg
-
+from pycats.core.geometry import FrozenRect
 from pycats.sim.controllers import AttackerController, level_params
 
 
@@ -96,8 +95,8 @@ _CTRL = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6, "
 
 def _stub(cx, cy, alive=True, on_ground=True):
     s = types.SimpleNamespace()
-    s.rect = pg.Rect(0, 0, 40, 60)
-    s.rect.center = (cx, cy)
+    s.rect = FrozenRect(0, 0, 40, 60)
+    s.rect = s.rect.with_center((cx, cy))
     s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground)
     s.controls = _CTRL
     return s
@@ -245,8 +244,8 @@ def _atk(owner, cx, cy, velocity=None, active=True):
     Melee hitboxes have velocity=None; projectiles carry a (vx, vy)."""
     s = types.SimpleNamespace()
     s.owner = owner
-    s.rect = pg.Rect(0, 0, 30, 30)
-    s.rect.center = (cx, cy)
+    s.rect = FrozenRect(0, 0, 30, 30)
+    s.rect = s.rect.with_center((cx, cy))
     s.velocity = velocity
     s.active = active
     return s
@@ -425,7 +424,7 @@ def test_reactive_bot_shields_incoming_projectile_in_real_loop():
     for f in range(60):
         if f == 5:  # inject a real projectile at p2's level, closing from the left
             atk = Attack(p1, hitboxes=fb_move.hitboxes, velocity=(8, 0), lifetime=73, disappear_on_hit=True)
-            atk.rect.center = (p2.rect.centerx - 120, p2.rect.centery)
+            atk.rect = atk.rect.with_center((p2.rect.centerx - 120, p2.rect.centery))
             attacks.add(atk)
         fi = merge_frames(c(p1, p2, f, attacks) for c in (c1, c2))
         for p in players:

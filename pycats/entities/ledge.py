@@ -4,9 +4,8 @@ lockout (PM edge-hog without trump; trump is a deferred follow-up)."""
 
 from __future__ import annotations
 
-import pygame  # type: ignore
-
 from .. import config
+from ..core.geometry import FrozenRect
 
 LEFT = "left"
 RIGHT = "right"
@@ -51,13 +50,13 @@ class Ledge:
         self.ay = ay
         self.occupied_by = None
 
-    def catch_rect(self) -> pygame.Rect:
+    def catch_rect(self) -> FrozenRect:
         """The off-stage box that, when the fighter's body overlaps it while
         descending, triggers a grab. Hangs outward from the corner and below the
         lip."""
         w, h = config.LEDGE_CATCH_W, config.LEDGE_CATCH_H
         left = self.ax - w if self.side == LEFT else self.ax
-        return pygame.Rect(left, self.ay, w, h)
+        return FrozenRect(left, self.ay, w, h)
 
     def hang_topleft(self, size):
         """Rect top-left a hanging fighter snaps to — body just off the lip, on the

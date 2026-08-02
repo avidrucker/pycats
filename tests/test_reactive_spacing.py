@@ -12,6 +12,7 @@ import types
 
 import pygame as pg
 
+from pycats.core.geometry import FrozenRect
 from pycats.sim.controllers import AttackerController, level_params
 
 pg.init()
@@ -25,8 +26,8 @@ def _move(startup=4, active=3, recovery=20):
 
 def _stub(cx, cy, alive=True, on_ground=True, current_move=None, move_frame=0):
     s = types.SimpleNamespace()
-    s.rect = pg.Rect(0, 0, 40, 60)
-    s.rect.center = (cx, cy)
+    s.rect = FrozenRect(0, 0, 40, 60)
+    s.rect = s.rect.with_center((cx, cy))
     s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground)
     s.controls = _CTRL
     s.current_move = current_move

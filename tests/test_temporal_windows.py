@@ -261,7 +261,7 @@ def test_two_windows_deal_two_hits_to_a_stationary_target():
 
     # A stationary defender parked on the attacker's hitbox origin (r=80 hurtbox
     # guarantees overlap with the r=10 hitbox both windows spawn there).
-    defender = _hit_counting_defender(p.rect.copy())
+    defender = _hit_counting_defender(p.rect)
 
     box_a = _box(damage=10.0, active_start=4, active_end=5)  # window A: frame 4, len 2
     box_b = _box(damage=20.0, active_start=13, active_end=17)  # window B: frame 13, len 5

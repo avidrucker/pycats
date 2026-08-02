@@ -281,10 +281,12 @@ class Player(pygame.sprite.Sprite):
         old flag exactly."""
         return self.attack_timer == 0
 
-    # rect is kept on Player (NOT collapsed in #90): pygame's Sprite machinery
-    # reads `sprite.rect` directly, so it must stay a real attribute. get+set so
-    # both in-place mutation (`p.rect.left = …`) and wholesale assignment flow
-    # through to the Fighter, which owns it.
+    # rect is kept on Player as a delegating get/set property (NOT collapsed in
+    # #90): callers and the Sprite base reach `sprite.rect`, and it forwards to the
+    # Fighter, which owns the box. Since #975 the box is an immutable FrozenRect, so
+    # every write is a wholesale reassignment (`p.rect = p.rect.with_left(…)`) that
+    # flows through this setter — there is no in-place `p.rect.left = …` mutation
+    # left to alias.
     @property
     def rect(self):
         return self.fighter.rect
@@ -446,7 +448,7 @@ class Player(pygame.sprite.Sprite):
                 down = self._pressed(held, "down")
                 away = ledge.away_held(self._pressed(held, "left"), self._pressed(held, "right"))
                 if up:  # neutral getup -> climb window
-                    self.rect.topleft = ledge.getup_topleft(self.rect.size)
+                    self.rect = self.rect.with_topleft(ledge.getup_topleft(self.rect.size))
                     self.fighter.intangible = False
                     self.fighter.ledge_intangible_timer = 0
                     self.fighter.ledge_getup_timer = LEDGE_GETUP_FRAMES
@@ -489,7 +491,7 @@ class Player(pygame.sprite.Sprite):
                 if self.rect.colliderect(ledge.catch_rect()):
                     if occupant is not None and occupant is not self:
                         self._evict_from_ledge(occupant)  # mistimed hog -> evicted
-                    self.rect.topleft = ledge.hang_topleft(self.rect.size)
+                    self.rect = self.rect.with_topleft(ledge.hang_topleft(self.rect.size))
                     self.fighter.vel.x = 0
                     self.fighter.vel.y = 0
                     self.fighter.ledge_regrab_count += 1  # #656: consecutive regrab (reset on land/hit)
@@ -642,8 +644,7 @@ class Player(pygame.sprite.Sprite):
             target = f.prone_size
         if (self.rect.width, self.rect.height) != tuple(target):
             midbottom = self.rect.midbottom
-            self.rect.size = target
-            self.rect.midbottom = midbottom
+            self.rect = self.rect.with_size(target).with_midbottom(midbottom)
 
     # ============================================================== helpers
     # Input handling lives in FighterInput (#73 / D1 slice 3); Player delegates

@@ -150,7 +150,7 @@ def test_descending_into_left_catch_region_grabs():
     plats = _stage()
     ledges = ledges_from_platforms(plats)
     p = _player()
-    p.rect.topleft = (80 - 40, 420)  # body just left of the left lip
+    p.rect = p.rect.with_topleft((80 - 40, 420))  # body just left of the left lip
     p.fighter.vel.x, p.fighter.vel.y = 0, 5  # descending
     p.fighter.on_ground = False
     p.update(_empty_frame(), plats, p_attack_group(), ledges)
@@ -164,7 +164,7 @@ def test_rising_does_not_grab():
     plats = _stage()
     ledges = ledges_from_platforms(plats)
     p = _player()
-    p.rect.topleft = (80 - 40, 420)
+    p.rect = p.rect.with_topleft((80 - 40, 420))
     p.fighter.vel.y = -5  # rising
     p.fighter.on_ground = False
     p.update(_empty_frame(), plats, p_attack_group(), ledges)
@@ -176,7 +176,7 @@ def test_rising_does_not_grab():
 
 
 def _grab_left(p, plats, ledges):
-    p.rect.topleft = (80 - 40, 420)
+    p.rect = p.rect.with_topleft((80 - 40, 420))
     p.fighter.vel.x, p.fighter.vel.y = 0, 5
     p.fighter.on_ground = False
     p.update(_empty_frame(), plats, p_attack_group(), ledges)
@@ -278,7 +278,7 @@ def test_regrab_lockout_blocks_immediate_regrab():
     p = _player()
     _grab_left(p, plats, ledges)
     p.update(_frame_down(p), plats, p_attack_group(), ledges)  # drop -> lockout armed
-    p.rect.topleft = (80 - 40, 420)
+    p.rect = p.rect.with_topleft((80 - 40, 420))
     p.fighter.vel.y = 5
     p.fighter.on_ground = False
     p.update(_empty_frame(), plats, p_attack_group(), ledges)  # in region again
@@ -294,13 +294,13 @@ def test_occupied_edge_blocks_second_grabber():
     p1 = _player()
     p2 = _player()
     # p1 grabs the LEFT edge
-    p1.rect.topleft = (80 - 40, 420)
+    p1.rect = p1.rect.with_topleft((80 - 40, 420))
     p1.fighter.vel.y = 5
     p1.fighter.on_ground = False
     p1.update(_empty_frame(), plats, p_attack_group(), ledges)
     assert p1.state == "ledge_hang"
     # p2 enters the SAME left catch region while p1 holds it
-    p2.rect.topleft = (80 - 40, 420)
+    p2.rect = p2.rect.with_topleft((80 - 40, 420))
     p2.fighter.vel.y = 5
     p2.fighter.on_ground = False
     p2.update(_empty_frame(), plats, p_attack_group(), ledges)

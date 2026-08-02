@@ -41,7 +41,7 @@ def test_reset_clears_transient_state_and_position():
     p.fighter.intangible = True
     p.fighter.percent = 80
     p.fighter.vel.update(7, -7)
-    p.rect.center = (9999, 9999)
+    p.rect = p.rect.with_center((9999, 9999))
     p.reset_to_spawn()
     assert p.fighter.is_alive
     assert (p.fighter.dodge_timer, p.fighter.hurt_timer, p.fighter.stun_timer, p.attack_timer) == (0, 0, 0, 0)

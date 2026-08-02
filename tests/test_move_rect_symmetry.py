@@ -22,6 +22,7 @@ import pygame as pg
 import pytest
 
 from pycats.combat.data import load_fighter_data
+from pycats.core.geometry import FrozenRect
 from pycats.core.physics import move_rect
 
 # Every shipped/selectable character (testcat == the default cat).
@@ -37,18 +38,18 @@ def _speed(cat: str, regime: str) -> float:
 
 def _displacement(vel_x: float, frames: int) -> int:
     """Absolute integer distance covered after driving move_rect `frames` times."""
-    r = pg.Rect(START_X, 0, 10, 10)
+    r = FrozenRect(START_X, 0, 10, 10)
     for _ in range(frames):
-        move_rect(r, pg.Vector2(vel_x, 0))
+        r = move_rect(r, pg.Vector2(vel_x, 0))
     return abs(r.x - START_X)
 
 
 def _frames_to_travel(vel_x: float, distance: int) -> int:
     """How many frames to cover at least `distance` px at constant vel_x."""
-    r = pg.Rect(START_X, 0, 10, 10)
+    r = FrozenRect(START_X, 0, 10, 10)
     frames = 0
     while abs(r.x - START_X) < distance:
-        move_rect(r, pg.Vector2(vel_x, 0))
+        r = move_rect(r, pg.Vector2(vel_x, 0))
         frames += 1
         assert frames < 100_000, "runaway: fighter never reached the target distance"
     return frames

@@ -10,6 +10,7 @@ import types
 
 import pygame as pg
 
+from pycats.core.geometry import FrozenRect
 from pycats.sim.controllers import AttackerController, level_params
 
 pg.init()
@@ -23,8 +24,8 @@ def _move(startup=4, active=3, recovery=20):
 
 def _stub(cx, cy, alive=True, on_ground=True, current_move=None, move_frame=0):
     s = types.SimpleNamespace()
-    s.rect = pg.Rect(0, 0, 40, 60)
-    s.rect.center = (cx, cy)
+    s.rect = FrozenRect(0, 0, 40, 60)
+    s.rect = s.rect.with_center((cx, cy))
     s.fighter = types.SimpleNamespace(is_alive=alive, on_ground=on_ground)
     s.controls = _CTRL
     s.current_move = current_move
@@ -143,8 +144,8 @@ def _off_cadence_recovery_attack(whiff_punish_on, frames=200):
 
     plats = runner.build_stage()
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
-    p1.rect.center = (440, 380)
-    p2.rect.center = (480, 380)  # within attack range
+    p1.rect = p1.rect.with_center((440, 380))
+    p2.rect = p2.rect.with_center((480, 380))  # within attack range
     c1 = Swinger(attacker_num=1)
     c2 = AttackerController(attacker_num=2, level=9, rng=random.Random(2))  # whiff_punish ON via level
     if not whiff_punish_on:

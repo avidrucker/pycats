@@ -37,7 +37,7 @@ def test_curl_on_lifts_the_tail(monkeypatch):
     monkeypatch.setattr(_tail, "TAIL_UNDULATE_AMP", 0.0)
     p, far = _pinned_player()
     for _ in range(300):
-        p.rect.midbottom = (460, 300)
+        p.rect = p.rect.with_midbottom((460, 300))
         p.fighter.vel.update(0, 0)
         p.update(_e(), far, pg.sprite.Group())
     base, tip = p.tail.segments[0], p.tail.segments[-1]
@@ -48,7 +48,7 @@ def test_curl_off_falls_back_to_pure_hang(monkeypatch):
     monkeypatch.setattr(_tail, "TAIL_CURL_STRENGTH", 0)  # disables whole layer
     p, far = _pinned_player()
     for _ in range(300):
-        p.rect.midbottom = (460, 300)
+        p.rect = p.rect.with_midbottom((460, 300))
         p.fighter.vel.update(0, 0)
         p.update(_e(), far, pg.sprite.Group())
     base, tip = p.tail.segments[0], p.tail.segments[-1]
@@ -59,12 +59,12 @@ def test_undulation_keeps_the_idle_tail_moving():
     # defaults (undulation on): a pinned, otherwise-idle tail keeps snaking.
     p, far = _pinned_player()
     for _ in range(200):  # reach steady undulation
-        p.rect.midbottom = (460, 300)
+        p.rect = p.rect.with_midbottom((460, 300))
         p.fighter.vel.update(0, 0)
         p.update(_e(), far, pg.sprite.Group())
     xs = []
     for _ in range(120):  # ~2s
-        p.rect.midbottom = (460, 300)
+        p.rect = p.rect.with_midbottom((460, 300))
         p.fighter.vel.update(0, 0)
         p.update(_e(), far, pg.sprite.Group())
         xs.append(p.tail.segments[-1].x)
@@ -77,12 +77,12 @@ def test_no_undulation_when_disabled(monkeypatch):
     monkeypatch.setattr(_tail, "TAIL_UNDULATE_AMP", 0.0)
     p, far = _pinned_player()
     for _ in range(200):
-        p.rect.midbottom = (460, 300)
+        p.rect = p.rect.with_midbottom((460, 300))
         p.fighter.vel.update(0, 0)
         p.update(_e(), far, pg.sprite.Group())
     xs = []
     for _ in range(120):
-        p.rect.midbottom = (460, 300)
+        p.rect = p.rect.with_midbottom((460, 300))
         p.fighter.vel.update(0, 0)
         p.update(_e(), far, pg.sprite.Group())
         xs.append(p.tail.segments[-1].x)

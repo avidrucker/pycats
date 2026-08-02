@@ -51,14 +51,14 @@ def step_physics(p, platforms, held):
             # (safety net in case any movement still occurs).
             platform_rect = current_platform.rect
             if p.rect.left < platform_rect.left:
-                p.rect.left = platform_rect.left
+                p.rect = p.rect.with_left(platform_rect.left)
                 p.fighter.vel.x = 0  # Stop any leftward movement
             if p.rect.right > platform_rect.right:
-                p.rect.right = platform_rect.right
+                p.rect = p.rect.with_right(platform_rect.right)
                 p.fighter.vel.x = 0  # Stop any rightward movement
 
     # Apply movement - this must happen immediately after the edge check.
-    move_rect(p.rect, p.fighter.vel)
+    p.rect = move_rect(p.rect, p.fighter.vel)
 
     # Post-movement clamping: ensure the dodge didn't move the player off-platform.
     if p.state == "dodge" and p.fighter.on_ground:
@@ -66,10 +66,10 @@ def step_physics(p, platforms, held):
         if current_platform is not None:
             platform_rect = current_platform.rect
             if p.rect.left < platform_rect.left:
-                p.rect.left = platform_rect.left
+                p.rect = p.rect.with_left(platform_rect.left)
                 p.fighter.vel.x = 0
             if p.rect.right > platform_rect.right:
-                p.rect.right = platform_rect.right
+                p.rect = p.rect.with_right(platform_rect.right)
                 p.fighter.vel.x = 0
 
     # Prevent drop-through of thin platforms when shield is held with down (both
@@ -91,7 +91,7 @@ def step_physics(p, platforms, held):
     # landing — the auto-knockdown trigger (#145) reads it in _handle_landing.
     p.fighter.land_impact_vy = p.fighter.vel.y
 
-    p.fighter.vel, p.fighter.on_ground, p.fighter.drop_platform = solve_vertical(
+    p.rect, p.fighter.vel, p.fighter.on_ground, p.fighter.drop_platform = solve_vertical(
         p.rect,
         p.fighter.vel,
         platforms,
@@ -102,7 +102,7 @@ def step_physics(p, platforms, held):
     # Issue #5: block the SIDE faces of solid (thick) platforms. Runs after
     # solve_vertical so a top-landing is resolved first and not mistaken for a
     # side entry.
-    p.fighter.vel = solve_horizontal(p.rect, p.fighter.vel, platforms)
+    p.rect, p.fighter.vel = solve_horizontal(p.rect, p.fighter.vel, platforms)
 
     # Maintain on_ground during a ground spot dodge to prevent unwanted fall
     # transitions.
@@ -111,7 +111,7 @@ def step_physics(p, platforms, held):
             p.fighter.on_ground = True
             current_platform = find_current_platform(p.rect, platforms)
             if current_platform:
-                p.rect.bottom = current_platform.rect.top
+                p.rect = p.rect.with_bottom(current_platform.rect.top)
 
     # Symmetric takeoff clamp (#473): a ground->air transition forfeits the
     # grounded jump. Runs after the spot-dodge on_ground maintenance above so a

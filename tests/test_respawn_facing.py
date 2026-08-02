@@ -38,7 +38,7 @@ def test_respawn_restores_initial_facing(initial_facing_right):
     p.fighter.facing_right = not initial_facing_right
 
     # Force a KO by driving the player out the bottom blast zone, via the real loop.
-    p.rect.top = SCREEN_HEIGHT + 9999
+    p.rect = p.rect.with_top(SCREEN_HEIGHT + 9999)
     p.update(_noop(), platforms, pygame.sprite.Group())
     assert not p.fighter.is_alive, "precondition: player should be KO'd"
     # Facing is untouched while dead/waiting; the reset happens on respawn.

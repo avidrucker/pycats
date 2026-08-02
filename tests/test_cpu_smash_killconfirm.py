@@ -30,8 +30,8 @@ _PERCENT, _LIVES = 7, 9
 def _adjacent_grounded(p1, p2, gap=30):
     """Stand P2 just within P1's melee reach, both grounded and level — the geometry
     the in-range attack gate wants (standoff-margin <= adx <= melee_range, |dy| < 60)."""
-    p2.rect.centerx = p1.rect.centerx + gap
-    p2.rect.centery = p1.rect.centery
+    p2.rect = p2.rect.with_centerx(p1.rect.centerx + gap)
+    p2.rect = p2.rect.with_centery(p1.rect.centery)
     p1.fighter.on_ground = True
     p2.fighter.on_ground = True
 
@@ -111,8 +111,8 @@ def test_leveled_bot_smashes_and_kos_a_high_percent_opponent():
             p.update(empty, plats, attacks, ledges)
     assert p1.fighter.on_ground and p2.fighter.on_ground, "fighters failed to settle on the ground"
     # Park the idle Birky in melee range at a lethal percent, both grounded and level.
-    p2.rect.centerx = p1.rect.centerx + 34
-    p2.rect.bottom = p1.rect.bottom
+    p2.rect = p2.rect.with_centerx(p1.rect.centerx + 34)
+    p2.rect = p2.rect.with_bottom(p1.rect.bottom)
     p2.fighter.percent = 140.0
     ctrl = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
     lives0 = p2.fighter.lives

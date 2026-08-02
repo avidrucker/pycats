@@ -34,8 +34,8 @@ def _jab_lands_on_flush_defender(defender_facing_right):
         x=460, y=340, controls=P2K, color=P2_COLOR, eye_color=WHITE, char_name="D", facing_right=defender_facing_right
     )
     # Place them flush at the settled push gap (rect.x 41 apart, bodies touching+).
-    attacker.rect.x, attacker.rect.y = 400, 340
-    defender.rect.x, defender.rect.y = 441, 340
+    attacker.rect = attacker.rect.with_x(400).with_y(340)
+    defender.rect = defender.rect.with_x(441).with_y(340)
     attacker.fighter.facing_right = True
     defender.fighter.facing_right = defender_facing_right
 

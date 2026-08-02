@@ -28,6 +28,7 @@ from ..config import (
     JOSTLE_TRIGGER_UNITS,
     MAX_FALL_SPEED,
 )
+from .geometry import FrozenRect
 
 # Physics thresholds (#446: named from inline literals).
 VEL_DEADZONE = 0.05  # |vel.x| below this snaps to 0 after friction (dead-zone)
@@ -53,40 +54,40 @@ def apply_gravity(vel: pg.Vector2, gravity: float = GRAVITY, max_fall_speed: flo
     return vel
 
 
-def move_rect(rect: pg.Rect, vel: pg.Vector2) -> None:
-    """Translate rect by vel (in-place).
+def move_rect(rect: FrozenRect, vel: pg.Vector2) -> FrozenRect:
+    """Return ``rect`` translated by ``vel`` (a new FrozenRect; nothing mutates).
 
-    pygame Rect coords are integers, so a raw ``rect.x += vel.x`` truncates the
-    float toward zero. At a positive on-stage x that makes a leftward step
-    ``ceil(|vel.x|)`` and a rightward step ``floor(|vel.x|)`` — a fixed 1px/frame
-    leftward bias for any fractional ``vel.x`` (#949/#979). Rounding ``vel.x``
-    symmetrically about zero *before* it reaches the int Rect makes left and right
-    advance identically. ``round`` is sign-symmetric (half-to-even) so there is no
-    residual bias even at the .5 boundary. This realizes a fighter's horizontal
-    speed at the nearest integer px/frame (e.g. Gnok walk 6.48 → 6, dash
-    9.72 → 10); carrying a sub-pixel remainder to preserve the exact fractional
-    rate is out of scope here.
+    FrozenRect coords are integers (like the pygame.Rect it replaced), so a raw
+    ``x + vel.x`` truncates the float toward zero. At a positive on-stage x that
+    makes a leftward step ``ceil(|vel.x|)`` and a rightward step ``floor(|vel.x|)``
+    — a fixed 1px/frame leftward bias for any fractional ``vel.x`` (#949/#979).
+    Rounding ``vel.x`` symmetrically about zero *before* it reaches the int coord
+    makes left and right advance identically. ``round`` is sign-symmetric
+    (half-to-even) so there is no residual bias even at the .5 boundary. This
+    realizes a fighter's horizontal speed at the nearest integer px/frame (e.g.
+    Gnok walk 6.48 → 6, dash 9.72 → 10); carrying a sub-pixel remainder to preserve
+    the exact fractional rate is out of scope here.
 
     ``vel.y`` is left truncating on purpose: the reported defect (#949) is
     horizontal, and rounding the gravity/jump-driven vertical step changes fall
-    trajectories (it moves the golden sims). Whether every Rect-writing site
+    trajectories (it moves the golden sims). Whether every coord-writing site
     should force int uniformly is the audit follow-up, not this fix.
     """
-    rect.x += round(vel.x)
-    rect.y += vel.y
+    return rect.moved(round(vel.x), vel.y)
 
 
 def solve_vertical(
-    actor: pg.Rect,
+    actor: FrozenRect,
     vel: pg.Vector2,
     platforms,
     press_down: bool,
     drop_platform: _DropThrough | None,
-) -> tuple[pg.Vector2, bool, _DropThrough | None]:
+) -> tuple[FrozenRect, pg.Vector2, bool, _DropThrough | None]:
     """
     Resolve vertical collisions against a list of platforms.
 
-    Returns (new_vel, on_ground, new_drop_platform)
+    Returns (new_actor, new_vel, on_ground, new_drop_platform) — the actor box is
+    returned rather than mutated (FrozenRect is immutable; no shared-alias risk).
     Pure maths: no Player-specific references.
     """
     on_ground = False
@@ -116,20 +117,20 @@ def solve_vertical(
             if vel.y >= 0 and actor.bottom - vel.y <= p.rect.top:
                 landing = p
             elif vel.y < 0 and actor.top - vel.y >= p.rect.bottom:
-                actor.top = p.rect.bottom
+                actor = actor.with_top(p.rect.bottom)
                 vel.y = 0
 
     if landing:
-        actor.bottom = landing.rect.top
+        actor = actor.with_bottom(landing.rect.top)
         vel.y = 0
         on_ground = True
         if landing.thin and press_down:
             new_drop = landing
 
-    return vel, on_ground, new_drop
+    return actor, vel, on_ground, new_drop
 
 
-def solve_horizontal(actor: pg.Rect, vel: pg.Vector2, platforms) -> pg.Vector2:
+def solve_horizontal(actor: FrozenRect, vel: pg.Vector2, platforms) -> tuple[FrozenRect, pg.Vector2]:
     """Resolve horizontal collisions against the SIDE faces of solid platforms.
 
     Issue #5 / Project M fidelity: a *thick* platform is solid on all sides, so
@@ -138,7 +139,8 @@ def solve_horizontal(actor: pg.Rect, vel: pg.Vector2, platforms) -> pg.Vector2:
 
     Disambiguates a genuine side entry from a top-landing using the pre-move
     horizontal edge (`actor.right - vel.x`), mirroring how `solve_vertical`
-    uses `actor.bottom - vel.y`. Mutates `actor` in place; returns `vel`.
+    uses `actor.bottom - vel.y`. Returns `(new_actor, vel)` — the actor box is
+    returned rather than mutated (FrozenRect is immutable).
     """
     for p in platforms:
         if p.thin:
@@ -147,13 +149,13 @@ def solve_horizontal(actor: pg.Rect, vel: pg.Vector2, platforms) -> pg.Vector2:
             continue
         if vel.x > 0 and actor.right - vel.x <= p.rect.left:
             # moving right, was clear of the left face before the move
-            actor.right = p.rect.left
+            actor = actor.with_right(p.rect.left)
             vel.x = 0
         elif vel.x < 0 and actor.left - vel.x >= p.rect.right:
             # moving left, was clear of the right face before the move
-            actor.left = p.rect.right
+            actor = actor.with_left(p.rect.right)
             vel.x = 0
-    return vel
+    return actor, vel
 
 
 # ----------------------------------------------------------------- horizontal
@@ -219,11 +221,11 @@ def resolve_player_push(players: list[Player], platforms) -> None:  # noqa: F821
             # velocity is never rewritten. On an exact stack (dx == 0) apply a
             # deterministic tie-break so integer-pixel fighters still separate.
             if dx > 0:  # a is to the right of b
-                a.rect.x += JOSTLE_PUSH_PX
-                b.rect.x -= JOSTLE_PUSH_PX
+                a.rect = a.rect.with_x(a.rect.x + JOSTLE_PUSH_PX)
+                b.rect = b.rect.with_x(b.rect.x - JOSTLE_PUSH_PX)
             else:  # a is left of b, or exactly stacked (deterministic tie-break)
-                a.rect.x -= JOSTLE_PUSH_PX
-                b.rect.x += JOSTLE_PUSH_PX
+                a.rect = a.rect.with_x(a.rect.x - JOSTLE_PUSH_PX)
+                b.rect = b.rect.with_x(b.rect.x + JOSTLE_PUSH_PX)
 
 
 # ----------------------------------------------------------------- edge detection for dodging
@@ -271,9 +273,10 @@ def would_dodge_off_platform(actor_rect: pg.Rect, dodge_velocity: float, current
 
     platform_rect = current_platform.rect
 
-    # Calculate where the actor would be after this frame's movement
-    future_rect = actor_rect.copy()
-    future_rect.x += dodge_velocity
+    # Calculate where the actor would be after this frame's movement. `moved`
+    # truncates (x + dodge_velocity) toward zero, matching the old
+    # `future_rect.x += dodge_velocity` on the int pygame.Rect.
+    future_rect = actor_rect.moved(dodge_velocity, 0)
 
     # We want to prevent the player from going completely off the platform
     # Check if enough of the player would remain on the platform

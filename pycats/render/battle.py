@@ -56,8 +56,11 @@ def render_battle(surface, players, platforms):
     Mirrors game.py's playing-branch draw block (no HUD/controls/FPS text)."""
     for pl in platforms:
         # #317/H-b: the platform holds only data (rect + thin); the adapter paints
-        # its thickness colour (was Platform.image, an entity-owned Surface).
-        pygame.draw.rect(surface, PLATFORM_THIN if pl.thin else PLATFORM_THICK, pl.rect)
+        # its thickness colour (was Platform.image, an entity-owned Surface). The
+        # sim box is a pygame-free FrozenRect (#975); pygame.draw.rect takes an
+        # (x, y, w, h) sequence, so hand it the box's tuple form at this boundary.
+        r = pl.rect
+        pygame.draw.rect(surface, PLATFORM_THIN if pl.thin else PLATFORM_THICK, (r.x, r.y, r.w, r.h))
     for p in players:
         if not p.fighter.is_alive:
             continue
@@ -159,4 +162,6 @@ def _attack_surface(a):
 
 def render_attacks(surface, attacks):
     for a in attacks:
-        surface.blit(_attack_surface(a), a.rect)
+        # blit uses only the dest rect's topleft; a.rect is a pygame-free
+        # FrozenRect (#975), so pass its topleft tuple at this render boundary.
+        surface.blit(_attack_surface(a), a.rect.topleft)

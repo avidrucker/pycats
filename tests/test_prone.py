@@ -318,7 +318,7 @@ def _land_in_hitstun(vy, hurt, frames=8):
     downward velocity and hitstun, then run a few frames. Returns (player, states)."""
     p = _mk()
     plats = _ground()  # solid platform, top at y=100
-    p.rect.bottom = 90  # airborne, just above the platform top
+    p.rect = p.rect.with_bottom(90)  # airborne, just above the platform top
     p.fighter.on_ground = False
     p.fighter.vel.y = vy
     p.fighter.hurt_timer = hurt
@@ -366,7 +366,7 @@ def test_hard_landing_in_hitstun_forces_prone_through_update():
     plats = _ground()
     p = _mk()
     p.fighter.on_ground = False
-    p.rect.bottom = plats[0].rect.top - 2  # just above the ground
+    p.rect = p.rect.with_bottom(plats[0].rect.top - 2)  # just above the ground
     p.fighter.vel.y = KNOCKDOWN_VY_THRESHOLD + 4  # hard downward impact
     p.fighter.hurt_timer = 10  # in hitstun / tumble
     _run(p, plats, _frame())  # one update -> land -> knockdown

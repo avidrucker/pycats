@@ -25,6 +25,7 @@ import types
 
 import pygame as pg
 
+from pycats.core.geometry import FrozenRect
 from pycats.sim.controllers import (
     FOE_ABOVE_DY,
     JUMP_PURPOSE_DY,
@@ -39,8 +40,8 @@ _CTRL = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6, "
 
 def _stub(cx, cy, on_ground=True):
     s = types.SimpleNamespace()
-    s.rect = pg.Rect(0, 0, 40, 60)
-    s.rect.center = (cx, cy)
+    s.rect = FrozenRect(0, 0, 40, 60)
+    s.rect = s.rect.with_center((cx, cy))
     s.fighter = types.SimpleNamespace(is_alive=True, on_ground=on_ground)
     s.controls = _CTRL
     s.current_move = None  # not recovering -> engage path, press_in stays off

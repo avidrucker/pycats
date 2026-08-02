@@ -1,6 +1,11 @@
 # pycats/systems/movement.py
 
-import pygame as pg  # type: ignore
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pg is used only in (stringized) annotations — never at runtime,
+    import pygame as pg  # type: ignore  # so this module carries no import-time pygame dep (#975, ADR-0004).
 
 from ..config import MOVE_SPEED
 from ..core.physics import apply_horizontal_friction

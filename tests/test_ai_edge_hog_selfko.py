@@ -22,6 +22,7 @@ import types
 import pygame as pg
 
 from pycats import config
+from pycats.core.geometry import FrozenRect
 from pycats.entities.ledge import Ledge, ledges_from_platforms
 from pycats.sim.controllers import EDGE_HOG_RANGE, LEDGE_HOG_MAX_FRAMES, AttackerController
 
@@ -33,8 +34,8 @@ _LEFT = Ledge("left", ax=60, ay=300)  # off-stage is x < 60
 
 def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None):
     s = types.SimpleNamespace()
-    s.rect = pg.Rect(0, 0, 40, 60)
-    s.rect.center = (cx, cy)
+    s.rect = FrozenRect(0, 0, 40, 60)
+    s.rect = s.rect.with_center((cx, cy))
     s.fighter = types.SimpleNamespace(
         is_alive=alive, on_ground=on_ground, hurt_timer=0, stun_timer=0, grabbed_ledge=grabbed_ledge
     )
@@ -84,7 +85,7 @@ def _run_a_full_hold_to_deny(*, jumps):
     p1, p2, _ = runner.build_players(p1_char="nalio", p2_char="nalio")
     ledges = ledges_from_platforms(plats)
     left = min(ledges, key=lambda L: L.ax)
-    p1.rect.topleft = left.hang_topleft(p1.rect.size)
+    p1.rect = p1.rect.with_topleft(left.hang_topleft(p1.rect.size))
     p1.fighter.grabbed_ledge = left
     left.occupied_by = p1
     p1.fighter.on_ground = False
@@ -96,7 +97,7 @@ def _run_a_full_hold_to_deny(*, jumps):
     c1.edge_hog = True  # #960: flag reverted off; force on to exercise the bounded-deny machinery (#952)
     attacks = pg.sprite.Group()
     for f in range(LEDGE_HOG_MAX_FRAMES + config.LEDGE_GETUP_FRAMES + 90):
-        p2.rect.center = (left.ax - 60, left.ay + 40)  # keep the opponent off-stage left
+        p2.rect = p2.rect.with_center((left.ax - 60, left.ay + 40))  # keep the opponent off-stage left
         p2.fighter.on_ground = False
         p1.update(c1(p1, p2, f, attacks, ledges), plats, attacks)
         if not p1.fighter.is_alive:
@@ -124,7 +125,7 @@ def test_go_to_ledge_walk_never_walks_off_into_a_self_ko():
     ledges = ledges_from_platforms(plats)
     left = min(ledges, key=lambda L: L.ax)
     for startx in (left.ax + 5, left.ax + 10, left.ax + 30, left.ax + EDGE_HOG_RANGE - 5):
-        p1.rect.center = (startx, left.ay - 30)
+        p1.rect = p1.rect.with_center((startx, left.ay - 30))
         p1.fighter.on_ground = True
         p1.fighter.vel.x = 0
         p1.fighter.vel.y = 0
@@ -138,7 +139,7 @@ def test_go_to_ledge_walk_never_walks_off_into_a_self_ko():
         c1.recover = False  # isolate the go-to-ledge walk branch
         attacks = pg.sprite.Group()
         for f in range(180):
-            p2.rect.center = (left.ax - 60, left.ay + 40)
+            p2.rect = p2.rect.with_center((left.ax - 60, left.ay + 40))
             p2.fighter.on_ground = False
             p1.update(c1(p1, p2, f, attacks, ledges), plats, attacks)
             if not p1.fighter.is_alive:

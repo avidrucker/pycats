@@ -32,6 +32,7 @@ from ..config import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
+from ..core.geometry import FrozenRect
 
 
 class Attack(pygame.sprite.Sprite):
@@ -126,8 +127,7 @@ class Attack(pygame.sprite.Sprite):
         if len(self.resolved) == 1:
             # Preserve the legacy default-cat rect exactly; golden snapshots record
             # attack sprite rects even though combat uses circles.
-            self.rect = pygame.Rect(0, 0, *ATTACK_SIZE)
-            self.rect.center = (int(prim_cx), int(prim_cy))
+            self.rect = FrozenRect(0, 0, *ATTACK_SIZE).with_center((int(prim_cx), int(prim_cy)))
         else:
             min_x = min(cx - r for cx, _cy, r, _hb in self.resolved)
             max_x = max(cx + r for cx, _cy, r, _hb in self.resolved)
@@ -138,7 +138,7 @@ class Attack(pygame.sprite.Sprite):
             top = int(min_y) - pad
             width = max(1, int(max_x - min_x) + pad * 2)
             height = max(1, int(max_y - min_y) + pad * 2)
-            self.rect = pygame.Rect(left, top, width, height)
+            self.rect = FrozenRect(left, top, width, height)
 
     # called every frame by sprite.Group.update(*args) — #266 forwards `platforms`
     # to every sprite; a static Attack ignores it (a Projectile uses it to bounce).
@@ -148,7 +148,7 @@ class Attack(pygame.sprite.Sprite):
             self.resolved = [(cx + vx, cy + vy, r, hb) for (cx, cy, r, hb) in self.resolved]
             self.hit_cx += vx
             self.hit_cy += vy
-            self.rect.center = (int(self.hit_cx), int(self.hit_cy))
+            self.rect = self.rect.with_center((int(self.hit_cx), int(self.hit_cy)))
             # despawn once it flies off the stage (the lifetime is the other bound)
             if not (-self.rect.width <= self.hit_cx <= SCREEN_WIDTH + self.rect.width):
                 self.kill()
@@ -209,7 +209,7 @@ class Projectile(Attack):
         self.hit_cx += dx
         self.hit_cy += dy
         self.resolved = [(cx + dx, cy + dy, r, hb) for (cx, cy, r, hb) in self.resolved]
-        self.rect.center = (int(self.hit_cx), int(self.hit_cy))
+        self.rect = self.rect.with_center((int(self.hit_cx), int(self.hit_cy)))
         self.velocity = (vx, vy)
         # Despawn: too many bounces, or off the stage (either side / below the floor).
         if (

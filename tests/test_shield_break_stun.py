@@ -101,7 +101,7 @@ def test_draw_dizzy_stars_only_when_stunned():
     from pycats.render_battle import draw_dizzy_stars
 
     p = _mk_player()
-    p.rect.topleft = (60, 60)  # leave room above the head on the surface
+    p.rect = p.rect.with_topleft((60, 60))  # leave room above the head on the surface
 
     blank = pg.Surface((160, 160))
     blank.fill((0, 0, 0))
@@ -120,7 +120,7 @@ def test_draw_dizzy_stars_animate_between_frames():
     from pycats.render_battle import draw_dizzy_stars
 
     p = _mk_player()
-    p.rect.topleft = (60, 60)
+    p.rect = p.rect.with_topleft((60, 60))
 
     def _frame(timer):
         s = pg.Surface((160, 160))

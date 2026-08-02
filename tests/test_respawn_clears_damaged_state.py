@@ -54,7 +54,7 @@ def _ko_while_damaged_then_respawn(kind):
     victim.update(_empty(), plats, empty)
     assert victim.fighter.hurt_timer > 0 or victim.fighter.stun_timer > 0  # genuinely damaged
 
-    victim.rect.center = (5000, 400)  # outside the blast zone -> KO
+    victim.rect = victim.rect.with_center((5000, 400))  # outside the blast zone -> KO
     victim.update(_empty(), plats, empty)
     assert not victim.fighter.is_alive
 

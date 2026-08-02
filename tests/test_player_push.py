@@ -19,6 +19,7 @@ import pygame
 from helpers import P1, P2  # noqa: F401  (kept for parity with the sibling push tests)
 
 from pycats.config import PLAYER_SIZE
+from pycats.core.geometry import FrozenRect
 from pycats.core.physics import (
     JOSTLE_PUSH_PX,
     JOSTLE_TRIGGER_PX,
@@ -42,8 +43,7 @@ class _FakeFighter:
     need a full input sequence to force)."""
 
     def __init__(self, midbottom, *, state="idle", on_ground=True):
-        self.rect = pygame.Rect(0, 0, *PLAYER_SIZE)
-        self.rect.midbottom = midbottom
+        self.rect = FrozenRect(0, 0, *PLAYER_SIZE).with_midbottom(midbottom)
         self.vel = pygame.Vector2(0, 0)
         self.state = state
         self.on_ground = on_ground

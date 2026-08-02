@@ -9,7 +9,14 @@ Contents:
 Use: Used to build the stage (collision platforms).
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import pygame  # type: ignore
+
+if TYPE_CHECKING:  # annotation-only; a real Platform holds a FrozenRect (#975).
+    from ..core.geometry import FrozenRect
 
 
 class Platform(pygame.sprite.Sprite):
@@ -19,7 +26,7 @@ class Platform(pygame.sprite.Sprite):
     *thick* - solid on all sides (e.g. main stage).
     """
 
-    def __init__(self, rect: pygame.Rect, thin: bool = False):
+    def __init__(self, rect: FrozenRect, thin: bool = False):
         super().__init__()
         self.thin = thin
         self.rect = rect

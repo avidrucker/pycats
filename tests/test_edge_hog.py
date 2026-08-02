@@ -45,7 +45,7 @@ def _stage():
 
 
 def _grab_left(p, plats, ledges):
-    p.rect.topleft = (80 - 40, 420)
+    p.rect = p.rect.with_topleft((80 - 40, 420))
     p.fighter.vel.x, p.fighter.vel.y = 0, 5
     p.fighter.on_ground = False
     p.update(_empty_frame(), plats, p_attack_group(), ledges)
@@ -143,7 +143,7 @@ def test_hog_denies_grab_while_occupant_invincible():
     _grab_left(p1, plats, ledges)
     assert p1.fighter.ledge_intangible_timer > 0
     # p2 enters the same catch region while p1 is still intangible -> denied
-    p2.rect.topleft = (80 - 40, 420)
+    p2.rect = p2.rect.with_topleft((80 - 40, 420))
     p2.fighter.vel.y = 5
     p2.fighter.on_ground = False
     p2.update(_empty_frame(), plats, p_attack_group(), ledges)
@@ -166,7 +166,7 @@ def test_hog_grab_succeeds_and_evicts_once_intangible_lapses():
     assert p1.fighter.ledge_intangible_timer == 0
     assert p1.state == "ledge_hang"
     # now p2 grabs the occupied edge -> succeeds, p1 evicted
-    p2.rect.topleft = (80 - 40, 420)
+    p2.rect = p2.rect.with_topleft((80 - 40, 420))
     p2.fighter.vel.y = 5
     p2.fighter.on_ground = False
     p2.update(_empty_frame(), plats, p_attack_group(), ledges)

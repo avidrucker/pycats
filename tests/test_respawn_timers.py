@@ -33,7 +33,7 @@ def test_respawn_clears_transient_action_state():
     p.platforms = platforms
 
     # Force a KO out the bottom blast zone via the real loop.
-    p.rect.top = SCREEN_HEIGHT + 9999
+    p.rect = p.rect.with_top(SCREEN_HEIGHT + 9999)
     p.update(_noop(), platforms, pygame.sprite.Group())
     assert not p.fighter.is_alive, "precondition: player should be KO'd"
 

@@ -12,6 +12,7 @@ import types
 
 import pygame as pg
 
+from pycats.core.geometry import FrozenRect
 from pycats.entities.ledge import Ledge
 from pycats.sim.controllers import EDGE_HOG_RANGE, AttackerController
 
@@ -24,8 +25,8 @@ def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None, current_move=N
     # #475: the deny is now bounded by the controller's own _hog_frames counter (no
     # engine hang timer). A fresh controller starts at 0, so its first hang frames HOLD.
     s = types.SimpleNamespace()
-    s.rect = pg.Rect(0, 0, 40, 60)
-    s.rect.center = (cx, cy)
+    s.rect = FrozenRect(0, 0, 40, 60)
+    s.rect = s.rect.with_center((cx, cy))
     s.fighter = types.SimpleNamespace(
         is_alive=alive, on_ground=on_ground, hurt_timer=0, stun_timer=0, grabbed_ledge=grabbed_ledge
     )

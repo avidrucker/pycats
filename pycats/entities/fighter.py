@@ -8,9 +8,10 @@ thin `pygame.sprite.Sprite` adapter that composes a `Fighter`, wires the
 subsystems (`_clock`/`_input`/`engine`/`tail`), exposes delegating properties so
 every reader/writer is unchanged, and orchestrates the per-frame `update()`.
 
-`Fighter` is deliberately NOT a `pygame.sprite.Sprite` — it holds plain values
-(`pygame.Rect`/`Vector2` are kept as value types per the #69 Sprite-free, not
-pygame-free, boundary), enforces its contracts, and runs the rules. It is
+`Fighter` is deliberately NOT a `pygame.sprite.Sprite` — it holds plain values: the
+body box is a pygame-free `FrozenRect` (#975), and velocity a `pygame.Vector2`
+value type (the #69 Sprite-free boundary). It enforces its contracts and runs the
+rules. It is
 **self-contained** (#264/S6): no back-reference to the Player. Domain methods that
 need an FSM transition (`_ko`, the #145 auto-knockdown in `_handle_landing`)
 *return intent*; the Player adapter applies it. The dependency is strictly
@@ -67,6 +68,7 @@ from ..config import (
     WAVEDASH_ANGLE_DEG,
     WAVEDASH_LANDING_LAG,
 )
+from ..core.geometry import FrozenRect
 
 # Where a KO'd fighter's rect is parked while dead — far off any stage so it can't
 # collide or render on-screen during the respawn wait (#425: named sentinel).
@@ -109,10 +111,11 @@ class Fighter:
 
         # ---------- kinematics (#84 / 6b-3a) ----------
         # The authoritative body box + velocity now live on the domain object;
-        # Player exposes them as delegating get/set properties (pygame value
-        # types, kept per the #69 Sprite-free-not-pygame-free boundary).
-        self.rect = pygame.Rect(0, 0, self.stand_size[0], self.stand_size[1])
-        self.rect.midbottom = (x, y)
+        # Player exposes them as delegating get/set properties. The body box is a
+        # FrozenRect (#975): an immutable, pygame-free value type replacing the old
+        # mutable pygame.Rect; velocity stays a pygame.Vector2 (still a value type
+        # per the #69 Sprite-free-not-pygame-free boundary).
+        self.rect = FrozenRect(0, 0, self.stand_size[0], self.stand_size[1]).with_midbottom((x, y))
         self.vel = pygame.Vector2(0, 0)
         self.on_ground = False
         self.spawn_point = pygame.Vector2(x, y)
@@ -514,7 +517,7 @@ class Fighter:
         self.is_alive = False
         self.respawn_timer = RESPAWN_DELAY_FRAMES
         # hide sprite off-screen
-        self.rect.center = _KO_OFFSCREEN_POS
+        self.rect = self.rect.with_center(_KO_OFFSCREEN_POS)
         self.vel.update(0, 0)
         # FSM transition applied by the caller (Player.update) — the domain no
         # longer drives the Player engine (#298/S5).
@@ -533,7 +536,7 @@ class Fighter:
         is ever constructed facing a non-default direction (e.g. #16 skins).
         """
         self.is_alive = True
-        self.rect.midbottom = self.spawn_point
+        self.rect = self.rect.with_midbottom(self.spawn_point)
         self.vel.update(0, 0)
         self.on_ground = False
         self.facing_right = self.original_facing_right

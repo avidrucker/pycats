@@ -12,6 +12,7 @@ import types
 
 import pygame as pg
 
+from pycats.core.geometry import FrozenRect
 from pycats.entities.ledge import Ledge
 from pycats.sim.controllers import AttackerController
 
@@ -23,8 +24,8 @@ _LEFT = Ledge("left", ax=60, ay=300)  # off-stage is x < 60
 
 def _stub(cx, cy, alive=True, on_ground=True):
     s = types.SimpleNamespace()
-    s.rect = pg.Rect(0, 0, 40, 60)
-    s.rect.center = (cx, cy)
+    s.rect = FrozenRect(0, 0, 40, 60)
+    s.rect = s.rect.with_center((cx, cy))
     s.fighter = types.SimpleNamespace(
         is_alive=alive, on_ground=on_ground, hurt_timer=0, stun_timer=0, grabbed_ledge=None
     )
@@ -125,14 +126,14 @@ def _guards_in_real_battle(edge_guard_on):
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
     ledges = ledges_from_platforms(plats)
     left = min(ledges, key=lambda L: L.ax)
-    p1.rect.center = (left.ax + 40, left.ay - 30)  # bot on-stage near the edge
+    p1.rect = p1.rect.with_center((left.ax + 40, left.ay - 30))  # bot on-stage near the edge
     c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
     if not edge_guard_on:
         c1.edge_guard = False  # discriminating control
     attacks = pygame.sprite.Group()
     attacked = False
     for f in range(40):
-        p2.rect.center = (left.ax - 40, left.ay + 50)  # pin foe off-stage + below lip
+        p2.rect = p2.rect.with_center((left.ax - 40, left.ay + 50))  # pin foe off-stage + below lip
         p2.fighter.on_ground = False
         foe_off = p2.rect.centerx < left.ax
         fi = c1(p1, p2, f, attacks, ledges)

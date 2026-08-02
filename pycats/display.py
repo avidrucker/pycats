@@ -7,9 +7,13 @@ intentionally free of pygame side effects so the sizing/mode/cycle logic is unit
 -testable headlessly; game.py owns the actual surface creation and blitting.
 
 Use: window_size_for / blit_mode_for / cycle_preset from game.py's present path.
-"""
 
-import pygame  # type: ignore
+pygame is imported lazily (inside scale_surface — the one function that touches
+it) so this module imports with pygame absent, matching its stated "free of
+pygame side effects" contract. That lets the pygame-free import chain
+settings -> runtime_settings -> systems.status_model stay clean, so `systems`
+can join the import-time boundary gate (#975/#833 §6, ADR-0004).
+"""
 
 from .config import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 
@@ -140,6 +144,8 @@ def scale_surface(surface, scale):
     """Return `surface` presented at `scale`, picking the transform per
     blit_mode_for: the source itself at 1x (no copy), nearest-neighbour at whole
     multiples (crisp), smoothscale at fractional scales (anti-aliased)."""
+    import pygame  # type: ignore  # lazy: the only pygame use in this module (see module docstring)
+
     mode = blit_mode_for(scale)
     if mode == "flip":
         return surface

@@ -17,14 +17,13 @@ stage-select epic has a second registry entry; it is **not** a player stage yet.
 
 from dataclasses import dataclass
 
-import pygame
-
 from ..config import (
     STARTING_POINT_DICT,
     THICK_PLAT_DICT,
     THIN_PLAT_DICT_L,
     THIN_PLAT_DICT_R,
 )
+from ..core.geometry import FrozenRect
 from .platform import Platform
 
 
@@ -40,7 +39,7 @@ class StageLayout:
     def build(self) -> list:
         """Fresh ``Platform`` sprites for this layout (callers own the list, exactly
         like the old inline ``game.py`` build)."""
-        return [Platform(pygame.Rect(d["x"], d["y"], d["w"], d["h"]), thin=thin) for d, thin in self.plats]
+        return [Platform(FrozenRect(d["x"], d["y"], d["w"], d["h"]), thin=thin) for d, thin in self.plats]
 
 
 # pycats' flat Final Destination — one solid main platform, no side platforms (#659/#660).

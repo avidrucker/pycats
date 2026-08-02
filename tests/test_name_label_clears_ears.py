@@ -13,6 +13,7 @@ import pytest
 
 from pycats import render_battle
 from pycats.config import EAR_HEIGHT, SCREEN_HEIGHT, SCREEN_WIDTH
+from pycats.core.geometry import FrozenRect
 
 pytestmark = pytest.mark.usefixtures("render_isolation")
 
@@ -21,7 +22,7 @@ class _FakeP:
     """Minimal surface draw_player_name reads: a rect + char_name + nickname."""
 
     def __init__(self, char_name="P1", nickname=None):
-        self.rect = pygame.Rect(200, 200, 40, 60)
+        self.rect = FrozenRect(200, 200, 40, 60)
         self.char_name = char_name
         self.nickname = nickname
 

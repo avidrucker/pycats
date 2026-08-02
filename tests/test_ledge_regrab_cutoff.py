@@ -59,7 +59,7 @@ def _regrab(p, plats, ledges):
     for lg in ledges:
         lg.occupied_by = None
     p.fighter.ledge_regrab_lockout_timer = 0
-    p.rect.topleft = (80 - 40, 420)  # body just left of the left lip
+    p.rect = p.rect.with_topleft((80 - 40, 420))  # body just left of the left lip
     p.fighter.vel.x, p.fighter.vel.y = 0, 5  # descending
     p.fighter.on_ground = False
     p.update(_empty_frame(), plats, _attacks(), ledges)

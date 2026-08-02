@@ -65,8 +65,8 @@ def test_reach_aware_falls_back_to_attack_range_when_move_absent():
 
 
 def _place(p, cx, cy):
-    p.rect.centerx = cx
-    p.rect.centery = cy
+    p.rect = p.rect.with_centerx(cx)
+    p.rect = p.rect.with_centery(cy)
 
 
 def test_reach_aware_bot_attacks_at_a_gap_the_flat_bot_rejects():
