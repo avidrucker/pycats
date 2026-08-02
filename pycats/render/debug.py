@@ -8,9 +8,9 @@ Extracted verbatim from render_battle (#900, child 3 of #833).
 
 import pygame
 
-from .. import runtime_settings
 from ..combat.geometry import resolve_circle
 from ..config import RED
+from ..storage import runtime_settings
 
 HITBOX_OVERLAY_COLOR = RED  # attack hitbox circles
 HURTBOX_OVERLAY_COLOR = (0, 255, 255)  # cyan — fighter hurtbox circles

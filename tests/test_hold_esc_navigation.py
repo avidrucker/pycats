@@ -123,7 +123,7 @@ def test_release_before_threshold_resets_the_hold():
 
 
 def test_setting_off_makes_esc_inert(monkeypatch):
-    import pycats.settings as settings_mod
+    import pycats.storage.settings as settings_mod
 
     monkeypatch.setattr(settings_mod, "load", lambda: {"esc_hold_to_navigate": False})
     sm = _mk("options")

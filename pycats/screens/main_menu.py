@@ -8,7 +8,6 @@ This module handles:
 - Handling input for menu progression
 """
 
-from .. import runtime_settings
 from ..config import (
     MAIN_MENU_BG_COLOR,
     MAIN_MENU_OPTION_SPACING,
@@ -19,6 +18,7 @@ from ..config import (
     SCREEN_WIDTH,
     WHITE,
 )
+from ..storage import runtime_settings
 from ..ui.menu_controller import MenuController
 from ..ui.menu_widgets import draw_menu_screen
 from ..ui.text_utils import text_renderer

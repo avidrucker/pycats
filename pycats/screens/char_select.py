@@ -10,7 +10,6 @@ This module handles:
 
 import pygame
 
-from .. import runtime_settings
 from ..characters.roster import ARCHETYPE_DEFAULT_SKIN, ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
 from ..config import (
     CHAR_SELECT_BG_COLOR,
@@ -28,6 +27,7 @@ from ..config import (
     WHITE,
 )
 from ..loadout import SKINS, Selection, assign_distinct_skins, available_skins, character_for
+from ..storage import runtime_settings
 from ..ui import text_utils
 
 # --- char-select layout + behaviour constants (#420: named from inline literals) ---

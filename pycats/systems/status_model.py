@@ -14,7 +14,6 @@ pre-#900 `render_battle` definitions; only the module home changed.
 import math
 from typing import NamedTuple
 
-from .. import runtime_settings
 from ..combat.data import GETUP_ATTACK
 from ..config import (
     DODGE_TIME,
@@ -31,6 +30,7 @@ from ..config import (
     WHITE,
     YELLOW,
 )
+from ..storage import runtime_settings
 
 # Per-timer bar colours (#334 spec). These are the BAR hues only — distinct from
 # the shared SHIELD_COLOR (shield bubble) / YELLOW (dizzy stars + body flash),

@@ -13,7 +13,7 @@ import os
 
 import pytest
 
-from pycats import profile_store
+from pycats.storage import profile_store
 
 
 @pytest.fixture(autouse=True)

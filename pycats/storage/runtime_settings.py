@@ -9,7 +9,8 @@ Like settings.py this is **present-layer only**: the deterministic sim and the
 golden tests never read it. Keys mirror the persisted schema in settings.py.
 """
 
-from . import config, settings
+from .. import config
+from . import settings
 
 _state = settings.defaults()
 

@@ -18,12 +18,12 @@ import pygame  # noqa: E402
 import pytest  # noqa: E402
 
 import pycats.ui.text_utils as tu  # noqa: E402
-from pycats import runtime_settings, settings  # noqa: E402
 from pycats.render_battle import draw_shell_chrome  # noqa: E402
 from pycats.screens.char_select import CharacterSelector  # noqa: E402
 from pycats.screens.main_menu import MainMenuManager  # noqa: E402
 from pycats.screens.options_menu import ROW_DESCRIPTIONS, OptionsMenu  # noqa: E402
 from pycats.screens.pause_menu import PauseMenuManager  # noqa: E402
+from pycats.storage import runtime_settings, settings  # noqa: E402
 
 _P1 = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6}
 _P2 = {"left": 11, "right": 12, "up": 13, "down": 14, "attack": 15, "special": 16}

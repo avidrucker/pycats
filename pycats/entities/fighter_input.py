@@ -13,9 +13,9 @@ shipped DEBUG print() calls.
 
 from __future__ import annotations
 
-from .. import dev_log
 from ..combat.move_select import resolve_move_key, select_move_key
 from ..config import DODGE_SPEED, DOUBLE_TAP_WINDOW, SMASH_CHARGE_FRAMES
+from ..storage import dev_log
 from ..systems.movement import step_horizontal
 
 

@@ -165,8 +165,8 @@ def test_pause_menu_render_flashes_during_pulse():
 
 
 # ---- options menu (2D grid) ----------------------------------------------- #
-from pycats import runtime_settings, settings  # noqa: E402
 from pycats.screens.options_menu import OptionsMenu  # noqa: E402
+from pycats.storage import runtime_settings, settings  # noqa: E402
 
 
 def _options():

@@ -68,12 +68,12 @@ def test_returns_rect_centered_at_position():
 
 
 # ---- pilot integration: OptionsMenu.render uses the widget ----------------- #
-from pycats import runtime_settings, settings  # noqa: E402
 from pycats.config import (  # noqa: E402
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
 from pycats.screens.options_menu import OptionsMenu  # noqa: E402
+from pycats.storage import runtime_settings, settings  # noqa: E402
 
 _P1 = dict(
     left=pygame.K_a,

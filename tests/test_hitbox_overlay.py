@@ -14,9 +14,9 @@ import pygame  # noqa: E402
 import pytest  # noqa: E402
 
 from pycats import render_battle as rb  # noqa: E402
-from pycats import runtime_settings, settings  # noqa: E402
 from pycats.combat.data import Circle, Hurtbox  # noqa: E402
 from pycats.screens.options_menu import OptionsMenu  # noqa: E402
+from pycats.storage import runtime_settings, settings  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #

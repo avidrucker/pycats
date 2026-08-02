@@ -25,7 +25,7 @@ import pygame  # type: ignore
 import pytest
 
 import pycats.config as config
-import pycats.settings as settings
+import pycats.storage.settings as settings
 
 _PYCATS = pathlib.Path(__file__).resolve().parent.parent / "pycats"
 _MODULE_FILES = {"game": _PYCATS / "game.py", "app": _PYCATS / "shell" / "app.py"}

@@ -8,11 +8,11 @@ into the whole session) and point the log at a tmp path.
 
 import pygame as pg
 
-from pycats import dev_log
 from pycats.config import P1_COLOR, WHITE
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
+from pycats.storage import dev_log
 
 MSG_CORE = "attempted to use"
 

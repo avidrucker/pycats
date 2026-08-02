@@ -10,7 +10,6 @@ This module handles:
 
 import pygame  # type: ignore
 
-from .. import runtime_settings, settings
 from ..config import (
     BLACK,
     MAIN_MENU_BG_COLOR,
@@ -22,6 +21,7 @@ from ..config import (
     SCREEN_WIDTH,
     WHITE,
 )
+from ..storage import runtime_settings, settings
 from ..ui.menu_controller import MenuController
 from ..ui.menu_widgets import draw_menu_screen
 

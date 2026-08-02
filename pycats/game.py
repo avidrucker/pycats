@@ -25,8 +25,8 @@ import sys
 
 import pygame  # type: ignore
 
-from . import runtime_settings, settings
 from .shell.app import App
+from .storage import runtime_settings, settings
 
 
 def parse_args(argv):

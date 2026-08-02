@@ -327,7 +327,7 @@ class ScreenStateManager:
         Each state's back-guard reads ``esc_hold_complete()`` to pop one level, and
         ``update()`` turns a completed hold at ``main_menu`` into an app quit.
         """
-        from ..settings import load
+        from ..storage.settings import load
 
         if not load().get("esc_hold_to_navigate", True):
             self._esc_hold.reset()

@@ -10,8 +10,8 @@ import os
 import pygame
 import pytest
 
-from pycats import keybind_store
 from pycats.core.keymap import Keymap
+from pycats.storage import keybind_store
 
 
 def _km():

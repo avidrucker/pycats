@@ -13,9 +13,9 @@ import types
 
 import pygame  # noqa: E402
 
-from pycats import runtime_settings, settings  # noqa: E402
 from pycats.render_battle import hud_rows  # noqa: E402
 from pycats.screens.options_menu import ROW_DESCRIPTIONS, OptionsMenu  # noqa: E402
+from pycats.storage import runtime_settings, settings  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #

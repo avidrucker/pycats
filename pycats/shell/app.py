@@ -25,11 +25,11 @@ Design (ruled on #707, 2026-07-08):
 
 import pygame  # type: ignore
 
-from .. import settings
 from ..config import tick_fps
 from ..core.keymap import Keymap
 from ..entities.stages import DEFAULT_PLAYER_STAGE
 from ..screens.battle_screen import BattleScreen
+from ..storage import settings
 from ..ui import cat_faces
 from . import display, screen_render
 from . import input_poll as inp

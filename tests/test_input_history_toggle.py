@@ -9,8 +9,8 @@ import json
 
 import pygame  # noqa: E402
 
-from pycats import runtime_settings, settings  # noqa: E402
 from pycats.screens.options_menu import OptionsMenu  # noqa: E402
+from pycats.storage import runtime_settings, settings  # noqa: E402
 
 _P1 = dict(
     left=pygame.K_a,

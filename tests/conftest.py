@@ -80,7 +80,7 @@ def _reset_runtime_settings():
     runtime_settings._state is module-global (#121); a test that flips the HUD
     toggle would otherwise leak a False into later render tests that assume the
     on-by-default behaviour. Cheap, so applied automatically to every test."""
-    from pycats import runtime_settings, settings
+    from pycats.storage import runtime_settings, settings
 
     runtime_settings.seed(settings.defaults())
     yield

@@ -10,7 +10,6 @@ loop. Byte-identical to the pre-#900 renderer; the render-parity oracle guards i
 
 import pygame
 
-from .. import runtime_settings
 from ..config import (
     ATTACK_SIZE,
     MAX_SHIELD_RADIUS,
@@ -18,6 +17,7 @@ from ..config import (
     SHIELD_COLOR,
     SHIELD_MAX_HP,
 )
+from ..storage import runtime_settings
 from ..systems.status_model import grabs_left_dots, timer_bar_specs
 from ..ui import cat_faces
 from .body import (

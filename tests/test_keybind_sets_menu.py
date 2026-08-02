@@ -8,9 +8,9 @@ Headless; the store writes under PYCATS_CONFIG_DIR (pointed at tmp_path, the #95
 import pygame
 import pytest
 
-from pycats import keybind_store
 from pycats.core.keymap import Keymap
 from pycats.screens.keybind_sets_menu import KeybindSetsMenu
+from pycats.storage import keybind_store
 
 
 @pytest.fixture(autouse=True)

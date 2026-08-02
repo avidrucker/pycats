@@ -19,7 +19,6 @@ B (special) backs out.
 
 import pygame  # type: ignore
 
-from .. import runtime_settings, settings
 from ..config import (
     FONT_SCALE_NAMES,
     FONT_SCALE_ORDER,
@@ -34,6 +33,7 @@ from ..config import (
     SCREEN_WIDTH,
     WHITE,
 )
+from ..storage import runtime_settings, settings
 from ..ui.menu_layout import effective_columns, grid_dims, scroll_to_visible
 from ..ui.menu_widgets import BUTTON_MIN_WIDTH, PRESS_PULSE_FRAMES, draw_menu_button, menu_button_size
 from ..ui.text_entry import draw_text_entry

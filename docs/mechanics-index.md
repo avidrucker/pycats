@@ -28,7 +28,7 @@ number. Owner today is the #605 inventory (the section named in `§`); #604 supe
 |---|---|---|---|---|
 | Declarative status table | §1.1 | `pycats/systems/status_model.py::StatusSource`, `pycats/systems/status_model.py::STATUS_SOURCES`, `pycats/render/tint.py::active_tint`, `pycats/systems/status_model.py::timer_bar_specs` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented render architecture |
 | Exclusive-vs-overlay bar precedence | §1.2 | `pycats/systems/status_model.py::StatusSource`, `pycats/render/tint.py::active_tint`, `pycats/systems/status_model.py::timer_bar_specs` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented priority model |
-| Status-bar / dev-info runtime flags | §1.3 | `pycats/runtime_settings.py::show_status_timer_bars`, `pycats/runtime_settings.py::show_dev_info` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented render toggles |
+| Status-bar / dev-info runtime flags | §1.3 | `pycats/storage/runtime_settings.py::show_status_timer_bars`, `pycats/storage/runtime_settings.py::show_dev_info` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented render toggles |
 | Archetype vs cosmetic-skin naming split | §1.4 | `pycats/characters/roster.py::ARCHETYPE_DEFAULT_SKIN`, `pycats/characters/roster.py::ARCHETYPE_PALETTE` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented identity split |
 | `"attack"` legacy move-key alias | §3.1 | `pycats/combat/move_select.py::resolve_move_key`, `pycats/combat/move_select.py::select_move_key` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented naming convention |
 | `MoveClock` temporal windows | §3.2 | `pycats/combat/move_clock.py::MoveClock`, `pycats/combat/move_clock.py::MoveTick` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented state consolidation |
@@ -37,7 +37,7 @@ number. Owner today is the #605 inventory (the section named in `§`); #604 supe
 | Sim goldens — byte detector + semantic sidecar | §5.1 | `tests/golden_util.py::check_or_update`, `tests/test_golden.py::test_golden_default` | `docs/golden-tests.md` (regen: `tests/golden/REGEN_PROTOCOL.md`) | invented oracle model |
 | Render-parity byte oracle | §5.2 | `tests/test_battle_screen_render.py::test_render_matches_inline_playing_composition` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented divergence guard |
 | Screen-flow parity (statechart == frozen golden) | §5.3 | `tests/test_screen_parity.py::test_screen_engine_initial_state` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented equivalence freeze |
-| `dev_log` — gated not-yet-implemented breadcrumb | §6.1 | `pycats/dev_log.py::enabled`, `pycats/dev_log.py::reset`, `pycats/dev_log.py::_log_path` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented dev tool |
+| `dev_log` — gated not-yet-implemented breadcrumb | §6.1 | `pycats/storage/dev_log.py::enabled`, `pycats/storage/dev_log.py::reset`, `pycats/storage/dev_log.py::_log_path` | `docs/research/2026-07-07-custom-mechanics-inventory.md` | invented dev tool |
 
 ---
 

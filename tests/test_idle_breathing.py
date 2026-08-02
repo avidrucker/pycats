@@ -22,7 +22,6 @@ import pygame
 import pytest
 from helpers import ground as _ground
 
-from pycats import runtime_settings, settings
 from pycats.combat.data import load_fighter_data
 from pycats.core.input import InputFrame
 from pycats.entities import Player
@@ -32,6 +31,7 @@ from pycats.render_battle import (
     idle_breath_wave,
     render_battle,
 )
+from pycats.storage import runtime_settings, settings
 
 _CONTROLS = dict(
     left=pygame.K_a,

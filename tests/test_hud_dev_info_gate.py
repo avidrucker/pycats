@@ -8,7 +8,6 @@ strings avoids pixel-diffing while covering exactly the acceptance criteria.
 
 import pygame
 
-from pycats import runtime_settings, settings
 from pycats.render_battle import (
     HUD_DEV_LINE_COUNT,
     HUD_PLAYER_LINE_COUNT,
@@ -17,6 +16,7 @@ from pycats.render_battle import (
     hud_rows,
 )
 from pycats.screens.battle_screen import BattleScreen
+from pycats.storage import runtime_settings, settings
 
 _P1 = dict(
     left=pygame.K_a,

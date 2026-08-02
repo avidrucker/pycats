@@ -6,7 +6,7 @@ never read or write the real ~/.config/pycats file.
 
 import json
 
-from pycats import settings
+from pycats.storage import settings
 
 
 def test_save_then_load_round_trips(tmp_path, monkeypatch):

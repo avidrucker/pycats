@@ -11,7 +11,6 @@ import types
 
 import pygame  # noqa: E402
 
-from pycats import runtime_settings, settings  # noqa: E402
 from pycats.render_battle import (  # noqa: E402
     HUD_MINIMAL_LINE_COUNT,
     hud_emphasis_rows,
@@ -19,6 +18,7 @@ from pycats.render_battle import (  # noqa: E402
     hud_rows,
 )
 from pycats.screens.pause_menu import PauseMenuManager  # noqa: E402
+from pycats.storage import runtime_settings, settings  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #

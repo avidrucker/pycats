@@ -16,7 +16,7 @@ import pytest
 # Initialize pygame before importing pycats modules
 pygame.init()
 
-from pycats.settings import defaults, load, save
+from pycats.storage.settings import defaults, load, save
 
 
 class TestSettingsToggle:

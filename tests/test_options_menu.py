@@ -10,11 +10,11 @@ import contextlib
 
 import pygame
 
-from pycats import runtime_settings, settings
 from pycats.config import MAIN_MENU_OPTION_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.core.input import InputFrame
 from pycats.screens.options_menu import ROW_DESCRIPTIONS, OptionsMenu
 from pycats.shell.screen_manager import ScreenStateManager
+from pycats.storage import runtime_settings, settings
 from pycats.ui.menu_widgets import menu_button_size
 
 P1 = {

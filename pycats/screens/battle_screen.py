@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import pygame
 
-from .. import runtime_settings
 from ..characters.roster import palette_for
 from ..config import (
     BG_COLOR,
@@ -40,6 +39,7 @@ from ..render_battle import (
     render_hitbox_overlay,
 )
 from ..shell.input_history import InputHistory
+from ..storage import runtime_settings
 from ..systems import hit_resolution
 from ..systems.win_condition import winner_loser
 
