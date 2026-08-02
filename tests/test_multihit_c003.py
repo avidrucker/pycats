@@ -8,7 +8,7 @@ Statement: A plain pycats multi-hitbox move (#130) — several hitbox circles in
 active window, no `rehit_rate` — hits a target EXACTLY ONCE. When the move overlaps
 a target, only the FIRST box in priority (tuple) order registers, and its params are
 applied; the extra overlapping boxes never add a second hit. Enforced in
-`systems/combat.py:process_hits` (`next(...)` picks the first overlapping box, then
+`systems/hit_resolution.py:process_hits` (`next(...)` picks the first overlapping box, then
 `break` after the connect). Multi-hitbox is NOT multi-hit.
 
 The claim has two conjuncts; each test below is proven able-to-fail by a named
@@ -43,7 +43,7 @@ import pygame
 
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox
 from pycats.entities.attack import Attack
-from pycats.systems.combat import process_hits
+from pycats.systems.hit_resolution import process_hits
 
 
 def _player(rect, *, hurtbox_circles, facing_right=True, intangible=False, is_alive=True):
