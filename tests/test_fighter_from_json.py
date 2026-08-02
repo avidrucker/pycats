@@ -44,6 +44,7 @@ def _jab_doc():
                         "angle": 83,
                         "knockback_growth": 100.0,
                         "set_knockback": 20,
+                        "label": "A",
                     },
                     {
                         "circle": [44, 28, 13],
@@ -51,6 +52,7 @@ def _jab_doc():
                         "angle": 83,
                         "knockback_growth": 100.0,
                         "set_knockback": 20,
+                        "label": "B",
                     },
                     {
                         "circle": [34, 29, 15],
@@ -58,6 +60,7 @@ def _jab_doc():
                         "angle": 85,
                         "knockback_growth": 100.0,
                         "set_knockback": 20,
+                        "label": "C",
                     },
                 ],
             }

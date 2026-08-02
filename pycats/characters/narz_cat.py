@@ -18,7 +18,13 @@ Narz's disjoint/tipper moves arrive one slice at a time under #294.
 """
 
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
-from pycats.combat.data import Circle, FighterData, Hitbox, MoveData
+from pycats.combat.data import (
+    Circle,
+    FighterData,
+    Hitbox,
+    MoveData,
+    with_dense_hit_labels,
+)
 
 # --- Forward-tilt (slice 2, #299): the disjoint+tipper IDENTITY move --------------
 # Narz's signature: a sword poke that reaches BEYOND the hurtbox (disjoint) and rewards
@@ -322,3 +328,7 @@ NARZ_FIGHTER_DATA = FighterData(
     gravity=0.45,
     jump_vel=-12,
 )
+
+# #1041: stamp dense A,B,C hit-box labels — the baseline labeling for authored
+# data — so the shipped JSON carries the real `label`s the editor adopts (#1030).
+NARZ_FIGHTER_DATA = with_dense_hit_labels(NARZ_FIGHTER_DATA)

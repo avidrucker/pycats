@@ -20,7 +20,14 @@ engine ticket; selectability (making Birky human-pickable) is gated on #117/#127
 """
 
 from pycats.characters.body_zones import zone_dy
-from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
+from pycats.combat.data import (
+    Circle,
+    FighterData,
+    Hitbox,
+    Hurtbox,
+    MoveData,
+    with_dense_hit_labels,
+)
 
 # Kirby-proportioned body (#275): shorter than the default 40x60 (Kirby is short/round).
 # Shape stays a rect for now (circle is a possible later change). Width kept at 40 so the
@@ -586,3 +593,7 @@ BIRKY_FIGHTER_DATA = FighterData(
     max_jumps=6,
     jump_vel=-11,
 )
+
+# #1041: stamp dense A,B,C hit-box labels — the baseline labeling for authored
+# data — so the shipped JSON carries the real `label`s the editor adopts (#1030).
+BIRKY_FIGHTER_DATA = with_dense_hit_labels(BIRKY_FIGHTER_DATA)

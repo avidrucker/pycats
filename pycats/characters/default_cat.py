@@ -53,7 +53,14 @@ Attack move ("attack") — ground attack approximating the current basic attack.
   angle  = 0     (horizontal launch; matches current behaviour)
 """
 
-from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
+from pycats.combat.data import (
+    Circle,
+    FighterData,
+    Hitbox,
+    Hurtbox,
+    MoveData,
+    with_dense_hit_labels,
+)
 
 # --- Hurtbox: 2-circle vertical stack covering the 40×60 player body -------
 # Origin = top-left of player rect; dx=20 centres circles horizontally.
@@ -122,3 +129,7 @@ DEFAULT_FIGHTER_DATA = FighterData(
     prone_size=_PRONE_SIZE,
     prone_hurtbox=_PRONE_HURTBOX,
 )
+
+# #1041: stamp dense A,B,C hit-box labels — the baseline labeling for authored
+# data — so the shipped JSON carries the real `label`s the editor adopts (#1030).
+DEFAULT_FIGHTER_DATA = with_dense_hit_labels(DEFAULT_FIGHTER_DATA)

@@ -24,7 +24,7 @@ Design notes:
 from __future__ import annotations
 
 import json
-from dataclasses import MISSING, dataclass, fields
+from dataclasses import MISSING, dataclass, fields, replace
 from pathlib import Path
 
 # Movement-constant defaults live in config; FighterData uses them as field
@@ -454,6 +454,32 @@ def fighter_to_json(fd: FighterData, character: str | None = None) -> dict:
         if size is not None:
             out[key] = list(size)
     return out
+
+
+def with_dense_hit_labels(fd: FighterData) -> FighterData:
+    """Return a copy of `fd` with every move's hit boxes labeled dense `A, B, C…`
+    in tuple order — the canonical baseline labeling for *authored* fighter data
+    (#1041).
+
+    Authored (pristine) moves always carry a full, hole-free letter run in box
+    order, so deriving it here and baking it into the shipped `Hitbox.label`
+    gives the editor real letters to adopt (#1030) instead of none. It is NOT the
+    editor auto-assigning at load — that stays banned; this is the one-time
+    migration baseline the oracles apply so the JSON ships stored labels a human
+    can review and a validator can check. Idempotent (dense in → dense out).
+
+    Hit boxes only — hurt-box labels need the `Circle`/`Hurtbox` schema change in
+    #1036. Assumes ≤26 hit boxes per move (max shipped is 8); a 27th would run
+    past `Z`.
+    """
+    new_moves = {
+        key: replace(
+            move,
+            hitboxes=tuple(replace(hb, label=chr(ord("A") + i)) for i, hb in enumerate(move.hitboxes)),
+        )
+        for key, move in fd.moves.items()
+    }
+    return replace(fd, moves=new_moves)
 
 
 # Per-fighter JSON data directory (#844, R4 of the #792 editor; design §1). The

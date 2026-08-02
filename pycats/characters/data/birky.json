@@ -23,6 +23,7 @@
           "angle": 20,
           "base_knockback": 40.0,
           "knockback_growth": 30.0,
+          "label": "A",
           "circle": [42, 37, 25]
         },
         {
@@ -30,6 +31,7 @@
           "angle": 20,
           "base_knockback": 40.0,
           "knockback_growth": 30.0,
+          "label": "B",
           "circle": [34, 38, 21]
         },
         {
@@ -37,6 +39,7 @@
           "angle": 20,
           "base_knockback": 40.0,
           "knockback_growth": 30.0,
+          "label": "C",
           "circle": [28, 39, 19]
         }
       ]
@@ -53,6 +56,7 @@
           "angle": 361,
           "base_knockback": 8.0,
           "knockback_growth": 50.0,
+          "label": "A",
           "circle": [38, 22, 17]
         },
         {
@@ -60,6 +64,7 @@
           "angle": 361,
           "base_knockback": 8.0,
           "knockback_growth": 50.0,
+          "label": "B",
           "circle": [30, 23, 17]
         }
       ]
@@ -76,6 +81,7 @@
           "angle": 361,
           "base_knockback": 8.0,
           "knockback_growth": 100.0,
+          "label": "A",
           "circle": [38, 23, 19]
         },
         {
@@ -83,6 +89,7 @@
           "angle": 361,
           "base_knockback": 8.0,
           "knockback_growth": 100.0,
+          "label": "B",
           "circle": [46, 22, 21]
         },
         {
@@ -90,6 +97,7 @@
           "angle": 361,
           "base_knockback": 8.0,
           "knockback_growth": 100.0,
+          "label": "C",
           "circle": [52, 22, 20]
         }
       ]
@@ -109,6 +117,7 @@
           "active_start": 4,
           "active_end": 5,
           "set_id": 1,
+          "label": "A",
           "circle": [22, 7, 25]
         },
         {
@@ -119,6 +128,7 @@
           "active_start": 4,
           "active_end": 5,
           "set_id": 1,
+          "label": "B",
           "circle": [30, 9, 30]
         },
         {
@@ -129,6 +139,7 @@
           "active_start": 6,
           "active_end": 10,
           "set_id": 1,
+          "label": "C",
           "circle": [22, 7, 25]
         },
         {
@@ -139,6 +150,7 @@
           "active_start": 6,
           "active_end": 10,
           "set_id": 1,
+          "label": "D",
           "circle": [30, 9, 30]
         }
       ]
@@ -157,6 +169,7 @@
           "knockback_growth": 100.0,
           "active_start": 3,
           "active_end": 29,
+          "label": "A",
           "circle": [20, 22, 22]
         }
       ]
@@ -175,6 +188,7 @@
           "active_start": 7,
           "active_end": 8,
           "set_knockback": 30,
+          "label": "A",
           "circle": [42, 22, 26]
         },
         {
@@ -184,6 +198,7 @@
           "active_start": 7,
           "active_end": 8,
           "set_knockback": 30,
+          "label": "B",
           "circle": [50, 20, 25]
         },
         {
@@ -193,6 +208,7 @@
           "active_start": 14,
           "active_end": 15,
           "set_knockback": 30,
+          "label": "C",
           "circle": [42, 22, 24]
         },
         {
@@ -202,6 +218,7 @@
           "active_start": 14,
           "active_end": 15,
           "set_knockback": 30,
+          "label": "D",
           "circle": [50, 20, 25]
         },
         {
@@ -210,6 +227,7 @@
           "knockback_growth": 160.0,
           "active_start": 22,
           "active_end": 24,
+          "label": "E",
           "circle": [50, 21, 30]
         },
         {
@@ -218,6 +236,7 @@
           "knockback_growth": 160.0,
           "active_start": 22,
           "active_end": 24,
+          "label": "F",
           "circle": [42, 22, 30]
         }
       ]
@@ -236,6 +255,7 @@
           "knockback_growth": 100.0,
           "active_start": 6,
           "active_end": 20,
+          "label": "A",
           "circle": [-12, 22, 30]
         },
         {
@@ -245,6 +265,7 @@
           "knockback_growth": 100.0,
           "active_start": 6,
           "active_end": 20,
+          "label": "B",
           "circle": [-2, 25, 32]
         }
       ]
@@ -263,6 +284,7 @@
           "knockback_growth": 102.5,
           "active_start": 10,
           "active_end": 15,
+          "label": "A",
           "circle": [20, 7, 23]
         },
         {
@@ -272,6 +294,7 @@
           "knockback_growth": 102.5,
           "active_start": 10,
           "active_end": 15,
+          "label": "B",
           "circle": [28, 7, 23]
         }
       ]
@@ -291,6 +314,7 @@
           "knockback_growth": 100.0,
           "active_start": 13,
           "active_end": 29,
+          "label": "A",
           "circle": [18, 48, 33]
         },
         {
@@ -300,6 +324,7 @@
           "knockback_growth": 100.0,
           "active_start": 13,
           "active_end": 29,
+          "label": "B",
           "circle": [26, 52, 25]
         }
       ]
@@ -320,6 +345,7 @@
           "active_start": 8,
           "active_end": 14,
           "set_id": 1,
+          "label": "A",
           "circle": [44, 22, 24]
         },
         {
@@ -330,6 +356,7 @@
           "active_start": 15,
           "active_end": 17,
           "set_id": 1,
+          "label": "B",
           "circle": [44, 22, 22]
         }
       ]
@@ -350,6 +377,7 @@
           "active_start": 6,
           "active_end": 8,
           "set_id": 1,
+          "label": "A",
           "circle": [20, 5, 24]
         },
         {
@@ -360,6 +388,7 @@
           "active_start": 9,
           "active_end": 13,
           "set_id": 1,
+          "label": "B",
           "circle": [22, 7, 22]
         }
       ]
@@ -380,6 +409,7 @@
           "active_start": 4,
           "active_end": 10,
           "set_id": 1,
+          "label": "A",
           "circle": [40, 37, 21]
         },
         {
@@ -390,6 +420,7 @@
           "active_start": 4,
           "active_end": 10,
           "set_id": 1,
+          "label": "B",
           "circle": [-40, 37, 23]
         },
         {
@@ -400,6 +431,7 @@
           "active_start": 11,
           "active_end": 18,
           "set_id": 1,
+          "label": "C",
           "circle": [40, 37, 21]
         },
         {
@@ -410,6 +442,7 @@
           "active_start": 11,
           "active_end": 18,
           "set_id": 1,
+          "label": "D",
           "circle": [-40, 37, 23]
         }
       ]
@@ -430,6 +463,7 @@
           "active_start": 3,
           "active_end": 4,
           "set_knockback": 117,
+          "label": "A",
           "circle": [18, 7, 19]
         },
         {
@@ -439,6 +473,7 @@
           "active_start": 3,
           "active_end": 4,
           "set_knockback": 117,
+          "label": "B",
           "circle": [38, 7, 19]
         },
         {
@@ -448,6 +483,7 @@
           "active_start": 3,
           "active_end": 4,
           "set_knockback": 102,
+          "label": "C",
           "circle": [14, -7, 19]
         },
         {
@@ -457,6 +493,7 @@
           "active_start": 3,
           "active_end": 4,
           "set_knockback": 102,
+          "label": "D",
           "circle": [32, -7, 19]
         }
       ]

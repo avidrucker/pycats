@@ -15,7 +15,7 @@ import types
 
 import pygame
 
-from pycats.characters.narz_cat import _NARZ_FTILT
+from pycats.characters.narz_cat import _NARZ_FTILT, NARZ_FIGHTER_DATA
 from pycats.combat.data import Circle, FighterData, Hurtbox, load_fighter_data
 from pycats.entities.attack import Attack
 from pycats.systems.combat import process_hits
@@ -47,7 +47,10 @@ def _player(rect, *, hurtbox_circles, facing_right=True):
 
 def test_ftilt_is_two_box_tipper_with_tip_first():
     ftilt = load_fighter_data("narz").moves["ftilt"]
-    assert ftilt == _NARZ_FTILT  # JSON-backed (#858): equal, not identical (fresh hydrate per load)
+    # JSON-backed (#858): equal, not identical (fresh hydrate per load). Compare to
+    # the oracle's ftilt as it ships — dense hit-box labels (#1041) live on the
+    # assembled NARZ_FIGHTER_DATA, not the pre-label _NARZ_FTILT move global.
+    assert ftilt == NARZ_FIGHTER_DATA.moves["ftilt"]
     assert len(ftilt.hitboxes) == 2
     tip, base = ftilt.hitboxes
     # the tip is authored FIRST and is the stronger hit

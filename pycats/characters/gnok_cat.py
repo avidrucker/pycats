@@ -37,7 +37,14 @@ not block on it — it ships on the same basis the other cats do, just authored 
 """
 
 from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA as _DEFAULT
-from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
+from pycats.combat.data import (
+    Circle,
+    FighterData,
+    Hitbox,
+    Hurtbox,
+    MoveData,
+    with_dense_hit_labels,
+)
 from pycats.combat.units import vel
 
 # --- Stand body (spec §2a/§2b, MEASURED) -------------------------------------
@@ -648,3 +655,7 @@ GNOK_FIGHTER_DATA = FighterData(
     max_fall_speed=vel(2.4),  # 12.96 — ≈ default (13)
     # max_jumps 2 == default MAX_JUMPS, left defaulted (matches baseline, like narz).
 )
+
+# #1041: stamp dense A,B,C hit-box labels — the baseline labeling for authored
+# data — so the shipped JSON carries the real `label`s the editor adopts (#1030).
+GNOK_FIGHTER_DATA = with_dense_hit_labels(GNOK_FIGHTER_DATA)

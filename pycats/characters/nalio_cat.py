@@ -66,7 +66,14 @@ Down-tilt ("attack") — PM3.6 Mario `AttackLw3` (rukaidata), real 3-hitbox form
   this with a true skeleton→pixel mapping is a later refinement.
 """
 
-from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
+from pycats.combat.data import (
+    Circle,
+    FighterData,
+    Hitbox,
+    Hurtbox,
+    MoveData,
+    with_dense_hit_labels,
+)
 from pycats.combat.units import u  # units->px authoring scale (#195)
 from pycats.config import GRAVITY, MAX_FALL_SPEED  # PM-Mario-calibrated fall baseline (#557)
 
@@ -710,3 +717,7 @@ NALIO_FIGHTER_DATA = FighterData(
     prone_size=_PRONE_SIZE,
     prone_hurtbox=_PRONE_HURTBOX,
 )
+
+# #1041: stamp dense A,B,C hit-box labels — the baseline labeling for authored
+# data — so the shipped JSON carries the real `label`s the editor adopts (#1030).
+NALIO_FIGHTER_DATA = with_dense_hit_labels(NALIO_FIGHTER_DATA)

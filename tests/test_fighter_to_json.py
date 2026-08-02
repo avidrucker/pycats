@@ -82,13 +82,35 @@ def test_output_is_json_serializable(key):
 
 def test_nalio_jab_is_thin_matches_worked_example():
     # §1.1: the Nalio jab dumps to exactly the collapsed hitboxes, no default
-    # keys. Grounded in nalio_cat.py _JAB, not the design prose.
+    # keys. Grounded in nalio_cat.py _JAB, not the design prose. Each box also
+    # carries its dense `label` (#1041) — A, B, C in box order.
     doc = fighter_to_json(load_fighter_data("nalio"))
     jab = doc["moves"]["jab"]
     assert jab["hitboxes"] == [
-        {"circle": [54, 27, 19], "damage": 3.0, "angle": 83, "knockback_growth": 100.0, "set_knockback": 20},
-        {"circle": [44, 28, 13], "damage": 3.0, "angle": 83, "knockback_growth": 100.0, "set_knockback": 20},
-        {"circle": [34, 29, 15], "damage": 3.0, "angle": 85, "knockback_growth": 100.0, "set_knockback": 20},
+        {
+            "circle": [54, 27, 19],
+            "damage": 3.0,
+            "angle": 83,
+            "knockback_growth": 100.0,
+            "set_knockback": 20,
+            "label": "A",
+        },
+        {
+            "circle": [44, 28, 13],
+            "damage": 3.0,
+            "angle": 83,
+            "knockback_growth": 100.0,
+            "set_knockback": 20,
+            "label": "B",
+        },
+        {
+            "circle": [34, 29, 15],
+            "damage": 3.0,
+            "angle": 85,
+            "knockback_growth": 100.0,
+            "set_knockback": 20,
+            "label": "C",
+        },
     ]
     # base_knockback (0.0) and the default window resolve to None -> all dropped.
     for hb in jab["hitboxes"]:
