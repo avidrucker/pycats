@@ -18,7 +18,7 @@ avoids constructing a real pygame-backed Player.
 
 from pycats import stats_print
 from pycats.config import INITIAL_LIVES
-from pycats.domain import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
+from pycats.loadout import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
 
 
 class _FakePlayer:

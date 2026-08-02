@@ -7,7 +7,7 @@ Two rules, both pure-domain and golden-neutral (no render, no sim):
 - **Distinctness** — two players who pick the same Character get distinct Skins.
 """
 
-from pycats.domain import (
+from pycats.loadout import (
     CHARACTERS,
     SHARED_SKIN_KEYS,
     SKINS,

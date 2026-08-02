@@ -1,7 +1,7 @@
 """The placeholder fighter — one non-selectable (Character, Skin) (#672 domain, spec §4).
 
 The placeholder is a *normal* Character + Skin that is simply **absent from the
-selectable registries** (``domain.registry``). "Doesn't use the regular palette"
+selectable registries** (``loadout.registry``). "Doesn't use the regular palette"
 means "not a member of the selectable roster", NOT a render bypass — so it needs
 zero ``if key == "testcat"`` special-cases anywhere.
 

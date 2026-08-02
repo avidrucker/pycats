@@ -1,4 +1,4 @@
-"""Unit tests for the pure pycats.domain model (#672 Phase 1a, #680).
+"""Unit tests for the pure pycats.loadout model (#672 Phase 1a, #680).
 
 Covers the value objects, the two resolvers, the build_fighter port, the
 unknown-key → placeholder routing, the registry exclusion of the placeholder, and
@@ -10,7 +10,7 @@ import sys
 
 from pycats.characters.palettes import load_palettes
 from pycats.combat.data import load_fighter_data
-from pycats.domain import (
+from pycats.loadout import (
     CHARACTERS,
     PLACEHOLDER_CHARACTER,
     PLACEHOLDER_SKIN,
@@ -133,7 +133,8 @@ def test_domain_import_pulls_no_pygame():
     in-process check would false-pass.
     """
     code = (
-        "import pycats.domain\nimport sys\nbad = sorted(m for m in sys.modules if 'pygame' in m)\nassert not bad, bad\n"
+        "import pycats.loadout\nimport sys\n"
+        "bad = sorted(m for m in sys.modules if 'pygame' in m)\nassert not bad, bad\n"
     )
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr

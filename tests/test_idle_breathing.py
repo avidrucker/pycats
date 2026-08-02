@@ -25,8 +25,8 @@ from helpers import ground as _ground
 from pycats import runtime_settings, settings
 from pycats.combat.data import load_fighter_data
 from pycats.core.input import InputFrame
-from pycats.domain.registry import character_for
 from pycats.entities import Player
+from pycats.loadout.registry import character_for
 from pycats.render_battle import (
     IDLE_BREATH_BOB_PX,
     idle_breath_wave,

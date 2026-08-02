@@ -16,7 +16,7 @@ import pytest  # noqa: E402
 
 from pycats import text_utils  # noqa: E402
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
-from pycats.domain import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor  # noqa: E402
+from pycats.loadout import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor  # noqa: E402
 from pycats.win_screen import WinScreenManager  # noqa: E402
 
 # Reuse the suite's font-cache isolation so this passes regardless of order (#63).

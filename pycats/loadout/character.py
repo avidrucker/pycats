@@ -3,7 +3,7 @@
 Pure: imports no pygame / sim / UI. A Character is a small identity value — the
 mechanics key that ``combat.data.load_fighter_data`` understands, a display name,
 and a *reference* to a default Skin. The actual ``FighterData`` is resolved lazily
-by ``domain.resolvers.fighter_data_of`` — it is deliberately NOT embedded here, so
+by ``loadout.resolvers.fighter_data_of`` — it is deliberately NOT embedded here, so
 this value stays pure and cheap.
 """
 

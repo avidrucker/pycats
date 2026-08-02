@@ -27,10 +27,10 @@ from .config import (
     SCREEN_WIDTH,
 )
 from .core.physics import resolve_player_push
-from .domain import Selection, Skin, assign_distinct_skins, build_fighter, character_for
 from .entities import Player
 from .entities.ledge import ledges_from_platforms
 from .input_history import InputHistory
+from .loadout import Selection, Skin, assign_distinct_skins, build_fighter, character_for
 from .render_battle import (
     draw_controls,
     draw_hud,

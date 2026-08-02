@@ -57,7 +57,7 @@ from ..config import (
     PROJECTILE_MAX_BOUNCES,
     PROJECTILE_RESTITUTION,
 )
-from ..domain import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
+from ..loadout import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
 from .attack import Attack, Projectile
 from .fighter import Fighter
 from .fighter_input import FighterInput

@@ -26,16 +26,16 @@ from ..config import (  # noqa: E402
 )
 from ..core.input import merge_frames  # noqa: E402
 from ..core.physics import resolve_player_push  # noqa: E402
-from ..domain import (  # noqa: E402
+from ..entities import Player  # noqa: E402
+from ..entities.ledge import ledges_from_platforms  # noqa: E402
+from ..entities.stages import BATTLEFIELD  # noqa: E402
+from ..loadout import (  # noqa: E402
     Selection,
     Skin,
     assign_distinct_skins,
     build_fighter,
     character_for,
 )
-from ..entities import Player  # noqa: E402
-from ..entities.ledge import ledges_from_platforms  # noqa: E402
-from ..entities.stages import BATTLEFIELD  # noqa: E402
 from ..systems import hit_resolution  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
 from .input_script import default_timeline  # noqa: E402

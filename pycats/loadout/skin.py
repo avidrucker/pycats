@@ -3,7 +3,7 @@
 Pure: imports no pygame / sim / UI. Colours are ``(r, g, b)`` tuples at the
 boundary, matching the palette dicts produced by
 ``characters.palettes.load_palettes()``. The OG skins are Skins; so is the
-placeholder (see ``domain.placeholder``).
+placeholder (see ``loadout.placeholder``).
 """
 
 from __future__ import annotations

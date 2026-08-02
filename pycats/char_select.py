@@ -27,7 +27,7 @@ from .config import (
     SCREEN_WIDTH,
     WHITE,
 )
-from .domain import SKINS, Selection, assign_distinct_skins, available_skins, character_for
+from .loadout import SKINS, Selection, assign_distinct_skins, available_skins, character_for
 
 # --- char-select layout + behaviour constants (#420: named from inline literals) ---
 # Input debounce windows (frames): movement repeats faster than a committing action.

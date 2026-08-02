@@ -1,4 +1,4 @@
-"""pycats.domain — the pure DDD core of the skin / character / selection model (#672).
+"""pycats.loadout — the pure DDD core of the skin / character / selection model (#672).
 
 Imports no pygame / sim / UI (enforced by ``tests/test_domain_model.py``'s import-
 purity check). This package is introduced *unwired* in Phase 1a; the sim + live
