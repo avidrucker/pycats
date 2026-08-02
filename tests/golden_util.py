@@ -116,6 +116,39 @@ def _summary_text(summary: dict) -> str:
     return json.dumps(summary, indent=2, sort_keys=True) + "\n"
 
 
+def _flatten(obj: Any, prefix: str = "") -> dict:
+    """Flatten a nested dict to ``{dotted.path: value}``; lists are leaves.
+
+    Used by :func:`_summary_diff_lines` so a summary change reports only the
+    fields that moved (e.g. ``players.birky.lives_end``) instead of two blobs.
+    """
+    if isinstance(obj, dict):
+        out: dict = {}
+        for k, v in obj.items():
+            key = f"{prefix}.{k}" if prefix else str(k)
+            out.update(_flatten(v, key))
+        return out
+    return {prefix: obj}
+
+
+def _summary_diff_lines(expected: dict, actual: dict, cap: int = 30) -> list:
+    """Return compact ``path: expected → actual`` lines for changed leaves only.
+
+    Only fields whose value differs appear; a missing side shows ``<missing>``.
+    Bounded at *cap* lines so an all-fields drift can't dump the whole summary.
+    """
+    fe, fa = _flatten(expected), _flatten(actual)
+    lines = []
+    for k in sorted(set(fe) | set(fa)):
+        if fe.get(k) != fa.get(k):
+            e = json.dumps(fe[k]) if k in fe else "<missing>"
+            a = json.dumps(fa[k]) if k in fa else "<missing>"
+            lines.append(f"  {k}: {e} → {a}")
+    if len(lines) > cap:
+        lines = lines[:cap] + [f"  … and {len(lines) - cap} more changed field(s)"]
+    return lines
+
+
 def _check_or_update_summary(name: str, snaps: list) -> None:
     """Write (update mode) or assert (check mode) the reviewable summary sidecar.
 
@@ -137,10 +170,10 @@ def _check_or_update_summary(name: str, snaps: list) -> None:
 
     expected = json.loads(path.read_text(encoding="utf-8"))
     if summary != expected:
+        diff = "\n".join(_summary_diff_lines(expected, summary))
         raise AssertionError(
-            f"Golden '{name}': semantic summary changed.\n"
-            f"  expected (sidecar) = {json.dumps(expected, sort_keys=True)}\n"
-            f"  actual   (this run)= {json.dumps(summary, sort_keys=True)}\n"
+            f"Golden '{name}': semantic summary changed. Changed fields (expected → actual):\n"
+            f"{diff}\n"
             f"If intended, review per tests/golden/REGEN_PROTOCOL.md and regen.\n{DOC_HINT}"
         )
 
@@ -148,6 +181,59 @@ def _check_or_update_summary(name: str, snaps: list) -> None:
 # ---------------------------------------------------------------------------
 # Oracle
 # ---------------------------------------------------------------------------
+
+# A serialized frame is ``[parts, attacks, phase, winner]`` (see sim/runner.snapshot).
+_FRAME_COMPONENTS = ("parts", "attacks", "phase", "winner")
+
+
+def _describe_frame_divergence(actual_frame: Any, expected_frame: Any) -> str:
+    """Name the first component/fighter/field that differs between two frames.
+
+    ``parts`` is a list of per-player rows read by name via ``PlayerSnap`` — so a
+    row-level difference is reported as ``<fighter>.<field>: <expected> → <actual>``
+    (e.g. ``birky.percent: 88.0 → 85.0``) rather than a raw positional index. The
+    other components (attacks/phase/winner) report as ``<component>: expected → actual``.
+    """
+    for ci, comp in enumerate(_FRAME_COMPONENTS):
+        av = actual_frame[ci] if ci < len(actual_frame) else None
+        ev = expected_frame[ci] if ci < len(expected_frame) else None
+        if av == ev:
+            continue
+        if comp != "parts":
+            return f"{comp}: {json.dumps(ev)} → {json.dumps(av)}"
+        # parts: find the first player row that differs, then the first field.
+        for pi in range(max(len(av or []), len(ev or []))):
+            arow = av[pi] if av and pi < len(av) else None
+            erow = ev[pi] if ev and pi < len(ev) else None
+            if arow == erow:
+                continue
+            if arow is None or erow is None:
+                return f"player slot {pi} present on one side only"
+            pa, pe = PlayerSnap(*arow), PlayerSnap(*erow)
+            for f in PlayerSnap._fields:
+                va, ve = getattr(pa, f), getattr(pe, f)
+                if va != ve:
+                    return f"{pe.name}.{f}: {json.dumps(ve)} → {json.dumps(va)}"
+            return f"player {pe.name}: rows differ"
+        return "parts differ"
+    return "frames differ"
+
+
+def _lead_in_frames(actual_frames: list, expected_frames: list, i: int, back: int = 2, width: int = 200) -> str:
+    """Compact context: up to *back* matching frames before divergence, then frame *i*.
+
+    Each frame is truncated to *width* chars so a large drift never dumps the whole
+    blob. Frames before *i* are identical on both sides (that's why they matched), so
+    each is shown once; frame *i* shows expected vs actual.
+    """
+
+    def _clip(s: str) -> str:
+        return s if len(s) <= width else s[:width] + "…"
+
+    lines = [f"    frame {f} (matches): {_clip(json.dumps(actual_frames[f]))}" for f in range(max(0, i - back), i)]
+    lines.append(f"  → frame {i} expected: {_clip(json.dumps(expected_frames[i]))}")
+    lines.append(f"  → frame {i} actual  : {_clip(json.dumps(actual_frames[i]))}")
+    return "\n".join(lines) + "\n"
 
 
 def check_or_update(name: str, snaps: list) -> None:
@@ -194,10 +280,12 @@ def check_or_update(name: str, snaps: list) -> None:
 
     for i, (a, e) in enumerate(zip(actual_frames, expected_frames)):
         if a != e:
+            what = _describe_frame_divergence(a, e)
+            lead = _lead_in_frames(actual_frames, expected_frames, i)
             raise AssertionError(
                 f"Golden '{name}': first divergence at frame {i}.\n"
-                f"  actual  = {json.dumps(a)[:300]}\n"
-                f"  expected= {json.dumps(e)[:300]}\n{DOC_HINT}"
+                f"  first change (expected → actual): {what}\n"
+                f"{lead}{DOC_HINT}"
             )
 
     # Lengths match and all frames match — the raw strings differ only in

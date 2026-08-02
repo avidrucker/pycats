@@ -85,3 +85,64 @@ def test_golden_failure_message_names_onboarding_doc(tmp_path, monkeypatch):
     msg = str(exc.value)
     assert "semantic summary changed" in msg
     assert "docs/golden-tests.md" in msg
+
+
+def test_golden_summary_change_reports_field_level_diff(tmp_path, monkeypatch):
+    """A1/#1017: a changed summary field produces a compact per-field
+    ``path: expected → actual`` diff, not two whole-summary blobs.
+
+    Able-to-fail: the old message dumped the full expected/actual summary JSON and
+    never emitted a dotted field path like ``players.P2.percent_max``.
+    """
+    monkeypatch.setattr(golden_util, "GOLDEN_DIR", tmp_path)
+
+    base = [_snap([_player("P1", "idle"), _player("P2", "idle", percent=0)])]
+    monkeypatch.setenv("PYCATS_UPDATE_GOLDENS", "1")
+    check_or_update("diffcase", base)  # write baseline
+    monkeypatch.delenv("PYCATS_UPDATE_GOLDENS", raising=False)
+
+    changed = [_snap([_player("P1", "idle"), _player("P2", "hurt", percent=42)])]
+    with pytest.raises(AssertionError) as exc:
+        check_or_update("diffcase", changed)
+    msg = str(exc.value)
+    assert "Changed fields (expected → actual)" in msg
+    assert "players.P2.percent_max: 0 → 42" in msg  # field-level line, only the moved key
+    assert "players.P2.states" in msg  # state set also changed
+    assert "expected (sidecar) =" not in msg  # old whole-summary blob dump is gone
+    assert "docs/golden-tests.md" in msg
+
+
+def test_golden_raw_divergence_names_fighter_field_and_lead_in(tmp_path, monkeypatch):
+    """A2/#1017: when the summary matches but raw bytes differ, the message names the
+    diverging ``fighter.field`` and shows lead-in frames — not just a frame index.
+
+    Change a field the semantic summary does NOT read (``rect_x``) so the summary
+    check passes and execution reaches the raw byte compare. Able-to-fail: the old
+    message printed only ``first divergence at frame N`` + truncated blobs, naming
+    no field and showing no lead-in.
+    """
+    monkeypatch.setattr(golden_util, "GOLDEN_DIR", tmp_path)
+
+    base = [
+        _snap([_player("P1", "idle"), _player("P2", "idle")]),
+        _snap([_player("P1", "idle"), _player("P2", "idle")]),
+    ]
+    monkeypatch.setenv("PYCATS_UPDATE_GOLDENS", "1")
+    check_or_update("rawcase", base)  # write baseline
+    monkeypatch.delenv("PYCATS_UPDATE_GOLDENS", raising=False)
+
+    # Move P2's rect_x (index 2) at frame 1 only — the summary ignores position, so
+    # the sidecar still matches and the raw byte compare is the one that fails.
+    p2 = list(_player("P2", "idle"))
+    p2[2] = 999  # rect_x
+    changed = [
+        _snap([_player("P1", "idle"), _player("P2", "idle")]),
+        _snap([_player("P1", "idle"), tuple(p2)]),
+    ]
+    with pytest.raises(AssertionError) as exc:
+        check_or_update("rawcase", changed)
+    msg = str(exc.value)
+    assert "first divergence at frame 1" in msg
+    assert "P2.rect_x" in msg  # names the diverging fighter.field, not a positional index
+    assert "frame 0 (matches)" in msg  # lead-in context frame
+    assert "docs/golden-tests.md" in msg
