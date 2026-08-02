@@ -91,6 +91,8 @@ Critical rules:
   exempt. See [RULES.md](./RULES.md) → "Closing work" (step 4).
 - **Banned words in ALL output** (replies, tickets, commits, docs): avoid **crisp**
   and **honest / honestly / honesty** — they read as vague filler / throat-clearing.
+  Also avoid the reflexive phrases **"You're right"** and **"I apologize" / "I'm sorry"** —
+  concede or correct concretely instead ("The probe was the ticket's work, not filing.").
   Name the concrete quality instead (crisp → specific / precise / clean; honest →
   plain / direct / candid / faithful). Proofread the closing line, where they slip in.
   Full list + replacements: [docs/banned_words.md](./docs/banned_words.md).
