@@ -9,7 +9,7 @@ Contents:
 Use: Used by game.py to display win screen statistics in a clean, aligned format.
 """
 
-from .config import INITIAL_LIVES
+from ..config import INITIAL_LIVES
 
 
 def _kos_scored(opponent):

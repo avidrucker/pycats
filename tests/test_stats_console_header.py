@@ -7,7 +7,7 @@ and assert they reach the console. With the old hardcoded `f"{'Stat':>18} {'P1'.
 line, the custom labels never appear (P1/P2 print instead), so this is red pre-fix.
 """
 
-from pycats import stats_print
+from pycats.ui import stats_print
 
 
 def _fake_summary(header):

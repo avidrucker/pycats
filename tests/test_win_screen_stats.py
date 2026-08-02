@@ -10,15 +10,15 @@ key contracts these tests pin:
   SDs is red against these tests.)
 * By construction P1's KOs equal P2's Falls and vice-versa.
 
-The rows are computed by :func:`pycats.stats_print.format_stats_table`, which
+The rows are computed by :func:`pycats.ui.stats_print.format_stats_table`, which
 reads the player's ``identity`` seam (win-attribution by slot, #672 Phase 1c),
 ``lives``, ``suicides``, ``hits_landed`` and ``attacks_made`` — so a tiny stand-in
 avoids constructing a real pygame-backed Player.
 """
 
-from pycats import stats_print
 from pycats.config import INITIAL_LIVES
 from pycats.loadout import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
+from pycats.ui import stats_print
 
 
 class _FakePlayer:

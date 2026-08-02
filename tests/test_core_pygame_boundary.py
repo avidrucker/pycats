@@ -36,7 +36,7 @@ def _guarded_files() -> list[pathlib.Path]:
             files += sorted(d.rglob("*.py"))
     files += [
         _ROOT / "sim" / "controllers.py",
-        _ROOT / "stats_print.py",
+        _ROOT / "ui" / "stats_print.py",
         _ROOT / "core" / "physics.py",
         _ROOT / "core" / "input.py",
         _ROOT / "entities" / "fighter.py",
