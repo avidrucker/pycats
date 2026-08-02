@@ -323,6 +323,7 @@ class Player(pygame.sprite.Sprite):
         self._try_ledge_grab(ledges)
         self._tick_timers_and_getup(input_frame, held)
         self._spawn_move_hitbox(attack_group)
+        self._apply_velocity_phases()
 
         # Update tail physics
         self.tail.update(platforms)
@@ -626,6 +627,34 @@ class Player(pygame.sprite.Sprite):
                         )  # #213 looping; static hit-box
                     )
         # (#321/F3: done_attacking is now a derived Player property — no latch.)
+
+    def _apply_velocity_phases(self):
+        """SET velocity for any move `VelocityPhase` whose frame is the clock's
+        current `move_frame` (#973, B1 of #566 Final Cutter).
+
+        The generalized mid-move counterpart of the recovery hook's single start
+        burst (#578, applied in fighter_input): a recovery/special move declares an
+        ordered list of `(frame, vx, vy)` phases (Final Cutter's rise->plunge flip),
+        and each fires exactly once — `move_frame` post-increments by 1 per frame and
+        the phase frame is matched with `==`. Runs AFTER `_spawn_move_hitbox` advanced
+        the clock, so the SET lands on the next frame's physics (a consistent, tiny
+        offset; the plunge frame is a playtest value anyway, ⚠ ADR-0003 class).
+
+        Gated off hitstun: a mid-rise hit's knockback owns the velocity, so a phase
+        must NOT overwrite the launch trajectory (the #1066 Q2 determinism/correctness
+        gate — the same reason apex-velocity detection was rejected). Empty
+        `velocity_phases` (every shipped move today) makes this a no-op → golden-safe.
+        """
+        mv = self.current_move
+        if mv is None or not mv.velocity_phases:
+            return
+        if self.fighter.hurt_timer > 0 or self.fighter.stun_timer > 0:
+            return  # knockback owns velocity during hitstun; don't clobber it
+        facing = 1 if self.fighter.facing_right else -1
+        for phase in mv.velocity_phases:
+            if phase.frame == self.move_frame:
+                self.fighter.vel.y = phase.vy
+                self.fighter.vel.x = phase.vx * facing
 
     def _apply_posture_geometry(self):
         """Resize the body Rect to match a lowered posture, feet planted.

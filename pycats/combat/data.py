@@ -121,6 +121,33 @@ class Hitbox:
 
 
 @dataclass(frozen=True)
+class VelocityPhase:
+    """A scripted mid-move velocity SET (#973, B1 of #566 Final Cutter).
+
+    On the frame the move clock's (post-increment) `move_frame` reaches `frame`,
+    the engine SETs the fighter's velocity to (`vx` facing-relative, `vy`) —
+    replacing, not adding to, the current velocity. This is the generalized
+    counterpart of the recovery hook's single start-of-move burst (#578): a move
+    may declare an ORDERED LIST of these to model multi-phase specials (Final
+    Cutter's rise->plunge flip; a future Dolphin-Slash-style special).
+
+    The trigger is a fixed integer frame (deterministic, a pure function of
+    `move_frame`) — NOT apex-velocity detection, which #1066 Q2 ruled out because
+    it couples the boundary to `vy` history (a mid-rise hit fires it on the wrong
+    trajectory). `vy` is screen-space (negative = up, like `recovery_vy`); `vx` is
+    mirrored by facing at apply time (like `recovery_vx`).
+    """
+
+    frame: int
+    vx: float = 0.0
+    vy: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.frame < 1:
+            raise ValueError(f"VelocityPhase frame {self.frame} must be >= 1 (post-increment move_frame)")
+
+
+@dataclass(frozen=True)
 class MoveData:
     """Timing and hitbox data for a single move.
 
@@ -167,6 +194,15 @@ class MoveData:
     grants_recovery: bool = False
     recovery_vy: float = 0.0
     recovery_vx: float = 0.0
+    # Scripted mid-move velocity phases (#973, B1 of #566): an ordered list of
+    # VelocityPhase, each SETting velocity at its integer `move_frame` (see
+    # VelocityPhase). The engine hook (`Player._apply_velocity_phases`) is what
+    # models Final Cutter's rise->plunge flip; the rise burst stays the #578
+    # `recovery_vy` start SET, these are the AFTER-rise re-sets. Empty by default
+    # → every existing move is byte-identical (golden-safe); the serializer omits
+    # it (omit == default). Generalizes the recovery hook rather than bolting on a
+    # one-off plunge_frame/plunge_vy pair (Nalio SJP #956 / Narz can reuse it).
+    velocity_phases: tuple[VelocityPhase, ...] = ()
     # Per-move hurtbox override (#831, R1 of the #792 editor). None = use the
     # fighter-posture hurtbox (FighterData.hurtbox / crouch_hurtbox / prone_hurtbox
     # — today's behavior). A move that sets this carries its own always-active
@@ -193,6 +229,11 @@ class MoveData:
                 raise ValueError(
                     f"Hitbox window [{hb.active_start}, {hb.active_end}] exceeds move '{self.name}' duration {total}"
                 )
+        # A velocity phase past the move's last frame would never fire (the clock
+        # clears the move on completion) — reject it as authoring error (#973).
+        for vp in self.velocity_phases:
+            if vp.frame > total:
+                raise ValueError(f"VelocityPhase frame {vp.frame} exceeds move '{self.name}' duration {total}")
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +370,9 @@ def _move_from_json(node: dict) -> MoveData:
     kw["hitboxes"] = tuple(_hitbox_from_json(h) for h in node["hitboxes"])
     if node.get("hurtbox") is not None:  # optional per-move override (#831)
         kw["hurtbox"] = _hurtbox_from_json(node["hurtbox"])
-    return MoveData(**kw)  # __post_init__ validates windows vs duration
+    if node.get("velocity_phases"):  # scripted mid-move velocity SETs (#973)
+        kw["velocity_phases"] = tuple(VelocityPhase(*triple) for triple in node["velocity_phases"])
+    return MoveData(**kw)  # __post_init__ validates windows + phases vs duration
 
 
 def _fighter_from_json(doc: dict) -> FighterData:
@@ -372,7 +415,7 @@ def _fighter_from_json(doc: dict) -> FighterData:
 # Structural fields handled explicitly per dataclass (excluded from the generic
 # scalar sweep). Circles go inline; hurtboxes/moves/sizes get their own walk.
 _HITBOX_STRUCTURAL = frozenset({"circle"})
-_MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox"})
+_MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox", "velocity_phases"})
 _FIGHTER_STRUCTURAL = frozenset(
     {"hurtbox", "moves", "stand_size", "crouch_size", "crouch_hurtbox", "prone_size", "prone_hurtbox"}
 )
@@ -428,6 +471,8 @@ def _move_to_json(m: MoveData) -> dict:
     out["hitboxes"] = [_hitbox_to_json(hb) for hb in m.hitboxes]
     if m.hurtbox is not None:  # optional per-move override (#831)
         out["hurtbox"] = _hurtbox_to_json(m.hurtbox)
+    if m.velocity_phases:  # scripted mid-move velocity SETs (#973); omit when empty
+        out["velocity_phases"] = [[vp.frame, vp.vx, vp.vy] for vp in m.velocity_phases]
     return out
 
 
