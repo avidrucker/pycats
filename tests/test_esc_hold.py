@@ -8,7 +8,7 @@ threshold and one progress semantic. Pure (no pygame/window/clock), so it is
 unit-testable and behaves identically on both surfaces by construction.
 """
 
-from pycats.esc_hold import EscHoldTimer
+from pycats.shell.esc_hold import EscHoldTimer
 
 
 def test_starts_incomplete_at_zero_progress():

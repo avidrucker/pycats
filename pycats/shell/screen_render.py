@@ -13,10 +13,10 @@ The loop calls `render_active_screen(...)` once per frame with the frame-local
 collaborators it used to close over as module globals.
 """
 
-from . import runtime_settings
-from .config import HUD_PADDING, HUD_SPACING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
-from .render_battle import draw_shell_chrome
-from .ui import text_utils
+from .. import runtime_settings
+from ..config import HUD_PADDING, HUD_SPACING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from ..render_battle import draw_shell_chrome
+from ..ui import text_utils
 
 
 def render_active_screen(current_state, screen_manager, surface, *, battle, platforms, is_fullscreen, frame_input, fps):

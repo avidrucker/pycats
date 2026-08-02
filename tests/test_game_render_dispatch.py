@@ -15,7 +15,7 @@ Able-to-fail: delete the `options` branch from render_active_screen and
 
 import pygame
 
-from pycats import screen_render
+from pycats.shell import screen_render
 
 
 class _SpyScreenManager:

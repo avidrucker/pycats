@@ -13,9 +13,9 @@ SDL dummy driver give DisplayManager a real headless surface (same as the #698 t
 
 import pygame  # type: ignore
 
-import pycats.app as app_mod
-from pycats.app import App
+import pycats.shell.app as app_mod
 from pycats.core.input import InputFrame
+from pycats.shell.app import App
 
 _PREFS = {"windowed_scale": 1.0, "fullscreen": False}
 

@@ -15,7 +15,7 @@ settings -> runtime_settings -> systems.status_model stay clean, so `systems`
 can join the import-time boundary gate (#975/#833 §6, ADR-0004).
 """
 
-from .config import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from ..config import FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 
 # How long the zoom toast stays on screen after an F10 change (#89).
 TOAST_DURATION_FRAMES = 3 * FPS

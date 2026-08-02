@@ -15,7 +15,7 @@ import math
 
 import pygame  # type: ignore
 
-from .config import MAIN_MENU_SELECTED_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from ..config import MAIN_MENU_SELECTED_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 
 
 class EscHoldTimer:

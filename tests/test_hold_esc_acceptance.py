@@ -4,7 +4,7 @@ import pygame
 
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.core.input import InputFrame
-from pycats.screen_manager import ScreenStateManager
+from pycats.shell.screen_manager import ScreenStateManager
 
 P1 = {"up": pygame.K_w, "down": pygame.K_s, "attack": pygame.K_v, "special": pygame.K_c}
 P2 = {

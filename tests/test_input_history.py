@@ -9,7 +9,7 @@ right, independent of facing). The HUD grid render + Options toggle are exercise
 elsewhere (test_input_history_render / test_input_history_toggle).
 """
 
-from pycats.input_history import (
+from pycats.shell.input_history import (
     HELD,
     INPUT_HISTORY_FRAMES,
     PRESSED,

@@ -17,7 +17,7 @@ import pygame as pg
 import pytest
 
 import pycats.sim.presenters as pr
-from pycats.esc_hold import EscHoldTimer
+from pycats.shell.esc_hold import EscHoldTimer
 from pycats.sim.captions import Caption
 from pycats.sim.presenters import LivePresenter
 
