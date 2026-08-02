@@ -113,6 +113,7 @@ findings, kept for provenance, not a live spec.
 | `docs/roadmap.md` | forward-looking work map | authoritative |
 | `docs/research/2026-07-07-custom-mechanics-inventory.md` | the #605 survey this router promotes | research-archive |
 | `docs/research/2026-07-08-ergonomics-ssot-decisions.md` | the #724 SSOT-hygiene decision rationale | research-archive |
+| `docs/research/fighter-buffs-findings.md` | catalog of fighter buff mechanics (heal/armor/invincibility/jump/etc.) across PM 3.6 / Brawl / Melee / meleelight (#1106) | research-archive |
 
 PM canon lives under `docs/pm-reference/`; dated investigations under `docs/research/`;
 architecture decisions under `docs/adr/`. Full doc-tree classification is a separate pass
