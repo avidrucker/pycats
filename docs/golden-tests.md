@@ -79,6 +79,58 @@ actually reached) so a golden can't quietly degrade into "nothing happened."
   sidecar (review its diff directly). Naming trap: a render-only or default-flip change
   generally does *not* touch it; a change to the menu/screen graph does.
 
+## Coverage — what the goldens lock, and what they don't
+
+The golden suite locks a **narrow slice** of behaviour on purpose (more goldens = more
+regen/review surface). This section makes that slice — and its gaps — visible at a glance, so a
+gap becomes a *candidate* future golden rather than an invisible blind spot. Adding a golden for
+any gap below is a separate decision (file its own ticket); this is an inventory, not a to-do.
+
+Read the golden-vs-unit-test column as the D2 ruling generalised (#1008): a golden is the right
+tool for an **emergent multi-frame trajectory** (the sim drifting over hundreds of frames); a
+focused **unit test** is the right tool for a mechanic you can assert in isolation. Most gaps
+below are already served by a unit test — they are gaps *in the golden suite*, not in coverage.
+
+### What each golden scenario actually locks (from the committed digests)
+
+| Scenario | Fighters | Locks | Notably absent |
+|---|---|---|---|
+| `default` | nalio vs nalio | 200f of ground/air movement (`idle/walk/jump/fall`), a few attack-active frames, `shield`; no damage, no KO, ends `in_play`. | any damage/hurt/ko; specials; defensive rolls/dodges. |
+| `combat` | nalio vs birky | The full damage arc: nalio `smash_charge → attack`, birky `hurt → ko` (KO at frame 600, `percent_max` ≈ 85), **one** stock lost. | match completion (still ends `in_play`, `winner 0`); specials; grabs. |
+| `two_npc` | testcat vs testcat (AI) | The dual-controller path + emergent movement; incidentally reaches `ledge_hang` and a small `hurt` (10%). | a **playable-cat** guarantee — `testcat` is a scaffold, not an archetype. |
+| `test_golden_summary` | — (synthetic) | `summarize()` logic itself (no committed file). | nothing sim-level; it guards the digest, not behaviour. |
+| `screen_parity` | — (screen FSM) | The screen-flow transition sequence over `main_menu/options/char_select/playing/pause/win_screen`. | anything sim/render — it's an FSM trace, no sidecar. |
+
+Union of fighter states any golden locks: `idle, walk, jump, fall, attack, shield, smash_charge,
+hurt, ko, crouch, ledge_hang`.
+
+### Character gaps
+
+| Gap | Golden or unit test? |
+|---|---|
+| **`narz` and `gnok`** — implemented, selectable archetypes (`ARCHETYPE_ROSTER` in `pycats/characters/roster.py`) with **no golden at all**. | Golden candidate: a per-cat combat/movement scenario would lock each one's emergent arc. Lower urgency while movesets are still settling. |
+| **Archetype-specific movesets** — each cat's specials/tilts/smashes beyond nalio's fsmash (in `combat`) go unexercised by any golden. | Mixed: per-move hitbox shape is already unit-tested (`test_multi_hitbox.py`, `test_move_rect_symmetry.py`); a golden only earns its keep for the *multi-frame* result (a specific move's KO/launch arc). |
+| **`testcat` ≠ a real cat** — `two_npc` locks controller behaviour on the scaffold fighter, not a shipping archetype. | Not a character-coverage guarantee; if a playable-cat AI arc matters, that's a new golden with real archetypes. |
+
+### Mechanic gaps (no golden locks these today)
+
+| Mechanic | In the sim? | Golden or unit test? |
+|---|---|---|
+| **Specials** (neutral/side/up/down B) — the `special` state never appears in any digest. | Yes (`move_select.py`, `provenance.py`). | Unit tests exist (`test_up_b_recovery.py`, `test_projectile.py`); a golden fits only for a full recovery/special *trajectory*. |
+| **Ledge & recovery** beyond a single `ledge_hang`: no `ledge_grab → ledge_getup`, no offstage recovery arc, no `ledge_intangible`/regrab-lockout, no `grabbed_ledge`. | Yes (`tangibility.py`; the `ledge_*` states). | Well covered by unit tests (`test_ledge_hang.py`, `test_ledge_regrab_cutoff.py`, `test_up_b_recovery.py`, `test_ai_recovery.py`); a recovery-arc golden would be the strongest single addition. |
+| **Grab / throw** — grab tangibility exists but no golden runs a grab→throw. | Yes (`tangibility.py`). | Unit test first (`test_grabs_left_dots.py`); golden only if a throw's launch arc needs locking. |
+| **Dash / run / dash-dance** — `dash`/`run` states never in a digest. | Yes (`dash_*` states). | Unit tests already own it (`test_dash.py`, `test_double_tap_dash.py`, `test_wavedash.py`) — not a golden need. |
+| **Defensive options** (roll, spot-dodge, air-dodge) — `dodge` states never in a digest. | Yes. | Unit tests own it (`test_dodge_mechanics.py`, `test_spot_dodge_input_order.py`, `test_air_dodge_*`); a golden adds little. |
+| **Multi-hit, clank, projectile resolution** — referenced in `combat/data.py`/`move_clock.py` but no golden locks the resolved outcome. | Yes. | Unit tests exist (`test_multi_hitbox.py`, `test_clank.py`, `test_projectile.py`); golden only for an emergent interaction across frames. |
+| **Match completion** — all three sim goldens end `in_play` with `winner 0` (combat loses just one of birky's stocks); no golden reaches `match_over`/a decided `winner`. | Yes. | Golden candidate: a short scenario that KOs all stocks would lock the end-of-match phase/winner transition — currently untested at the sim-golden level. |
+
+### State-combination gaps
+
+No golden exercises: `shield → shieldstun → shield-break`; hitlag/hitstun interplay through a
+`clank`; or an intangibility window (`air_dodge`/`roll`/ledge) actually **negating** an incoming
+hit. Each is a focused-unit-test shape (assert the specific interaction), not a golden — a golden
+would only lock them incidentally inside a larger scripted fight.
+
 ## Regenerating goldens (the short version)
 
 When a code change legitimately moves the sim, re-record — but **reviewed, not rubber-stamped**:
