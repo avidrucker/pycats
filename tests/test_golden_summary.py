@@ -6,7 +6,10 @@ percent / KO frames). The digest is the artifact a reviewer reads before
 accepting a `PYCATS_UPDATE_GOLDENS=1` regen — see tests/golden/REGEN_PROTOCOL.md.
 """
 
-from tests.golden_util import summarize
+import pytest
+
+from tests import golden_util
+from tests.golden_util import check_or_update, summarize
 
 
 def _player(name, state, percent=0, lives=3, character="testcat"):
@@ -60,3 +63,25 @@ def test_summarize_counts_attack_frames_and_final_phase_winner():
 def test_summarize_empty():
     s = summarize([])
     assert s["frames"] == 0 and s["players"] == {}
+
+
+def test_golden_failure_message_names_onboarding_doc(tmp_path, monkeypatch):
+    """B2/#1016: a failing golden points a first-time reader at docs/golden-tests.md.
+
+    Record a baseline in an isolated golden dir, then feed a behaviour-changed run so
+    the summary assertion fires — the message must name the onboarding doc. Able-to-fail:
+    without the DOC_HINT append, ``docs/golden-tests.md`` is absent from the message.
+    """
+    monkeypatch.setattr(golden_util, "GOLDEN_DIR", tmp_path)
+
+    recorded = [_snap([_player("P1", "idle"), _player("P2", "idle")])]
+    monkeypatch.setenv("PYCATS_UPDATE_GOLDENS", "1")
+    check_or_update("hintcase", recorded)  # write baseline
+    monkeypatch.delenv("PYCATS_UPDATE_GOLDENS", raising=False)
+
+    changed = [_snap([_player("P1", "walk"), _player("P2", "hurt", percent=10)])]
+    with pytest.raises(AssertionError) as exc:
+        check_or_update("hintcase", changed)
+    msg = str(exc.value)
+    assert "semantic summary changed" in msg
+    assert "docs/golden-tests.md" in msg

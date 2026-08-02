@@ -1,6 +1,9 @@
 # tests/golden_util.py
 """Helper for golden-snapshot regression tests.
 
+New here? See ``docs/golden-tests.md`` for the plain-English onboarding + glossary
+(golden / oracle / digest-sidecar / re-baseline / check-vs-record).
+
 Usage::
 
     from tests.golden_util import check_or_update
@@ -22,6 +25,10 @@ from pycats.sim.runner import PlayerSnap  # #322/B-b: read player rows by name
 
 # Goldens live alongside this file, one sub-directory down.
 GOLDEN_DIR = Path(__file__).parent / "golden"
+
+# Appended to every golden failure so a first-time reader knows what a golden is
+# and how to read the failure. Onboarding home: docs/golden-tests.md (B2/#1016).
+DOC_HINT = "New to goldens? See docs/golden-tests.md (what goldens are + how to read this)."
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +131,9 @@ def _check_or_update_summary(name: str, snaps: list) -> None:
         return
 
     if not path.exists():
-        raise AssertionError(f"Golden summary missing: {path}\nRun tests with PYCATS_UPDATE_GOLDENS=1 to record it.")
+        raise AssertionError(
+            f"Golden summary missing: {path}\nRun tests with PYCATS_UPDATE_GOLDENS=1 to record it.\n{DOC_HINT}"
+        )
 
     expected = json.loads(path.read_text(encoding="utf-8"))
     if summary != expected:
@@ -132,7 +141,7 @@ def _check_or_update_summary(name: str, snaps: list) -> None:
             f"Golden '{name}': semantic summary changed.\n"
             f"  expected (sidecar) = {json.dumps(expected, sort_keys=True)}\n"
             f"  actual   (this run)= {json.dumps(summary, sort_keys=True)}\n"
-            "If intended, review per tests/golden/REGEN_PROTOCOL.md and regen."
+            f"If intended, review per tests/golden/REGEN_PROTOCOL.md and regen.\n{DOC_HINT}"
         )
 
 
@@ -162,7 +171,7 @@ def check_or_update(name: str, snaps: list) -> None:
 
     if not golden_path.exists():
         raise AssertionError(
-            f"Golden file missing: {golden_path}\nRun tests with PYCATS_UPDATE_GOLDENS=1 to record it."
+            f"Golden file missing: {golden_path}\nRun tests with PYCATS_UPDATE_GOLDENS=1 to record it.\n{DOC_HINT}"
         )
 
     # Semantic summary first: a behaviour change fails with a small readable diff
@@ -179,7 +188,8 @@ def check_or_update(name: str, snaps: list) -> None:
 
     if len(actual_frames) != len(expected_frames):
         raise AssertionError(
-            f"Golden '{name}': frame count mismatch — got {len(actual_frames)}, expected {len(expected_frames)}."
+            f"Golden '{name}': frame count mismatch — got {len(actual_frames)}, "
+            f"expected {len(expected_frames)}.\n{DOC_HINT}"
         )
 
     for i, (a, e) in enumerate(zip(actual_frames, expected_frames)):
@@ -187,12 +197,12 @@ def check_or_update(name: str, snaps: list) -> None:
             raise AssertionError(
                 f"Golden '{name}': first divergence at frame {i}.\n"
                 f"  actual  = {json.dumps(a)[:300]}\n"
-                f"  expected= {json.dumps(e)[:300]}"
+                f"  expected= {json.dumps(e)[:300]}\n{DOC_HINT}"
             )
 
     # Lengths match and all frames match — the raw strings differ only in
     # encoding (shouldn't happen, but just in case).
     raise AssertionError(
         f"Golden '{name}': JSON content matches but raw strings differ "
-        "(encoding mismatch). Rerun with PYCATS_UPDATE_GOLDENS=1."
+        f"(encoding mismatch). Rerun with PYCATS_UPDATE_GOLDENS=1.\n{DOC_HINT}"
     )

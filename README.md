@@ -114,7 +114,9 @@ A green run with some skips is expected. Golden snapshots live in `tests/golden/
 regenerate them intentionally with `make goldens` (it sets `PYCATS_UPDATE_GOLDENS=1` for the
 three golden modules, then prints the review steps). Review the regenerated `.summary.json`
 sidecars before committing — see
-[`tests/golden/REGEN_PROTOCOL.md`](./tests/golden/REGEN_PROTOCOL.md).
+[`tests/golden/REGEN_PROTOCOL.md`](./tests/golden/REGEN_PROTOCOL.md). New to goldens (or
+staring at a red `test_golden_*`)? [`docs/golden-tests.md`](./docs/golden-tests.md) is the
+plain-English onboarding + glossary (golden / oracle / digest-sidecar / re-baseline).
 
 ### Development setup
 
@@ -206,4 +208,5 @@ New here (human or agent)? Start with these:
 - [docs/adr/](./docs/adr/) — architecture decision records (the *why* behind design calls).
 - [docs/project-m-parity.md](./docs/project-m-parity.md) — where pycats deliberately diverges from Project M.
 - [docs/pygame-fonts.md](./docs/pygame-fonts.md) — working with the font/text stack: sizes, scaling, mixed text, per-frame `SysFont` and test-isolation gotchas.
+- [docs/golden-tests.md](./docs/golden-tests.md) — golden-test onboarding + glossary (golden / oracle / digest-sidecar / re-baseline / check-vs-record).
 - [RULES.md](./RULES.md) — project conventions (labels, filing, closing work).
