@@ -46,7 +46,11 @@ def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None):
 
 
 def _hogger():
-    return AttackerController(attacker_num=1, level=9, rng=random.Random(0))
+    # #960: edge_hog reverted off at every level; force the dormant flag on to exercise
+    # the machinery this test guards (bounded deny → climb; #952 groundwork).
+    c = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
+    c.edge_hog = True
+    return c
 
 
 # ---- facet 1: decide-level contract ----------------------------------------
@@ -88,7 +92,8 @@ def _run_a_full_hold_to_deny(*, jumps):
     p1.fighter.vel.y = 0
     p1.fighter.ledge_intangible_timer = 0
     p1.fighter.jumps_remaining = jumps
-    c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))  # edge_hog on @ lv9
+    c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
+    c1.edge_hog = True  # #960: flag reverted off; force on to exercise the bounded-deny machinery (#952)
     attacks = pg.sprite.Group()
     for f in range(LEDGE_HOG_MAX_FRAMES + config.LEDGE_GETUP_FRAMES + 90):
         p2.rect.center = (left.ax - 60, left.ay + 40)  # keep the opponent off-stage left
@@ -129,6 +134,7 @@ def test_go_to_ledge_walk_never_walks_off_into_a_self_ko():
         p1.fighter.lives = 3
         left.occupied_by = None
         c1 = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
+        c1.edge_hog = True  # #960: flag reverted off; force on to exercise the go-to-ledge walk (#952)
         c1.recover = False  # isolate the go-to-ledge walk branch
         attacks = pg.sprite.Group()
         for f in range(180):

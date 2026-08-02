@@ -228,7 +228,9 @@ LEVEL_PARAMS: dict[int, LevelParams] = {
         reach_aware=True,
         reactive_spacing=True,
         evade_chance=0.15,
-        edge_hog=True,
+        # #960/#942 D4: edge_hog reverted to the dataclass default (False) — no level
+        # enables edgehogging in V1 (canon: a CPU never leaves the stage to contest a
+        # ledge). The machinery stays dormant for epic #952 to rebuild on.
         recover=True,
         edge_guard=True,
     ),
@@ -244,7 +246,7 @@ LEVEL_PARAMS: dict[int, LevelParams] = {
         reach_aware=True,
         reactive_spacing=True,
         evade_chance=0.30,
-        edge_hog=True,
+        # #960/#942 D4: edge_hog reverted to default (False) — see the Lv7 note above.
         recover=True,
         edge_guard=True,
     ),

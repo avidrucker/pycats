@@ -82,10 +82,13 @@ def test_no_guard_when_foe_is_on_stage():
 
 
 def test_edge_guard_takes_precedence_over_edge_hog():
-    # A level-9 bot has BOTH edge_hog and edge_guard. Near the ledge with the foe in
-    # projectile range, the on-stage guard (special) fires FIRST — not the edge-hog
-    # grab movement (left/right toward the ledge).
+    # A level-9 bot with edge_guard on (canon) and edge_hog force-enabled: #960 reverted
+    # the flag off at every level, so force it on here so there IS an edge-hog grab for
+    # the guard to take precedence over (the #952-groundwork machinery). Near the ledge
+    # with the foe in projectile range, the on-stage guard (special) fires FIRST — not
+    # the edge-hog grab movement (left/right toward the ledge).
     c = AttackerController(attacker_num=1, level=9, rng=random.Random(0))
+    c.edge_hog = True
     a = _stub(100, 300)  # within EDGE_HOG_RANGE of ax=60
     foe = _stub(30, 380, on_ground=False)  # off-stage, projectile range, below lip
     got = c.decide(a, foe, 0, None, [_LEFT])

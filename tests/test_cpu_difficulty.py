@@ -66,8 +66,10 @@ def test_discrete_flags_inherit_lower_odd_rung():
     assert level_params(4).enabled_moves == level_params(3).enabled_moves
     assert level_params(4).reactive_shield is False  # unlocks at Lv5
     assert level_params(6).reactive_shield is True
-    assert level_params(6).edge_hog is False  # unlocks at Lv7
-    assert level_params(8).edge_hog is True
+    assert level_params(4).edge_guard is False  # unlocks at Lv5
+    assert level_params(6).edge_guard is True
+    # (#960 reverted edge_hog off at EVERY level — no threshold to demonstrate;
+    # test_960_edge_hog_revert owns the per-level `edge_hog is False` assertion.)
 
 
 def test_out_of_range_level_clamps():

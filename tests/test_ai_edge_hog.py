@@ -37,8 +37,12 @@ def _stub(cx, cy, alive=True, on_ground=True, grabbed_ledge=None, current_move=N
 
 
 def _hogger(**kw):
-    # level 7 => edge_hog=True and level>=5 (the getup/hold branch is live).
-    return AttackerController(attacker_num=1, level=7, rng=random.Random(0), **kw)
+    # level 7 => level>=5 (the getup/hold branch is live). #960/#942 D4 reverted
+    # edge_hog off at every level, so force the dormant flag on to exercise the
+    # still-present machinery (epic #952 rebuilds intentional edgehogging on it).
+    c = AttackerController(attacker_num=1, level=7, rng=random.Random(0), **kw)
+    c.edge_hog = True
+    return c
 
 
 _LEFT = Ledge("left", ax=60, ay=300)  # off-stage is x < 60
