@@ -63,6 +63,18 @@ _DEFAULTS = {
     # static render. Mirrors show_status_timer_bars; an Options toggle is a later
     # child. ON by default (the feature is player-facing polish, not a dev tool).
     "show_idle_breathing": True,
+    # Movement-status HUD indicator (#977): when True, each fighter's HUD gains a
+    # "Movement:" row (under Shield HP) showing its live Player.state (idle/walk/dash/
+    # run and every other FSM state) so a human can confirm dash→run is firing (#967
+    # added sustained run but no distinct run animation yet). OFF by default → the
+    # battle render is byte-identical (goldens don't move). Options-menu toggle.
+    "show_movement_status": False,
+    # Minimal-HUD mode (#977): when True the battle HUD drops every non-essential
+    # secondary row (jumps / Shield HP / Movement / dev-info) and shows only the
+    # player-name label plus the essential emphasized Lives / Damage % corners.
+    # Instruction hints keep their own toggles. OFF by default (full HUD). Toggled
+    # from the in-battle pause menu, not the Options screen.
+    "minimal_hud": False,
 }
 
 
@@ -105,6 +117,8 @@ def _validated(raw):
     out["esc_hold_to_navigate"] = bool(raw.get("esc_hold_to_navigate", out["esc_hold_to_navigate"]))
     out["show_dev_info"] = bool(raw.get("show_dev_info", out["show_dev_info"]))
     out["show_idle_breathing"] = bool(raw.get("show_idle_breathing", out["show_idle_breathing"]))
+    out["show_movement_status"] = bool(raw.get("show_movement_status", out["show_movement_status"]))
+    out["minimal_hud"] = bool(raw.get("minimal_hud", out["minimal_hud"]))
     fs = raw.get("font_scale")
     if fs in FONT_SCALES:  # snap an unknown preset back to the default
         out["font_scale"] = fs

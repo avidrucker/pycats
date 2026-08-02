@@ -10,7 +10,7 @@ This module handles:
 
 import pygame  # type: ignore
 
-from . import runtime_settings
+from . import runtime_settings, settings
 from .config import (
     BLACK,
     MAIN_MENU_BG_COLOR,
@@ -33,8 +33,9 @@ PAUSE_INSTRUCTIONS_OFFSET_Y = 120  # instruction block below centre
 PAUSE_INSTRUCTION_LINE_SPACING = 25
 PAUSE_INSTRUCTION_FONT_SIZE = 18
 
-# What a confirmed row maps to, by index.
-_ACTIONS = ["resume", "end_match", "return_to_char_select"]
+# What a confirmed row maps to, by index. "toggle_minimal_hud" (#977) is handled
+# in-place by on_select and returns no action, so the menu stays open on pause.
+_ACTIONS = ["resume", "toggle_minimal_hud", "end_match", "return_to_char_select"]
 
 
 class PauseMenuManager(MenuController):
@@ -42,10 +43,24 @@ class PauseMenuManager(MenuController):
 
     def __init__(self, p1_controls, p2_controls):
         super().__init__(p1_controls, p2_controls)
-        self.options = ["Resume", "End Match", "Return to Character Select"]
+        # Index 1 is the minimal-HUD toggle (#977); its label is refreshed live in
+        # render(), so the initial string here is just a placeholder for layout width.
+        self.options = ["Resume", "Minimal HUD: OFF", "End Match", "Return to Character Select"]
+
+    def _hud_toggle_label(self):
+        """The live label for the minimal-HUD toggle row (#977)."""
+        return "Minimal HUD: " + ("ON" if runtime_settings.minimal_hud() else "OFF")
 
     def on_select(self, index):
-        return _ACTIONS[index] if 0 <= index < len(_ACTIONS) else None
+        action = _ACTIONS[index] if 0 <= index < len(_ACTIONS) else None
+        if action == "toggle_minimal_hud":
+            # Flip the HUD-declutter setting in place (live + persisted) and stay on the
+            # pause menu — no screen transition (mirrors OptionsMenu._activate, #977).
+            new = not runtime_settings.minimal_hud()
+            runtime_settings.set("minimal_hud", new)
+            settings.save({"minimal_hud": new})
+            return None
+        return action
 
     def render(self, surface, background_surface=None):
         """Render the pause menu with optional background."""
@@ -66,6 +81,11 @@ class PauseMenuManager(MenuController):
             ["Use W/S or ↑/↓ to navigate", "Press V or / to select"] if runtime_settings.show_controls() else []
         )
 
+        # The minimal-HUD toggle row (#977) shows its live ON/OFF state; the rest are
+        # static labels. Rebuilt each frame so a flip is reflected immediately.
+        options = list(self.options)
+        options[1] = self._hud_toggle_label()
+
         # Title + glowing button column + instruction lines (#837 shared body). Unlike
         # the main menu, the option spacing is fixed (not font-scaled) and there is no
         # F11 hint; the dim overlay above is the pause-specific pre-step.
@@ -75,7 +95,7 @@ class PauseMenuManager(MenuController):
             title_center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - PAUSE_TITLE_OFFSET_Y),
             title_size=MAIN_MENU_TITLE_SIZE,
             title_color=MAIN_MENU_TITLE_COLOR,
-            options=self.options,
+            options=options,
             selected=self.selected_option,
             press_pulse=self.press_pulse,
             options_start_y=SCREEN_HEIGHT // 2 - PAUSE_OPTIONS_OFFSET_Y,

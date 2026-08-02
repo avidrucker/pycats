@@ -56,6 +56,7 @@ MORE_CUE_FONT_SIZE = 18  # the "↑ more" / "↓ more" scroll affordances
 ROW_DESCRIPTIONS = {
     "status_bars": "Show the HUD stun / shield timer bars above each fighter.",
     "hitbox_overlay": "Draw debug hit / hurtbox outlines during battle.",
+    "movement_status": "Show each fighter's movement state (idle / walk / dash / run) above it.",
     "input_history": "Show your recent inputs in Project M notation, in-battle.",
     "controls": "Show the on-screen control hints during battle only.",
     "screen_hints": "Show the key hints on the menu / select / win screens (not battle).",
@@ -82,6 +83,7 @@ class OptionsMenu:
         self.rows = [
             "status_bars",
             "hitbox_overlay",
+            "movement_status",
             "input_history",
             "controls",
             "screen_hints",
@@ -279,6 +281,10 @@ class OptionsMenu:
             new = not runtime_settings.show_hitbox_overlay()
             runtime_settings.set("show_hitbox_overlay", new)
             settings.save({"show_hitbox_overlay": new})
+        elif row == "movement_status":
+            new = not runtime_settings.show_movement_status()
+            runtime_settings.set("show_movement_status", new)
+            settings.save({"show_movement_status": new})
         elif row == "input_history":
             new = not runtime_settings.show_input_history()
             runtime_settings.set("show_input_history", new)
@@ -326,6 +332,8 @@ class OptionsMenu:
             return "Status Bars: " + ("ON" if runtime_settings.show_status_timer_bars() else "OFF")
         if row == "hitbox_overlay":
             return "Hitbox Overlay: " + ("ON" if runtime_settings.show_hitbox_overlay() else "OFF")
+        if row == "movement_status":
+            return "Movement Status: " + ("ON" if runtime_settings.show_movement_status() else "OFF")
         if row == "input_history":
             return "Input History: " + ("ON" if runtime_settings.show_input_history() else "OFF")
         if row == "controls":

@@ -34,6 +34,8 @@ HUD_FONT_SIZE = 24  # shared size for HUD / controls / input-history / chrome te
 # total kept for back-compat; layout below anchors on the live hud_line_count().
 HUD_PLAYER_LINE_COUNT = 3  # label + jumps + Shield HP (always on; #550 moved Lives/Damage out)
 HUD_DEV_LINE_COUNT = 2  # FSM: + Shield Attempting: (dev-info-gated)
+HUD_MOVEMENT_LINE_COUNT = 1  # Movement: (movement-status-gated, under Shield HP, #977)
+HUD_MINIMAL_LINE_COUNT = 1  # just the player-name label when minimal-HUD is on (#977)
 HUD_LINE_COUNT = HUD_PLAYER_LINE_COUNT + HUD_DEV_LINE_COUNT  # 5, all secondary rows (dev-info on)
 CONTROLS_LINE_COUNT = 7  # rows drawn by draw_controls (header + 6 controls)
 HUD_BLOCK_GAP = 20  # vertical gap between stacked text blocks
@@ -57,25 +59,39 @@ INPUT_GRID_HELD_COLOR = (130, 130, 140)  # dimmer than a fresh press
 
 
 def hud_line_count():
-    """Rows draw_hud actually draws given the live dev-info flag (#545). The
-    controls / input-history blocks anchor below the HUD, so they must follow the
-    real row count, not the all-rows maximum, or a gap opens when the flag is off."""
-    return HUD_PLAYER_LINE_COUNT + (HUD_DEV_LINE_COUNT if runtime_settings.show_dev_info() else 0)
+    """Rows draw_hud actually draws given the live HUD flags. The input-history
+    block anchors below the HUD, so it must follow the real row count, not a fixed
+    maximum, or a gap opens. Minimal-HUD (#977) collapses to the single label row;
+    otherwise it's the player rows plus the movement (#977) and dev-info (#545)
+    rows when those flags are on. Mirrors hud_rows exactly."""
+    if runtime_settings.minimal_hud():
+        return HUD_MINIMAL_LINE_COUNT
+    return (
+        HUD_PLAYER_LINE_COUNT
+        + (HUD_MOVEMENT_LINE_COUNT if runtime_settings.show_movement_status() else 0)
+        + (HUD_DEV_LINE_COUNT if runtime_settings.show_dev_info() else 0)
+    )
 
 
 def hud_rows(label, p: Player):
     """The ordered *secondary* HUD row strings for player `p` — the top-anchored,
-    standard-size group. Honours the live dev-info flag (#545): the FSM / Shield
-    Attempting jargon rows are included only when show_dev_info() is on; the label /
-    jumps / Shield HP rows always are. Damage % and Lives are NOT here — they are the
-    emphasized bottom-corner rows (see hud_emphasis_rows, #550). Row order matches the
-    pre-gate layout so the flag-on secondary render is unchanged."""
+    standard-size group. Minimal-HUD (#977) collapses this to just the player-name
+    label (the essential Lives / Damage % stay — they are the emphasized bottom-corner
+    rows, see hud_emphasis_rows, #550). Otherwise it honours the live flags: the
+    Movement row (#977) renders under Shield HP when show_movement_status() is on, and
+    the FSM / Shield Attempting jargon rows when show_dev_info() is on (#545); the
+    label / jumps / Shield HP rows always render. Row order matches the pre-gate layout
+    so the flags-off secondary render is unchanged."""
+    if runtime_settings.minimal_hud():
+        return [label]
     dev = runtime_settings.show_dev_info()
     rows = [label]
     if dev:
         rows.append(f"FSM: {p.state.capitalize()}")
     rows.append(f"{p.fighter.jumps_remaining} jump{'s' if p.fighter.jumps_remaining != 1 else ''} left")
     rows.append(f"Shield HP: {p.fighter.shield_hp}")
+    if runtime_settings.show_movement_status():
+        rows.append(f"Movement: {p.state.capitalize()}")
     if dev:
         rows.append(f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}")
     return rows
@@ -195,12 +211,15 @@ def draw_input_history(surface, history, label, topright=False):
     ``│`` where it was held-but-not-freshly-pressed — so a same-frame combo, a
     sequential press, and a held-while-pressed one look different (the #21 strip
     could not tell them apart). Glyphs go through ``render_text_mixed`` (the same
-    Unicode path draw_controls uses). The block anchors under the HUD (its live
-    row count, #545) + controls (7 lines) blocks; for P2 it hugs the right edge."""
+    Unicode path draw_controls uses). The block anchors directly under the HUD (its
+    live row count, #545/#977) — controls are pause-only (#977); for P2 it hugs the
+    right edge."""
     frames = history.frames()
     n = INPUT_HISTORY_FRAMES
     block_w = INPUT_GRID_LABEL_W + n * INPUT_GRID_CELL_W
-    top_y = HUD_PADDING + (hud_line_count() + CONTROLS_LINE_COUNT) * HUD_SPACING + 2 * HUD_BLOCK_GAP
+    # Controls are now pause-only (#977), so in battle the input-history grid anchors
+    # directly below the HUD's live row count (was below HUD + the controls block).
+    top_y = HUD_PADDING + hud_line_count() * HUD_SPACING + HUD_BLOCK_GAP
     block_x = (SCREEN_WIDTH - HUD_PADDING - block_w) if topright else HUD_PADDING
     cells_x0 = block_x + INPUT_GRID_LABEL_W
     # Recorded frames right-align inside the N-column window (newest fixed at the

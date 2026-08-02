@@ -167,10 +167,8 @@ class BattleScreen:
         if self.player1 and self.player2:
             draw_hud(surface, self.player1, "P1")
             draw_hud(surface, self.player2, "P2", topright=True)
-            # Fighter-controls display (#284), gated on the live toggle (default ON).
-            if runtime_settings.show_controls():
-                draw_controls(surface, self.player1, "P1")
-                draw_controls(surface, self.player2, "P2", topright=True)
+            # Fighter-controls display (#284) is now pause-only (#977) — see
+            # render_paused; it no longer draws during live play.
             # Input-history strip (#21), gated on the live toggle (default ON).
             if runtime_settings.show_input_history():
                 draw_input_history(surface, self.p1_history, "P1")
@@ -196,4 +194,10 @@ class BattleScreen:
         if self.player1 and self.player2:
             draw_hud(background, self.player1, "P1")
             draw_hud(background, self.player2, "P2", topright=True)
+            # Fighter-controls display (#284) is pause-only now (#977): draw it on the
+            # frozen background here, gated on show_controls (default ON), so the
+            # per-fighter key scheme is visible while paused instead of during play.
+            if runtime_settings.show_controls():
+                draw_controls(background, self.player1, "P1")
+                draw_controls(background, self.player2, "P2", topright=True)
         pause_menu.render(surface, background)

@@ -78,12 +78,12 @@ def _draw_pause_hint(surface):
 
 def test_render_matches_inline_playing_composition():
     """render() == fill(BG) -> render_battle -> render_attacks ->
-    render_hitbox_overlay -> draw_hud x2 -> draw_controls x2 ->
-    draw_input_history x2 -> pause hint (the playing branch's inline block),
-    byte-for-byte. The input-history strip (#21) is default-ON, so it's part of
-    the composite; the 'P: Pause Game' hint is part of render() (battle HUD,
-    #279) — the FPS/fullscreen/debug shell overlays moved to draw_shell_chrome
-    (see test_shell_chrome)."""
+    render_hitbox_overlay -> draw_hud x2 -> draw_input_history x2 -> pause hint
+    (the playing branch's inline block), byte-for-byte. The input-history strip
+    (#21) is default-ON, so it's part of the composite; the controls display is
+    pause-only now (#977), so it is NOT in the playing composite; the 'P: Pause
+    Game' hint is part of render() (battle HUD, #279) — the FPS/fullscreen/debug
+    shell overlays moved to draw_shell_chrome (see test_shell_chrome)."""
     runtime_settings.seed(settings.defaults())  # input-history strip default ON (#21)
     bs = _battle()
     platforms = []
@@ -95,8 +95,6 @@ def test_render_matches_inline_playing_composition():
     render_hitbox_overlay(expected, bs.players, bs.attacks)  # #219 debug overlay
     draw_hud(expected, bs.player1, "P1")
     draw_hud(expected, bs.player2, "P2", topright=True)
-    draw_controls(expected, bs.player1, "P1")
-    draw_controls(expected, bs.player2, "P2", topright=True)
     draw_input_history(expected, bs.p1_history, "P1")  # #21 default-ON strip
     draw_input_history(expected, bs.p2_history, "P2", topright=True)
     _draw_pause_hint(expected)
@@ -111,7 +109,9 @@ def test_render_matches_inline_playing_composition():
 def test_render_paused_excludes_pause_hint():
     """render_paused()'s frozen-battle background must NOT carry the 'P: Pause Game'
     hint — you can't pause while already paused. Guards the #279 move: the hint went
-    into render() (playing only), not into the shared _draw_battle path."""
+    into render() (playing only), not into the shared _draw_battle path. Controls ARE
+    part of the paused background now (#977), default show_controls ON."""
+    runtime_settings.seed(settings.defaults())  # show_controls default ON (#977)
     bs = _battle()
     platforms = []
 
@@ -123,6 +123,8 @@ def test_render_paused_excludes_pause_hint():
     render_hitbox_overlay(bg, bs.players, bs.attacks)
     draw_hud(bg, bs.player1, "P1")
     draw_hud(bg, bs.player2, "P2", topright=True)
+    draw_controls(bg, bs.player1, "P1")  # #977 controls are pause-only now
+    draw_controls(bg, bs.player2, "P2", topright=True)
 
     captured = {}
 
@@ -136,9 +138,10 @@ def test_render_paused_excludes_pause_hint():
 
 
 def test_render_paused_freezes_battle_onto_intermediate_background():
-    """render_paused() composites the frozen battle + HUD (no controls) onto an
-    INTERMEDIATE background surface, then delegates to pause_menu.render(surface,
-    background) — matching game.py's pause branch."""
+    """render_paused() composites the frozen battle + HUD + controls (#977: controls
+    are pause-only, default ON) onto an INTERMEDIATE background surface, then delegates
+    to pause_menu.render(surface, background) — matching game.py's pause branch."""
+    runtime_settings.seed(settings.defaults())  # show_controls default ON (#977)
     bs = _battle()
     platforms = []
 
@@ -149,6 +152,8 @@ def test_render_paused_freezes_battle_onto_intermediate_background():
     render_hitbox_overlay(expected_bg, bs.players, bs.attacks)  # #219 debug overlay
     draw_hud(expected_bg, bs.player1, "P1")
     draw_hud(expected_bg, bs.player2, "P2", topright=True)
+    draw_controls(expected_bg, bs.player1, "P1")  # #977 controls are pause-only now
+    draw_controls(expected_bg, bs.player2, "P2", topright=True)
 
     captured = {}
 

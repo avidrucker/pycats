@@ -84,8 +84,17 @@ def test_options_row_present_labelled_and_toggles(tmp_path, monkeypatch):
     assert m._row_label("controls") == "Controls: OFF"
 
 
-# ---- battle_screen.py: _draw_battle gates draw_controls -------------------- #
-def test_draw_battle_gates_controls_on_toggle():
+# ---- battle_screen.py: controls are pause-only now (#977) ------------------ #
+class _CapturePauseMenu:
+    """Captures the frozen-battle background render_paused composites."""
+
+    def render(self, surface, background):
+        self.background = background
+
+
+def test_live_battle_render_is_invariant_to_controls_toggle():
+    """After #977 the controls display is pause-only, so toggling show_controls no
+    longer changes the LIVE battle render (_draw_battle draws no controls)."""
     bs = BattleScreen(_P1, _P2)
     bs.create_from_selection("calico", "tabby")
     platforms = build_stage()
@@ -98,4 +107,23 @@ def test_draw_battle_gates_controls_on_toggle():
     runtime_settings.set("show_controls", False)
     bs._draw_battle(off, platforms)
 
-    assert pygame.image.tobytes(on, "RGB") != pygame.image.tobytes(off, "RGB")
+    assert pygame.image.tobytes(on, "RGB") == pygame.image.tobytes(off, "RGB")
+
+
+def test_paused_render_gates_controls_on_toggle():
+    """The relocated controls (#977) render on the paused frame's frozen background,
+    gated on show_controls — toggling it changes that background."""
+    bs = BattleScreen(_P1, _P2)
+    bs.create_from_selection("calico", "tabby")
+    platforms = build_stage()
+    runtime_settings.seed(settings.defaults())
+
+    runtime_settings.set("show_controls", True)
+    on_menu = _CapturePauseMenu()
+    bs.render_paused(pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT)), platforms, on_menu)
+
+    runtime_settings.set("show_controls", False)
+    off_menu = _CapturePauseMenu()
+    bs.render_paused(pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT)), platforms, off_menu)
+
+    assert pygame.image.tobytes(on_menu.background, "RGB") != pygame.image.tobytes(off_menu.background, "RGB")

@@ -80,6 +80,20 @@ def show_idle_breathing():
     return bool(get("show_idle_breathing"))
 
 
+def show_movement_status():
+    """Live toggle the HUD "Movement:" row honours (#977). Default off — a dev turns
+    it on to confirm the idle/walk/dash/run FSM transitions on screen; off renders the
+    battle byte-identical (goldens don't move)."""
+    return bool(get("show_movement_status"))
+
+
+def minimal_hud():
+    """Live toggle for minimal-HUD mode (#977): when on, the battle HUD shows only the
+    player-name label plus the essential Lives / Damage % corners, dropping the jumps /
+    Shield HP / Movement / dev-info rows. Flipped from the pause menu. Default off."""
+    return bool(get("minimal_hud"))
+
+
 def font_scale():
     """Live UI-text size multiplier (0.5 / 1.0 / 2.0) from the font_scale preset
     (#345). Unknown presets fall back to 1.0 (standard)."""
