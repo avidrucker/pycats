@@ -684,6 +684,16 @@ _PRONE_HURTBOX = Hurtbox(
     )
 )
 
+# --- Idle rest loop (#1105, Decision A #1104) ---------------------------------
+# Idle as a first-class MoveData so it flows through the standard move pipeline (editor
+# move cycle / timeline / scrubber / reference-GIF layer) like every attack — no bespoke
+# idle mechanism. No active hitbox window → empty hitboxes; the posture stand hurtbox
+# (_HURTBOX) already covers idle (#1082), so no per-move hurtbox override. Loop length =
+# PM Mario `Wait1` subaction, brawllib_rs datamine (env #614): 51 frames (FOUND) — the same
+# figure `render/body.py` uses for Nalio's breathing period (_NALIO_WAIT1_LOOP_FRAMES, #753).
+# Modeled as recovery with startup = active = 0.
+_WAIT = MoveData(name="wait", in_air=False, startup=0, active=0, recovery=51, hitboxes=())
+
 # --- Assembled FighterData ----------------------------------------------------
 NALIO_FIGHTER_DATA = FighterData(
     weight=100,  # PM3.6 Mario (== pycats default → no KB change)
@@ -711,6 +721,7 @@ NALIO_FIGHTER_DATA = FighterData(
         "fsmash": _FSMASH,
         "usmash": _USMASH,
         "dsmash": _DSMASH,
+        "wait": _WAIT,  # idle rest loop (#1105)
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,

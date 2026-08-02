@@ -620,6 +620,17 @@ _GNOK_DSMASH = MoveData(
 )
 
 
+# --- Idle rest loop (#1105, Decision A #1104) ---------------------------------
+# Idle as a first-class MoveData so it flows through the standard move pipeline (editor
+# move cycle / timeline / scrubber / reference-GIF layer) like every attack — no bespoke
+# idle mechanism. No active hitbox window → empty hitboxes; the posture stand hurtbox
+# (_HURTBOX) already covers idle (#1082), so no per-move hurtbox override. Loop length =
+# PM DK `Wait1` subaction, brawllib_rs datamine (env #614): 141 frames (FOUND) — the longest
+# idle loop of the four cats (DK's heavy, slow sway). Modeled as recovery with startup =
+# active = 0.
+_WAIT = MoveData(name="wait", in_air=False, startup=0, active=0, recovery=141, hitboxes=())
+
+
 GNOK_FIGHTER_DATA = FighterData(
     # Own measured big body + 4-circle hurtbox (spec §2); crouch/prone geometry; the faithful
     # PM3.6 velocity scalars authored raw-first via vel() (#785). The full V1 striking kit is
@@ -641,6 +652,7 @@ GNOK_FIGHTER_DATA = FighterData(
         "fsmash": _GNOK_FSMASH,
         "usmash": _GNOK_USMASH,
         "dsmash": _GNOK_DSMASH,
+        "wait": _WAIT,  # idle rest loop (#1105)
     },
     crouch_size=_CROUCH_SIZE,
     crouch_hurtbox=_CROUCH_HURTBOX,

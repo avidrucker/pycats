@@ -497,6 +497,14 @@
           "circle": [32, -7, 19]
         }
       ]
+    },
+    "wait": {
+      "name": "wait",
+      "in_air": false,
+      "startup": 0,
+      "active": 0,
+      "recovery": 71,
+      "hitboxes": []
     }
   },
   "crouch_hurtbox": {
