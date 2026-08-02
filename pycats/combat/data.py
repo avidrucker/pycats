@@ -148,6 +148,50 @@ class VelocityPhase:
 
 
 @dataclass(frozen=True)
+class LandingSpawn:
+    """A projectile spawned when a move's fighter touches the ground (#974, B-cluster
+    of #566 Final Cutter — the up-B's ground shockwave beam).
+
+    Unlike the mid-move projectile (spawned on an active move-clock frame in
+    `Player._spawn_move_hitbox` when `projectile_speed` is set), this fires on the
+    touchdown EVENT (`Player._step_physics` detects the airborne->ground frame). The
+    event trigger is canon-required, not a preference: the descent-to-floor distance
+    varies (off a ledge, on a taller stage), so a fixed move-clock frame would desync
+    the beam (#1066 Q2 — the Melee decomp fires the landing phase in a ground-contact
+    callback, meleelight in `land()`). By touchdown the move has usually ended
+    (`current_move is None`, routed to `helpless`), so the spawn keys off a descriptor
+    stashed at move start (`Player._pending_landing_spawn`), not off the move clock.
+
+    Reuses the #223/#266 `Projectile` primitive — only the trigger (on-land) and the
+    spawn position are new. The projectile resolves its circles against the fighter's
+    grounded rect at touchdown, so author the hitbox circle at the feet offset. It
+    travels outward at `speed` px/frame along the facing direction; `both_directions`
+    emits a mirrored pair for a symmetric shockwave (assumes a body-centred box, dx≈0,
+    since the circle is resolved against the same facing for both). `landing_lag` is
+    the grounded action-lock applied on touchdown (routed via the existing
+    `landing_lag` chart state, #202); 0 recovers straight to idle. Generalizes to any
+    special's landing effect (#1066 Q4), not Birky-only.
+    """
+
+    hitboxes: tuple[Hitbox, ...]
+    speed: float
+    lifetime: int
+    landing_lag: int = 0
+    both_directions: bool = False
+    gravity: float = 0.0
+
+    def __post_init__(self) -> None:
+        if not self.hitboxes:
+            raise ValueError("LandingSpawn requires at least one hitbox")
+        if self.lifetime < 1:
+            raise ValueError(f"LandingSpawn lifetime {self.lifetime} must be >= 1")
+        if self.speed < 0:
+            raise ValueError(f"LandingSpawn speed {self.speed} must be >= 0")
+        if self.landing_lag < 0:
+            raise ValueError(f"LandingSpawn landing_lag {self.landing_lag} must be >= 0")
+
+
+@dataclass(frozen=True)
 class MoveData:
     """Timing and hitbox data for a single move.
 
@@ -213,6 +257,15 @@ class MoveData:
     # Forward ref (Hurtbox is defined below): safe under `from __future__ import
     # annotations`, which stringifies all annotations.
     hurtbox: Hurtbox | None = None
+    # Landing-triggered shockwave (#974, B-cluster of #566): a LandingSpawn spawned
+    # the frame the fighter touches down (the engine hook is
+    # `Player._spawn_landing_shockwave`), modelling Final Cutter's ground beam. The
+    # trigger is the touchdown EVENT (not a move-clock frame), so a varying
+    # descent-to-floor distance can't desync it (#1066 Q2 / see LandingSpawn).
+    # Defaults None → every existing move is byte-identical (golden-safe); the
+    # serializer omits it (omit == default). Generalizes to any special's landing
+    # effect (#1066 Q4), reusing the #223/#266 Projectile primitive.
+    landing_spawn: LandingSpawn | None = None
 
     def __post_init__(self) -> None:
         # Per-hitbox temporal-window cross-check (#204). Per-box shape (paired,
@@ -365,6 +418,12 @@ def _hitbox_from_json(node: dict) -> Hitbox:
     return Hitbox(**kw)  # __post_init__ validates the window pairing
 
 
+def _landing_spawn_from_json(node: dict) -> LandingSpawn:
+    kw = _select(node, LandingSpawn)
+    kw["hitboxes"] = tuple(_hitbox_from_json(h) for h in node["hitboxes"])
+    return LandingSpawn(**kw)  # __post_init__ validates lifetime/speed/lag
+
+
 def _move_from_json(node: dict) -> MoveData:
     kw = _select(node, MoveData)
     kw["hitboxes"] = tuple(_hitbox_from_json(h) for h in node["hitboxes"])
@@ -372,6 +431,8 @@ def _move_from_json(node: dict) -> MoveData:
         kw["hurtbox"] = _hurtbox_from_json(node["hurtbox"])
     if node.get("velocity_phases"):  # scripted mid-move velocity SETs (#973)
         kw["velocity_phases"] = tuple(VelocityPhase(*triple) for triple in node["velocity_phases"])
+    if node.get("landing_spawn") is not None:  # touchdown shockwave (#974)
+        kw["landing_spawn"] = _landing_spawn_from_json(node["landing_spawn"])
     return MoveData(**kw)  # __post_init__ validates windows + phases vs duration
 
 
@@ -415,7 +476,8 @@ def _fighter_from_json(doc: dict) -> FighterData:
 # Structural fields handled explicitly per dataclass (excluded from the generic
 # scalar sweep). Circles go inline; hurtboxes/moves/sizes get their own walk.
 _HITBOX_STRUCTURAL = frozenset({"circle"})
-_MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox", "velocity_phases"})
+_LANDING_SPAWN_STRUCTURAL = frozenset({"hitboxes"})
+_MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox", "velocity_phases", "landing_spawn"})
 _FIGHTER_STRUCTURAL = frozenset(
     {"hurtbox", "moves", "stand_size", "crouch_size", "crouch_hurtbox", "prone_size", "prone_hurtbox"}
 )
@@ -466,6 +528,12 @@ def _hitbox_to_json(hb: Hitbox) -> dict:
     return out
 
 
+def _landing_spawn_to_json(ls: LandingSpawn) -> dict:
+    out = _nondefault_scalars(ls, _LANDING_SPAWN_STRUCTURAL)
+    out["hitboxes"] = [_hitbox_to_json(hb) for hb in ls.hitboxes]
+    return out
+
+
 def _move_to_json(m: MoveData) -> dict:
     out = _nondefault_scalars(m, _MOVE_STRUCTURAL)
     out["hitboxes"] = [_hitbox_to_json(hb) for hb in m.hitboxes]
@@ -473,6 +541,8 @@ def _move_to_json(m: MoveData) -> dict:
         out["hurtbox"] = _hurtbox_to_json(m.hurtbox)
     if m.velocity_phases:  # scripted mid-move velocity SETs (#973); omit when empty
         out["velocity_phases"] = [[vp.frame, vp.vx, vp.vy] for vp in m.velocity_phases]
+    if m.landing_spawn is not None:  # touchdown shockwave (#974); omit when absent
+        out["landing_spawn"] = _landing_spawn_to_json(m.landing_spawn)
     return out
 
 

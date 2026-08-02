@@ -371,6 +371,12 @@ class FighterInput:
                         facing = 1 if p.fighter.facing_right else -1
                         p.fighter.vel.y = move.recovery_vy
                         p.fighter.vel.x = move.recovery_vx * facing
+                    # Landing shockwave (#974, B-cluster of #566): a move that declares
+                    # a `landing_spawn` (Final Cutter's ground beam) stashes its
+                    # descriptor now — the spawn fires on the eventual touchdown, by
+                    # which point the move has ended (current_move is None). Stashed on
+                    # EVERY start (None for a normal move) so it never goes stale.
+                    p._pending_landing_spawn = move.landing_spawn
             elif is_special:
                 # Not-yet-implemented: an input mapped to a move the fighter does not
                 # define (an undefined special resolves to None — specials have no

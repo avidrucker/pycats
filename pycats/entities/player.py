@@ -177,6 +177,16 @@ class Player(pygame.sprite.Sprite):
         # frame convention is unchanged (first tick -> frame 1).
         self._clock = MoveClock()
 
+        # Landing-triggered shockwave (#974, B-cluster of #566): a recovery/special
+        # move that declares a `landing_spawn` stashes its descriptor here at move
+        # start (in fighter_input) — because by touchdown the move has ended
+        # (`current_move is None`, routed to helpless), so the spawn can't key off the
+        # move clock. `_step_physics` fires it on the airborne->ground frame and hands
+        # the descriptor to `_spawn_landing_shockwave` via `_landing_spawn_now`. Both
+        # None until a landing-spawn move arms them → no-op / golden-safe.
+        self._pending_landing_spawn = None
+        self._landing_spawn_now = None
+
         # Input → action translator (jump/dodge/shield/attack/move); #73.
         self._input = FighterInput(self)
 
@@ -241,6 +251,8 @@ class Player(pygame.sprite.Sprite):
         new-match reset (battle_screen)."""
         self.fighter.reset_to_spawn()
         self._clock.reset()  # attack_timer/current_move/move_frame derive from this
+        self._pending_landing_spawn = None  # #974: don't carry an armed shockwave across a life
+        self._landing_spawn_now = None
         self.tail.reset()  # re-lay the tail at the spawn point (#41)
 
     # ---- move-progress, delegated to MoveClock (#71) ----
@@ -324,6 +336,7 @@ class Player(pygame.sprite.Sprite):
         self._tick_timers_and_getup(input_frame, held)
         self._spawn_move_hitbox(attack_group)
         self._apply_velocity_phases()
+        self._spawn_landing_shockwave(attack_group)
 
         # Update tail physics
         self.tail.update(platforms)
@@ -467,9 +480,21 @@ class Player(pygame.sprite.Sprite):
         Skipped while hanging — the fighter is pinned to the ledge. step_physics
         returns True on a #145 auto-knockdown landing; the adapter applies force_prone
         (the domain returns intent — #298/S5)."""
+        was_airborne = not self.fighter.on_ground
         if self.fighter.grabbed_ledge is None:
             if step_physics(self, platforms, held):
                 self.force_prone(KNOCKDOWN_PRONE_FRAMES)
+        # Landing-triggered shockwave (#974): a move that armed `_pending_landing_spawn`
+        # fires it on the touchdown EVENT — the frame the fighter goes airborne->ground
+        # — not on a move-clock frame, so a varying descent-to-floor distance (off a
+        # ledge, taller stage) can't desync the beam (#1066 Q2). The spawn itself needs
+        # attack_group, so stash the descriptor for `_spawn_landing_shockwave`; set the
+        # landing lag here (a Player-applied Fighter timer, like force_prone) so the
+        # chart routes helpless -> landing_lag -> idle from this frame's engine.tick.
+        if was_airborne and self.fighter.on_ground and self._pending_landing_spawn is not None:
+            self._landing_spawn_now = self._pending_landing_spawn
+            self._pending_landing_spawn = None
+            self.fighter.landing_lag_timer = self._landing_spawn_now.landing_lag
 
     def _try_ledge_grab(self, ledges):
         """Grab a ledge after physics (#14 + #311 edge-hog).
@@ -655,6 +680,37 @@ class Player(pygame.sprite.Sprite):
             if phase.frame == self.move_frame:
                 self.fighter.vel.y = phase.vy
                 self.fighter.vel.x = phase.vx * facing
+
+    def _spawn_landing_shockwave(self, attack_group):
+        """Spawn a move's `landing_spawn` the frame its fighter touched down (#974).
+
+        The touchdown detection + landing-lag set happen in `_step_physics` (the seam
+        where `on_ground` flips); this consumes the stashed descriptor once
+        `attack_group` is in hand. The projectile resolves its circles against the
+        fighter's current (grounded) rect, so a shockwave circle authored at the feet
+        offset lands at the feet; it travels outward at `speed` along the facing
+        direction (`both_directions` mirrors a symmetric pair, assuming a body-centred
+        box). Reuses the #223/#266 `Projectile` primitive — only the trigger (on-land)
+        and the spawn position (feet) are new, per #974. No stashed descriptor -> a
+        no-op → every existing move is byte-identical (golden-safe)."""
+        spawn = self._landing_spawn_now
+        if spawn is None:
+            return
+        self._landing_spawn_now = None
+        facing = 1 if self.fighter.facing_right else -1
+        directions = (facing, -facing) if spawn.both_directions else (facing,)
+        for d in directions:
+            attack_group.add(
+                Projectile(
+                    self,
+                    hitboxes=spawn.hitboxes,
+                    in_air=False,  # a grounded beam (clanks like a normal ground hit)
+                    disappear_on_hit=False,
+                    lifetime=spawn.lifetime,
+                    velocity=(d * spawn.speed, 0),
+                    gravity=spawn.gravity,  # 0 by default: a flat ground beam
+                )
+            )
 
     def _apply_posture_geometry(self):
         """Resize the body Rect to match a lowered posture, feet planted.
