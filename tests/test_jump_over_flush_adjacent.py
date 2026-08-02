@@ -47,7 +47,7 @@ def _step(players, plats, held, pressed):
     fi = InputFrame(held=set(held), pressed=set(pressed), released=set())
     for p in players:
         p.update(fi, plats, pg.sprite.Group())
-    resolve_player_push(players)
+    resolve_player_push(players, plats)
 
 
 def _p1_jumps_toward_p2(p1, p2, players, plats):

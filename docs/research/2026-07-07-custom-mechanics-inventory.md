@@ -96,12 +96,11 @@ gate), plus the GUESS rows.
 | `KNOCKBACK_DECAY` | 0.145 px/f | Smash decay 0.051/frame | Scaled to the 960px stage, **preserving the 1.7 decay/launch ratio**. (#44) — seed #8. |
 | `GETUP_ROLL_FRAMES` | 16 frames | Melee getup roll 35f, intangible 1-14..1-24 | pycats runs a **shorter roll on its own scale**; duration == its intangibility window. (#146) |
 
-### 2b. TUNED rows (deliberate design values, not seeking canon) — all 24
+### 2b. TUNED rows (deliberate design values, not seeking canon) — all 23
 
 | Constant | value·unit | Note (from `provenance.py`) |
 |---|---|---|
 | `DODGE_SPEED` | 14 px/f | pycats ground-roll boost; Melee rolls animation-driven, no single canon. |
-| `JOSTLE_MIN_VOVERLAP_FRAC` | 0.8 factor | vertical-overlap gate for the PM X-only push heuristic (#68). |
 | `SHIELD_MAX_HP` | 50 hp | pycats shield-HP model; Melee uses a different shield-health/decay model (#12). |
 | `SHIELD_DRAIN_PER_FRAME` | 0.2 hp/f | pycats shield drain/regain rate, no canon equivalent (#111). |
 | `HITSTUN_FLOOR` | 1 frame | pycats floor ≥1f for any clean hit; SmashWiki documents no canon minimum (#138). |
@@ -132,7 +131,7 @@ gate), plus the GUESS rows.
 under "divergences worth flagging" or leave to the registry.
 
 **Domain finding:** the registry is the complete marked-divergence surface. Beyond the 4
-DIVERGENCE + 24 TUNED + 8 GUESS rows above, **nothing further in `provenance.py` is
+DIVERGENCE + 23 TUNED + 8 GUESS rows above, **nothing further in `provenance.py` is
 non-canon** — the remaining rows are FOUND (PM-sourced, out of scope). One accuracy flag:
 `SMASH_CHARGE_FRAMES` (59) is FOUND but **primary-unconfirmed** (single secondary, engine-
 hardcoded; needs a PM DOL/RAM dump per #626) — not a divergence, but #604 might note the
@@ -310,7 +309,7 @@ the seeds; the many `test_render_*` files are unit-level, not new oracle models.
 ## Completeness gate
 
 - [x] **Every DIVERGENCE row** (4) has an entry — §2a.
-- [x] **Every TUNED row** (24) has an entry — §2b.
+- [x] **Every TUNED row** (23) has an entry — §2b.
 - [x] **All 8 seed mechanics** covered — table above.
 - [x] **Each domain** ends with a found-or-"nothing beyond seeds" note — §§1–6.
 - [x] Each item carries a **landmark + how-it-works line**.

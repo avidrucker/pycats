@@ -55,12 +55,15 @@ MAX_JUMPS = 2  # single + double
 GROUND_FRICTION = 0.5  # 1.0 = ice; 0.0 = instant stop
 AIR_FRICTION = 0.85
 
-# Fighter-vs-fighter "jostle" (Project M X-only push, issue #1) only applies when
-# the two bodies are at substantially the same level — i.e. a grounded-contact
-# interaction. Require their vertical overlap to be at least this fraction of the
-# shorter body's height; below it, one fighter is clearly above the other
-# (jumping over / standing on a head) and must NOT shove the one below (issue #68).
-JOSTLE_MIN_VOVERLAP_FRAC = 0.8
+# Fighter-vs-fighter "jostle" (Project M ground push, #1/#1020, ADR-0012). A literal
+# port of meleelight's grounded jostle (schmooblidon/meleelight @ 27af171,
+# src/physics/physics.js). Authored raw-first in Smash *units*; the pixel trigger /
+# push derive at the seam via combat.units.u() in core/physics.py (ADR-0011 — no bare
+# × PX_PER_UNIT here). Both are FOUND from meleelight, a SECONDARY reimplementation
+# proxy; the exact retail Melee/Brawl/PM 3.6 magnitude is ⚠ UNDOCUMENTED (the push is
+# an engine global, not per-move script data). See pycats/combat/provenance.py.
+JOSTLE_TRIGGER_UNITS = 6.5  # centre-distance below which the push fires (meleelight `diff < 6.5`)
+JOSTLE_PUSH_UNITS = 0.3  # per-fighter position nudge each overlap frame (meleelight `pos.x += ±0.3`)
 
 # Timers (frames)
 HURT_TIME = 12

@@ -59,7 +59,6 @@ playtest starts) rows are out of scope — read them straight from the registry.
 | `KNOCKBACK_DECAY` | `pycats/config/physics.py::KNOCKBACK_DECAY` | DIVERGENCE | `pycats/combat/provenance.py` | 960px-scaled, preserves 1.7 decay/launch ratio |
 | `GETUP_ROLL_FRAMES` | `pycats/config/physics.py::GETUP_ROLL_FRAMES` | DIVERGENCE | `pycats/combat/provenance.py` | shorter roll; duration == intangibility window |
 | `DODGE_SPEED` | `pycats/config/physics.py::DODGE_SPEED` | TUNED | `pycats/combat/provenance.py` | ground-roll boost; no single canon |
-| `JOSTLE_MIN_VOVERLAP_FRAC` | `pycats/config/physics.py::JOSTLE_MIN_VOVERLAP_FRAC` | TUNED | `pycats/combat/provenance.py` | vertical-overlap gate for X-only push |
 | `SHIELD_MAX_HP` | `pycats/config/physics.py::SHIELD_MAX_HP` | TUNED | `pycats/combat/provenance.py` | pycats shield-HP model |
 | `SHIELD_DRAIN_PER_FRAME` | `pycats/config/physics.py::SHIELD_DRAIN_PER_FRAME` | TUNED | `pycats/combat/provenance.py` | shield drain/regain rate, no canon |
 | `HITSTUN_FLOOR` | `pycats/config/physics.py::HITSTUN_FLOOR` | TUNED | `pycats/combat/provenance.py` | ≥1f floor for any clean hit |

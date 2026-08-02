@@ -147,7 +147,7 @@ class BattleScreen:
         self.p2_history.record(pressed, held, self.p2_keys)
         for p in self.players:
             p.update(frame_input, platforms, self.attacks, self._ledges)
-        resolve_player_push(list(self.players))
+        resolve_player_push(list(self.players), platforms)
         self.attacks.update(platforms)  # #266: projectiles need platforms to bounce
         combat.process_hits(self.players, self.attacks)
 

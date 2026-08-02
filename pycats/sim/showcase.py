@@ -139,15 +139,18 @@ _SEGMENTS = (
         # lip lets the grab register before the back-press holds the hang.
         # dwell_at (#412): freeze at f542 while P1 hangs on the ledge, not the walking f485.
         # Frames shifted +80 by the inserted fireball beat (#432). The right-walk runs
-        # longer (f485-540, was f485-500) because #898 rooted the earlier jabs, so P1
+        # longer (f485-538, was f485-500) because #898 rooted the earlier jabs, so P1
         # enters this beat ~230px further left than the pre-#898 cut and needs the extra
-        # steps to reach the lip before the back-press at f542.
+        # steps to reach the lip before the back-press. The grab window sits 2 frames
+        # earlier than the pre-#1020 cut (right ..538 / back-press 540..) because the
+        # PM-faithful ground jostle (ADR-0012) leaves P1 a hair further right entering
+        # this beat, so it reaches the lip at f538 instead of f540.
         "Ledge grab — hang on the edge",
         anchor=BOTTOM_CENTER,
         start=485,
         end=600,
         dwell_at=542,
-        spans=(InputSpan(485, 540, 1, "right"), InputSpan(542, 595, 1, "left")),
+        spans=(InputSpan(485, 539, 1, "right"), InputSpan(540, 595, 1, "left")),
     ),
     DemoSegment(
         # From the hang (still holding at ~f585, auto-release not until ~f621), P1 presses

@@ -264,7 +264,7 @@ def run_battle(
             fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
         for p in players:
             p.update(fi, platforms, attacks, ledges)
-        resolve_player_push(list(players))
+        resolve_player_push(list(players), platforms)
         attacks.update(platforms)  # #266: projectiles need platforms to bounce
         combat.process_hits(players, attacks)
         match.tick()

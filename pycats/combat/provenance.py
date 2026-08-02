@@ -136,9 +136,24 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "WAVEDASH_LANDING_LAG": Provenance(
         10, "frames", "SmashWiki:Wavedash — Melee/PM landing lag ~10 frames (60 FPS maps 1:1)", "FOUND", 202
     ),
-    # ---- fighter-vs-fighter jostle (#1/#68) ----
-    "JOSTLE_MIN_VOVERLAP_FRAC": Provenance(
-        0.8, "factor", "deliberate vertical-overlap gate for the PM X-only push heuristic", "TUNED", 68
+    # ---- fighter-vs-fighter ground jostle (#1/#1020, ADR-0012) ----
+    # Raw Smash units (config holds the unit; core/physics.py derives px via units.u()).
+    # SECONDARY proxy: meleelight is a faithful reimplementation, NOT the retail ROM; the
+    # exact retail Melee/Brawl/PM 3.6 magnitude is ⚠ UNDOCUMENTED (engine global, not
+    # per-move script data). Direct source literals → no derivation.
+    "JOSTLE_TRIGGER_UNITS": Provenance(
+        6.5,
+        "unit",
+        "meleelight @27af171 src/physics/physics.js `if (diff < 6.5 && diff > 0)` (SECONDARY proxy; retail PM 3.6 magnitude UNDOCUMENTED)",  # noqa: E501
+        "FOUND",
+        1020,
+    ),
+    "JOSTLE_PUSH_UNITS": Provenance(
+        0.3,
+        "unit",
+        "meleelight @27af171 src/physics/physics.js `pos.x += sign(...) * -0.3` (SECONDARY proxy; retail PM 3.6 magnitude UNDOCUMENTED)",  # noqa: E501
+        "FOUND",
+        1020,
     ),
     # ---- shield / shieldstun / shield-break (#12/#140/#111) ----
     "SHIELD_BREAK_STUN_MAX": Provenance(
@@ -398,7 +413,8 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "DODGE_AIR_SPEED",
         "WAVEDASH_ANGLE_DEG",
         "WAVEDASH_LANDING_LAG",
-        "JOSTLE_MIN_VOVERLAP_FRAC",
+        "JOSTLE_TRIGGER_UNITS",
+        "JOSTLE_PUSH_UNITS",
         "SHIELD_BREAK_STUN_MAX",
         "SHIELD_BREAK_STUN_MIN",
         "SHIELDSTUN_FACTOR",

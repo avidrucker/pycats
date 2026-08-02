@@ -19,17 +19,24 @@ class _DropThrough(Protocol):
 
 
 # Read tuning constants from config once
+from ..combat.units import u
 from ..config import (
     AIR_FRICTION,
     GRAVITY,
     GROUND_FRICTION,
-    JOSTLE_MIN_VOVERLAP_FRAC,
+    JOSTLE_PUSH_UNITS,
+    JOSTLE_TRIGGER_UNITS,
     MAX_FALL_SPEED,
 )
 
 # Physics thresholds (#446: named from inline literals).
 VEL_DEADZONE = 0.05  # |vel.x| below this snaps to 0 after friction (dead-zone)
-COLLISION_PUSH_SPLIT = 0.5  # a one-sided push shares speed: both move at half the pusher's
+
+# Fighter-vs-fighter ground jostle (ADR-0012, #1020): raw Smash units authored in
+# config; the integer-pixel trigger / push derive here at the units seam (ADR-0011 —
+# u() rounds because the sim is integer-pixel, #80). round(6.5 × 5.4)=35, round(0.3 × 5.4)=2.
+JOSTLE_TRIGGER_PX = u(JOSTLE_TRIGGER_UNITS)  # centre-distance below which the push fires
+JOSTLE_PUSH_PX = u(JOSTLE_PUSH_UNITS)  # per-fighter position nudge each overlap frame
 
 # ------------------------------------------------------------------ vertical
 
@@ -164,64 +171,59 @@ def apply_horizontal_friction(vel: pg.Vector2, on_ground: bool, factor_ground: f
 
 
 # -------------------------------------------------- player-to-player collision
-def resolve_player_push(players: list[Player]) -> None:  # noqa: F821  (Player is an unresolved forward-ref, lazy under `from __future__ import annotations`; not imported so core/ stays decoupled from entities)
+def resolve_player_push(players: list[Player], platforms) -> None:  # noqa: F821  (Player is an unresolved forward-ref, lazy under `from __future__ import annotations`; not imported so core/ stays decoupled from entities)
+    """PM-faithful ground jostle — a literal port of meleelight's grounded push
+    (ADR-0012, #1020; schmooblidon/meleelight @ 27af171, src/physics/physics.js).
+
+    For each pair of fighters, a gradual, **position-only** nudge apart along X when
+    BOTH are grounded on the *same* platform and their centres are within
+    JOSTLE_TRIGGER_PX. Each frame the pair is within range, each fighter moves
+    JOSTLE_PUSH_PX px away from the other — a wide overlap separates over several
+    frames, not one. Velocity is never touched (fighters keep their momentum), and Y
+    is never resolved (vertical overlap between fighters is allowed — canon).
+
+    The grounded gate makes airborne fighters neither push nor be pushed: two airborne
+    fighters pass through / overlap each other, and a fighter flying *over* a grounded
+    one no longer ratchets it sideways (superseding the #68 vertical-overlap gate).
+    Player-vs-PLATFORM collision is a separate concern (solve_vertical/solve_horizontal).
+    """
     for i in range(len(players)):
         for j in range(i + 1, len(players)):
             a, b = players[i], players[j]
 
-            # Skip players in "dodge" state
+            # Skip players in "dodge" state (kept from #1; meleelight's grab exemption
+            # has no pycats analog — there is no fighter-vs-fighter grab).
             if a.state == "dodge" or b.state == "dodge":
                 continue
-            if not a.rect.colliderect(b.rect):
+
+            # Decision 4 — grounded + same-platform gate. meleelight pushes only when
+            # both fighters are `grounded` on the identical surface (type + index);
+            # pycats compares each fighter's current platform instance. Decision 5 —
+            # no airborne jostle: this gate excludes the flyover by construction.
+            if not (a.fighter.on_ground and b.fighter.on_ground):
+                continue
+            plat_a = find_current_platform(a.rect, platforms)
+            plat_b = find_current_platform(b.rect, platforms)
+            if plat_a is None or plat_a is not plat_b:
                 continue
 
-            # Issue #68: the jostle is a grounded-contact interaction, so only
-            # apply it when the two bodies are at substantially the same level.
-            # An airborne fighter passing *over* a grounded one re-overlaps each
-            # rising frame with only a sliver of vertical overlap; pushing on that
-            # sliver ratchets the stationary fighter sideways. Require a meaningful
-            # vertical overlap (≥ JOSTLE_MIN_VOVERLAP_FRAC of the shorter body) so a
-            # flyover / standing-on-a-head no longer shoves the fighter below.
-            v_overlap = min(a.rect.bottom, b.rect.bottom) - max(a.rect.top, b.rect.top)
-            min_overlap = JOSTLE_MIN_VOVERLAP_FRAC * min(a.rect.height, b.rect.height)
-            if v_overlap < min_overlap:
+            # Decision 1 — trigger on horizontal centre-distance < JOSTLE_TRIGGER_PX
+            # (meleelight `diff < 6.5`). This is an absolute centre-distance, less than
+            # a default body width, so fighters settle slightly overlapping — canon.
+            dx = a.rect.centerx - b.rect.centerx
+            if abs(dx) >= JOSTLE_TRIGGER_PX:
                 continue
 
-            # Issue #1 / Project M "jostle": fighter-vs-fighter collision is
-            # resolved on the X axis ONLY. Push the players apart horizontally;
-            # never block or reposition them on Y — vertical overlap between
-            # fighters is allowed (one may briefly stand on another's head, then
-            # be nudged off sideways). Player-vs-PLATFORM vertical collision is a
-            # separate concern handled by solve_vertical.
-            if a.rect.centerx < b.rect.centerx:  # A is to the left of B
-                overlap = a.rect.right - b.rect.left
-                # Move both players away from each other equally
-                a.rect.x -= overlap // 2 + 1
-                b.rect.x += overlap // 2 + 1
-            else:  # B is to the left of A (also the perfectly-stacked tie-break)
-                overlap = b.rect.right - a.rect.left
-                a.rect.x += overlap // 2 + 1
-                b.rect.x -= overlap // 2 + 1
-
-            # Pushing logic — match velocities so neither side gains an advantage
-            if (a.fighter.vel.x > 0 and b.fighter.vel.x < 0) or (a.fighter.vel.x < 0 and b.fighter.vel.x > 0):
-                # Pushing in opposite directions — cancel out
-                a.fighter.vel.x = 0.0
-                b.fighter.vel.x = 0.0
-            # If only one is pushing, both move at half the pusher's speed
-            elif a.fighter.vel.x != 0 and b.fighter.vel.x == 0:
-                push_speed = a.fighter.vel.x * COLLISION_PUSH_SPLIT
-                a.fighter.vel.x = push_speed
-                b.fighter.vel.x = push_speed
-            elif b.fighter.vel.x != 0 and a.fighter.vel.x == 0:
-                push_speed = b.fighter.vel.x * COLLISION_PUSH_SPLIT
-                a.fighter.vel.x = push_speed
-                b.fighter.vel.x = push_speed
-            # If both move the same direction, average them
-            elif a.fighter.vel.x != 0 and b.fighter.vel.x != 0:
-                avg = (a.fighter.vel.x + b.fighter.vel.x) / 2
-                a.fighter.vel.x = avg
-                b.fighter.vel.x = avg
+            # Decisions 2 & 3 — gradual, position-only push: each fighter steps
+            # JOSTLE_PUSH_PX px apart along X (meleelight `pos.x += sign(...) * -0.3`);
+            # velocity is never rewritten. On an exact stack (dx == 0) apply a
+            # deterministic tie-break so integer-pixel fighters still separate.
+            if dx > 0:  # a is to the right of b
+                a.rect.x += JOSTLE_PUSH_PX
+                b.rect.x -= JOSTLE_PUSH_PX
+            else:  # a is left of b, or exactly stacked (deterministic tie-break)
+                a.rect.x -= JOSTLE_PUSH_PX
+                b.rect.x += JOSTLE_PUSH_PX
 
 
 # ----------------------------------------------------------------- edge detection for dodging

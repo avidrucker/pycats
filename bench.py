@@ -48,7 +48,7 @@ def benchmark(frames=10_000):
         t0 = time.perf_counter()
         for p in players:
             p.update(fi, platforms, attacks)
-        resolve_player_push(list(players))
+        resolve_player_push(list(players), platforms)
         attacks.update()
         combat.process_hits(players, attacks)
         match.tick()
@@ -87,7 +87,7 @@ def bucketed(frames=10_000):
         for p in players:
             p.update(fi, platforms, attacks)
         t1 = time.perf_counter()
-        resolve_player_push(plist)
+        resolve_player_push(plist, platforms)
         t2 = time.perf_counter()
         attacks.update()
         combat.process_hits(players, attacks)

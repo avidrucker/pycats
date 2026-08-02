@@ -5,7 +5,7 @@
 > `pycats/combat/provenance.py` registry (#233): 🟢 FOUND · 🟡 TUNED/GUESS · 🔴 DIVERGENCE.
 > Legend: [docs/parity-labeling-legend.md](parity-labeling-legend.md) (#452). Design: #448 (Pass C of #451).
 
-**Summary:** 22 🟢 / 33 🟡 / 4 🔴  (59 constants)
+**Summary:** 24 🟢 / 32 🟡 / 4 🔴  (60 constants)
 
 ## 🟢 Sourced — FOUND (PM-valid, checked)
 
@@ -20,6 +20,8 @@
 | `HITLAG_CAP` | 30 | FOUND | 🟢 | SmashWiki:Hitlag — Brawl-onward cap (Melee was 20) |
 | `HITLAG_DAMAGE_FACTOR` | 0.3846154 | FOUND | 🟢 | SmashWiki:Hitlag (Brawl onward) — d-term coefficient 1/2.6 |
 | `HITSTUN_MULTIPLIER` | 0.4 | FOUND | 🟢 | SmashWiki:Hitstun — 0.4 frames per unit of knockback (Melee; Brawl same; PM = Melee model) |
+| `JOSTLE_PUSH_UNITS` | 0.3 | FOUND | 🟢 | meleelight @27af171 src/physics/physics.js `pos.x += sign(...) * -0.3` (SECONDARY proxy; retail PM 3.6 magnitude UNDOCUMENTED) |
+| `JOSTLE_TRIGGER_UNITS` | 6.5 | FOUND | 🟢 | meleelight @27af171 src/physics/physics.js `if (diff < 6.5 && diff > 0)` (SECONDARY proxy; retail PM 3.6 magnitude UNDOCUMENTED) |
 | `JUMP_VEL` | -13 | FOUND | 🟢 | calibrated to PM Mario full-hop 30.19 u (SmashWiki:Mario_(PM); #120) via height = JUMP_VEL^2/(2*GRAVITY) = 169 px ~= 31 u @ PX_PER_UNIT |
 | `LEDGE_INTANGIBLE_BASE_FRAMES` | 21 | FOUND | 🟢 | PM 3.6 CliffCatch intangibility 1-21, flat across characters (rukaidata; #671) |
 | `MAX_JUMPS` | 2 | FOUND | 🟢 | Mario/PM jump count: 1 ground + 1 midair = 2 (standard 2-jump character; SmashWiki:Mario_(PM)) |
@@ -52,7 +54,6 @@
 | `HITSTUN_FLOOR` | 1 | TUNED | 🟡 | pycats floor: >=1 frame for any clean hit; SmashWiki:Hitstun documents no canon minimum |
 | `HURT_TIME` | 12 | TUNED | 🟡 | pycats hurt/flinch timer; deliberate design value, no PM canon equivalent |
 | `INITIAL_LIVES` | 3 | TUNED | 🟡 | pycats default stock count; a match ruleset setting, not a PM physics value |
-| `JOSTLE_MIN_VOVERLAP_FRAC` | 0.8 | TUNED | 🟡 | deliberate vertical-overlap gate for the PM X-only push heuristic |
 | `KNOCKDOWN_PRONE_FRAMES` | 30 | TUNED | 🟡 | pycats fixed getup window (~0.5s @60 FPS); Melee knockdown/getup is variable + per-character, no single canon value (SmashWiki:Floor_getup) |
 | `KNOCKDOWN_VY_THRESHOLD` | 8.0 | TUNED | 🟡 | pycats auto-knockdown impact-speed gate (#145); pycats-specific mechanic, no canon equivalent |
 | `LEDGE_CATCH_H` | 64 | TUNED | 🟡 | pycats ledge-grab catch-region height below the lip; pycats geometry, no canon |

@@ -23,12 +23,12 @@
     "P2": {
       "character": "birky",
       "ko_frames": [
-        600
+        601
       ],
       "lives_end": 2,
       "lives_min": 2,
       "lives_start": 3,
-      "percent_max": 85.1394,
+      "percent_max": 88.1394,
       "states": [
         "attack",
         "fall",
