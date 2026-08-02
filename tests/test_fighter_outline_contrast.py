@@ -15,9 +15,9 @@ fallback default, whose >= 3:1 contrast floor test_outline_clears_* still guards
 
 import pygame
 
-from pycats.battle_screen import BattleScreen
 from pycats.config import BG_COLOR, FIGHTER_OUTLINE_COLOR, FIGHTER_OUTLINE_WIDTH
 from pycats.render_battle import _BODY_PAD_TOP, _BODY_PAD_X, _cat_body_surface, slot_accent_color
+from pycats.screens.battle_screen import BattleScreen
 
 _P1 = dict(
     left=pygame.K_a,

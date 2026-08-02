@@ -10,7 +10,7 @@ import pytest
 
 from pycats import keybind_store
 from pycats.core.keymap import Keymap
-from pycats.keybind_sets_menu import KeybindSetsMenu
+from pycats.screens.keybind_sets_menu import KeybindSetsMenu
 
 
 @pytest.fixture(autouse=True)

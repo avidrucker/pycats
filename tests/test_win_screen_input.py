@@ -8,7 +8,7 @@ select before they could read the stats.
 
 import pygame  # type: ignore
 
-from pycats.win_screen import WinScreenManager
+from pycats.screens.win_screen import WinScreenManager
 
 P1_CONTROLS = {"attack": pygame.K_v, "special": pygame.K_c}
 P2_CONTROLS = {"attack": pygame.K_SLASH, "special": pygame.K_PERIOD}

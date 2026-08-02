@@ -11,7 +11,7 @@ import pytest
 
 from pycats import keybind_store
 from pycats.core.keymap import Keymap
-from pycats.options_menu import OptionsMenu
+from pycats.screens.options_menu import OptionsMenu
 
 _P1 = {"up": 1, "down": 2, "left": 3, "right": 4, "attack": 5, "special": 6, "shield": 7}
 _P2 = {"up": 11, "down": 12, "left": 13, "right": 14, "attack": 15, "special": 16, "shield": 17}

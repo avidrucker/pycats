@@ -16,8 +16,8 @@ import pygame  # noqa: E402
 
 from pycats import runtime_settings, settings  # noqa: E402
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
-from pycats.main_menu import MainMenuManager  # noqa: E402
-from pycats.pause_menu import PauseMenuManager  # noqa: E402
+from pycats.screens.main_menu import MainMenuManager  # noqa: E402
+from pycats.screens.pause_menu import PauseMenuManager  # noqa: E402
 
 _P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d, attack=pygame.K_v, special=pygame.K_c)
 _P2 = dict(

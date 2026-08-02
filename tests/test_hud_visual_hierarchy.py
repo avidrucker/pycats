@@ -15,7 +15,6 @@ import pygame
 import pytest
 
 from pycats import runtime_settings, settings, text_utils
-from pycats.battle_screen import BattleScreen
 from pycats.config import (
     HUD_EMPHASIS_SIZE,
     HUD_PADDING,
@@ -31,6 +30,7 @@ from pycats.render_battle import (
     emphasis_row_y,
     hud_emphasis_rows,
 )
+from pycats.screens.battle_screen import BattleScreen
 
 # Re-init font + clear stale render/font caches before each test (#63) so a scale
 # change in one test can't leave a cached glyph behind for the next.

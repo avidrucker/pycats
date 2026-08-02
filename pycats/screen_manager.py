@@ -9,13 +9,13 @@ This module handles:
 
 import pygame  # type: ignore
 
-from .char_select import CharacterSelector
 from .esc_hold import EscHoldTimer, draw_esc_hold_arc
-from .main_menu import MainMenuManager
-from .options_menu import OptionsMenu
-from .pause_menu import PauseMenuManager
+from .screens.char_select import CharacterSelector
+from .screens.main_menu import MainMenuManager
+from .screens.options_menu import OptionsMenu
+from .screens.pause_menu import PauseMenuManager
+from .screens.win_screen import WinScreenManager
 from .systems.screen_engine import make_screen_engine
-from .win_screen import WinScreenManager
 
 
 class ScreenStateManager:

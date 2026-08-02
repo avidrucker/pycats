@@ -8,8 +8,8 @@ This module handles:
 - Handling input for menu progression
 """
 
-from . import runtime_settings
-from .config import (
+from .. import runtime_settings
+from ..config import (
     MAIN_MENU_BG_COLOR,
     MAIN_MENU_OPTION_SPACING,
     MAIN_MENU_PADDING,
@@ -19,9 +19,9 @@ from .config import (
     SCREEN_WIDTH,
     WHITE,
 )
-from .menu_controller import MenuController
-from .menu_widgets import draw_menu_screen
-from .text_utils import text_renderer
+from ..menu_controller import MenuController
+from ..menu_widgets import draw_menu_screen
+from ..text_utils import text_renderer
 
 # Layout literals for the instruction/fullscreen-hint text (#433: named inline).
 INSTRUCTION_FONT_SIZE = 20  # bottom navigation-hint lines

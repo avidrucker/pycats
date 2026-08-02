@@ -14,8 +14,8 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 
-from pycats.char_select import CharacterSelector  # noqa: E402
 from pycats.characters.roster import palette_for  # noqa: E402
+from pycats.screens.char_select import CharacterSelector  # noqa: E402
 
 _P1 = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6}
 _P2 = {"left": 11, "right": 12, "up": 13, "down": 14, "attack": 15, "special": 16}

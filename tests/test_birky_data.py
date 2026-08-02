@@ -9,9 +9,9 @@ load_fighter_data("birky") — the loader is the seam (#229).
 
 import pygame
 
-from pycats.battle_screen import BattleScreen
 from pycats.combat.data import load_fighter_data
 from pycats.config import PLAYER_SIZE
+from pycats.screens.battle_screen import BattleScreen
 
 # #229 PM-Kirby -> pycats stat table (proportional-to-Mario; pin/playtest later).
 _EXPECTED = dict(weight=70, gravity=0.42, max_fall_speed=12, move_speed=5, max_jumps=6, jump_vel=-11)

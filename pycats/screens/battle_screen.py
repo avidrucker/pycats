@@ -14,9 +14,9 @@ from __future__ import annotations
 
 import pygame
 
-from . import runtime_settings
-from .characters.roster import palette_for
-from .config import (
+from .. import runtime_settings
+from ..characters.roster import palette_for
+from ..config import (
     BG_COLOR,
     INITIAL_LIVES,
     PLAYER1_START_X,
@@ -26,12 +26,12 @@ from .config import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
-from .core.physics import resolve_player_push
-from .entities import Player
-from .entities.ledge import ledges_from_platforms
-from .input_history import InputHistory
-from .loadout import Selection, Skin, assign_distinct_skins, build_fighter, character_for
-from .render_battle import (
+from ..core.physics import resolve_player_push
+from ..entities import Player
+from ..entities.ledge import ledges_from_platforms
+from ..input_history import InputHistory
+from ..loadout import Selection, Skin, assign_distinct_skins, build_fighter, character_for
+from ..render_battle import (
     draw_controls,
     draw_hud,
     draw_input_history,
@@ -40,8 +40,8 @@ from .render_battle import (
     render_battle,
     render_hitbox_overlay,
 )
-from .systems import hit_resolution
-from .systems.win_condition import winner_loser
+from ..systems import hit_resolution
+from ..systems.win_condition import winner_loser
 
 
 class BattleScreen:

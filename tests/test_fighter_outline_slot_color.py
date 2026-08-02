@@ -11,7 +11,6 @@ import pygame
 import pytest
 
 from pycats import render_battle as rb
-from pycats.battle_screen import BattleScreen
 from pycats.config import (
     FIGHTER_OUTLINE_COLOR,
     P1_UI_COLOR,
@@ -20,6 +19,7 @@ from pycats.config import (
     SCREEN_WIDTH,
 )
 from pycats.render_battle import _BODY_PAD_TOP, _cat_body_surface, slot_accent_color
+from pycats.screens.battle_screen import BattleScreen
 
 # Clear stale render caches between tests (surfaces go stale after a quit, #63).
 pytestmark = pytest.mark.usefixtures("render_isolation")

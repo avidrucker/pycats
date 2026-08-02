@@ -8,8 +8,8 @@ access is cached, so a steady-state render frame makes zero SysFont calls.
 
 import pygame  # noqa: E402
 
-from pycats.main_menu import MainMenuManager  # noqa: E402
-from pycats.pause_menu import PauseMenuManager  # noqa: E402
+from pycats.screens.main_menu import MainMenuManager  # noqa: E402
+from pycats.screens.pause_menu import PauseMenuManager  # noqa: E402
 
 _P1 = dict(
     left=pygame.K_a,

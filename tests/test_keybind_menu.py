@@ -6,7 +6,7 @@ all pure (the pygame KEYDOWN read + rendering are a thin layer over this).
 """
 
 from pycats.core.keymap import Keymap
-from pycats.keybind_menu import KeybindMenu
+from pycats.screens.keybind_menu import KeybindMenu
 
 _DEF1 = {"left": 1, "right": 2, "attack": 5, "shield": 7}
 _DEF2 = {"left": 11, "right": 12, "attack": 15, "shield": 17}

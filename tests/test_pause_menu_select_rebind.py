@@ -11,7 +11,7 @@ and (b) the default attack key still selects (no regression for the common case)
 
 import pygame
 
-from pycats.pause_menu import PauseMenuManager
+from pycats.screens.pause_menu import PauseMenuManager
 
 # Defaults match app.P1_KEYS / P2_KEYS (attack = K_v / K_SLASH).
 DEFAULT_P1 = {"up": pygame.K_w, "down": pygame.K_s, "attack": pygame.K_v}

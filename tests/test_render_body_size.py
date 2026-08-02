@@ -8,7 +8,6 @@ into platforms).
 
 import pygame
 
-from pycats.battle_screen import BattleScreen
 from pycats.config import BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.render_battle import (
     _BODY_PAD_BOT,
@@ -16,6 +15,7 @@ from pycats.render_battle import (
     _cat_body_surface,
     render_battle,
 )
+from pycats.screens.battle_screen import BattleScreen
 
 _P1 = dict(
     left=pygame.K_a,

@@ -10,8 +10,8 @@ This module handles:
 
 import pygame  # type: ignore
 
-from . import render_battle, runtime_settings, stats_print, text_utils
-from .config import (
+from .. import render_battle, runtime_settings, stats_print, text_utils
+from ..config import (
     FPS,
     P1_UI_COLOR,
     P2_UI_COLOR,

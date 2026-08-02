@@ -16,8 +16,8 @@ exercises the title.
 
 import pygame
 
-from pycats import main_menu
-from pycats.main_menu import MainMenuManager
+from pycats.screens import main_menu
+from pycats.screens.main_menu import MainMenuManager
 
 
 class _DummyFont:

@@ -7,7 +7,7 @@ Options must request the `options` action the screen FSM transitions on.
 
 import pygame
 
-from pycats.main_menu import MainMenuManager
+from pycats.screens.main_menu import MainMenuManager
 
 P1 = {"up": pygame.K_w, "down": pygame.K_s, "attack": pygame.K_v}
 P2 = {"up": pygame.K_UP, "down": pygame.K_DOWN, "attack": pygame.K_SLASH}

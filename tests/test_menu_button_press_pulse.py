@@ -85,7 +85,7 @@ def test_pressed_only_matters_when_focused():
 
 # ---- screen wiring: the press_pulse counter ------------------------------- #
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
-from pycats.main_menu import MainMenuManager  # noqa: E402
+from pycats.screens.main_menu import MainMenuManager  # noqa: E402
 
 
 def test_main_menu_pulse_set_on_select():
@@ -129,7 +129,7 @@ def test_main_menu_render_flashes_during_pulse():
 
 
 # ---- pause menu ----------------------------------------------------------- #
-from pycats.pause_menu import PauseMenuManager  # noqa: E402
+from pycats.screens.pause_menu import PauseMenuManager  # noqa: E402
 
 
 def test_pause_menu_pulse_set_on_nav():
@@ -166,7 +166,7 @@ def test_pause_menu_render_flashes_during_pulse():
 
 # ---- options menu (2D grid) ----------------------------------------------- #
 from pycats import runtime_settings, settings  # noqa: E402
-from pycats.options_menu import OptionsMenu  # noqa: E402
+from pycats.screens.options_menu import OptionsMenu  # noqa: E402
 
 
 def _options():

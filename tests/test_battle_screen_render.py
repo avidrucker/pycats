@@ -13,7 +13,6 @@ home, beside their sibling drawers render_battle / render_attacks).
 import pygame
 
 from pycats import runtime_settings, settings, text_utils
-from pycats.battle_screen import BattleScreen
 from pycats.config import (
     BG_COLOR,
     HUD_PADDING,
@@ -30,6 +29,7 @@ from pycats.render_battle import (
     render_battle,
     render_hitbox_overlay,
 )
+from pycats.screens.battle_screen import BattleScreen
 
 _P1 = dict(
     left=pygame.K_a,

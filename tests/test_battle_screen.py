@@ -9,7 +9,7 @@ sim/runner.py path.
 
 import pygame
 
-from pycats.battle_screen import BattleScreen
+from pycats.screens.battle_screen import BattleScreen
 
 _P1 = dict(
     left=pygame.K_a,

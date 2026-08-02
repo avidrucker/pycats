@@ -14,8 +14,8 @@ from pycats import runtime_settings, settings
 from pycats.config import MAIN_MENU_OPTION_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.core.input import InputFrame
 from pycats.menu_widgets import menu_button_size
-from pycats.options_menu import ROW_DESCRIPTIONS, OptionsMenu
 from pycats.screen_manager import ScreenStateManager
+from pycats.screens.options_menu import ROW_DESCRIPTIONS, OptionsMenu
 
 P1 = {
     "up": pygame.K_w,
@@ -118,7 +118,7 @@ def test_b_key_backs_out_from_any_row():
 def test_nav_down_wraps_within_column():
     # 2-column grid (#389): down steps a full row within the column and wraps.
     # Derived from the live row count so adding a row (e.g. #345 font_scale) is fine.
-    from pycats.options_menu import NCOLS
+    from pycats.screens.options_menu import NCOLS
 
     m = _opts()
     nrows = (len(m.rows) + NCOLS - 1) // NCOLS

@@ -6,7 +6,7 @@
 # are a thin layer that call `capture_key` / `reset_player` and render this state.
 from __future__ import annotations
 
-from .core.keymap import KeyBindingConflict
+from ..core.keymap import KeyBindingConflict
 
 
 class KeybindMenu:

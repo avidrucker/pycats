@@ -10,9 +10,9 @@ This module handles:
 
 import pygame
 
-from . import runtime_settings, text_utils
-from .characters.roster import ARCHETYPE_DEFAULT_SKIN, ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
-from .config import (
+from .. import runtime_settings, text_utils
+from ..characters.roster import ARCHETYPE_DEFAULT_SKIN, ARCHETYPE_NAME, ARCHETYPE_ROSTER, palette_for
+from ..config import (
     CHAR_SELECT_BG_COLOR,
     CHAR_SELECT_CURSOR_WIDTH,
     CHAR_SELECT_GRID_COLS,
@@ -27,7 +27,7 @@ from .config import (
     SCREEN_WIDTH,
     WHITE,
 )
-from .loadout import SKINS, Selection, assign_distinct_skins, available_skins, character_for
+from ..loadout import SKINS, Selection, assign_distinct_skins, available_skins, character_for
 
 # --- char-select layout + behaviour constants (#420: named from inline literals) ---
 # Input debounce windows (frames): movement repeats faster than a committing action.

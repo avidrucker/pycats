@@ -18,8 +18,8 @@ import pytest  # noqa: E402
 
 from pycats import runtime_settings, settings  # noqa: E402
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
-from pycats.main_menu import MainMenuManager  # noqa: E402
-from pycats.options_menu import OptionsMenu  # noqa: E402
+from pycats.screens.main_menu import MainMenuManager  # noqa: E402
+from pycats.screens.options_menu import OptionsMenu  # noqa: E402
 from pycats.text_utils import text_renderer  # noqa: E402
 
 _P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d, attack=pygame.K_v, special=pygame.K_c)

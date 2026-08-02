@@ -8,10 +8,10 @@ char_name stays "P1"/"P2" so win-attribution + name rendering are unchanged.
 
 import pygame
 
-from pycats.battle_screen import BattleScreen
-from pycats.char_select import CharacterSelector
 from pycats.characters.roster import ARCHETYPE_PALETTE, ARCHETYPE_ROSTER
 from pycats.combat.data import load_fighter_data
+from pycats.screens.battle_screen import BattleScreen
+from pycats.screens.char_select import CharacterSelector
 
 _P1 = dict(
     left=pygame.K_a,

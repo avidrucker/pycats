@@ -10,8 +10,8 @@ This module handles:
 
 import pygame  # type: ignore
 
-from . import runtime_settings, settings
-from .config import (
+from .. import runtime_settings, settings
+from ..config import (
     BLACK,
     MAIN_MENU_BG_COLOR,
     MAIN_MENU_OPTION_SPACING,
@@ -22,8 +22,8 @@ from .config import (
     SCREEN_WIDTH,
     WHITE,
 )
-from .menu_controller import MenuController
-from .menu_widgets import draw_menu_screen
+from ..menu_controller import MenuController
+from ..menu_widgets import draw_menu_screen
 
 # Pause-screen layout literals (#433: named inline). Offsets are from the vertical
 # centre; the dim overlay reuses config.BLACK at config.OVERLAY_DIM_ALPHA (#450).

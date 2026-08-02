@@ -8,8 +8,8 @@
 # (docs/research/2026-07-02-keybinding-set-ui-scope-464.md).
 from __future__ import annotations
 
-from . import keybind_store
-from .text_entry import TextEntry
+from .. import keybind_store
+from ..text_entry import TextEntry
 
 # Max characters in a saved-scheme name (the on-screen grid is uppercase, #471).
 NAME_MAXLEN = 12

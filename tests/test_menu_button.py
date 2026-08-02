@@ -73,7 +73,7 @@ from pycats.config import (  # noqa: E402
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
-from pycats.options_menu import OptionsMenu  # noqa: E402
+from pycats.screens.options_menu import OptionsMenu  # noqa: E402
 
 _P1 = dict(
     left=pygame.K_a,

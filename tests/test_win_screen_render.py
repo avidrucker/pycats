@@ -17,7 +17,7 @@ import pytest  # noqa: E402
 
 from pycats.config import P1_COLOR, P2_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE  # noqa: E402
 from pycats.entities.player import Player  # noqa: E402
-from pycats.win_screen import WinScreenManager  # noqa: E402
+from pycats.screens.win_screen import WinScreenManager  # noqa: E402
 
 pytestmark = pytest.mark.usefixtures("render_isolation")
 

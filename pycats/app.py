@@ -27,12 +27,12 @@ import pygame  # type: ignore
 
 from . import cat_faces, display, screen_render, settings
 from . import input_poll as inp
-from .battle_screen import BattleScreen
 from .config import tick_fps
 from .core.keymap import Keymap
 from .display_manager import DisplayManager
 from .entities.stages import DEFAULT_PLAYER_STAGE
 from .screen_manager import ScreenStateManager
+from .screens.battle_screen import BattleScreen
 
 # Rebindable per-player keymaps (#439/#447): the same `Keymap` instance is shared by the
 # battle and the Options screen, so a rebind there takes effect live. A `Keymap` is a

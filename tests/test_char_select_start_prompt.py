@@ -14,8 +14,8 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
 import pygame  # noqa: E402
 
-from pycats.char_select import GRID_START_Y, PLAYER_SLOT_ROW_Y, CharacterSelector  # noqa: E402
 from pycats.config import CHAR_SELECT_TILE_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
+from pycats.screens.char_select import GRID_START_Y, PLAYER_SLOT_ROW_Y, CharacterSelector  # noqa: E402
 
 _P1 = {"left": 1, "right": 2, "up": 3, "down": 4, "attack": 5, "special": 6}
 _P2 = {"left": 11, "right": 12, "up": 13, "down": 14, "attack": 15, "special": 16}
@@ -112,7 +112,7 @@ def test_start_prompt_text_renders_below_the_grid():
     # Same text the modal carried, now drawn in the band below the grid (below the last
     # tile row, above the Player Choice Slot row). Red today: the modal centres "START"
     # near the vertical middle of the screen, above the grid's bottom.
-    import pycats.char_select as cs
+    import pycats.screens.char_select as cs
 
     calls = []
     orig = cs.text_utils.render_text

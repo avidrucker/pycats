@@ -16,8 +16,8 @@ no black-outline pixels — this stays 0, proving named cats are untouched (byte
 
 import pygame
 
-from pycats.battle_screen import BattleScreen
 from pycats.render_battle import _cat_body_surface
+from pycats.screens.battle_screen import BattleScreen
 
 _P1 = dict(
     left=pygame.K_a,
