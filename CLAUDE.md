@@ -95,6 +95,9 @@ Critical rules:
   concede or correct concretely instead ("The probe was the ticket's work, not filing.").
   Name the concrete quality instead (crisp → specific / precise / clean; honest →
   plain / direct / candid / faithful). Proofread the closing line, where they slip in.
+  Also banned here: **PR / pull request** — this repo has no pull-request workflow
+  (work merges to `main` via `pmtools` direct-push, or an attended in-session `git merge`
+  + push); say "the change" / "the branch" / "the merge" / "the ticket" instead.
   Full list + replacements: [docs/banned_words.md](./docs/banned_words.md).
 - **Reference locations by named landmark, not raw line number** — in tickets, reviews,
   commits, and docs, point at a **function/class + file path** (or a bare symbol) for
