@@ -30,6 +30,17 @@ mutation (revert-check), then reverted to green:
        once-ness is a real, breakable property, so the looping move's extra hits are
        attributable to `rehit_rate`, not to the harness always counting one.
 
+  M3 — mis-time the cooldown re-arm (#1081, the frame-SPACING conjunct). In
+       `process_hits`, arm the looping cooldown to the wrong period: replace
+       `atk._rehit_timer = atk.rehit_rate` with `atk._rehit_timer = atk.rehit_rate + 1`.
+       The connects then fall every 5 frames ([0, 5, 10, 15]) instead of every 4, so
+       four hits still land over the 20-frame window: the COUNT tests stay green
+       (`hits_received >= 4` holds at 4), but test_c004_rehit_connects_on_exact_n_frame_cadence
+       reds — the connect frames become [0, 5, 10, 15] != [0, 4, 8, 12, 16] and the
+       inter-hit gaps become 5 != rehit_rate. This is what closes the pre-#1081 gap:
+       before it, no test pinned the "on a fixed N-frame cooldown" wording — only the
+       hit count — so a wrong-period re-arm slipped through green.
+
 Geometry (matches the #130 / test_rehit_rate harness): attacker rect at (0,0) facing
 right, so a Hitbox Circle(dx,dy,r) resolves to absolute centre (dx,dy). Defender rect at
 (100,100,40,60) with a single hurtbox circle dx=20,dy=30,r=14 -> absolute (120,130). The
@@ -96,6 +107,53 @@ def _drive(atk, frames):
         process_hits([owner, defender], [atk])
         atk.update()
     return defender
+
+
+def _connect_frames(atk, frames):
+    """Like `_drive`, but return the list of frame indices on which a hit REGISTERED
+    (not just the final count). A connect is detected by `hits_received` ticking up
+    across a single `process_hits` call, so the returned list is the exact rehit
+    cadence the looping cooldown produces over the move's active window."""
+    owner = _player(pygame.Rect(0, 0, 40, 60), hurtbox_circles=_DEF_HURTBOX)
+    defender = _player(pygame.Rect(100, 100, 40, 60), hurtbox_circles=_DEF_HURTBOX)
+    hit_on = []
+    for i in range(frames):
+        if atk.frames_left <= 0:
+            break
+        before = defender.hits_received
+        process_hits([owner, defender], [atk])
+        if defender.hits_received > before:
+            hit_on.append(i)
+        atk.update()
+    return hit_on
+
+
+def test_c004_rehit_connects_on_exact_n_frame_cadence():
+    """Conjunct (fixed N-frame spacing — #1081): a `rehit_rate=N` attack over a
+    stationary overlapping target re-connects EXACTLY every N frames, starting on the
+    first active frame — not merely "many times". For rehit_rate=4 over a 20-frame
+    lifetime the connect frames are [0, 4, 8, 12, 16] and every inter-hit gap equals
+    the rehit_rate. This pins the "on a fixed N-frame cooldown" half of the claim that
+    the count-only tests (test_c004_looping_rehit_hits_one_target_many_times) leave
+    unpinned. Able-to-fail via M3 (arm the cooldown to rehit_rate + 1 -> connects fall
+    every 5 frames -> [0, 5, 10, 15], gaps 5 != 4) while the count tests stay green.
+    Claim: PYC-C-004-GRAPE."""
+    pygame.init()
+    rate = 4
+    owner = _player(pygame.Rect(0, 0, 40, 60), hurtbox_circles=_DEF_HURTBOX)
+    atk = Attack(owner, hitboxes=(_overlapping_box(damage=3.0),), lifetime=20, rehit_rate=rate)
+
+    connect_frames = _connect_frames(atk, frames=20)
+
+    assert connect_frames == [0, 4, 8, 12, 16], (
+        "a rehit_rate=4 attack must connect on a fixed 4-frame cadence across its "
+        "active window (first active frame, then every rehit_rate frames)"
+    )
+    gaps = [b - a for a, b in zip(connect_frames, connect_frames[1:])]
+    assert gaps == [rate] * len(gaps), (
+        "every inter-hit gap must equal the rehit_rate exactly — the cooldown period "
+        "is fixed at N, not merely 'more than one hit lands'"
+    )
 
 
 def test_c004_looping_rehit_hits_one_target_many_times():
