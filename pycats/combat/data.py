@@ -84,14 +84,18 @@ class Hitbox:
                            existing move is byte-identical (golden-safe). The tag
                            is per-move-instance: the registry clears on move start,
                            so the same small integer may be reused across moves.
-        label            — a stable per-hitbox display id (#958): a letter A–Z the
-                           editor (and a JSON reader) uses to tell which hitbox is
-                           which across a move's temporal windows. Assigned by
-                           `collapse` = the source box's rank among the move's
-                           distinct hit-box ids; a box that spans several windows
-                           keeps ONE letter. None = unlabeled (today's behavior:
-                           migrated/hand-written data), so every existing move is
-                           byte-identical (the serializer omits it) — golden-safe.
+        label            — a stable per-hitbox display id (#958, #1029): a letter
+                           A–Z the editor (and a JSON reader) uses to tell which
+                           hitbox is which across a move's temporal windows. The
+                           letter is a preserved identity — assigned once at box
+                           creation editor-side (#1030) and carried through
+                           save→load; `collapse` PRESERVES the source box's `label`
+                           rather than recomputing a rank, so deleting a *middle*
+                           box does not re-letter the survivors, and a box spanning
+                           several windows keeps ONE letter. None = unlabeled
+                           (migrated/hand-written data, or a box with no assigned
+                           letter), so every existing move is byte-identical (the
+                           serializer omits it) — golden-safe.
     """
 
     circle: Circle

@@ -30,7 +30,9 @@ Input shape — a single move's `provenance[<move>]["frames"]`, frame-major:
 Box scalar keys are the editor's convention and map to `Hitbox` fields here:
 `kbg` → knockback_growth, `wdsk` → set_knockback, `bkb` → base_knockback,
 `damage`/`angle` direct. Missing `bkb`/`kbg` default to 0.0, missing `wdsk` to
-None — the same defaults as `Hitbox`.
+None — the same defaults as `Hitbox`. An optional `label` (the editor's assigned
+letter, #1029) is preserved onto `Hitbox.label`; a box with no `label` yields
+`Hitbox.label = None`.
 """
 
 from __future__ import annotations
@@ -49,14 +51,18 @@ def _scalar_signature(box: dict) -> tuple:
     return (tuple(box["circle"]), tuple(box.get(k) for k in _SCALAR_KEYS))
 
 
-def _make_hitbox(box: dict, *, active_start: int | None, active_end: int | None, label: str | None) -> Hitbox:
-    """Build a `Hitbox` from a provenance box, mapping the editor key names."""
+def _make_hitbox(box: dict, *, active_start: int | None, active_end: int | None) -> Hitbox:
+    """Build a `Hitbox` from a provenance box, mapping the editor key names.
+
+    The box's `label` (the editor's assigned letter, #1029) is preserved as-is;
+    a box carrying no `label` yields `Hitbox.label = None`.
+    """
     dx, dy, r = box["circle"]
     return Hitbox(
         circle=Circle(dx=dx, dy=dy, r=r),
         damage=box["damage"],
         angle=box["angle"],
-        label=label,
+        label=box.get("label"),
         base_knockback=box.get("bkb", 0.0),
         knockback_growth=box.get("kbg", 0.0),
         active_start=active_start,
@@ -88,11 +94,12 @@ def collapse(frames, *, startup: int, active: int) -> tuple[Hitbox, ...]:
         for box in frame_record["boxes"]:
             streams.setdefault(box["id"], []).append((frame, box))
 
-    # 1b. Letter labels (#958) — each distinct box id gets a letter = its rank
-    #     among the SORTED distinct ids (dense A, B, C… even when ids are sparse).
-    #     A box that spans several windows keeps its one letter (stamped per id).
-    #     Assumes ≤26 hit boxes per move (chr overflows 'Z' beyond that).
-    labels = {box_id: chr(ord("A") + rank) for rank, box_id in enumerate(sorted(streams))}
+    # 1b. Letter labels (#1029) — collapse PRESERVES the letter the editor assigned
+    #     to each box (carried on every provenance box as `label`), rather than
+    #     recomputing a rank. The letter is a stable identity: deleting a *middle*
+    #     box does not re-letter the survivors ([A,C] stays [A,C], not [A,B]). A box
+    #     with no `label` yields `Hitbox.label = None`. Assignment, gap-fill, and
+    #     validation live editor-side (#1030); the fold stays pure.
 
     # 2. Run-length fold — one Hitbox per maximal run where frame is contiguous
     #    and (circle, scalars) are unchanged. Track (window_start, id, Hitbox).
@@ -112,7 +119,7 @@ def collapse(frames, *, startup: int, active: int) -> tuple[Hitbox, ...]:
                     (
                         run_first,
                         box_id,
-                        _make_hitbox(run_box, active_start=run_first, active_end=run_last, label=labels[box_id]),
+                        _make_hitbox(run_box, active_start=run_first, active_end=run_last),
                     )
                 )
                 run_first = run_last = frame
@@ -122,7 +129,7 @@ def collapse(frames, *, startup: int, active: int) -> tuple[Hitbox, ...]:
                 (
                     run_first,
                     box_id,
-                    _make_hitbox(run_box, active_start=run_first, active_end=run_last, label=labels[box_id]),
+                    _make_hitbox(run_box, active_start=run_first, active_end=run_last),
                 )
             )
 
