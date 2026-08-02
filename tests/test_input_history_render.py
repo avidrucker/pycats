@@ -10,7 +10,7 @@ import pygame  # noqa: E402
 
 from pycats import render_battle as rb  # noqa: E402
 from pycats.config import BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
-from pycats.input_history import InputHistory  # noqa: E402
+from pycats.shell.input_history import InputHistory  # noqa: E402
 
 CONTROLS = {"up": 3, "attack": 5}
 

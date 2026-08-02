@@ -24,9 +24,9 @@ file I/O (no settings-file pollution, cf. #345).
 
 import pygame  # type: ignore
 
-from pycats import display
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
-from pycats.display_manager import DisplayManager
+from pycats.shell import display
+from pycats.shell.display_manager import DisplayManager
 
 
 def _paint(surface):

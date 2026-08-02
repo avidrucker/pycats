@@ -13,7 +13,7 @@ Two able-to-fail layers:
 import types
 
 from pycats.core.input import InputFrame
-from pycats.input_history import PRESSED, InputHistory
+from pycats.shell.input_history import PRESSED, InputHistory
 from pycats.sim.presenters import record_player_histories
 from pycats.sim.runner import P1_KEYS, P2_KEYS
 

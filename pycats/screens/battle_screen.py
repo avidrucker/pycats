@@ -29,7 +29,6 @@ from ..config import (
 from ..core.physics import resolve_player_push
 from ..entities import Player
 from ..entities.ledge import ledges_from_platforms
-from ..input_history import InputHistory
 from ..loadout import Selection, Skin, assign_distinct_skins, build_fighter, character_for
 from ..render_battle import (
     draw_controls,
@@ -40,6 +39,7 @@ from ..render_battle import (
     render_battle,
     render_hitbox_overlay,
 )
+from ..shell.input_history import InputHistory
 from ..systems import hit_resolution
 from ..systems.win_condition import winner_loser
 

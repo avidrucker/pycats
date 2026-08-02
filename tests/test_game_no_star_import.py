@@ -4,7 +4,7 @@ Two layers, now covering both the entry point and the shell object:
 
 1. **Import-safety (#701, extended to app.py in #707).** `pycats.game` wraps its whole
    runtime — pygame.init, settings I/O, the drive loop — in `main()` behind an `if __name__`
-   guard, and the per-frame body + collaborators live on `App` in `pycats.app`. **Importing
+   guard, and the per-frame body + collaborators live on `App` in `pycats.shell.app`. **Importing
    either module has no observable side effects** (game.py used to run the loop and
    `sys.exit()` at import — the #386-class untestable-loop blindspot). The monitored-import
    tests patch `pygame.init` / `pygame.display.set_mode` / `settings.load`, import the
@@ -28,7 +28,7 @@ import pycats.config as config
 import pycats.settings as settings
 
 _PYCATS = pathlib.Path(__file__).resolve().parent.parent / "pycats"
-_MODULE_FILES = {"game": _PYCATS / "game.py", "app": _PYCATS / "app.py"}
+_MODULE_FILES = {"game": _PYCATS / "game.py", "app": _PYCATS / "shell" / "app.py"}
 
 
 def _tree(module):
@@ -64,10 +64,10 @@ def test_importing_game_has_no_side_effects(monkeypatch):
 
 
 def test_importing_app_has_no_side_effects(monkeypatch):
-    """import pycats.app must be inert too — the collaborators/window are built only when an
+    """import pycats.shell.app must be inert too — the collaborators/window are built only when an
     `App` is constructed (inside main()), never at import (#707)."""
-    app_mod = _assert_import_is_inert("pycats.app", monkeypatch)
-    assert isinstance(app_mod.App, type), "pycats.app must expose the App class"
+    app_mod = _assert_import_is_inert("pycats.shell.app", monkeypatch)
+    assert isinstance(app_mod.App, type), "pycats.shell.app must expose the App class"
 
 
 def test_game_defines_main_entry_point():
@@ -102,13 +102,15 @@ def test_module_has_no_star_import(module):
 
 @pytest.mark.parametrize("module", ["game", "app"])
 def test_module_config_imports_all_resolve(module):
-    # every name the module imports from .config must exist in config (guards typo/rename).
+    # every name the module imports from config must exist in config (guards typo/rename).
     # Not every module imports from config (game.py no longer does since #707) — this only
     # checks the ones present; the no-star guard above catches a regression to `import *`.
+    # level 1 = a root module's `from .config`; level 2 = a subpackage's `from ..config`
+    # (app.py moved to pycats/shell/, so its config import is now level 2).
     imported = [
         alias.name
         for node in ast.walk(_tree(module))
-        if isinstance(node, ast.ImportFrom) and node.module == "config" and node.level == 1
+        if isinstance(node, ast.ImportFrom) and node.module == "config" and node.level in (1, 2)
         for alias in node.names
     ]
     missing = [n for n in imported if not hasattr(config, n)]

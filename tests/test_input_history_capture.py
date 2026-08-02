@@ -11,8 +11,8 @@ import pygame  # noqa: E402
 from pycats import runtime_settings, settings  # noqa: E402
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
 from pycats.core.input import InputFrame  # noqa: E402
-from pycats.input_history import HELD, PRESSED  # noqa: E402
 from pycats.screens.battle_screen import BattleScreen  # noqa: E402
+from pycats.shell.input_history import HELD, PRESSED  # noqa: E402
 from pycats.sim.runner import build_stage  # noqa: E402
 
 _P1 = dict(

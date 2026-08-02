@@ -1,7 +1,7 @@
 # pycats/core/input.py
 #
 # Pygame-free input port: `InputFrame` (the per-frame edge-aware key snapshot) and
-# `merge_frames`. The framework-touching `poll()` lives in `pycats/input_poll.py`
+# `merge_frames`. The framework-touching `poll()` lives in `pycats/shell/input_poll.py`
 # (present layer) — see ADR-0004 / decision #9 (#318).
 from dataclasses import dataclass
 

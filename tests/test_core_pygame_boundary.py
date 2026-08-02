@@ -8,7 +8,7 @@ able-to-fail AST guard: any `pygame.<attr>` outside the allow-list (or a
 reds the test. See ADR-0004.
 
 `core/input.py` joined the guarded set in #342 — its `poll()` (which imported
-`pygame.event`) moved to `pycats/input_poll.py` (present layer, decision #9), so
+`pygame.event`) moved to `pycats/shell/input_poll.py` (present layer, decision #9), so
 the port is now pygame-free.
 """
 

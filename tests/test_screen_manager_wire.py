@@ -12,7 +12,7 @@ import types
 import pygame
 
 from pycats.core.input import InputFrame
-from pycats.screen_manager import ScreenStateManager
+from pycats.shell.screen_manager import ScreenStateManager
 
 _P1 = dict(
     left=pygame.K_a,

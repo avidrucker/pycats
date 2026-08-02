@@ -1,4 +1,4 @@
-# pycats/input_poll.py
+# pycats/shell/input_poll.py
 """Present-layer input polling — the pygame-framework half of the old core/input.
 
 `poll()` reads the pygame event queue (framework, not a value type), so per
@@ -9,7 +9,7 @@ called once per tick by `game.py`. The pygame-free port (`InputFrame` +
 
 import pygame as pg  # type: ignore
 
-from .core.input import InputFrame
+from ..core.input import InputFrame
 
 _currently_held: set[int] = set()
 

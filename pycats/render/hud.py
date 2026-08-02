@@ -19,7 +19,7 @@ from ..config import (
     WHITE,
 )
 from ..entities import Player
-from ..input_history import _GLYPHS, INPUT_HISTORY_FRAMES, PRESSED
+from ..shell.input_history import _GLYPHS, INPUT_HISTORY_FRAMES, PRESSED
 from ..ui import text_utils
 
 # HUD / text-overlay layout (#415: named from inline literals). The overlay font
@@ -205,7 +205,7 @@ def draw_controls(surface, p: Player, label, topright=False):
 def draw_input_history(surface, history, label, topright=False):
     """Draw a fighter's recent-input GRID (#875) below the controls block.
 
-    ``history`` is an :class:`~pycats.input_history.InputHistory`. Rows are the
+    ``history`` is an :class:`~pycats.shell.input_history.InputHistory`. Rows are the
     seven controls (``_GLYPHS`` order: absolute-direction arrows then A/B/S);
     columns are the last ``INPUT_HISTORY_FRAMES`` frames, newest at the right.
     A cell shows ``●`` where that control had its rising edge that frame and

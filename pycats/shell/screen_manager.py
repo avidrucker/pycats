@@ -9,13 +9,13 @@ This module handles:
 
 import pygame  # type: ignore
 
+from ..screens.char_select import CharacterSelector
+from ..screens.main_menu import MainMenuManager
+from ..screens.options_menu import OptionsMenu
+from ..screens.pause_menu import PauseMenuManager
+from ..screens.win_screen import WinScreenManager
+from ..systems.screen_engine import make_screen_engine
 from .esc_hold import EscHoldTimer, draw_esc_hold_arc
-from .screens.char_select import CharacterSelector
-from .screens.main_menu import MainMenuManager
-from .screens.options_menu import OptionsMenu
-from .screens.pause_menu import PauseMenuManager
-from .screens.win_screen import WinScreenManager
-from .systems.screen_engine import make_screen_engine
 
 
 class ScreenStateManager:
@@ -327,7 +327,7 @@ class ScreenStateManager:
         Each state's back-guard reads ``esc_hold_complete()`` to pop one level, and
         ``update()`` turns a completed hold at ``main_menu`` into an app quit.
         """
-        from .settings import load
+        from ..settings import load
 
         if not load().get("esc_hold_to_navigate", True):
             self._esc_hold.reset()

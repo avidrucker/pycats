@@ -33,7 +33,7 @@ def test_load_corrupt_file_falls_back_to_defaults(tmp_path, monkeypatch):
 def test_load_snaps_invalid_windowed_scale_to_a_valid_preset(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
     (tmp_path / "settings.json").write_text(json.dumps({"version": 1, "windowed_scale": 3.7, "fullscreen": False}))
-    from pycats.display import WINDOWED_SCALE_PRESETS
+    from pycats.shell.display import WINDOWED_SCALE_PRESETS
 
     assert settings.load()["windowed_scale"] in WINDOWED_SCALE_PRESETS
 

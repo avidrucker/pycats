@@ -5,7 +5,7 @@ Use: `python -m pycats.game`. The runtime lives in `main()` behind an `if __name
 "__main__"` guard (#701, C2 of #280), so **importing this module has no side effects** —
 no pygame.init, no window, no settings I/O, no loop. `main()` boots pygame, loads prefs,
 and drives `while app.running: app.step()`; the per-frame body and the runtime
-collaborators live on `App` (#707, C3 — see pycats/app.py).
+collaborators live on `App` (#707, C3 — see pycats/shell/app.py).
 
 #### TODO: implement menu options for pause screen such as restart, quit, etc.
 #### TODO: increase player jump height, and increase thin platforms height
@@ -26,7 +26,7 @@ import sys
 import pygame  # type: ignore
 
 from . import runtime_settings, settings
-from .app import App
+from .shell.app import App
 
 
 def parse_args(argv):

@@ -1,14 +1,14 @@
 """Windowed-scale preset helpers (#82).
 
-These are pure-math tests for pycats.display — no pygame surface needed for the
+These are pure-math tests for pycats.shell.display — no pygame surface needed for the
 sizing/mode/cycle logic. A separate test exercises a real surface scale to prove
 the chosen blit mode actually produces the expected dimensions.
 """
 
 import pytest
 
-from pycats import display
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
+from pycats.shell import display
 
 
 @pytest.mark.parametrize(
