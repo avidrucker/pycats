@@ -19,9 +19,9 @@ from ..config import (
     SCREEN_WIDTH,
     WHITE,
 )
-from ..menu_controller import MenuController
-from ..menu_widgets import draw_menu_screen
-from ..text_utils import text_renderer
+from ..ui.menu_controller import MenuController
+from ..ui.menu_widgets import draw_menu_screen
+from ..ui.text_utils import text_renderer
 
 # Layout literals for the instruction/fullscreen-hint text (#433: named inline).
 INSTRUCTION_FONT_SIZE = 20  # bottom navigation-hint lines

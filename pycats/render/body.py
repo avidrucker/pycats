@@ -11,7 +11,6 @@ import math
 
 import pygame
 
-from .. import cat_faces, text_utils
 from ..config import (
     BLACK,
     EAR_HEIGHT,
@@ -44,6 +43,7 @@ from ..config import (
     WHITE,
 )
 from ..entities import Player
+from ..ui import cat_faces, text_utils
 from .tint import _blend, active_tint, body_tint
 
 # #694 (DP1 of #672): black-outline stroke width for the flat-gray placeholder's

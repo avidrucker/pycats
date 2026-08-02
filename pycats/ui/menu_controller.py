@@ -15,7 +15,7 @@ Select reads the rebindable `p1/p2_controls["attack"]` for both players (the #84
 fix, now shared here), so an attack rebind is honoured on every menu.
 """
 
-from .config import MENU_NAV_COOLDOWN, MENU_SELECT_COOLDOWN
+from ..config import MENU_NAV_COOLDOWN, MENU_SELECT_COOLDOWN
 from .menu_widgets import PRESS_PULSE_FRAMES
 
 

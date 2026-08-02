@@ -9,7 +9,7 @@ renderer that falls back to primitives when no monospace font is available.
 
 import pygame
 
-from pycats import cat_faces
+from pycats.ui import cat_faces
 
 
 def test_cycle_face_style_wraps_through_all_styles():

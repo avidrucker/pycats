@@ -9,7 +9,7 @@ the pre-#900 draws — the render-parity oracle guards it.
 
 import pygame
 
-from .. import runtime_settings, text_utils
+from .. import runtime_settings
 from ..config import (
     HUD_EMPHASIS_SIZE,
     HUD_PADDING,
@@ -20,6 +20,7 @@ from ..config import (
 )
 from ..entities import Player
 from ..input_history import _GLYPHS, INPUT_HISTORY_FRAMES, PRESSED
+from ..ui import text_utils
 
 # HUD / text-overlay layout (#415: named from inline literals). The overlay font
 # size was repeated at ~10 call sites; the line counts + block gap couple the

@@ -21,8 +21,9 @@ The zoom/scale math is not re-implemented here — it is consumed from `pycats.d
 
 import pygame  # type: ignore
 
-from . import display, text_utils
+from . import display
 from .config import HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
+from .ui import text_utils
 
 
 class DisplayManager:

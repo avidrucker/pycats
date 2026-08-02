@@ -16,10 +16,10 @@ import pygame
 import pytest
 
 from pycats import render_battle as rb
-from pycats import text_utils
 from pycats.config import BG_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.core.input import InputFrame
 from pycats.sim.runner import build_players, build_stage
+from pycats.ui import text_utils
 
 # The fixture under test — exactly what guards the real render modules.
 pytestmark = pytest.mark.usefixtures("render_isolation")

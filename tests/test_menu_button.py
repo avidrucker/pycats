@@ -8,7 +8,7 @@ Piloted in OptionsMenu here; rolled out to the other menus in #360.
 
 import pygame  # noqa: E402
 
-from pycats.menu_widgets import (  # noqa: E402
+from pycats.ui.menu_widgets import (  # noqa: E402
     BUTTON_FILL_FOCUSED,
     FOCUS_MARKER,
     draw_menu_button,

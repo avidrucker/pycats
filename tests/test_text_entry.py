@@ -5,7 +5,7 @@ from pressed-nav — pure (no pygame), so it's fully unit-tested here. Consumers
 (#463 set names, #441 nicknames) host it; the render is a thin separate function.
 """
 
-from pycats.text_entry import DEL, DONE, TextEntry, draw_text_entry
+from pycats.ui.text_entry import DEL, DONE, TextEntry, draw_text_entry
 
 
 def test_new_text_entry_starts_empty_at_the_first_cell():

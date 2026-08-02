@@ -16,7 +16,7 @@ render_text_simple replace chain) and the glyph falls back to "?"/tofu → red.
 
 import pygame  # noqa: E402
 
-from pycats.text_utils import TextRenderer  # noqa: E402
+from pycats.ui.text_utils import TextRenderer  # noqa: E402
 
 # glyph -> the legible ASCII stand-in it must degrade to (#547 Should table;
 # ✓ stays "OK" — a confirmation marker, so "P1 ✓" -> "P1 OK", never "P1 x").

@@ -11,8 +11,8 @@ is emitted, so test_smash_row_present_after_special fails.
 
 import pygame
 
-from pycats import text_utils
 from pycats.render_battle import draw_controls
+from pycats.ui import text_utils
 
 
 class _Player:

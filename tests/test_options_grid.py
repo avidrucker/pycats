@@ -9,7 +9,7 @@ axes (vertical centering was the visible defect — text sat low in the rect).
 import pygame  # noqa: E402
 
 from pycats.screens.options_menu import NCOLS, OptionsMenu  # noqa: E402
-from pycats.text_utils import text_renderer  # noqa: E402
+from pycats.ui.text_utils import text_renderer  # noqa: E402
 
 # Full control dicts (the grid needs left/right, unlike the old single column).
 _P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d, attack=pygame.K_v, special=pygame.K_c)

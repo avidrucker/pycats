@@ -15,8 +15,8 @@ from dataclasses import dataclass
 
 import pygame
 
-from .. import text_utils
 from ..config import WHITE
+from ..ui import text_utils
 
 # Anchors — horizontally centred; vertical position per name.
 TOP_CENTER = "top_center"

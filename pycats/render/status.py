@@ -12,7 +12,6 @@ import math
 
 import pygame
 
-from .. import text_utils
 from ..config import (
     EAR_HEIGHT,
     PLAYER_SIZE,
@@ -22,6 +21,7 @@ from ..config import (
     YELLOW,
 )
 from ..systems.status_model import INTANGIBLE_BAR_COLOR
+from ..ui import text_utils
 
 # Dizzy stars drawn above a shield-broken (#12) fighter's head. Cosmetic only
 # (rendering is not golden-snapshotted), so these live here in the renderer.

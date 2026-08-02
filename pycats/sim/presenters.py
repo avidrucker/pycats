@@ -5,11 +5,11 @@ from __future__ import annotations
 
 import pygame
 
-from .. import text_utils
 from ..config import BG_COLOR, FPS, HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, tick_fps
 from ..esc_hold import EscHoldTimer, draw_esc_hold_arc
 from ..input_history import InputHistory
 from ..render_battle import draw_input_history, render_attacks, render_battle
+from ..ui import text_utils
 from .captions import caption_hold_frames, draw_captions
 
 # Live-replay overlay text sizes (#444: named from inline literals).

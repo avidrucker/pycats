@@ -13,10 +13,11 @@ input-present cases.
 
 import pygame
 
-from pycats import runtime_settings, text_utils
+from pycats import runtime_settings
 from pycats.config import HUD_PADDING, HUD_SPACING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 from pycats.core.input import InputFrame
 from pycats.render_battle import draw_shell_chrome
+from pycats.ui import text_utils
 
 
 def _raw(surface):

@@ -13,9 +13,10 @@ cycles the preset; a MIN_FONT_PX clamp keeps a scaled-down size readable.
 import pygame  # noqa: E402
 import pytest  # noqa: E402
 
-from pycats import runtime_settings, settings, text_utils  # noqa: E402
+from pycats import runtime_settings, settings  # noqa: E402
 from pycats.config import FONT_SCALES, MIN_FONT_PX  # noqa: E402
 from pycats.screens.options_menu import OptionsMenu  # noqa: E402
+from pycats.ui import text_utils  # noqa: E402
 
 
 @pytest.fixture(autouse=True)

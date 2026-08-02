@@ -34,10 +34,10 @@ from ..config import (
     SCREEN_WIDTH,
     WHITE,
 )
-from ..menu_layout import effective_columns, grid_dims, scroll_to_visible
-from ..menu_widgets import BUTTON_MIN_WIDTH, PRESS_PULSE_FRAMES, draw_menu_button, menu_button_size
-from ..text_entry import draw_text_entry
-from ..text_utils import text_renderer
+from ..ui.menu_layout import effective_columns, grid_dims, scroll_to_visible
+from ..ui.menu_widgets import BUTTON_MIN_WIDTH, PRESS_PULSE_FRAMES, draw_menu_button, menu_button_size
+from ..ui.text_entry import draw_text_entry
+from ..ui.text_utils import text_renderer
 from .keybind_menu import KeybindMenu
 from .keybind_sets_menu import KeybindSetsMenu
 

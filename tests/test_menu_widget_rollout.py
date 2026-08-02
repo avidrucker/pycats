@@ -33,7 +33,7 @@ _P2 = dict(
 def _spy_button_calls(render_fn):
     """Return the (label, focused) tuples that `render_fn` passes to draw_menu_button.
 
-    Patched at its definition site `pycats.menu_widgets.draw_menu_button`: since #837
+    Patched at its definition site `pycats.ui.menu_widgets.draw_menu_button`: since #837
     the menus render their rows through the shared `draw_menu_screen` helper (which
     calls `draw_menu_button` in menu_widgets' own namespace) rather than referencing
     the widget directly, so the spy targets the widget module, not the screen module.
@@ -44,7 +44,7 @@ def _spy_button_calls(render_fn):
         calls.append((label, focused))
         return pygame.Rect(0, 0, 1, 1)
 
-    with patch("pycats.menu_widgets.draw_menu_button", side_effect=fake):
+    with patch("pycats.ui.menu_widgets.draw_menu_button", side_effect=fake):
         render_fn()
     return calls
 

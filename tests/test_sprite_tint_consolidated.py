@@ -22,10 +22,10 @@ Revert-the-fix checks:
 import pygame as pg
 import pytest
 
-from pycats import cat_faces
 from pycats import render_battle as rb
 from pycats.config import RED, WHITE, YELLOW
 from pycats.entities.player import Player
+from pycats.ui import cat_faces
 
 pytestmark = pytest.mark.usefixtures("render_isolation")
 

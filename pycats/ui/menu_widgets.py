@@ -11,8 +11,8 @@ the pixels. Headless-safe (plain pygame Surface ops; no display hooks needed).
 
 import pygame
 
-from . import runtime_settings
-from .config import (
+from .. import runtime_settings
+from ..config import (
     MAIN_MENU_OPTION_COLOR,
     MAIN_MENU_OPTION_SIZE,
     MAIN_MENU_SELECTED_COLOR,

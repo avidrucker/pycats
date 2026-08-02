@@ -1,6 +1,6 @@
 """Pure layout math for scale-aware, scrollable menu grids (#402)."""
 
-from pycats.menu_layout import effective_columns, grid_dims, scroll_to_visible
+from pycats.ui.menu_layout import effective_columns, grid_dims, scroll_to_visible
 
 
 # ---- effective_columns: how many buttons fit across the screen -------------- #

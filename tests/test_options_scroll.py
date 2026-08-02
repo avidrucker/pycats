@@ -13,8 +13,8 @@ import pytest  # noqa: E402
 
 from pycats import runtime_settings, settings  # noqa: E402
 from pycats.config import MAIN_MENU_OPTION_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH  # noqa: E402
-from pycats.menu_widgets import menu_button_size  # noqa: E402
 from pycats.screens.options_menu import OptionsMenu  # noqa: E402
+from pycats.ui.menu_widgets import menu_button_size  # noqa: E402
 
 _P1 = dict(up=pygame.K_w, down=pygame.K_s, left=pygame.K_a, right=pygame.K_d, attack=pygame.K_v, special=pygame.K_c)
 _P2 = dict(

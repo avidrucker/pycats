@@ -13,8 +13,8 @@ rows read `Attack: ?` / `Shield: ?`, so these assertions go red.
 
 import pygame
 
-from pycats import text_utils
 from pycats.render_battle import draw_controls
+from pycats.ui import text_utils
 
 
 class _Player:

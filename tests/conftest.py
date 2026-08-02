@@ -5,7 +5,7 @@ from helpers import P1, P2, mk_player
 from helpers import ground as _ground
 
 from pycats import render_battle as rb
-from pycats import text_utils
+from pycats.ui import text_utils
 
 
 # --- shared construction fixtures (#884, Child 2 of #833) -------------------

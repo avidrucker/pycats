@@ -10,7 +10,7 @@ non-overlapping side-by-side blits, so one-step vs two-step compositing match).
 
 import pygame  # noqa: E402
 
-from pycats.text_utils import TextRenderer  # noqa: E402
+from pycats.ui.text_utils import TextRenderer  # noqa: E402
 
 
 def _tr():

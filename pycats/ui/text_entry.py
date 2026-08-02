@@ -51,7 +51,7 @@ def draw_text_entry(surface, entry, title="Enter name"):
     """Render the widget: title, the current buffer, and the char grid with the focused
     cell highlighted. Standalone (the model stays pygame-free) — pygame/render imports
     are local so importing the model doesn't pull them."""
-    from .config import (
+    from ..config import (
         MAIN_MENU_BG_COLOR,
         MAIN_MENU_OPTION_SIZE,
         MAIN_MENU_SELECTED_COLOR,

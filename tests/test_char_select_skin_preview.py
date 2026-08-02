@@ -109,7 +109,7 @@ def test_no_skin_readout_under_the_roster_tile(monkeypatch):
     # #761 deliverable 2: the `P1 ✓ {skin}` readout is dropped from the roster tile — the
     # skin NAME belongs only to the Player Choice Slot. Able-to-fail: red on #676's code,
     # which renders "P1 ✓ Void" in the grid band under the tile.
-    from pycats import text_utils
+    from pycats.ui import text_utils
 
     sel = _sel()
     _confirm_p1(sel, 0)  # nalio

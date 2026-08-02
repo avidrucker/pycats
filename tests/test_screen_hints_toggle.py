@@ -17,7 +17,7 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame  # noqa: E402
 import pytest  # noqa: E402
 
-import pycats.text_utils as tu  # noqa: E402
+import pycats.ui.text_utils as tu  # noqa: E402
 from pycats import runtime_settings, settings  # noqa: E402
 from pycats.render_battle import draw_shell_chrome  # noqa: E402
 from pycats.screens.char_select import CharacterSelector  # noqa: E402

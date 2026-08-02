@@ -11,7 +11,7 @@ render goldens / screen-parity are untouched.
 
 import pygame  # noqa: E402
 
-from pycats.menu_widgets import (  # noqa: E402
+from pycats.ui.menu_widgets import (  # noqa: E402
     BUTTON_FILL_PRESSED,
     PRESS_PULSE_FRAMES,
     draw_menu_button,

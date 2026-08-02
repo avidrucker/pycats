@@ -10,7 +10,7 @@ This module handles:
 
 import pygame  # type: ignore
 
-from .. import render_battle, runtime_settings, stats_print, text_utils
+from .. import render_battle, runtime_settings, stats_print
 from ..config import (
     FPS,
     P1_UI_COLOR,
@@ -27,6 +27,7 @@ from ..config import (
     WIN_SCREEN_TITLE_SIZE,
     YELLOW,
 )
+from ..ui import text_utils
 
 # Win-screen input timing (frames) — #446: named from inline literals.
 WIN_INPUT_COOLDOWN = 15  # ignore repeat confirm/cancel presses for this long

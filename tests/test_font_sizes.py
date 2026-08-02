@@ -13,8 +13,9 @@ not a UI text size) — a test pins that it stays local.
 import pathlib
 import re
 
-import pycats.cat_faces as cat_faces
-from pycats import config, render_battle, text_utils
+import pycats.ui.cat_faces as cat_faces
+from pycats import config, render_battle
+from pycats.ui import text_utils
 
 # pycats/ package dir. Anchored on render_battle (a top-level module) rather than
 # config, which is now a package (config.__file__ -> config/__init__.py) (#934).
@@ -44,7 +45,7 @@ def test_no_bare_font_size_literals_in_touched_modules():
     # A Font(...) / SysFont(...) call ending in a bare integer size is what #344
     # removed; only a named constant or a `size` variable should remain.
     bad = re.compile(r"(?:Font|SysFont)\([^)]*,\s*\d+\s*\)")
-    for name in ("render_battle.py", "game.py", "text_utils.py"):
+    for name in ("render_battle.py", "game.py", "ui/text_utils.py"):
         src = (_PKG / name).read_text()
         hits = bad.findall(src)
         assert not hits, f"{name} still has a bare font-size literal: {hits}"
