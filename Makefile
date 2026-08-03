@@ -10,7 +10,7 @@ RUFF := $(VENV)/ruff
 HEADLESS := SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=.
 ARGS ?=
 
-.PHONY: help test run run-cmd lint format bench goldens
+.PHONY: help test run run-cmd lint format bench goldens census
 
 help:
 	@echo "pycats — command SSOT (see #724). Targets:"
@@ -21,6 +21,7 @@ help:
 	@echo "  make format                   ruff format pycats/ (write; lint is its --check twin)"
 	@echo "  make bench [ARGS=\"...\"]        bench.py headless (extra flags via ARGS)"
 	@echo "  make goldens                  regen file-based goldens (3 modules); review sidecars — see tests/golden/REGEN_PROTOCOL.md"
+	@echo "  make census                   print the authored-vs-sourced value census (#1151); re-bless its ratchet baseline with PYCATS_UPDATE_AUTHORED_BASELINE=1"
 	@echo ""
 	@echo "SIM (run: python -m pycats.game):"
 	@echo "  python -m pycats.game                   play the game (same as make run)"
@@ -69,3 +70,9 @@ goldens:
 	@echo "goldens regenerated — REVIEW before committing:"
 	@echo "  git diff tests/golden/*.summary.json   # read the semantic sidecar diffs"
 	@echo "  every change must trace to an intended code change (tests/golden/REGEN_PROTOCOL.md)"
+
+# print the authored-vs-sourced value census across both status loci (#1151):
+# provenance.py config scalars + the per-fighter #1133 seam. Re-bless the ratchet
+# baseline (tests/authored_value_baseline.json) with the env var below (reviewed).
+census:
+	$(HEADLESS) "$(PY)" -m pycats.combat.value_status_census

@@ -120,6 +120,12 @@ sidecars before committing — see
 staring at a red `test_golden_*`)? [`docs/golden-tests.md`](./docs/golden-tests.md) is the
 plain-English onboarding + glossary (golden / oracle / digest-sidecar / re-baseline).
 
+`make census` prints the authored-vs-sourced value census (#1151) across both status loci —
+config scalars (`combat/provenance.py`) and the per-fighter move-data seam
+(`characters/data/*.json`). Its ratchet (`tests/test_authored_value_ratchet.py`) reds when a
+fighter's authored/undeclared value count grows; re-bless the baseline intentionally with
+`PYCATS_UPDATE_AUTHORED_BASELINE=1` (a reviewable one-file diff, author ≠ reviewer).
+
 ### Development setup
 
 The tests, linter, benchmark, and video recording need a few more packages, in
