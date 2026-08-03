@@ -21,6 +21,12 @@ help:
 	@echo "  make format                   ruff format pycats/ (write; lint is its --check twin)"
 	@echo "  make bench [ARGS=\"...\"]        bench.py headless (extra flags via ARGS)"
 	@echo "  make goldens                  regen file-based goldens (3 modules); review sidecars — see tests/golden/REGEN_PROTOCOL.md"
+	@echo ""
+	@echo "SIM (run: python -m pycats.game):"
+	@echo "  python -m pycats.game                   play the game (same as make run)"
+	@echo "  SDL_VIDEODRIVER=dummy python bench.py   headless state-engine benchmark (same as make bench)"
+	@echo ""
+	@"$(PY)" scripts/help_scripts.py
 
 # full suite headless; subset via ARGS="-k expr"
 test:

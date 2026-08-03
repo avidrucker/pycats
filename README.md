@@ -97,8 +97,10 @@ run-to-run; pass an int for a reproducible one.
 Common dev commands run through the root `Makefile` — the command SSOT (#724). The targets
 are `make test`, `run`, `run-cmd`, `lint`, `format`, `bench`, and `goldens`; each resolves
 the project `.venv` automatically (including from a `git` worktree, which has no local
-`.venv`). `make help` prints the authoritative one-line list — if it and this section ever
-disagree, `make help` wins.
+`.venv`). `make help` prints the authoritative one-line list — the Make targets, the
+sim/run invocations, and every root/`scripts/` entry point with its one-line purpose (the
+scripts section is derived from each script's docstring, so a new script self-documents;
+#1140). If it and this section ever disagree, `make help` wins.
 
 ### Running the tests
 
