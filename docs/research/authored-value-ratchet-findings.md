@@ -61,9 +61,15 @@ the counter carries both as sub-tallies under `authored`, not a merged total.
 
 ---
 
-## 3. Current baseline snapshot (as of 2026-08-02, this branch)
+## 3. Current baseline snapshot
 
-Real counts, so the follow-on build starts from a known number:
+> **⚠️ STALE — historical snapshot, do not trust these numbers as current.** The tables
+> below were hand-tallied on 2026-08-02 (design branch), before the census was built. Both
+> loci have moved since. **For a live reading, run `make census`** (or
+> `python -m pycats.combat.value_status_census`) — the runnable reader shipped in #1151. The
+> figures are preserved here only for traceability of what the design started from.
+
+Original hand-tally (2026-08-02, superseded):
 
 **`provenance.py` (60 scalar rows):**
 
@@ -83,9 +89,23 @@ Real counts, so the follow-on build starts from a known number:
 | gnok | 0 | 0 | 0 | **0 — undeclared** |
 | default | 0 | 0 | 0 | **0 — undeclared** |
 
-Only **birky** carries declared status today (it was the #1133 exemplar). The other four fighters'
-move values are real, authored, and **invisible to any declared-status counter** — see §5, the
-central design decision.
+Only **birky** carried declared status when this was tallied (it was the #1133 exemplar). The
+other four fighters' move values are real, authored, and **invisible to any declared-status
+counter** — see §5, the central design decision.
+
+**Live reading (as of 2026-08-03, from `make census`):** the numbers have already drifted from
+the hand-tally above — which is why the doc points at the command, not a frozen figure. Re-run
+`make census` for a current count; the reading on 2026-08-03 was:
+
+| area | guess | placeholder | sourced | decided | undeclared |
+|---|---|---|---|---|---|
+| physics_config | 9 | 0 | 32 | 30 | 0 |
+| fighter:birky | 0 | 15 | 21 | 0 | 362 |
+| fighter:default | 2 | 0 | 0 | 0 | 26 |
+| fighter:gnok | 2 | 0 | 0 | 0 | 417 |
+| fighter:nalio | 0 | 0 | 0 | 0 | 426 |
+| fighter:narz | 2 | 0 | 0 | 0 | 248 |
+| **TOTAL** | **15** | **15** | **53** | **30** | **1479** |
 
 ---
 
