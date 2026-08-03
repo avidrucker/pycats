@@ -353,7 +353,7 @@
       "in_air": false,
       "startup": 0,
       "active": 0,
-      "recovery": 111,
+      "recovery": 71,
       "hitboxes": []
     }
   },

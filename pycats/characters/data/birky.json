@@ -650,7 +650,7 @@
       "in_air": false,
       "startup": 0,
       "active": 0,
-      "recovery": 71,
+      "recovery": 111,
       "hitboxes": []
     }
   },

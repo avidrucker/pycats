@@ -7,8 +7,8 @@ like every attack — no bespoke idle mechanism. The `wait` move carries **no hi
 its frame length is the PM `Wait1` idle-subaction LOOP length, datamined per source via
 brawllib_rs (env #614, same pipeline as #753's Mario 51):
 
-    nalio -> Mario Wait1 = 51    birky -> Marth Wait1 = 71
-    narz  -> Kirby Wait1 = 111    gnok  -> DK    Wait1 = 141   (all FOUND, not guessed)
+    nalio -> Mario Wait1 = 51    birky -> Kirby Wait1 = 111
+    narz  -> Marth Wait1 = 71    gnok  -> DK    Wait1 = 141   (all FOUND, not guessed)
 
 Able-to-fail: drop the `wait` move from any authored cat, give it a hitbox, or set a wrong
 loop length, and the matching parametrized case goes red.
@@ -20,8 +20,9 @@ from pycats.characters.roster import ARCHETYPE_ROSTER
 from pycats.combat.data import load_fighter_data
 
 # PM `Wait1` idle-loop frame lengths, brawllib_rs datamine (FOUND): nalio->Mario,
-# birky->Marth, narz->Kirby, gnok->DK. Keep in sync with each cat module's `_WAIT`.
-_WAIT1_LOOP = {"nalio": 51, "birky": 71, "narz": 111, "gnok": 141}
+# birky->Kirby, narz->Marth, gnok->DK. Keep in sync with each cat's `characters/data/<cat>.json`.
+# (#1137: birky/narz values + labels were transposed at #1105 — Kirby=111, Marth=71.)
+_WAIT1_LOOP = {"nalio": 51, "birky": 111, "narz": 71, "gnok": 141}
 
 
 @pytest.mark.parametrize("cat", ARCHETYPE_ROSTER)
