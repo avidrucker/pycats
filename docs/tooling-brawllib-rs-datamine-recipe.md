@@ -28,38 +28,38 @@ precedent). So this tool is out of scope for #599's charge globals and any engin
 need meleelight / a decomp / the PM codeset (a separate ticket + the sourcing map). Do not attempt to
 read a global out of a subaction dump.
 
-## ⚠ Gated prerequisites — human-approve at execution (do NOT auto-install)
+## Prerequisites — the env is LIVE (both obtained; #794 §7)
 
-The clone is on disk, but **running** it is parked behind two human approvals (per RULES →
-"Dependencies"):
+Both prerequisites were obtained by the human and are present on this machine — the run steps below
+**execute as written**. (Historically these were the two gated dependencies, per RULES →
+"Dependencies"; that gate is cleared. A *new* toolchain/data install still needs approval, but nothing
+below installs anything.)
 
-1. **Rust toolchain** (`cargo` / `rustc`) — not installed on this machine (`which cargo` → nothing).
-   The clone pins `rust-toolchain.toml` → channel **1.92** (+ `rustfmt`, `clippy`, and a
-   `wasm32-unknown-unknown` target). The native examples below need only the 1.92 host toolchain; the
-   **wasm32 target is not required** unless you build the wasm/visualiser examples. Proposed install
-   (rustup, user-local, no root): `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-   then let the toolchain file select 1.92. **Propose only — do not run without approval.**
-2. **PM 3.6 `.pac` files** — the game build data the parser reads; copyrighted, **not vendored**.
-   `BrawlMod::new(brawl_dir, mod_dir)` overlays a **PM 3.6 SD-card build** (`-m`) on top of a
-   **vanilla Brawl dump** (`-d`). Both must be obtained separately by the human and their paths
-   supplied at run time.
+1. **Rust toolchain** — installed via rustup: **cargo 1.97.1 / rustc 1.97.1** at `~/.cargo/bin`
+   (not on the non-login `PATH` — source it first with `. ~/.cargo/env`; a bare `which cargo` misses
+   it). The clone's `rust-toolchain.toml` pins channel 1.92, but the installed host toolchain builds
+   the native examples fine. The `wasm32` target is only needed for the wasm/visualiser examples.
+2. **PM 3.6 `.pac` files** — present at **`~/Documents/Study/Rust/pm-data/`**: a vanilla Brawl dump at
+   `pm-data/brawl-dump/DATA/files` (`-d`) with the PM 3.6 SD-card build overlaid from `pm-data/pm36-sd`
+   (`-m`). Copyrighted, so **still not vendored** into either repo; they live only under `pm-data/`.
 
-Until both are approved and present, the run steps below are **not executed** — this recipe records
-*how*, gated.
+## Run recipe (live)
 
-## Run recipe (parked behind the gate above)
-
-All commands run from the clone: `cd ~/Documents/Study/Rust/brawllib_rs`.
+All commands run from the clone: `cd ~/Documents/Study/Rust/brawllib_rs` after `. ~/.cargo/env`.
+The `-d`/`-m` paths below are the real on-disk locations.
 
 ### 1. Human-readable structured dump (no new deps)
 
-The stock `high_level_frame_data` example already prints the processed tree (Rust `{:#?}` debug):
+The stock `high_level_frame_data` example already prints the processed tree (Rust `{:#?}` debug) — and,
+at `-l fighter`, includes the full `FighterAttributes` block (walk/dash/run, gravity, term/fastfall,
+jump velocities, num_jumps, weight — the per-character movement source of record, #1136):
 
 ```bash
-# -d vanilla Brawl dump   -m PM 3.6 SD-card overlay   -f fighter   -l data level
+. ~/.cargo/env
+# -d vanilla Brawl dump   -m PM 3.6 SD overlay   -f fighter   -l data level
 cargo run --release --example high_level_frame_data -- \
-  -d /path/to/brawl-dump \
-  -m /path/to/pm-3.6-sd \
+  -d ~/Documents/Study/Rust/pm-data/brawl-dump/DATA/files \
+  -m ~/Documents/Study/Rust/pm-data/pm36-sd \
   -f Mario \
   -l subaction \
   -a AttackS4S      # optional: one subaction (here f-smash); omit for all
@@ -83,7 +83,7 @@ From `examples/first_active_frames.rs` (authoritative in-tree list):
 (Smash attacks split into a `…Start` charge subaction and the release `…S`/`…4` — read hitboxes from
 the release subaction.)
 
-### 3. Structured JSON / binary export (small addition — also gated)
+### 3. Structured JSON / binary export (a new-dependency gate, distinct from the now-cleared env gate)
 
 The stock examples print debug text, not JSON. The `HighLevelFighter` structs are serde-`Serialize`,
 so a machine-readable dump is a ~15-line custom example. Two options:
@@ -91,8 +91,11 @@ so a machine-readable dump is a ~15-line custom example. Two options:
 - **`bincode`** — already a dependency (`Cargo.toml`, serde feature). A binary dump needs **no new
   dep**.
 - **`serde_json`** — **not** currently a dep; a JSON emitter would add `serde_json` as a
-  dev-dependency to the clone's `Cargo.toml`. That is itself a (small, dev-only, out-of-repo) dep
-  addition — treat it as gated with the toolchain approval, don't add it unprompted.
+  dev-dependency to the clone's `Cargo.toml`. That is a (small, dev-only, out-of-repo) dep addition —
+  **still gated** (adding any new dependency needs approval, RULES "Dependencies"), independent of the
+  env gate above being cleared. Don't add it unprompted. For a machine-readable roster dump today,
+  `scripts/datamine_fighter_attributes.sh` sidesteps this — it greps the stock `{:#?}` output instead
+  of adding a JSON emitter, so it needs no new dep.
 
 Sketch (`examples/dump_json.rs`, to add once approved):
 
