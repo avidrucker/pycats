@@ -1,0 +1,636 @@
+# pycats — project conventions
+
+## Work tracking
+
+- **Single source of truth: GitHub issues.** Actionable work lives in the issue
+  tracker (`gh issue list`), not in markdown TODO files. (`TODOS.md` was retired
+  into issues on 2026-06-22; the original list is preserved in git history.)
+- pycats runs the **fleet** orchestration workflow (`.claude/orchestrate.json`,
+  `mode: "fleet"`). Triage + assignment via the `/fruit-agent-orchestrate` skill;
+  agents claim work with `pmtools claim <issue> --as <fruit>` and close it with
+  `pmtools close <issue>` (see [Closing work](#closing-work)).
+
+## Labels & priority
+
+- **`severity:*` is for DEFECTS ONLY** (bugs). It describes the *impact of a
+  defect*: `high` = data corruption / broken output / blocking; `medium` = real,
+  visible defect; `low` = cosmetic or latent.
+- **Features / enhancements do NOT get a `severity:*` label.** They carry
+  `enhancement` and rank *below* triaged bugs in the work queue — this is
+  intentional: fix what's broken before adding more. To pull a specific feature
+  forward, **assign it directly** — the ranked queue is advisory and the human
+  orchestrator overrides it.
+- **`blocked`** encodes real dependencies (e.g. a feature gated on a
+  prerequisite). Prefer it over faking severity to express ordering.
+- The label taxonomy is a **shared cross-project convention** created by
+  `scripts/create-standard-labels.sh`. Don't invent project-local severity
+  meanings — keep labels identical across repos.
+
+### Area labels (`area:*`)
+
+- **Every ticket gets exactly one `area:*` label at filing time** — the
+  project-local subsystem it belongs to. The current set:
+  - `area:display` — rendering, fullscreen, zoom, resolution, display preferences
+  - `area:combat` — knockback, hitstun, hitboxes, dodges, attacks, off-stage mechanics
+  - `area:entities` — Fighter/Player state machine (dizzy, prone, ledge-hang, decomposition)
+  - `area:screens` — screen system/manager, start/win-loss screens, menus, skins, input feedback
+  - `area:watch` — `--watch` / `--vs` spectator battles
+  - `area:tracker` — ticket discipline, TODO reconciliation, rules/process docs
+  - `area:docs` — README, docs, setup, contributor workflow, and developer-experience documentation
+
+  **One area per issue:** if it spans two, pick the dominant one (the orchestrator
+  uses the *first-listed*) and **make a suggestion of how to effectively split the
+  ticket** if it genuinely needs two lanes. **Why:** `/fruit-agent-orchestrate`
+  partitions the backlog into per-agent lanes by `area:*` (at most one cluster per
+  agent), so an unlabelled ticket lands in the wildcard pool and weakens the
+  same-file collision guard. (Reproducible label *creation*: `avidrucker/pmtools#69`.)
+
+### Relationship labels (`parent` / `child`)
+
+- **`parent`** — the ticket has sub-issues / tracks child slices (an umbrella or
+  decomposition parent). **`child`** — the ticket has a parent / is a slice of a
+  larger tracker. A ticket that sits **mid-tree** (both a parent and a child) carries
+  **both** labels. These complement `area:*`: the area label says *what lane* the work
+  is in, the relationship label says *what tree* it belongs to.
+- **When to apply — at file/claim time, going forward.** When you file or claim a
+  ticket, tag it `parent` if it has sub-issues, `child` if it has a parent, both if
+  it's mid-tree. **Why:** GitHub's native sub-issue links (`parent:` / `sub-issues:`)
+  don't surface in the issue **list** view, so while working a child you can't
+  glance-see it's a slice of a bigger tracker, or that a parent has siblings you should
+  finish/close alongside it. The label makes the tree visible in the list.
+- **Backfill of already-open tickets is a one-time sweep, tracked separately** — this
+  note governs new/claimed tickets from now on; retro-tagging the existing backlog is
+  its own follow-up ticket, not an inline chore. (Labels created in **#641**.)
+
+## Filing work
+
+- **A question or suggestion is not authorization to create work.** "Have you done
+  X?", "did you Y?", "is Z done?", or "this would be good" asks for an *answer* or
+  surfaces an *option* — it is not a cue to file an issue, claim a worktree, or
+  start coding. Answer the question (or present the option) and **stop**;
+  file/claim/execute only after an explicit go-ahead ("yes, do it", "take that
+  ticket", "go ahead"). Filing-and-claiming is outward-facing and costly to
+  unwind — when unsure whether you've been authorized, ask. (Front-end mirror of
+  "surface the contradiction before an outward-facing close" under *Fixing bugs*.)
+- **No unprompted research.** When asked for a specific action (file/log/label/claim/
+  edit a named thing), do **exactly that** — do not first run greps, file reads, or
+  issue listings that weren't requested. Resolving the minimal input the asked action
+  strictly requires (e.g. looking up a command's required argument, or reading the one
+  file you're about to edit) is fine; open-ended investigation — "let me check how X
+  works", "let me see what else exists" — is not: ask "want me to look into X first?"
+  and wait for a yes. Burned tokens and the "I didn't ask you to research" correction
+  are the tell (errors db 23/24). (Execution-time complement of "a question is not
+  authorization" above: that rule bars acting when only *asked* a question; this one
+  bars over-acting when *given* an action.)
+- **Suggest, don't act** — see ~/.claude/CLAUDE.md → "Suggest, don't act". When asked for a narrow action, do only that; propose anything further, don't perform it.
+- Shape every ticket as a complaint: **have X / should have Y / repro**
+  (yegor-bdd).
+- **Open new issues with `pmtools file` (alias `create`), not bare `gh issue
+  create`.** `pmtools file` wraps `gh issue create` behind the config-driven
+  requirement gates: it enforces the role gate, maps `--area combat` →
+  `--label area:combat`, and refuses a `--severity` that isn't on a `bug`
+  (the "severity is for defects only" rule, enforced at filing time). Typical call:
+  `pmtools file --title "feat: X" --area <area> --role <ROLE> --body-file <f.md>`
+  (or `--body "…"`). Notes: `--role` is **required** (a valid role, e.g.
+  `DEV`/`RESEARCH`/`WRITER`); `--area X` becomes the `area:X` label; `--severity`
+  and extra `--label`s pass through (severity still gated to defects);
+  `--allow-uncategorized` files without an area. Always **`--dry-run` first** — it
+  prints the exact `gh issue create` call it would run, so you verify the labels
+  before minting. (Bare `gh issue create` still works and is what runs underneath,
+  but `pmtools file` is the path that keeps the gates on.)
+- **Repro/spec-first for unclear bugs.** If a bug's symptom isn't specific enough to
+  write have/should/repro, file a **`research`** ticket to validate / spec /
+  reproduce it first, then create the DEV bug ticket once the repro is known.
+  Never file a half-specified DEV ticket.
+- **Reconcile a worktree-found failure against current `origin/main` before filing
+  it.** `pmtools claim` guarantees a fresh base *at claim time* (it fetches and
+  hard-blocks a claim when local `main` is behind `origin/main`), but sibling agents
+  keep merging *during* your session, so a long-lived worktree base drifts behind and
+  a failure you see may already be fixed upstream. Before filing a regression found
+  in a worktree, `git fetch origin main` and check the open-issue list / `git log
+  origin/main` — confirm it still reproduces on **current** `origin/main`, not just
+  your (possibly stale) base. The claim-time guard cannot cover mid-session drift, and
+  `pmtools status` does not surface it today (#171). (Cousin of "merged ≠ what your
+  tree has" under *Closing work* and the stale-tracker caution.)
+- **Verify a delegated/audit finding — or a user-reported symptom — in the code
+  before filing or acting on it.** A subagent's finding, an audit's claim, or a
+  user's "X is broken / it works like Y" is a *lead, not a fact* — it reads with the
+  authority of prose but may not match what the code does. Before turning any reported
+  "X is broken / unwired / works like Y" into a ticket or an outward-facing change,
+  open the named `file:func` and confirm it. Precedents: **#189** (two reported
+  follow-ups — an "unwired" `StatechartScreenEngine`, a "mis-keyed" Nalio d-tilt —
+  both wrong on inspection; filing them would have duplicated #100/#142); **#453**
+  (the "Esc doesn't back out of sub-menus" report was wrong on mechanism — Esc was
+  hold-to-quit, never a back key). (Same spirit as reconcile-before-filing above and
+  "surface the contradiction before an outward-facing close" under *Fixing bugs*.)
+- **Lazy decomposition for research epics.** A multi-thread investigation gets
+  ONE umbrella `research` tracker issue listing the threads; file each child
+  thread **one at a time**, finishing it before filing the next sibling. This
+  avoids premature decomposition (yegor: only decompose when about to start work).
+- **Every `research` ticket produces ≥1 findings doc; follow-ups are optional.** Two
+  clauses ratified in **#618**:
+  **(A) The findings doc is the mandatory artifact.** A `research`-labelled ticket
+  closes only when it has written **one or more** durable findings docs (e.g.
+  `docs/research/<topic>-findings.md`) — a bare issue comment is **not** a sufficient
+  closing artifact; the closing comment **links** the doc(s). "At least one" lets a
+  single investigation emit multiple docs when it naturally splits. (Ties to the
+  issue-review research rubric's "expected output format" check.)
+  **(B) Follow-up tickets are optional and filed downstream of the doc, one at a
+  time.** Findings **may** cause follow-up tickets (a DEV to implement, a `decision`
+  to rule, or further `research`); those cite the findings doc as their source and are
+  filed **one at a time** per *Lazy decomposition* and the sequential-minting rule
+  below. Filing follow-ups is optional; the findings doc (A) is not.
+- **Verify a ticket's identity before stating it; mint IDs/refs one at a time.** Two
+  clauses from the #535/#536 misnumbering (errors db 51), ratified in **#541**:
+  **(A) Verify before you state.** Never tell the human — or write into any doc,
+  commit, or comment — a ticket's **number or title** until it's confirmed from a
+  real lookup: the `pmtools file` (→ `gh issue create`) return URL *for that specific
+  create*, or `gh issue view <N>`. Never infer a number from filing order or from a
+  batched command's stdout ordering.
+  **(B) Mint IDs/refs sequentially, never concurrently.** Never run **ID/ref-minting
+  mutations** in parallel — `pmtools file` (which calls `gh issue create`) **and**
+  `pmtools claim` (which mints a claim ref + worktree, same race class): file/claim
+  one, confirm the returned
+  identifier, then do the next. No `&`, `wait`, `xargs -P`, or concurrent tool calls
+  that each mint an ID/ref. Read-only `gh`/`pmtools` calls **may** still run in
+  parallel — the ban is only on concurrent ID/ref-minting mutations. (The failure was
+  filing two issues concurrently → GitHub assigned their numbers in race order → they
+  landed swapped, then propagated into a committed doc + comments before verification.)
+
+## Dependencies
+
+- **Adding a dependency needs explicit human approval — propose, don't install.**
+  Any way of pulling in undeclared code is gated: `pip install` (even a dev `.venv`),
+  manifest/lockfile edits, `npm`, `apt`. Proceed only on an explicit "yes" (the
+  `pyflakes`-into-`.venv` install during #193 is the case this forbids). Fine without
+  asking: **using** a declared dep (`pygame-ce`, `pytest`, `statecharts-py`), and
+  **suggesting/explaining** a library — the gate is on installing, not discussing.
+  **Why:** a new dep is supply-chain + reproducibility surface, and "it's
+  dev-only/harmless" is how silent installs get normalized. pycats is stdlib-only by
+  design (`settings.py`, "no new dependency, per #94").
+
+## Fixing bugs
+
+- **Every bugfix lands a regression test in the same commit.** A fix without a
+  test is not done — the test is what stops the bug from coming back (and from
+  being *re-filed*: #7's original fix `b480ae0` shipped with no test, so the
+  behavior looked broken a year later and was re-filed and re-investigated from
+  scratch). This is the repo's expression of yegor-bdd (a bug is a failing test).
+- **The test must be able to fail.** Before claiming the fix works, confirm the
+  new test is **red without the fix and green with it** — revert the fix (or stub
+  it), watch the test fail, then restore **by reversing the same edit** (undo the
+  mutation with the inverse Edit). Do **not** restore with `git checkout <file>` /
+  `git restore <file>`: that reverts the whole file to HEAD and discards your
+  uncommitted fix along with the mutation — a footgun that has recurred repeatedly.
+  Mutating via Edit keeps the undo symmetric so `git checkout` never enters the loop;
+  see `docs/research/2026-07-20-revert-check-footgun-findings.md` (#791). A test that
+  has never been red proves nothing (it may assert the wrong thing or never reach the
+  branch). See `docs/learnings/today-i-learned-2026-06-23-dragonfruit.md` §1 & §4.
+- **Already-fixed / non-reproducing bug?** If a reported bug does not reproduce on
+  current `main`, the deliverable is still the *missing* regression test (find the
+  commit that fixed it, add the can-fail guard), not a no-op close. Surface the
+  contradiction to the reporter before an outward-facing close.
+
+## Testing
+
+- **Golden-safe by default-identity — not by hand.** A new present-layer or behavioral
+  feature is golden-safe when its **default is an exact identity on the sim/golden path**:
+  gate it off-by-default so the golden cat / scripted controller never exercises it, and the
+  goldens stay byte-identical *by construction*. Precedents — the default cat has no smash
+  (#327); the level-less controller has every AI flag `False` (#312); `font_scale=standard`
+  ⇒ `round(base*1.0) == base` (#345); a `dict`-subclass `Keymap` drops into `controls[...]`
+  unchanged and a `None` nickname renders the identical `"P1"`/`"P2"` (#438). Extend a shared
+  render primitive behind a **default-identity kwarg** for the same reason
+  (`draw_menu_button(pressed=False)`, #332). Assert the identity with a byte-identity /
+  render-parity oracle test, and prefer this to regenerating or hand-editing goldens to chase
+  a diff — regenerate only once every remaining diff is explained. See
+  `docs/learnings/today-i-learned-2026-07-01-dragonfruit.md`.
+- **AI / behavioral integration tests must (a) drive the REAL loop and (b) be
+  discriminating.** A controller test that calls `decide()` on a stub can pass while the live
+  loop **drops** the input — the #248/#370 "emit-but-don't-convert" gotcha — so drive the
+  actual `run_battle` loop, not just the policy. And a real-loop test that *also passes with
+  the feature turned off* is not testing the feature: **revert-check the integration test**
+  (mutate the feature off, confirm the test goes red), exactly as for a unit test (see *Fixing
+  bugs* → "able to fail"). Both halves bit in one session — a melee-poke test the ordinary
+  attack already satisfied (fixed with a below-the-lip foe, `dy > 60`; #413) and a recovery
+  `y`-comparison silently broken by a KO→respawn to `y = -1000` (switched to asserting the
+  input is emitted in-loop; #409). See
+  `docs/learnings/today-i-learned-2026-07-01-dragonfruit.md`.
+
+## Code conventions
+
+- **Read the optional `Player`/control surface defensively in shared combat/input
+  code.** `systems/combat.py::process_hits` and `entities/fighter_input.py` are
+  exercised by lightweight test stubs that model only the documented *minimal*
+  contract (rect, facing, hurtbox, `receive_hit`, …), not the full `Player`. Any
+  new read of an optional attribute or key — `defender.state`, `controls["special"]`,
+  … — must use `getattr(obj, "attr", default)` / `dict.get(key, default)` with a
+  safe default, never a bare `obj.attr` / `controls[key]`. The safe default is the
+  inert reading: an unbound action is "unpressable"; a defender without `.state` is
+  "not crouching". Precedent — this bit twice: **#137** (`process_hits` read
+  `defender.state == "crouch"` → `AttributeError` reddened `main` via the stub-based
+  `test_multi_hitbox`/`test_clank`) and **#143** (the move-selection seam read
+  `controls["special"]` → `KeyError` on the 16 test control maps that omit it).
+
+- **Never restore a monkeypatched global by hand in a test — use the `monkeypatch`
+  fixture (or `try/finally`).** A manual restore is skipped if the test throws before
+  its last line, leaking the stub into every later test. **Diagnostic:** a change that
+  reddens tests in *files the diff never touched* = a leaked global from an earlier
+  failing test. Bit **thrice**: `os.environ` at module top (#345, ~15 tests), hand-restored
+  `settings.load` (#453, ~19 tests), and a **cached-fake variant** (#550→#709): a test
+  used `monkeypatch` *correctly*, but the fake `SysFont` product it created was cached in
+  the **shared `text_renderer.font_cache`** singleton and outlived the patch (the cache
+  holds the object, not the patched fn), reddening unrelated menu-render tests on reorder.
+  **`monkeypatch` alone isn't enough when the fake lands in a shared cache — a test that
+  injects a fake font/factory MUST flush the downstream cache in its own teardown**
+  (`text_renderer.font_cache.clear()`). The autouse `_no_fake_fonts_leaked` guard in
+  `tests/conftest.py` (#709) backstops this — it fails the *polluting* test by name (and
+  evicts the fake so victims stay green) if a non-`pygame.font.Font` object is left in the
+  shared cache. Font-stack usage + gotchas are written up in
+  [docs/pygame-fonts.md](./docs/pygame-fonts.md) (§7).
+
+- **A refactor/feature that EXPOSES a pre-existing, *unrelated* test failure — root-fix,
+  never hide (ratified 2026-07-07, #550/#709).** When your reorder/cache-warming surfaces
+  a latent test bug that isn't about your change's target, the *red gate* is not a `@todo`
+  puzzle to defer — merge-gate/zero-tolerance (never merge red) outrank PDD. Resolve it to
+  green via the cheapest **legitimate** rung, never a hidden one:
+  - **Never** skip/quarantine the victim tests, and never dodge the trigger with a
+    feature-local hack — both are fake green.
+  - **A — trivial root-fix (default for a ≤~10-line, obviously-correct fix):** land it in
+    the feature commit **with a documented note in the commit/close + a follow-up tracking
+    ticket** (e.g. #550's inline `text_renderer` flush + this #709).
+  - **B — non-trivial / risky fix:** **stop** — file the bug (its independent repro is the
+    complaint), fix it first as its own reviewed unit (author ≠ reviewer), then rebase the
+    feature. Available whenever the bug reproduces without the feature.
+  - *Mechanical* test edits from a refactor (a renamed symbol, a moved seam) ride along
+    freely; *behaviour/oracle* flips still go through the golden-regen author ≠ reviewer path.
+
+## Referencing code & docs
+
+- **Point at named landmarks, not raw line numbers.** When an *authored* reference — a
+  ticket, issue comment, review, commit message, or doc — points at a location, use a
+  **stable landmark**. Line numbers drift the moment a file changes and then silently
+  misdirect the next reader to the wrong (or deleted) line; a landmark is greppable and
+  self-correcting.
+  - **Code** → the **function / method / class name** + the **file path**
+    (`build_stage()` in `pycats/sim/runner.py`), or the bare **symbol** when there's no
+    enclosing definition (`LEDGE_GETUP_FRAMES` in `pycats/config/physics.py`) — never
+    `runner.py:73` / `config.py:142`.
+  - **Markdown docs** → the **section heading** (under `## Filing work` in RULES.md) —
+    never `RULES.md:47`.
+- A line number **may** ride along as a secondary, clearly-as-of hint (`~L73 at time of
+  writing`), but never stand alone as the reference.
+- **Carve-outs** — these don't rot, so a line number is fine: a **commit-pinned
+  permalink** (`blob/<sha>/file#L73`) is a valid *primary* locator (it points at a frozen
+  commit, not the moving branch), and **quoted tool output** (stack traces, `pytest` /
+  `ruff` output, diffs) keeps its own line numbers. The rule governs the refs you *write*,
+  not machine output you paste.
+
+## PM-parity markers (`⚠` / `🔬` / `❓`)
+
+Inline glyph markers make unresolved-vs-Project-M work **greppable**. Use them at write
+time. (Axis A of the labeling system #451; design #448; the human-facing key across all
+three axes: **[docs/parity-labeling-legend.md](docs/parity-labeling-legend.md)** (#452).
+Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-audit.md`.)
+
+| Marker | Means | `grep -rn` answers |
+|---|---|---|
+| `⚠` (U+26A0) | **guessed** — value present but unconfirmed vs PM | "what's unpinned?" |
+| `🔬` (U+1F52C) | **needs research** — a concrete sourcing/derivation is queued | "what's the research backlog?" |
+| `❓` (U+2753) | **open question** — an undecided design/behaviour point | "what's undecided?" |
+
+- `⚠` and `🔬` **co-occur** (`⚠🔬`) on a guessed value that is also queued for sourcing.
+  `grep ⚠` = every unpinned value; `grep 🔬` = the subset with an active sourcing action.
+- Mark only **unresolved** things. The #233 provenance registry's *resolved* states —
+  `FOUND` / `TUNED` / `DIVERGENCE` — get **no** marker (marker = "still open"; the
+  registry classification is the resolution; the two compose).
+- **Convention once.** Mark a documented, repeated convention in **one** place (e.g. a
+  module-docstring note that "hitbox positions are approximated per #120"), not on every
+  repetition — repeated markers become noise (#448 "marker soup"). Don't re-mark a
+  continuation line whose comment is already marked.
+- An `❓` should **reference its `decision` / research ticket** where one exists
+  (e.g. `❓ … — see #466`), so the code points at the discussion instead of duplicating it.
+
+## Changing values
+
+- **A value change must cite its basis.** Any change to a tuning/gameplay constant — a
+  config value or balance number (frame windows, speeds, damage, knockback, thresholds,
+  timers, cooldowns, hitbox sizes) — must point to **one** of:
+  1. **Research findings / data** — a sourced PM/Melee value (rukaidata, SmashWiki, a PM
+     changelog, or an in-repo `docs/research/*` finding), cited in the commit **and** the
+     constant's comment; **or**
+  2. **A game-designer decision** — a citation to a design doc (an ADR, a `docs/` design
+     note, or a ratified `decision:` ticket) where the human designer chose the value.
+- **Game-feel alone is not a basis.** A round number, a mid-band guess, or bare "it feels
+  better" is **not** sufficient — such a change is declined and closed **`wont-do` /
+  `vapid`** (precedent: **#489**, a `DOUBLE_TAP_WINDOW` bump that rested on a feel-pick
+  after **#407** found PM has no faithful number to copy). A genuinely un-pinned value
+  **stays at its current number**, carrying its `⚠`/GUESS marker, until basis (1) or (2) exists.
+- **Picking a surrogate is a decision, not a DEV edit.** When no faithful value exists,
+  *choosing* one is a `decision:` ticket (e.g. **#491**); the ratified choice then becomes
+  basis (2). Record which basis applies in the commit, the constant's comment, and its
+  `combat/provenance.py` entry (**#233** / ADR-0003) as **FOUND** (sourced) or **TUNED**
+  (designer-chosen) — never presented as sourced when it is a guess.
+- **Routing a "source + pin a value" ticket** (which label, and how the steps chain; ruling in
+  **#530**, `docs/research/2026-07-05-value-sourcing-classification.md`). The rule above sets the
+  *basis* a value needs; this sets the **label** the sourcing work carries:
+  - **Already sourced** in an in-repo `docs/research/*` finding → a single **DEV** (`enhancement`):
+    swap the constant, record **FOUND**, cite the finding, land a proving test.
+  - **Sourceable but not yet sourced** → **research → DEV**: the research finds and cites the value,
+    then a DEV child (*blocked-by* the research) applies it.
+  - **No faithful value exists** → **decision → DEV**: a `decision:` ticket where the human picks
+    the surrogate (**TUNED**), then a DEV applies it — *choosing* is never a DEV edit.
+  - **No `architect` label** for this work — the architect role maps to `research` (source it) or
+    `decision` (invent it), not a separate label.
+- This gates *changing* a value; the `⚠`/`🔬`/`❓` markers above only *label* an unpinned
+  one — the two compose (a changed value should shed its `⚠` and land a `FOUND`/`TUNED` entry).
+
+## Read the source before asserting
+
+- **Ground a governed claim before you assert or classify it.** Any claim touching an
+  external canon (**Project M / Melee / Brawl**) — or an **in-repo fact you're recalling
+  rather than reading** that feeds a decision/artifact (a commit, ticket, doc,
+  classification, closing summary) — must rest on a **checkable authority** *before* it is
+  stated: the ticket **body** over its title, the **code** over memory, the **registry**
+  over prose. Grounding is one of two authorities:
+  1. a **verbatim primary quote** (external canon, or a `FOUND` value); or
+  2. the **provenance record + deciding issue** (a pycats decision — `TUNED`/`DIVERGENCE`;
+     `combat/provenance.py`, ADR-0003). A decision-grounded claim must carry a **"not canon"** tag.
+- **No authority in hand → don't assert from a proxy.** Emit an **evidence-deviation
+  notice** and get consent (interactive), or **withhold + log** the claim as a grounding
+  debt (autonomous / fleet). A `GUESS`/unsourced value is a debt to drive to zero, never a
+  silent assertion. The **`grounded-claim`** skill runs this reflex; **#575** is the
+  detective backstop. (Protocol: `docs/superpowers/specs/2026-07-05-grounded-claim-protocol-design.md`;
+  origin #571 / #611 / #620.)
+- **Cite primary sources for parity/mechanics claims** (the PM instance of the reflex above).
+  When asserting how Project M / Melee / Brawl behaves, pull a **verbatim quote** from a
+  **primary source** — PMDT changelogs, rukaidata / `brawllib_rs`, OpenSA/dantarion,
+  doldecomp — with the **URL + tier** (T1 primary / T2 secondary: SmashWiki, Liquipedia,
+  Smashboards). **Label inference as inference** — never issue a **"refuted"/"confirmed"**
+  verdict from a chain of reasoning over secondary facts; scope the verdict to what a primary
+  quote supports and record the rest as a flagged **`gap`**. Flag Melee/Brawl/Smash-4/Ultimate
+  values so they are **never silently attributed to PM**. (Origin: #520 → correction #537,
+  reframe #527, audit #536; ratified **#562**.)
+- **The verify-claims ledger lives outside the repo.** The claims ledger (`PYC-*` IDs,
+  per-area subtrees, generated `INDEX.md`) was relocated to the sibling
+  **`pycats-claims-data/`** — a plain untracked folder at `…/Study/Python/pycats-claims-data/`,
+  outside the pycats tree, with no git history by design. `.claude/ledger.json` `dir` holds
+  its absolute path; consumers resolve the ledger from there, not from an in-tree
+  `claims-data/`. (#946.)
+
+## Process lessons
+
+Working-discipline lessons distilled from session retrospectives (TILs), codified here so
+they outlive the session that surfaced them.
+
+- **Calibrate before executing a planned sweep.** Before trusting a multi-module plan's
+  ordering, recon the *actual* current state — a module the plan lists may already be
+  factored. Report an already-clean module as an explicit **finding**, not a silent skip,
+  so the plan's premise is corrected rather than quietly diverged from. (From the #410
+  magic-number audit: combat/systems were already factored via ADR-0003; the real debt lived
+  in render/UI.)
+- **An identity refactor needs a proof, and the proof needs an able-to-fail check.** A
+  "behaviour-unchanged" refactor must be backed by evidence that behaviour did not change —
+  and that evidence must be shown to *fail* when behaviour does. Where goldens are thin (e.g.
+  `screen_parity` is an FSM state-trace, not pixels), use a **before/after render-hash across
+  the affected states**, and confirm the harness reds by flipping one constant before
+  trusting a green. (Same able-to-fail discipline as *Fixing bugs* above; precedents #420 /
+  #433 / #450.)
+- **Research produces a design *choice*, not a unilateral fix.** When a parity fix collides
+  with possible game-feel or design intent, surface the options to the reporter / designer as
+  an A/B choice rather than auto-filing or auto-applying one branch — the research output is
+  the *decision material*, not the decision. (E.g. #466 walk-off jump → A/B; #480 spawn
+  model. Composes with *Changing values* above: picking a surrogate is a `decision:`, not a
+  DEV edit.)
+
+## Surfacing run/sim commands
+
+When a change would **benefit from or require a live run or simulation** to verify
+— anything observable: the running game loop, rendering/scaling, input, screens or
+menus, audio, or sim output — the agent's **final response MUST include the exact
+command(s) to run it, with full absolute paths**, so the human can copy-paste and
+manually test (the agent can't drive the GUI). **pycats-only** — other repos in the
+Study tree do not inherit this rule.
+
+- **When it applies:** the change is runnable/observable. A pure-internal refactor
+  with full test coverage and no behaviour change doesn't strictly need it, though a
+  run command is still welcome.
+- **Full paths, not `python -m pycats.game` alone.** Worktrees have no `.venv`, so
+  the interpreter is **always** the main repo's `.venv` — but the **working directory
+  selects the code**: under `-m`, cwd is `sys.path[0]`, so `-m pycats.game` imports
+  the `pycats/` package from whatever directory you `cd` into. Present it as a
+  `REPO=` / `PY=` variable block (one assignment per line), not an opaque one-liner.
+  - **Merged change (default):** run from the main checkout.
+
+        REPO=/abs/path/to/pycats                   # the main checkout
+        PY="$REPO/.venv/bin/python"                # ALWAYS the main repo's venv
+        cd "$REPO" && "$PY" -m pycats.game
+  - **Unmerged change (still on your claimed worktree branch):** `cd` into the
+    **worktree**, not the main checkout — otherwise `-m pycats.game` imports `main`'s
+    package and the reviewer sees the OLD, pre-change behavior. **Don't hand-assemble
+    the `WT=` path** — that is exactly the recurring mistake (a `WT` pointing at main
+    launches the pre-change build). Instead generate the block with the helper, which
+    resolves an issue number / branch name / worktree path to the exact worktree and
+    fails loudly if none matches (never falling back to main):
+
+        make run-cmd WHAT=<issue|branch|worktree-path>   # e.g. WHAT=859
+        # prints:  cd '<resolved-worktree>' && make run
+
+    `make run` already resolves the main repo's venv from a worktree cwd
+    (`VENV := $(GIT_COMMON)/../.venv/bin`), so `cd <worktree> && make run` needs no
+    hand-typed `PY=`/`WT=` at all — that is why it is the mistake-proof default.
+    (`scripts/run_cmd.py <what>` is the same generator if you want it without `make`.)
+
+    The raw block below is what that expands to — kept only as the explanation of the
+    moving parts, no longer the recipe to type by hand: the interpreter stays the main
+    repo's venv (the worktree has none); only the cwd changes.
+
+        REPO=/abs/path/to/pycats
+        PY="$REPO/.venv/bin/python"                # ALWAYS the main repo's venv
+        WT="$REPO/.claude/worktrees/wt-<fruit>-<proj>-<N>"   # the UNMERGED change lives here
+        cd "$WT" && "$PY" -m pycats.game
+
+- **Pick the command that shows the change:** the live game (`-m pycats.game`), a
+  replay/match (`watch.py`, `watch.py --match`), or a recorded video
+  (`watch.py --match --video media/clip.mp4`). The README "How to Run" section and
+  the `watch.py` commands are the canonical sources — cite the one that exercises
+  the change, with absolute paths filled in.
+- **There is no `main.py` or top-level launcher — never invent `python main.py`.**
+  The only entry points, all run from the repo root, are `-m pycats.game` (live
+  game), `watch.py` (replay/match), and `bench.py` (benchmark). `python main.py`
+  fails with `No such file or directory`. If unsure, the README "How to Run"
+  section is authoritative — read it rather than guessing a conventional path.
+
+## Claiming work
+
+- **Run the full suite right after `pmtools claim`, before you change anything.** A
+  fresh worktree branches off whatever `main` is *right now*, and in fleet mode
+  another agent may have just merged a mid-flight (or even red) change. Confirm
+  green first:
+
+      SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
+        /abs/path/to/pycats/.venv/bin/python -m pytest -q
+
+  If it's red, the failure is **not yours** — fix `main` first (or `git merge
+  origin/main` to pull in a fix that landed after you branched) before building, so
+  you never attribute a pre-existing failure to your change, or ship on top of a
+  broken baseline. (#177; fleet merge race.)
+
+- **Move the session into the worktree right after `pmtools claim` — call the
+  `EnterWorktree` tool with the worktree path.** `claim` runs `git worktree add` (an
+  external command): it creates the worktree directory on disk but does **not** change
+  the session's working directory, so the shell stays pinned to the main checkout.
+  Leaving it there forces a `cd <worktree>` prefix on every command and hides the real
+  cwd from the human — the footgun behind editing or running against `main` instead of
+  the worktree (#763; error rows id=150 wrong-checkout, id=158 wrong run-command).
+  `EnterWorktree` with the claimed path changes cwd for real: bare commands run in the
+  worktree, `CLAUDE.md`/memory reload for that directory, `pwd` is accurate, and the
+  #769 run/sim `cd` becomes implicit. Do this before the suite run above so pytest
+  imports the worktree's package. (Return to main at close time — see "Closing work".)
+
+## Closing work
+
+The fleet closes via **`pmtools close`**, which owns the racy push to `main` and
+the gated worktree teardown. Follow this order — do **not** improvise:
+
+1. **Work in your claimed worktree.** `pmtools claim <N> --as <fruit>` created it
+   under `.claude/worktrees/wt-<fruit>-<project>-N` on branch
+   `br-<fruit>/<project>-N` — the pmtools #128 "standard" mint shape (the legacy
+   `<fruit>/issue-N` branch and old-canonical `…-<lang>-issue-N` forms still parse
+   for back-compat). Note the branch and worktree-dir shapes differ:
+   `.claude/orchestrate.json`'s `worktreeBranchPattern` parses the **branch column**
+   of `git worktree list` (`br-<fruit>/<project>-N`), **not** the `wt-…` directory
+   name.
+2. **Re-run the full suite after your FINAL edit, before you commit.** The
+   post-claim run (see "Claiming work") guards the *merge race* — a red inherited
+   from another agent's mid-flight merge. It does **not** guard a red *you* introduce
+   with a later edit: #757 dropped `evidenceDir` from `.claude/ledger.json` *after* its
+   green post-claim run, and the broken `tests/test_ledger_config.py` merged anyway
+   (fixed reactively in #762) — ruff had nothing to say about a broken Python assertion.
+   So run the suite once more after your last change:
+
+       SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
+         /abs/path/to/pycats/.venv/bin/python -m pytest -q
+
+   The `pmtools close` gate re-runs the suite too (step 5), so this is not the only net
+   — but catching a red locally is faster feedback than a rejected merge.
+3. **Commit on the feature branch, with `Closes #N` in the commit _body_.** The
+   subject may keep the repo's `type(scope): summary (#N)` style, but the body
+   MUST carry the `Closes #N` keyword: it is both the GitHub auto-close trigger
+   *and* exactly what `pmtools close` scans for (and recovers on). `git log
+   --oneline` only shows the subject — put the keyword in the body, not the title.
+4. **Human eyeball-approval gate — for player-visible changes.** If the change is
+   **player-visible** — anything a player sees on screen: rendering, UI/HUD text,
+   layout, colors, animation, or screen flow — **show it to the human and get an
+   explicit OK before you land it (step 5), even when the full suite is green.** A
+   green suite proves behaviour/pixels are *stable*, not that they *look right*: the
+   render-parity oracle is a byte comparison, not a judgment of appearance (#677), and
+   #868 removed a HUD hint and merged before anyone eyeballed it. Surface the run/sim
+   command (see [Surfacing run/sim commands](#surfacing-runsim-commands) — the run
+   command is *how* the human eyeballs it) and wait for their confirmation; only then
+   land. **Carve-out — no eyeball OK needed for a non-visible change:** logic, tooling,
+   docs, or a render refactor proven byte-identical by a render-hash / parity oracle.
+   (Ratified in-session 2026-07-21; #873.)
+5. **Return the session to main with `ExitWorktree keep`, then land + tear down with
+   `pmtools close <N>` from the main checkout.** Because you entered the worktree at
+   claim time (see "Claiming work"), the session is now *inside* the worktree — call
+   the `ExitWorktree` tool with `action: keep` to move it back to the main checkout
+   first. Use **`keep`**, never `remove`: `pmtools close` owns the actual teardown, so
+   your job is only to leave the directory, not delete it. Then run `close` from the
+   main repo root — it resolves the worktree + branch from the issue number
+   (pmtools#104, `008cb2a`), so it must run from main, **not** from inside the worktree
+   it deletes. Before pushing, `close` runs the `close.verify` gate (cwd=worktree, so
+   it checks the code being merged): `ruff format --check` + `ruff check` on `pycats/`,
+   then the **full pytest suite** under the SDL dummy drivers (`SDL_*=dummy … python -m
+   pytest -q`, added #764); any failure aborts the close before anything reaches `main`.
+   So a green close *does* mean the suite passed at merge — the pytest step is why;
+   before #764 the gate was ruff-only and a broken test could merge green-gated (#757→
+   #762). Then it loops fetch → rebase `origin/main` → push `HEAD:main` until it lands,
+   then — only after confirming the commit reached `origin/main` — deletes the claim
+   ref, closes the issue, and removes the worktree + branch. Exiting to main first
+   keeps your shell from being stranded in the deleted directory. (No-code
+   decision/research tickets close via `gh issue close` + `pmtools release`; the same
+   `ExitWorktree keep` applies before running them from main.)
+6. **Run the pre-close error self-audit.** Before posting the closing comment,
+   re-read the session from claim → now, enumerate every log-error trigger event
+   (including resolved ones), log any missing rows (`pmtools error log`), and include
+   one of `error self-audit: N row(s) logged (#…)` or `error self-audit: no loggable
+   errors this session` in the closing comment. See the **log-error** skill for the
+   trigger list + fields. This turns silence into a checkable acknowledgement — a
+   clean session and a forgotten log stop looking identical.
+
+**Never `git push` to `main` directly, and never manually `git merge` your feature
+branch into `main`** — **unless a human explicitly authorizes a direct merge + push
+for a specific change in the current session.** `pmtools close` exists to make the
+close atomic and race-safe: a hand-typed push-then-teardown can tear down a worktree
+*after* a race-rejected push, destroying work that is still only local (the lccjs
+"#200 incident"). Hand-closing also leaves a dangling `refs/claims/issue-N` that
+`pmtools close` would otherwise sweep.
+
+**The explicit-authorization carve-out.** When a human, in the current session,
+explicitly authorizes a direct merge + push for a specific change, a direct `git
+merge` + `git push origin main` is permitted — the authorizing human owns the race
+and accepts it. This is for **attended, in-session** work only; for
+unattended / fleet / ticket-close work the default stands (route through `pmtools
+close`). The go-ahead permits the *push route*, **not** skipping the gate: the change
+still ships with the suite green and the pre-close error self-audit done, and a
+hand-close should still clean up its `refs/claims/issue-N` (via `pmtools release` or
+by deleting the ref). Absent an explicit in-session go-ahead, always route through the
+tool. (Basis: error id=74 — an agent refused a direct commit+push and invented a PR
+flow; #600.)
+
+**pycats specifics (differences from lccjs):**
+
+- **Velocity is on** (`storage.velocity.enabled = true`, enabled 2026-07-13) — closing a
+  code ticket requires a **velocity row first**, or `pmtools close` blocks with a
+  velocity-row guard (`no velocity row for #N … Log your session first`). Log it before
+  closing:
+
+      pmtools velocity log '{"ticket":N,"role":"DEV","agent":"<fruit>",
+        "started_iso":"<ISO>","finished_iso":"<ISO>","actual_min":<A>}'
+
+  then re-run `pmtools close <N>`. This mirrors the `puzzle-velocity` / write-til flow.
+  (History: velocity was off at repo setup — a deliberate choice, not an oversight — and
+  turned on 2026-07-13; every pycats velocity row is dated 2026-07-13+.)
+- **No code markers** — pycats does not use `@todo`/`@inprogress #N` markers, so
+  there is nothing to delete in the close commit; just include `Closes #N`.
+- **The errors store is live** (`storage.errors.enabled = true`) — `pmtools error
+  log '<json>'` records to `~/.pmtools/pycats/pmtools.db`. The step-6 self-audit
+  logs to it, so the `error self-audit: …` line is always available to state.
+- **Fallback only if `pmtools` is unavailable:** `gh issue close <N>` plus a
+  closing comment. Prefer the tool whenever it is installed.
+
+**Close-time caveats:**
+
+- **Run from the main checkout and `close` exits 0 cleanly.** Before teardown,
+  `pmtools close` chdirs its *own* process back to the main root, so from `<main>` it
+  never deletes the cwd it is standing in — it returns **0** after `CLOSE OK …` /
+  `commit <sha> … on origin/main`. Your shell also stayed in `<main>` the whole time,
+  so there is no strand and no cwd to recover: comment and keep working in place.
+- **Legacy from-worktree behaviour (avoid — prefer from-main above).** If you instead
+  run `close` from *inside* the worktree, its final step deletes the cwd you are
+  standing in: the process returns **exit 1** after a *successful* close (trust the
+  `CLOSE OK` banner, not the code — pmtools#8), and your shell is left in a deleted
+  directory (`getcwd: cannot access parent directories`, with a stale
+  `wt-<fruit>-<project>-N` in your prompt) until you `cd /abs/path/to/pycats`. From-main (pmtools#104) avoids
+  all of this — which is why it is the default in step 5.
+- **Post the closing comment from `<main>` (where you already are)**, and include the
+  step-6 `error self-audit: …` line:
+
+      gh issue comment <N> --body "Closed in <sha>. <summary>
+      error self-audit: no loggable errors this session"
+- **No-code tickets close differently.** `pmtools close` needs a `Closes #N`
+  *commit* to land and verify; a **research / comment-only** ticket has
+  none. Close those with `gh issue close <N>` (after posting the ruling/finding as
+  a comment), then **`pmtools release <N>`** to drop the claim ref + worktree. Do
+  **not** fabricate a no-op commit just to satisfy `pmtools close`.
+- **Closing a `decision:` ticket appends a Decision Log row.** When you close a
+  ratified `decision:` ticket, append one row to `docs/decisions-ledger.md`
+  (`date · issue # · area · one-line ruling · record`) — the append-only index of
+  game-design rulings ([ADR-0007](adr/0007-decision-ledger.md); complements ADRs and
+  `combat/provenance.py`, does not replace them). **Append-only:** a reversal is a new
+  row citing the superseded issue, never an in-place edit. Because that row is a
+  committed artifact, a `decision:` ticket closes via the **normal `Closes #N` +
+  `pmtools close`** path — *not* the commit-less `gh issue close` + `pmtools release`
+  path above (which stays for research / comment-only tickets). Convention basis:
+  #705 / ADR-0007.

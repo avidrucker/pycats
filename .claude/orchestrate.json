@@ -1,0 +1,39 @@
+{
+  "host": "github",
+  "languages": ["python"],
+  "mode": "fleet",
+  "issueLimit": 50,
+  "roster": ["APPLE", "BANANA", "CHERRY", "DRAGONFRUIT", "ELDERBERRY", "FIG", "GRAPE", "HONEYDEW", "INCABERRY"],
+  "worktreeBranchPattern": "^(?:br-)?(?<agent>[a-z0-9]+(?:-[0-9]+)?)/(?:(?!issue-\\d)(?<project>[a-z0-9]+)-(?:(?!issue-)(?<lang>[a-z0-9]+)-)?)?(?:issue-)?(?<issue>\\d+)",
+  "defaultBase": "origin/main",
+  "paths": { "worktreeDir": ".claude/worktrees" },
+  "pmtools": { "home": null, "port": "py" },
+  "close": {
+    "verify": {
+      "comment": "Whole-tree ruff gate + full pytest suite at merge (#633, from #628; pytest added #764). cwd=worktree has no .venv (repo convention), and neither `ruff` nor `python` is on PATH there; `git rev-parse --git-common-dir` resolves the MAIN repo's .venv/bin depth-independently while `pycats/` stays relative to the worktree cwd (checks the code being merged). Ruff runs first so a formatting/lint failure short-circuits before the slow suite; pytest last runs the whole suite under the SDL dummy drivers so a broken test blocks the merge (#757→#762: a red test previously merged green-gated because the gate was ruff-only). Ruff `check` (lint) covers pycats/ + tests/ (#817 widened it — a tests/ F401 rotted undetected because the lint gate was pycats/-only); `format --check` covers pycats/ + tests/ too (#910 reformatted the never-formatted tests/ tree and widened this gate — the #540/#817 deferral is closed). pytest is whole-suite.",
+      "commands": [
+        "\"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/ruff\" format --check pycats/ tests/",
+        "\"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/ruff\" check pycats/ tests/",
+        "SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \"$(git rev-parse --path-format=absolute --git-common-dir)/../.venv/bin/python\" -m pytest -q"
+      ],
+      "cwd": "worktree",
+      "enabled": true
+    }
+  },
+  "enrichment": {
+    "statusCommand": "pmtools status",
+    "claimCommand": "pmtools claim",
+    "preflightCommand": "pmtools preflight",
+    "closeCommand": "pmtools close"
+  },
+  "advisory": {
+    "iceSource": "stats/ice-scores.csv",
+    "clusterFile": null,
+    "sequencingDocRef": null
+  },
+  "storage": {
+    "dbPath": null,
+    "velocity": { "enabled": true, "csvMirror": null, "logCommand": "pmtools velocity log" },
+    "errors": { "enabled": true, "csvMirror": null, "logCommand": "pmtools error log" }
+  }
+}

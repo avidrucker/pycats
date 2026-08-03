@@ -1,0 +1,290 @@
+# pycats/sim/runner.py
+"""Headless deterministic battle runner. Drives the exact real per-frame loop
+(game.py:702-709) from a scripted input timeline through the statechart engine,
+producing per-frame snapshots for golden checks and benchmarking."""
+
+from __future__ import annotations
+
+import os
+from collections import namedtuple
+
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+
+import pygame  # noqa: E402
+
+if not pygame.get_init():
+    pygame.init()
+
+from ..characters.roster import palette_for  # noqa: E402
+from ..config import (  # noqa: E402
+    CAT_CHARACTERS,
+    PLAYER1_START_X,
+    PLAYER1_START_Y,
+    PLAYER2_START_X,
+    PLAYER2_START_Y,
+)
+from ..core.input import merge_frames  # noqa: E402
+from ..core.physics import resolve_player_push  # noqa: E402
+from ..entities import Player  # noqa: E402
+from ..entities.ledge import ledges_from_platforms  # noqa: E402
+from ..entities.stages import BATTLEFIELD  # noqa: E402
+from ..loadout import (  # noqa: E402
+    Selection,
+    Skin,
+    assign_distinct_skins,
+    build_fighter,
+    character_for,
+)
+from ..systems import hit_resolution  # noqa: E402
+from ..systems.match_engine import make_match_engine  # noqa: E402
+from .input_script import default_timeline  # noqa: E402
+
+# Self-describing per-player golden snapshot row (#322/B-b). A `namedtuple` so the
+# golden oracle + tests read fields by name instead of magic indices — and it's a
+# `tuple` subclass, so `golden_util._to_list` serialises it byte-identically (no
+# golden regen) and existing positional readers keep working. The field ORDER here
+# IS the golden layout; `test_snapshot_layout` guards it against drift.
+PlayerSnap = namedtuple(
+    "PlayerSnap",
+    (
+        # #672 Phase 2a (DP2): `character` (the fighter's Character.key) is APPENDED at
+        # the end so it names the fighter without shifting any existing field index —
+        # the golden layout + every positional reader (incl. production sim/battle_log,
+        # which reads name/state/percent/lives by index) stay valid. The slot stays the
+        # row-key (`name`); `character` rides alongside.
+        "name state rect_x rect_y vel_x vel_y on_ground percent shield_hp lives is_alive "
+        "jumps_remaining dodge_timer hurt_timer stun_timer attack_timer intangible_timer "
+        "facing_right intangible defensive_status move_frame character"
+    ),
+)
+
+P1_KEYS = dict(
+    left=pygame.K_a,
+    right=pygame.K_d,
+    up=pygame.K_w,
+    down=pygame.K_s,
+    attack=pygame.K_v,
+    special=pygame.K_c,
+    shield=pygame.K_x,
+    smash=pygame.K_b,  # dedicated smash input (#327/#331) — lets scripts drive smashes (#588)
+)
+P2_KEYS = dict(
+    left=pygame.K_LEFT,
+    right=pygame.K_RIGHT,
+    up=pygame.K_UP,
+    down=pygame.K_DOWN,
+    attack=pygame.K_SLASH,
+    special=pygame.K_PERIOD,
+    shield=pygame.K_COMMA,
+    smash=pygame.K_QUOTE,  # dedicated smash input (#327/#331) (#588)
+)
+KEYMAPS = [P1_KEYS, P2_KEYS]
+
+
+def build_stage():
+    # Delegate to the single Battlefield builder (#731) — the sims and the player
+    # game now run the same arena, so it must be built exactly one way.
+    return BATTLEFIELD.build()
+
+
+def _skin_for(char_key, default_skin_key):
+    # #648: colour the sim player from the char key so the CLI can visually render a
+    # chosen character's real cosmetic palette (via `palette_for`, matching battle_screen)
+    # — this is what makes `testcat`'s #636 gray placeholder inspectable. Golden-safe:
+    # a `None` key keeps today's exact hardcoded skin, so the no-arg build_players() path
+    # stays byte-identical (the #244 sim-golden contract).
+    if char_key is None:
+        return Skin.from_palette_dict(default_skin_key, CAT_CHARACTERS[default_skin_key])
+    return Skin.from_palette_dict(char_key, palette_for(char_key))
+
+
+def build_players(p1_char=None, p2_char=None, p1_palette=None, p2_palette=None):
+    # #244: an optional per-player character loads that archetype's FighterData
+    # (e.g. "nalio" → Nalio's moveset); unknown/None → the default cat. char_name
+    # stays "P1"/"P2".
+    # Phase 1b (#672): construct through the domain build_fighter port.
+    # #648: cosmetics now follow the char key via `palette_for` (dev/debug visual) when a
+    # key is given; a `None` key keeps the legacy calico/tabby default so goldens are
+    # byte-identical. Mechanics still resolve the per-player key (unknown/None → default cat).
+    # #898: an optional per-player palette key (an OG skin name like "ghost"/"tabby")
+    # decouples the SKIN from the character — the moveset still comes from p*_char, but the
+    # cosmetic palette comes from p*_palette when given. Used so a demo can pick a
+    # high-visibility skin (e.g. the showcase) without changing the archetype; None keeps
+    # the char-derived skin, so every existing caller is byte-identical.
+    sel1 = Selection(character_for(p1_char), _skin_for(p1_palette or p1_char, "calico"))
+    sel2 = Selection(character_for(p2_char), _skin_for(p2_palette or p2_char, "tabby"))
+    # #718: two players on the SAME Character would otherwise render identically (both
+    # skins come from `palette_for(char_key)`). De-collide through the #755 domain layer:
+    # P2 falls to the next available skin in that Character's pool. Different-Character and
+    # the `None`/no-key legacy path (distinct calico/tabby) pass through untouched, so the
+    # sim goldens (#244) stay byte-identical.
+    sel1, sel2 = assign_distinct_skins((sel1, sel2))
+    built1 = build_fighter(sel1)
+    built2 = build_fighter(sel2)
+    p1 = Player(
+        PLAYER1_START_X,
+        PLAYER1_START_Y,
+        P1_KEYS,
+        built1.skin.color,
+        eye_color=built1.skin.eye_color,
+        char_name="P1",
+        facing_right=True,
+        fighter_data=built1.fighter_data,
+        character=sel1.character,
+    )
+    p2 = Player(
+        PLAYER2_START_X,
+        PLAYER2_START_Y,
+        P2_KEYS,
+        built2.skin.color,
+        eye_color=built2.skin.eye_color,
+        char_name="P2",
+        facing_right=False,
+        fighter_data=built2.fighter_data,
+        character=sel2.character,
+    )
+    p1.stripe_color = built1.skin.stripe_color
+    p2.stripe_color = built2.skin.stripe_color
+    return p1, p2, pygame.sprite.Group(p1, p2)
+
+
+def snapshot(players, attacks, match):
+    parts = []
+    for p in players:
+        # #322/B-b: a PlayerSnap namedtuple (field ORDER unchanged) — serialises
+        # byte-identically and lets the oracle/tests read by name.
+        parts.append(
+            PlayerSnap(
+                p.identity.name,  # #672 Phase 1c: the P1/P2 label from the name seam (byte-identical)
+                p.state,
+                p.rect.x,
+                p.rect.y,
+                round(p.fighter.vel.x, 6),
+                round(p.fighter.vel.y, 6),
+                p.fighter.on_ground,
+                round(p.fighter.percent, 6),
+                round(p.fighter.shield_hp, 6),
+                p.fighter.lives,
+                p.fighter.is_alive,
+                p.fighter.jumps_remaining,
+                p.fighter.dodge_timer,
+                p.fighter.hurt_timer,
+                p.fighter.stun_timer,
+                p.attack_timer,
+                p.fighter.intangible_timer,
+                p.fighter.facing_right,
+                p.fighter.intangible,
+                # Task 6: new observable state fields (appended to preserve existing indices)
+                p.defensive_status,
+                p.move_frame,
+                # #672 Phase 2a (DP2): the fighter's Character.key, appended last so no
+                # existing field index shifts (production battle_log + tests read by index).
+                p.character.key if p.character else "",
+            )
+        )
+    atk = tuple(
+        sorted(
+            (
+                a.rect.x,
+                a.rect.y,
+                a.frames_left,
+                a.owner.identity.name,  # #672 Phase 1c: attack owner id from the name seam
+                a.active,
+                round(a.hit_cx, 6),
+                round(a.hit_cy, 6),
+                round(a.hit_r, 6),
+            )
+            for a in attacks
+        )
+    )
+    return (tuple(parts), atk, match.phase, match.winner)
+
+
+def run_battle(
+    frames=None,
+    frame_inputs=None,
+    presenter=None,
+    controller=None,
+    stop_on_match_over=False,
+    controllers=None,
+    p1_char=None,
+    p2_char=None,
+    p1_palette=None,
+    p2_palette=None,
+    boundaries=None,
+):
+    """Run the headless battle.
+
+    Inputs come from `controller(p1, p2, frame) -> InputFrame` when given,
+    otherwise from `frame_inputs` (defaulting to the scripted DEFAULT timeline).
+    A controller is for live/generated battles (e.g. a chase bot); capture its
+    emitted frames to freeze a deterministic input list for parity tests.
+    `stop_on_match_over=True` ends the run the frame the match resolves.
+
+    `controllers=(c1, c2)` drives BOTH players from a controller per player
+    (either may be None for an idle player). Each controller is called on the
+    same frame-start snapshot and their emitted frames are merged by set-union;
+    this is unambiguous because P1/P2 keymaps are disjoint. To freeze a 2-NPC
+    battle for replay, capture the per-controller `.emitted` lists and zip them
+    through `merge_frames`. Pass at most one of `controller` / `controllers`.
+
+    `boundaries` (sorted or not) are the caption-section start frames used by
+    skip-to-next-section (#508): when `presenter.show()` returns `"skip"`, the runner
+    keeps running every sim frame but suppresses `presenter.show()` (render + display
+    pacing) until the cursor reaches the nearest boundary after the current frame, then
+    resumes. `boundaries=None` (headless/goldens) makes a skip intent a no-op — the sim
+    path is byte-identical. Frames are never dropped: `snaps` stays continuous.
+    """
+    if controller is not None and controllers is not None:
+        raise ValueError("pass at most one of `controller` / `controllers`")
+    if controller is None and controllers is None and frame_inputs is None:
+        frame_inputs = default_timeline(KEYMAPS)
+    if frames is None:
+        frames = len(frame_inputs) if frame_inputs is not None else 0
+
+    platforms = build_stage()
+    ledges = ledges_from_platforms(platforms)  # solid-edge ledges (#14)
+    p1, p2, players = build_players(p1_char, p2_char, p1_palette, p2_palette)
+    attacks = pygame.sprite.Group()
+    match = make_match_engine([p1, p2])
+
+    snaps = []
+    skip_to = None  # #508: while set, fast-forward (suppress show()) until f reaches it
+    for f in range(frames):
+        if controllers is not None:
+            # Call every controller on the SAME frame-start snapshot, THEN merge
+            # and apply — so neither sees the other's mutation mid-frame.
+            # #254: pass the live `attacks` group (frame-start state — opponent
+            # hitboxes/projectiles still alive) so threat-aware policies can react.
+            fi = merge_frames(c(p1, p2, f, attacks) if c is not None else _empty_frame() for c in controllers)
+        elif controller is not None:
+            fi = controller(p1, p2, f, attacks, ledges)  # ledges: AI edge-hog (#404)
+        else:
+            fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
+        for p in players:
+            p.update(fi, platforms, attacks, ledges)
+        resolve_player_push(list(players), platforms)
+        attacks.update(platforms)  # #266: projectiles need platforms to bounce
+        hit_resolution.process_hits(players, attacks)
+        match.tick()
+        snaps.append(snapshot(players, attacks, match))
+        if presenter is not None:
+            if skip_to is not None and f < skip_to:
+                pass  # #508: fast-forwarding — run the sim but suppress render + pacing
+            else:
+                skip_to = None  # reached the boundary (or not skipping): render this frame
+                intent = presenter.show(platforms, players, attacks, f, inputs=fi)  # #434
+                if intent == "skip" and boundaries:
+                    skip_to = min((b for b in boundaries if b > f), default=None)
+        if stop_on_match_over and match.phase == "match_over":
+            break
+    if presenter is not None:
+        presenter.close()
+    return snaps
+
+
+def _empty_frame():
+    from ..core.input import InputFrame
+
+    return InputFrame(held=set(), pressed=set(), released=set())

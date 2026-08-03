@@ -1,0 +1,73 @@
+# tests/test_runner.py
+from pycats.sim.runner import PlayerSnap, run_battle
+
+
+def test_runner_is_deterministic():
+    a = run_battle(frames=120)
+    b = run_battle(frames=120)
+    assert a == b
+
+
+def test_runner_produces_one_snapshot_per_frame():
+    snaps = run_battle(frames=80)
+    assert len(snaps) == 80
+
+
+# --- Task 6: new snapshot field tests ---
+
+
+def test_snapshot_player_tuple_carries_defensive_status_move_frame_and_character():
+    """PlayerSnap carries defensive_status (str), move_frame (int), and the appended
+    character (str, #672 Phase 2a). Read BY NAME so a later field append can't silently
+    shift these (the reason the old tail-index form broke when `character` was added)."""
+    snaps = run_battle(frames=10)
+    players, _atk, _phase, _winner = snaps[0]
+    for p in players:
+        ps = PlayerSnap(*p)
+        assert isinstance(ps.defensive_status, str), (
+            f"expected str for defensive_status, got {type(ps.defensive_status)}: {ps.defensive_status!r}"
+        )
+        assert ps.defensive_status in ("vulnerable", "intangible"), (
+            f"unexpected defensive_status value: {ps.defensive_status!r}"
+        )
+        assert isinstance(ps.move_frame, int), (
+            f"expected int for move_frame, got {type(ps.move_frame)}: {ps.move_frame!r}"
+        )
+        assert isinstance(ps.character, str), f"expected str for character, got {type(ps.character)}: {ps.character!r}"
+
+
+def test_snapshot_attack_tuple_ends_with_hitbox_circle():
+    """Per-attack tuples must end with hit_cx, hit_cy, hit_r (float or int)."""
+    from pycats.sim.input_script import COMBAT_SCRIPT, compile_timeline
+    from pycats.sim.runner import KEYMAPS
+
+    frame_inputs = compile_timeline(COMBAT_SCRIPT, KEYMAPS)
+    # Run enough frames that attacks actually appear
+    snaps = run_battle(frames=len(frame_inputs), frame_inputs=frame_inputs)
+    # Find a snap where an attack is active
+    attack_snap = None
+    for s in snaps:
+        _players, atk, _phase, _winner = s
+        if atk:
+            attack_snap = atk
+            break
+    assert attack_snap is not None, "No attacks appeared during COMBAT_SCRIPT run"
+    for a in attack_snap:
+        # Existing fields: (rect.x, rect.y, frames_left, owner_name, active)
+        # New fields: hit_cx, hit_cy, hit_r  at indices -3, -2, -1
+        assert len(a) == 8, f"expected 8-field attack tuple, got {len(a)}: {a}"
+        hit_cx, hit_cy, hit_r = a[-3], a[-2], a[-1]
+        assert isinstance(hit_cx, (int, float)), f"hit_cx not numeric: {hit_cx!r}"
+        assert isinstance(hit_cy, (int, float)), f"hit_cy not numeric: {hit_cy!r}"
+        assert isinstance(hit_r, (int, float)), f"hit_r not numeric: {hit_r!r}"
+        assert hit_r > 0, f"hit_r should be positive, got {hit_r}"
+
+
+def test_run_battle_has_no_backend_arg():
+    """ADR-0002 step 3 (#183): the backend-selection plumbing is gone — there is
+    one engine (statechart), so run_battle() no longer accepts a `backend` arg.
+    """
+    import pytest
+
+    with pytest.raises(TypeError):
+        run_battle(backend="statechart", frames=1)

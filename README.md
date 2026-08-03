@@ -1,0 +1,220 @@
+# PyCats
+
+A local 2-player cat fighter for the keyboard, written in Python with Pygame and
+inspired by **Project M** (the *Super Smash Bros. Brawl* mod). Two cats knock each
+other off a stage; damage builds knockback, and a launched fighter that flies past
+the blast line loses a stock.
+
+## What it is (and isn't)
+
+pycats is a **personal learning project**, so its goals are shaped by that:
+
+- **Project-M-at-heart, not a clone.** The *feel* — movement, knockback, shield,
+  dodges, ledges — follows Project M; where pycats deliberately diverges is written
+  down in [docs/project-m-parity.md](./docs/project-m-parity.md).
+- **Deterministic and headless-first.** The simulation is frame-counted, RNG-free at
+  its core, and runs without a display, so recorded "golden" snapshots reproduce a
+  fight exactly and act as the regression oracle. This constraint is load-bearing —
+  see the determinism/headless contract in [CONTEXT.md](./CONTEXT.md).
+- **Local, keyboard, two players.** Two humans on one keyboard, or a human against a
+  computer-controlled cat (see [Play against the computer](#play-against-the-computer)).
+
+**Not** goals of this project: online / netplay, and a large character roster.
+Play is keyboard-first; a game-controller backend is only exploratory, not part of
+the current game.
+
+## Quickstart
+
+Requires Python 3.10+. These steps use a project virtualenv (`.venv`), which works
+everywhere — including Debian/Ubuntu/Mint, where a bare `pip install` is refused with
+`externally-managed-environment` (PEP 668).
+
+```bash
+git clone https://github.com/avidrucker/pycats.git
+cd pycats
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt   # pygame-ce + the statechart engine
+make run                                               # play (see `make help` for all dev commands)
+```
+
+`requirements.txt` pulls both runtime dependencies: **pygame-ce**, and **statecharts**
+— the statechart engine that drives every fighter and screen (ADR-0002). The engine
+isn't on PyPI, so it's pinned there to a git release tag; nothing else to clone.
+
+(If your `python` already points at a writable environment, you can skip the `.venv`
+and drop the `.venv/bin/` prefixes.)
+
+## Controls
+
+Two players share the keyboard. Every key below is **rebindable in the in-game Options
+screen** (the defaults are what "reset to defaults" restores).
+
+| Action  | Player 1 | Player 2 |
+| ------- | -------- | -------- |
+| Move    | `W` `A` `S` `D` | Arrow keys |
+| Attack  | `V` | `/` |
+| Special | `C` | `.` |
+| Shield  | `X` | `,` |
+| Smash   | `B` | `'` |
+
+Jump is *up* (`W` / `Up`); hold *down* to crouch and to drop through / off ledges.
+Attack is the standard A-button; **Special** is the B-button (e.g. Nalio's fireball);
+**Smash** is a dedicated strong-attack input.
+
+## Play against the computer
+
+A cat can be driven by the computer along **two independent axes** — don't confuse them:
+
+**CPU difficulty — `--p1-level` / `--p2-level`, a level from 1 to 9.** This is the
+Smash-style **CPU** opponent: higher levels react faster, attack and shield more, and
+at the top levels throw specials (fireballs). Turning on a level makes that player a
+CPU.
+
+```bash
+# Two Nalios: a level-5 CPU (P1) versus a level-9 CPU (P2), reproducible with a seed.
+.venv/bin/python watch.py --p1-char nalio --p1-level 5 --p2-char nalio --p2-level 9 --seed 42
+```
+
+**Behavior variants — `--vs {idle,chase,idler,follower}`.** A *separate* axis: these
+are scripted-controller personalities for P2 (idle = no controller, chase = pursue,
+idler = baseline, follower = shadow P1), used for demos and testing. They are **not**
+CPU difficulty levels — a "follower" is not "harder" than an "idler", just different.
+
+```bash
+.venv/bin/python watch.py --vs chase --seed 42   # P1 attacker vs a P2 that chases
+```
+
+Other `watch.py` modes: `--match` plays a full match to a KO, `--demo showcase` plays
+the captioned feature demo, and `--video out.mp4` records instead of showing a live
+window (recording needs `imageio` + `imageio-ffmpeg`). Run `watch.py --help` for the
+full flag list. Omit `--seed` for a clocktime seed so a computer match varies
+run-to-run; pass an int for a reproducible one.
+
+---
+
+## For contributors
+
+Common dev commands run through the root `Makefile` — the command SSOT (#724). The targets
+are `make test`, `run`, `run-cmd`, `lint`, `format`, `bench`, and `goldens`; each resolves
+the project `.venv` automatically (including from a `git` worktree, which has no local
+`.venv`). `make help` prints the authoritative one-line list — the Make targets, the
+sim/run invocations, and every root/`scripts/` entry point with its one-line purpose (the
+scripts section is derived from each script's docstring, so a new script self-documents;
+#1140). If it and this section ever disagree, `make help` wins.
+
+### Running the tests
+
+The suite runs headless (no display) and is the regression oracle:
+
+```bash
+make test                          # full suite, headless
+make test ARGS="-m 'not slow'"     # skip the benchmark tests
+make test ARGS="-k dodge"          # run a subset (any pytest args pass through)
+```
+
+A green run with some skips is expected. Golden snapshots live in `tests/golden/`;
+regenerate them intentionally with `make goldens` (it sets `PYCATS_UPDATE_GOLDENS=1` for the
+three golden modules, then prints the review steps). Review the regenerated `.summary.json`
+sidecars before committing — see
+[`tests/golden/REGEN_PROTOCOL.md`](./tests/golden/REGEN_PROTOCOL.md). New to goldens (or
+staring at a red `test_golden_*`)? [`docs/golden-tests.md`](./docs/golden-tests.md) is the
+plain-English onboarding + glossary (golden / oracle / digest-sidecar / re-baseline).
+
+`make census` prints the authored-vs-sourced value census (#1151) across both status loci —
+config scalars (`combat/provenance.py`) and the per-fighter move-data seam
+(`characters/data/*.json`). Its ratchet (`tests/test_authored_value_ratchet.py`) reds when a
+fighter's authored/undeclared value count grows; re-bless the baseline intentionally with
+`PYCATS_UPDATE_AUTHORED_BASELINE=1` (a reviewable one-file diff, author ≠ reviewer).
+
+### Development setup
+
+The tests, linter, benchmark, and video recording need a few more packages, in
+`requirements-dev.txt` (pytest, ruff, pre-commit, imageio) — install alongside the
+runtime deps (see [ADR-0006](./docs/adr/) for the lint setup):
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
+```
+
+**Hacking on the engine?** To develop `statecharts-py` alongside pycats, clone it as a
+sibling and install it editable *instead of* the pinned line in `requirements.txt`
+(see [ADR-0002](./docs/adr/) for why it is the sole state engine):
+
+```bash
+git clone https://github.com/avidrucker/statecharts-py.git   # ../statecharts-py
+.venv/bin/python -m pip install -e ../statecharts-py          # overrides the pinned tag
+```
+
+Lint + format (ruff; config in `ruff.toml` and `.pre-commit-config.yaml`):
+
+```bash
+make lint                          # ruff format --check + ruff check on pycats/ + tests/ (the close-gate)
+make format                        # apply ruff formatting (write-twin of lint's --check)
+.venv/bin/pre-commit install       # one-time: run both on each commit
+```
+
+The lint hook is ruff-only so it stays fast; `pytest` remains the on-demand source of
+truth (there is no CI gate). Legacy debug scripts that once masqueraded as tests now
+live in `scripts/`, so a bare `pytest` collects only real assert-based tests.
+
+The whole tree (`pycats/` **and** `tests/`) is ruff-formatted and the close-gate checks
+both (#910). The one-time reflow of `tests/` is a mechanical commit listed in
+`.git-blame-ignore-revs`; tell `git blame` to skip it so line authorship survives:
+
+```bash
+git config blame.ignoreRevsFile .git-blame-ignore-revs   # one-time, per clone
+```
+
+### Benchmark
+
+```bash
+make bench                                                       # quick run
+make bench ARGS="--frames 20000 --json bench_results/run.json"   # longer, with JSON output
+```
+
+### Running an unmerged (worktree) change
+
+To run code that still lives on a claimed worktree branch (not yet merged to `main`), let
+the Makefile derive the exact command instead of hand-assembling a path — pass an issue
+number, branch name, or worktree path:
+
+```bash
+make run-cmd WHAT=892                       # by issue number
+make run-cmd WHAT=br-elderberry/pycats-892  # or by branch name / worktree path
+# prints:  cd '<resolved-worktree>' && make run
+```
+
+`make run` already resolves the main repo's `.venv` from a worktree cwd, so
+`cd '<worktree>' && make run` runs the unmerged code with the right interpreter — no
+hand-typed venv path to get wrong. The helper fails loudly if nothing matches (it never
+falls back to `main`). See RULES.md §"Surfacing run/sim commands".
+
+### Project layout
+
+The `pycats/` package is split into a **display-free rules core** and a separate
+**present layer** (rendering, input polling, `game.py`). The core sub-packages:
+
+| Package | Holds |
+| ------- | ----- |
+| `pycats/core/` | input frames, rebindable keymaps, low-level physics |
+| `pycats/entities/` | `Fighter` (pure state/rules), the `Player` sprite adapter, platforms, ledges |
+| `pycats/combat/` | the data-driven attack system — hitboxes, knockback, shield, move selection |
+| `pycats/characters/` | per-archetype fighter data + skins (Nalio, Birky, Narz, the default cat) |
+| `pycats/charts/` + `pycats/systems/` | the statechart definitions and state engines |
+| `pycats/sim/` | the headless battle runner, AI controllers, demos, and the captioned showcase |
+
+Entry points are modules, **not** a `main.py`: `python -m pycats.game` (the game),
+`watch.py` (replays / demos / CPU battles), and `bench.py` (benchmark). The
+architecture layer map lives in [CONTEXT.md](./CONTEXT.md).
+
+## Project docs
+
+New here (human or agent)? Start with these:
+
+- [CONTEXT.md](./CONTEXT.md) — domain vocabulary + the determinism/headless contract.
+- [docs/glossary.md](./docs/glossary.md) — one-line definitions of every PM/Smash mechanic + project term, linked to the authoritative doc.
+- [docs/adr/](./docs/adr/) — architecture decision records (the *why* behind design calls).
+- [docs/project-m-parity.md](./docs/project-m-parity.md) — where pycats deliberately diverges from Project M.
+- [docs/pygame-fonts.md](./docs/pygame-fonts.md) — working with the font/text stack: sizes, scaling, mixed text, per-frame `SysFont` and test-isolation gotchas.
+- [docs/golden-tests.md](./docs/golden-tests.md) — golden-test onboarding + glossary (golden / oracle / digest-sidecar / re-baseline / check-vs-record).
+- [RULES.md](./RULES.md) — project conventions (labels, filing, closing work).

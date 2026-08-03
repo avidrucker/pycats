@@ -1,0 +1,35 @@
+{
+  "_comment": "Authored-value ratchet baseline (#1151). Per-area gated counts: `guess` + `placeholder` = the authored bucket, and `undeclared` = authored value-slots with no status entry. The ratchet (tests/test_authored_value_ratchet.py) reds when either the authored sum or undeclared grows above these. Regenerate with PYCATS_UPDATE_AUTHORED_BASELINE=1 (author != reviewer); a bump is a reviewable one-file diff. sourced/decided are NOT gated and are not stored here.",
+  "areas": {
+    "fighter:birky": {
+      "guess": 0,
+      "placeholder": 15,
+      "undeclared": 362
+    },
+    "fighter:default": {
+      "guess": 2,
+      "placeholder": 0,
+      "undeclared": 26
+    },
+    "fighter:gnok": {
+      "guess": 2,
+      "placeholder": 0,
+      "undeclared": 417
+    },
+    "fighter:nalio": {
+      "guess": 0,
+      "placeholder": 0,
+      "undeclared": 426
+    },
+    "fighter:narz": {
+      "guess": 2,
+      "placeholder": 0,
+      "undeclared": 248
+    },
+    "physics_config": {
+      "guess": 9,
+      "placeholder": 0,
+      "undeclared": 0
+    }
+  }
+}
