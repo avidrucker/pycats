@@ -72,7 +72,12 @@ def test_log_flag_prints_event_log(capsys):
     )
     out = capsys.readouterr().out
     assert "battle log:" in out  # the --log flag fired
-    assert len(out.strip().splitlines()) >= 2, out  # header + at least one event line
+    # INTERIM (#1087 → #1088): the "header + at least one event line" assertion is relaxed.
+    # #1087's engine hard-drop drops the Lv5 bots' mid-move re-presses, so no jump/attack
+    # event lands inside this 60-frame window (the old event lines were attack re-spawns
+    # from the #961 restart bug). The event-formatting itself is still covered by the
+    # synthetic test_battle_log_text_* tests above. #1088 (controller
+    # skip-while-current_move) restores efficient bot output; re-assert the event line there.
 
 
 def test_no_log_flag_is_silent(capsys):

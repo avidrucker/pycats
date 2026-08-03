@@ -328,7 +328,20 @@ class FighterInput:
         # is a no-op this slice (no air-smash). `_pressed` is binding-tolerant, so
         # control maps without "smash" (the sim keymaps) simply never smash.
         ground_smash = self._pressed(pressed, "smash") and p.fighter.on_ground
-        if (atk_pressed or sp_pressed or ground_smash) and p.state not in ("shield", "dodge", "helpless"):
+        # Hard-drop a mid-move re-press (#1087, ruling #1079 Q2): while a move is
+        # already running (`current_move is not None`), ignore Attack/Special/ground-
+        # smash — no `MoveClock.start()`, so the running move is NOT restarted to
+        # frame 0. No early-out/IASA window in V1: pycats keeps its no-IASA commitment
+        # model, and PM 3.6 is faithful to the drop (no default input buffer — a
+        # mid-move press is dropped, not buffered to IASA; research #1093,
+        # docs/research/pm-input-buffer-findings.md). IASA-aware interrupt is post-V1
+        # (#1089). The `smash_charge` fire path returns above and never reaches here,
+        # and during a charge no move clock is active, so charging is unaffected.
+        if (
+            (atk_pressed or sp_pressed or ground_smash)
+            and p.state not in ("shield", "dodge", "helpless")
+            and p.current_move is None
+        ):
             # Map (direction × ground/air × A-vs-B-vs-smash) -> a move key, falling
             # back to whatever the character defines (#143). Data-driven (Task 4 /
             # #71): start the move clock; the hitbox spawns later in update() when

@@ -74,25 +74,30 @@ def default_timeline(keymaps):
 # run_battle (test_golden_combat). The default cat (used by test_runner) still produces
 # attacks from the jab spans, so the "attacks appear" contract holds there too.
 #
-# Choreography (spike-derived in #588):
+# Choreography (spike-derived in #588; jab cadence re-tuned in #1087):
 # - DEFAULT_SCRIPT settles both on the main platform ~48 px apart (~frame 120).
 # - Frame 141-145: P1 closes the gap with a short walk (jab reach ~34-54 px).
-# - Frames 148..428: P1 jabs IN PLACE every 8 frames (36 jabs). Birky, driven by no
-#   inputs, is pinned near centre-stage (x≈501, gap ≈50) and racks to ~69% — jab-in-place
-#   avoids the overshoot-to-the-ledge that a walking chase causes. (36, not 34, since #599:
-#   the PM-correct smash — 1.3671× over 59f — is ~2.4% weaker than the old Brawl 1.4×/60f,
-#   so the margin side-blast KO needs a few more % of rack-up to still land.)
-# - Frame 452: after a 16-frame settle to idle (so the smash press registers), P1 holds
+# - Frames 148..916: P1 jabs IN PLACE every 16 frames (48 jabs). Birky, driven by no
+#   inputs, is pinned near centre-stage (x≈504) and racks to ~72% — jab-in-place avoids
+#   the overshoot-to-the-ledge that a walking chase causes.
+#   The 16-frame PERIOD and 48-jab COUNT are the #1087 re-tune: the jab is 16 frames long,
+#   and #1087's engine hard-drop ignores a re-press while a move is running (no more
+#   restart-to-frame-0), so a press must be spaced a full jab apart to land a fresh hit.
+#   The pre-#1087 script pressed every 8 frames (36 jabs); each mid-jab re-press restarted
+#   the jab and re-opened its active window with a fresh hit-registry, so Birky was hit
+#   ~twice as often per frame (a symptom of the #961 restart bug). Under the corrected
+#   once-per-completed-move hit rate, ~2× the jabs are needed to reach the same KO% window.
+# - Frame 932: after a 16-frame settle to idle (so the smash press registers), P1 holds
 #   right+smash for ~62 frames → a FULLY charged forward-smash (charge = SMASH_CHARGE_FRAMES,
-#   59f) fires ~frame 511. It deals ~+19% (→ ~88%) and launches Birky right off the blast
-#   zone (SCREEN_WIDTH + BLAST_PADDING = 1010 px) → "ko" at ~69%→88%, P1 safe at x≈466.
+#   59f) fires. It deals ~+19% (→ ~91%) and launches Birky right off the blast zone
+#   (SCREEN_WIDTH + BLAST_PADDING = 1010 px) → "ko" at ~72%→91%, P1 safe near x≈468.
 #   (A vertical up-smash KO was ruled infeasible in the #588 spike: it needs ~140%+ and
 #   pixel-perfect overlap; the side-blast fsmash is the sanctioned fallback.)
 # - P2 respawns after RESPAWN_DELAY_FRAMES, completing the ko→idle arc.
 _COMBAT_JAB_START = 148
-_COMBAT_N_JABS = 36
-_COMBAT_JAB_PERIOD = 8
-_COMBAT_FSMASH_START = _COMBAT_JAB_START + _COMBAT_N_JABS * _COMBAT_JAB_PERIOD + 16  # 452
+_COMBAT_N_JABS = 48
+_COMBAT_JAB_PERIOD = 16  # = jab length; one clean hit per completed move under #1087's hard-drop
+_COMBAT_FSMASH_START = _COMBAT_JAB_START + _COMBAT_N_JABS * _COMBAT_JAB_PERIOD + 16  # 932
 COMBAT_SCRIPT = (
     list(DEFAULT_SCRIPT)
     + [InputSpan(141, 146, 1, "right")]  # close the initial ~48px gap into jab range
@@ -100,7 +105,7 @@ COMBAT_SCRIPT = (
         InputSpan(
             _COMBAT_JAB_START + i * _COMBAT_JAB_PERIOD, _COMBAT_JAB_START + i * _COMBAT_JAB_PERIOD + 1, 1, "attack"
         )
-        for i in range(_COMBAT_N_JABS)  # rack Birky to ~69% with in-place jabs
+        for i in range(_COMBAT_N_JABS)  # rack Birky to ~72% with in-place jabs (#1087 re-tune)
     ]
     + [
         # fully-charged forward smash: right sets the f-smash direction; smash charges
