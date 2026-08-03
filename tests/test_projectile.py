@@ -10,12 +10,13 @@ import types
 
 import pygame as pg
 
-import pycats.characters.nalio_cat as nalio
+from pycats.combat.data import load_fighter_data
 from pycats.entities.attack import Attack, Projectile
 
 pg.init()
 
-_FB = next(v for v in vars(nalio).values() if getattr(v, "projectile_speed", None) is not None)
+# Nalio's fireball move, read from the shipped data (#1141: JSON is the sole source).
+_FB = next(m for m in load_fighter_data("nalio").moves.values() if getattr(m, "projectile_speed", None) is not None)
 
 
 def _owner(facing_right=True):

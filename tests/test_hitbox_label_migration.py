@@ -82,6 +82,6 @@ def test_shipped_json_hit_boxes_carry_dense_labels(stem):
     for move_key, move in fighter.moves.items():
         got = [hb.label for hb in move.hitboxes]
         assert got == _dense(len(move.hitboxes)), (
-            f"{stem}.{move_key}: labels {got} are not dense A,B,C… — regenerate "
-            f"the JSON from the oracle (python scripts/regen_character_json.py)"
+            f"{stem}.{move_key}: labels {got} are not dense A,B,C… — fix the "
+            f"labels in characters/data/{stem}.json (the sole source since #1141)"
         )

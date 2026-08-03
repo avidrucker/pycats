@@ -769,8 +769,9 @@ def with_dense_hit_labels(fd: FighterData) -> FighterData:
     order, so deriving it here and baking it into the shipped `Hitbox.label`
     gives the editor real letters to adopt (#1030) instead of none. It is NOT the
     editor auto-assigning at load — that stays banned; this is the one-time
-    migration baseline the oracles apply so the JSON ships stored labels a human
-    can review and a validator can check. Idempotent (dense in → dense out).
+    migration baseline applied when the JSON was generated, so it ships stored
+    labels a human can review and a validator can check. Idempotent (dense in →
+    dense out).
 
     Hit boxes only — hurt-box labels need the `Circle`/`Hurtbox` schema change in
     #1036. Assumes ≤26 hit boxes per move (max shipped is 8); a 27th would run
@@ -788,9 +789,8 @@ def with_dense_hit_labels(fd: FighterData) -> FighterData:
 
 # Per-fighter JSON data directory (#844, R4 of the #792 editor; design §1). The
 # editor writes one thin-mirror file per fighter here; load_fighter_data prefers
-# it when present. NO <character>.json ships today, so the branch never fires for
-# a real character and the Python switch below is authoritative (golden-safe).
-# The migration dump that populates this dir is R5 (#792). Tests monkeypatch this
+# it when present. The four archetypes + default ship JSON here, and since #1141
+# it is the sole source (the Python oracles are retired). Tests monkeypatch this
 # constant to exercise the branch without touching the repo.
 CHARACTER_DATA_DIR = Path(__file__).parent.parent / "characters" / "data"
 
@@ -818,12 +818,12 @@ def known_character_keys() -> frozenset[str]:
 
 
 def _default_fighter() -> FighterData:
-    """Hydrate the default cat from its shipped JSON — never the Python literal.
+    """Hydrate the default cat from its shipped JSON.
 
-    Since #881 default.json is the sole runtime source: the Python
-    DEFAULT_FIGHTER_DATA survives only as gnok/narz's construction base and the
-    R8 drift-guard oracle (#877), never a runtime path. A missing or malformed
-    default.json is therefore a hard, loud failure by design (no quiet floor).
+    Since #881 default.json is the sole runtime source; #1141 retired the Python
+    DEFAULT_FIGHTER_DATA oracle entirely, so there is no literal to fall back to.
+    A missing or malformed default.json is therefore a hard, loud failure by
+    design (no quiet floor).
     """
     return _fighter_from_json(json.loads((CHARACTER_DATA_DIR / "default.json").read_text()))
 
@@ -834,12 +834,12 @@ def load_fighter_data(character: str) -> FighterData:
     Resolution order (#844, R4): a `CHARACTER_DATA_DIR/<character>.json` thin
     mirror is preferred when present (hydrated via `_fighter_from_json`, #809
     §2.1). The four archetypes and the default cat all ship JSON, so they resolve
-    through that branch; the Python archetype arms below are dead (kept as the R8
-    oracles + gnok/narz's construction base — O1 "demote, don't delete", #881).
+    through that branch; #1141 retired the Python archetype arms (and the oracle
+    modules) entirely, so the JSON mirror is the only source.
 
     The intended-default keys (`_DEFAULT_KEYS` = `{"default", "P1", "P2",
     "testcat"}`) resolve to the default cat loaded from default.json (a fresh
-    hydrated instance, never the Python literal). Every OTHER key is a programming
+    hydrated instance). Every OTHER key is a programming
     error and raises `UnknownCharacter` (#887/#881). Production never reaches the
     raise: the #672 domain layer folds an unknown/None selection into the
     `testcat` placeholder before this seam, and `Player.__init__` resolves a
@@ -864,26 +864,10 @@ def load_fighter_data(character: str) -> FighterData:
     if path.exists():
         return _fighter_from_json(json.loads(path.read_text()))
 
-    # Dead archetype arms (O1, #881): each archetype ships JSON, so the branch
-    # above already returned. Kept because the Python literals remain the R8
-    # drift-guard oracles; deleting them is a deferred follow-up.
-    if character == "nalio":
-        from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
-
-        return NALIO_FIGHTER_DATA
-    if character == "birky":
-        from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA
-
-        return BIRKY_FIGHTER_DATA
-    if character == "narz":
-        from pycats.characters.narz_cat import NARZ_FIGHTER_DATA
-
-        return NARZ_FIGHTER_DATA
-    if character == "gnok":
-        from pycats.characters.gnok_cat import GNOK_FIGHTER_DATA
-
-        return GNOK_FIGHTER_DATA
-
+    # The four archetypes ship JSON, so the branch above returns for them. Their
+    # Python-literal fallback arms were retired with the oracles (#1141, #1078
+    # Q1/G1): the JSON mirror is the sole source, so a missing <archetype>.json is
+    # now a loud UnknownCharacter below rather than a quiet Python floor.
     if character in _DEFAULT_KEYS:
         # Intended-default seats ("default"/"P1"/"P2"/"testcat"). "default" also
         # resolves via the JSON branch above once default.json ships; "P1"/"P2"

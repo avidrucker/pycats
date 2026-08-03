@@ -115,12 +115,13 @@ def test_stationary_target_takes_one_hit_of_averaged_damage(cat, key, dmg, bkb, 
     assert defender.last_damage == dmg
 
 
-def test_placeholder_marker_present_on_every_flattened_move():
-    """Each flattened move carries the greppable `...-v1-only` marker so the post-V1
-    restore tickets can find them: >=2 in nalio_cat.py (bair, uair), >=3 in birky_cat.py
-    (nair, bair, uair)."""
-    root = Path(__file__).resolve().parents[1] / "pycats" / "characters"
-    nalio = (root / "nalio_cat.py").read_text()
-    birky = (root / "birky_cat.py").read_text()
-    assert nalio.count(MARKER) >= 2, "nalio bair + uair must each carry the placeholder marker"
-    assert birky.count(MARKER) >= 3, "birky nair + bair + uair must each carry the placeholder marker"
+def test_flattened_moves_are_listed_in_the_breadcrumb_doc():
+    """The post-V1 restore breadcrumb (docs/flattened-v1-aerials.md) carries the
+    greppable `-v1-only` marker and lists every flattened move. #1141 retired the
+    Python oracle where this list used to live as source comments (the JSON mirror
+    carries no comments), so the greppable anchor moved to the doc. Able-to-fail:
+    drop a move from the doc and its CASES row reds here."""
+    doc = (Path(__file__).resolve().parents[1] / "docs" / "flattened-v1-aerials.md").read_text()
+    assert MARKER in doc, "the breadcrumb doc must carry the -v1-only marker token"
+    for cat, key, *_ in CASES:
+        assert f"{cat}.{key}" in doc, f"{cat}.{key} must be listed in docs/flattened-v1-aerials.md"

@@ -408,13 +408,15 @@ def test_reactive_bot_shields_incoming_projectile_in_real_loop():
     # in-band threat is the projectile — proving the projectile branch end-to-end.
     import pygame
 
-    import pycats.characters.nalio_cat as nalio
+    from pycats.combat.data import load_fighter_data
     from pycats.core.input import merge_frames
     from pycats.entities.attack import Attack
     from pycats.sim import runner
     from pycats.sim.controllers import IdlerController
 
-    fb_move = next(v for v in vars(nalio).values() if getattr(v, "projectile_speed", None) is not None)
+    fb_move = next(
+        m for m in load_fighter_data("nalio").moves.values() if getattr(m, "projectile_speed", None) is not None
+    )
     plats = runner.build_stage()
     p1, p2, players = runner.build_players(p1_char="nalio", p2_char="nalio")
     c1 = IdlerController(attacker_num=1)  # p1 stays put at spawn (far from p2)

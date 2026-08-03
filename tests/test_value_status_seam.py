@@ -18,7 +18,6 @@ phase-1 blade is the mixed box (sourced radius + authored position).
 
 import json
 
-from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA
 from pycats.combat.data import (
     CHARACTER_DATA_DIR,
     Circle,
@@ -37,10 +36,6 @@ from pycats.combat.data import (
     fighter_to_json,
     load_fighter_data,
 )
-
-
-def _final_cutter_boxes():
-    return BIRKY_FIGHTER_DATA.moves["up_b"].hitboxes
 
 
 def _spike(boxes):
@@ -169,9 +164,3 @@ def test_status_survives_serialize_reload_on_every_carrier():
     # dict -> json.dumps -> json.loads -> hydrate, the real write/reload cycle.
     reloaded = _fighter_from_json(json.loads(json.dumps(fighter_to_json(fd, "synthetic"))))
     assert reloaded == fd
-
-
-def test_shipped_birky_round_trips_with_status():
-    # The exemplar file specifically: on-disk bytes hydrate back to the oracle,
-    # status maps included (R8 covers this in aggregate; asserted here explicitly).
-    assert load_fighter_data("birky") == BIRKY_FIGHTER_DATA

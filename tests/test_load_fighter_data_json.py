@@ -3,12 +3,11 @@ Tests for the JSON branch of load_fighter_data (#844, R4 of the #792 editor;
 design docs/pycats-editor-data-schema-design.md §2.1 + §2.2).
 
 R4 wires the R3 hydrate (_fighter_from_json) into load_fighter_data: when
-`CHARACTER_DATA_DIR / f"{character}.json"` exists it is hydrated and returned;
-otherwise the existing Python import switch runs unchanged. Migration flips real
-fighters onto JSON one-at-a-time (#851 flipped Nalio); each flip is proven
-byte-equal to its Python oracle in that fighter's own test, so goldens are
-untouched. These tests monkeypatch CHARACTER_DATA_DIR to a tmp dir to exercise
-the branch in isolation.
+`CHARACTER_DATA_DIR / f"{character}.json"` exists it is hydrated and returned.
+The four archetypes + default all ship JSON, and since #1141 the mirror is the
+sole source (the Python oracles are retired): a JSON-less archetype now raises
+rather than flooring to a Python literal. These tests monkeypatch
+CHARACTER_DATA_DIR to a tmp dir to exercise the branch in isolation.
 """
 
 import json
@@ -68,16 +67,19 @@ def test_json_branch_loads_hydrated_fighter(tmp_path, monkeypatch):
     assert fd == _fighter_from_json(doc)  # branch returned the hydrated data
 
 
-# --- Fall-through to the Python import switch when no JSON file ---------------
+# --- Retired Python fallback: a JSON-less archetype now raises (#1141) --------
 
 
-def test_no_json_falls_through_to_python(tmp_path, monkeypatch):
+def test_no_json_archetype_now_raises(tmp_path, monkeypatch):
+    # #1141 retired the Python-literal fallback arms: with no <archetype>.json the
+    # loader no longer floors to a Python literal — a known archetype key whose
+    # JSON is absent is a loud failure, exactly like an unknown key. Able-to-fail:
+    # restore an arm and this returns a fighter instead of raising.
     monkeypatch.setattr("pycats.combat.data.CHARACTER_DATA_DIR", tmp_path)  # empty dir
-    fd = load_fighter_data("nalio")
-    # identical to the Python-defined Nalio (no JSON present)
-    from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
+    from pycats.combat.errors import UnknownCharacter
 
-    assert fd is NALIO_FIGHTER_DATA
+    with pytest.raises(UnknownCharacter):
+        load_fighter_data("nalio")
 
 
 def test_unknown_key_raises(tmp_path, monkeypatch):
@@ -92,21 +94,18 @@ def test_unknown_key_raises(tmp_path, monkeypatch):
         load_fighter_data("no_such_cat")
 
 
-# --- JSON precedence: a <character>.json wins over the Python definition ------
+# --- The JSON branch fires for a real archetype key, not just made-up keys ----
 
 
-def test_json_takes_precedence_over_python(tmp_path, monkeypatch):
+def test_json_branch_fires_for_a_real_archetype_key(tmp_path, monkeypatch):
     monkeypatch.setattr("pycats.combat.data.CHARACTER_DATA_DIR", tmp_path)
-    # A nalio.json with a distinguishable weight — proves the branch runs BEFORE
-    # the `character == "nalio"` Python import.
+    # A nalio.json with a distinguishable weight — the branch resolves a real
+    # archetype key straight from its file (the sole source since #1141).
     doc = _jab_doc("nalio")
     doc["weight"] = 123
     _write_json(tmp_path, "nalio", doc)
     fd = load_fighter_data("nalio")
-    assert fd.weight == 123  # came from JSON, not the Python NALIO (weight 100)
-    from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
-
-    assert fd is not NALIO_FIGHTER_DATA
+    assert fd.weight == 123  # came from nalio.json
 
 
 # --- Golden-safety: no committed <character>.json ships in the repo -----------

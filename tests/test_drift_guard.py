@@ -21,16 +21,17 @@ collapse first), deliberately out of scope here.
 import json
 from dataclasses import replace
 
-from pycats.characters.nalio_cat import NALIO_FIGHTER_DATA
 from pycats.combat.collapse import collapse
 from pycats.combat.data import (
     CHARACTER_DATA_DIR,
     _fighter_from_json,
     fighter_to_json,
+    load_fighter_data,
 )
 
 # The design §1.1 worked example: Nalio jab per-frame trace (frames 2 & 3
-# identical, all three boxes). Collapsing this must reproduce _JAB.hitboxes.
+# identical, all three boxes). Collapsing this must reproduce the shipped jab's
+# canonical hitboxes.
 _JAB_FRAMES = [
     {
         "frame": 2,
@@ -90,9 +91,10 @@ def _nalio_jab_fixture() -> dict:
     # `hitboxes` must ALSO carry those labels for the drift-guard's `collapse ==
     # committed` contract to hold. Rebuild the jab's canonical hitboxes from the
     # labeled collapse output, so committed and recompiled agree.
-    jab = NALIO_FIGHTER_DATA.moves["jab"]
+    nalio = load_fighter_data("nalio")
+    jab = nalio.moves["jab"]
     labeled_jab = replace(jab, hitboxes=collapse(_JAB_FRAMES, startup=jab.startup, active=jab.active))
-    fighter = replace(NALIO_FIGHTER_DATA, moves={**NALIO_FIGHTER_DATA.moves, "jab": labeled_jab})
+    fighter = replace(nalio, moves={**nalio.moves, "jab": labeled_jab})
     doc = fighter_to_json(fighter, "nalio")
     doc["provenance"] = {"jab": {"note": "§1.1 worked example fixture", "frames": _JAB_FRAMES}}
     return doc

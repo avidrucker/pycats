@@ -5,11 +5,12 @@ R6 (#862, child of #792): the collapse contract (design §1.3). `collapse` folds
 move's per-frame provenance into canonical windowed `Hitbox`es. The runtime never
 runs it; the editor Save (E5) and the drift-guard (R7) do, so it must be exact.
 
-The primary oracle is the real Nalio jab (`nalio_cat.py` _JAB): its worked
-provenance (design §1.1 — frames 2 & 3 identical, all three boxes) must collapse
-back to `_JAB.hitboxes` byte-for-byte, windows canonicalized to None. Able-to-fail:
-the fixtures below assert exact structures; a wrong fold, a dropped
-canonicalization, or a non-deterministic order breaks a specific assertion.
+The primary oracle is the real Nalio jab (the shipped `nalio.json`, reached via
+`load_fighter_data("nalio").moves["jab"]`): its worked provenance (design §1.1 —
+frames 2 & 3 identical, all three boxes) must collapse back to the jab's shipped
+hitboxes byte-for-byte, windows canonicalized to None. Able-to-fail: the fixtures
+below assert exact structures; a wrong fold, a dropped canonicalization, or a
+non-deterministic order breaks a specific assertion.
 
 #1029: collapse now PRESERVES each box's assigned letter (the editor stamps a
 `"label"` on every provenance box) onto `Hitbox.label`, instead of recomputing a
@@ -19,16 +20,13 @@ not re-letter the survivors. A provenance box with no `"label"` key collapses to
 fold).
 """
 
-from dataclasses import replace
-
-from pycats.characters.nalio_cat import _JAB
 from pycats.combat.collapse import collapse
-from pycats.combat.data import Circle, Hitbox
+from pycats.combat.data import Circle, Hitbox, load_fighter_data
 
-# The jab's three boxes carry labels A/B/C in the editor's provenance. The
-# committed _JAB.hitboxes is unlabeled (migrated data), so the oracle is _JAB with
-# the preserved A/B/C labels grafted on.
-_LABELED_JAB = tuple(replace(hb, label=letter) for hb, letter in zip(_JAB.hitboxes, "ABC"))
+# The shipped nalio jab already carries its dense A/B/C labels (#1041), so it is
+# the collapse oracle directly: collapsing the §1.1 worked provenance below must
+# reproduce these hitboxes (windows canonicalized to None, labels A/B/C).
+_LABELED_JAB = load_fighter_data("nalio").moves["jab"].hitboxes
 
 # The design §1.1 worked example: Nalio jab (startup=1, active=2 → default window
 # [2,3]), three boxes all present + identical on frames 2 and 3, each carrying its

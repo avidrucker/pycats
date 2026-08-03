@@ -6,10 +6,11 @@ which also needs Birky-own posture hurtboxes: combat tests the hurtbox *circles*
 (systems/hit_resolution.py), and the inherited default circles reach below the shorter boxes.
 """
 
-from pycats.characters.birky_cat import BIRKY_FIGHTER_DATA as BIRKY
 from pycats.combat.data import load_fighter_data
 
-# The minimal one-move test fixture, loaded by name (#591).
+# Birky's shipped data (#1141: the JSON mirror is the sole source) + the minimal
+# one-move default fixture (#591), both loaded by name.
+BIRKY = load_fighter_data("birky")
 _TESTCAT = load_fighter_data("testcat")
 
 
@@ -45,6 +46,8 @@ def test_birky_posture_hurtboxes_fit_inside_the_new_boxes():
 
 def test_birky_no_longer_shares_the_default_posture_hurtboxes():
     # Re-authored, not inherited — combat reads these per defender, so they must be
-    # Birky's own values, not the default objects sized for the 40/22 boxes.
-    assert BIRKY.crouch_hurtbox is not _TESTCAT.crouch_hurtbox
-    assert BIRKY.prone_hurtbox is not _TESTCAT.prone_hurtbox
+    # Birky's own values, not the default objects sized for the 40/22 boxes. Value
+    # inequality, not identity: JSON hydrates a fresh instance per load (#870), so
+    # `is not` would be trivially true regardless of the values.
+    assert BIRKY.crouch_hurtbox != _TESTCAT.crouch_hurtbox
+    assert BIRKY.prone_hurtbox != _TESTCAT.prone_hurtbox

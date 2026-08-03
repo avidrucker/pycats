@@ -82,12 +82,9 @@ def test_load_fighter_data_testcat_returns_minimal_one_move_kit():
 def test_load_fighter_data_testcat_equals_the_default_cat():
     """The named handle returns data equal to the default cat, so migrated tests
     observe identical data. Guards the #586 acceptance that testcat is the minimal
-    fixture, not a new archetype. Value equality, not identity: since #887 testcat
-    hydrates a FRESH instance from default.json (the sole runtime source), never
-    the Python DEFAULT_FIGHTER_DATA literal."""
-    from pycats.characters.default_cat import DEFAULT_FIGHTER_DATA
-
-    assert load_fighter_data("testcat") == DEFAULT_FIGHTER_DATA
+    fixture, not a new archetype. Value equality, not identity: both hydrate FRESH
+    instances from default.json (the sole source since #887/#1141)."""
+    assert load_fighter_data("testcat") == load_fighter_data("default")
 
 
 def test_testcat_is_not_a_selectable_archetype():
