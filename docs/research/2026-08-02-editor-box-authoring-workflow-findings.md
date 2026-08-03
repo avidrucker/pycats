@@ -2,6 +2,15 @@
 
 **Ticket:** #1072 (RESEARCH, `combat:editor`, child of #792) · **Date:** 2026-08-02 · **Author:** FIG
 
+> **Refresh 2026-08-03 (ELDERBERRY, #1159).** §1 census + §4/§5 gap list re-verified against
+> `pycats-editor` HEAD `4bd4222` (through #1154). Since the original write-up (HEAD `68f3b60`) the
+> editor shipped: **playback loop + speed** (#1142), the **FPS indicator** (#1152), **hurt-box
+> authoring** (#1154), the **Add-box button** (#1031), **used-letter indicators** (#1126/#1034),
+> and **persisted zoom** (#908) — the census below is updated to match, and each row is now tied to
+> a test by the #1159 coverage sweep (`pycats-editor` `tests/test_1159_walkthrough_coverage.py`
+> drift-guards every controls/census row; `tests/test_1159_e2e_authoring.py` exercises §2 steps
+> 1–9). Only **non-box text scaling** (#1012, OPEN) remains unbuilt of the original headline gap.
+
 ## What this answers
 
 Before authoring every move's hit/hurtboxes across the roster with `pycats-editor`, we need
@@ -29,17 +38,21 @@ This doc delivers five things the ticket asked for:
 The single most important census result is a **spec-vs-reality gap** in this ticket's own "Have"
 section, which listed several editor QoL items as "already open/landed":
 
-| Feature | Ticket said | Reality (source at HEAD) |
+This was the original (2026-08-02) census result, kept for the record; the **Reality** column is
+updated to HEAD `4bd4222` in the 2026-08-03 refresh:
+
+| Feature | Ticket said | Reality (updated 2026-08-03) |
 |---|---|---|
-| Persist zoom across launches | landed (#908) | **not built** — `#908` OPEN; zoom is in-memory, reset to 1.0 each launch; no settings file read/written |
-| Add-hitbox on-screen button | landed (#1031) | **not built** — `#1031` OPEN; only the `A` key adds a box; `BUTTONS` is `[Reset, Re-letter]` |
-| Used-letter indicator | landed (#1034) | **not built** — `#1034` OPEN; no on-screen "letters consumed" readout |
-| Non-box text scaling | landed (#1012) | **not built** — `#1012` OPEN; `vis.py` scales geometry only, fonts fixed |
+| Persist zoom across launches | landed (#908) | **built** — `#908` CLOSED; `settings.load()`/`settings.save()` persist `windowed_scale` across quit |
+| Add-hitbox on-screen button | landed (#1031) | **built** — `#1031` CLOSED; `BUTTONS` now `[Reset, Re-letter, Add box, Add hurt]` |
+| Used-letter indicator | landed (#1034) | **built** — `#1034` CLOSED; `working.used_letter_readout` drawn per move (#1126) |
+| Non-box text scaling | landed (#1012) | **not built** — `#1012` OPEN; `vis.py` scales geometry only, fonts fixed (the last unbuilt headline gap) |
 | Help overlay | landed (#936) | **built** — via `#1007` (F1/`?` toggles `_draw_help`) |
 
-Two further capabilities the MVP list promises are **also not built**: **hurt-box *authoring***
-(you cannot add a hurt box; hurt is whole-move only) and **playback loop** (frames only advance
-on manual scrub). Both matter for the campaign — see §4.
+Both further capabilities the MVP list promised — **hurt-box *authoring*** and **playback loop** —
+have since shipped: **#1154** adds a whole-move hurt box (`H` / Add-hurt button); **#1142** adds
+play/pause + a 25/50/75/100% speed cycle, and **#1152** adds the on-screen FPS indicator. Only
+per-frame *moving* hurt authoring remains deferred (#918).
 
 ---
 
@@ -96,9 +109,10 @@ Legend: ✅ works · 🟡 partial · ❌ not-built.
 | Load a fighter | ✅ | boot + `,`/`.` | `main` → `load_fighter_data`; `navigation.step_character` |
 | Pick a move | ✅ | `[` / `]` | `navigation.step_move` → `_reload` |
 | Scrub frames | ✅ | `←`/`→`, timeline | `timeline.step_frame`, `frame_at_x` |
-| **Loop playback** | ❌ | — | no auto-play timer / play key anywhere |
-| Add a **hit** box | ✅ | `A` | `working.add_box` (`kind="hit"`) |
-| **Add a hurt box** | ❌ | — | `add_box` hard-codes `kind="hit"`; hurt only seeded from posture |
+| **Loop playback** (#1142) | ✅ | `Space`; `\` speed | `playback.Playback.toggle` / `cycle_speed`; loops `[1, total]` at 25/50/75/100% |
+| **FPS indicator** (#1152) | ✅ | auto (while playing) | `playback.fps_readout(clock.get_fps())` drawn while `pb.playing` |
+| Add a **hit** box | ✅ | `A` / Add-box button | `working.add_box` (`kind="hit"`) |
+| **Add a hurt box** (#1154) | ✅ | `H` / Add-hurt button | `working.add_hurt_box` (whole-move `kind="hurt"`; per-frame hurt deferred #918) |
 | Move / resize / delete a box | ✅ | drag / ring / `Delete` | `working.move_box` / `resize_box` / `remove_box` |
 | **Per-frame** box data | 🟡 | `A` / drag / `Ctrl+←→` | **hits are per-frame** (`WorkingMove.frames`); **hurt is whole-move** (`WorkingMove.hurt`), per-frame hurt deferred (#918) |
 | Toggle hit/hurt display | ✅ | `1` / `2` | `gifcompare.toggle_layer` |
@@ -110,10 +124,17 @@ Legend: ✅ works · 🟡 partial · ❌ not-built.
 | Re-letter labels (#1035) | ✅ | `L` | `working.reletter_move` |
 | Label warnings on load (#1056) | ✅ | automatic | `_label_load_report`, `validate_hit_labels` |
 | Help overlay (#1007) | ✅ | `F1`/`?` | `_draw_help`, `keybindings.sections()` |
-| Add-hitbox **button** (#1031) | ❌ | — | `BUTTONS=[Reset, Re-letter]` only |
-| Persist zoom (#908) | ❌ | — | in-memory only; no settings file |
-| Used-letter indicator (#1034) | ❌ | — | no such UI |
-| Non-box text scaling (#1012) | ❌ | — | `vis.py` scales geometry only |
+| Add-hitbox **button** (#1031) | ✅ | Add-box button / `A` | `BUTTONS=[Reset, Re-letter, Add box, Add hurt]`; button + key share `_add_box` |
+| Persist zoom (#908) | ✅ | auto | `settings.load()` at boot, `settings.save({"windowed_scale": …})` on `X` |
+| Used-letter indicator (#1126/#1034) | ✅ | auto (per move) | `working.used_letter_readout` drawn for hit + hurt letters |
+| Non-box text scaling (#1012) | ❌ | — | `#1012` OPEN; `vis.py` scales geometry only, fonts fixed |
+
+> **Census ↔ test coverage (#1159).** Every ✅ row above is exercised by the coverage sweep
+> `pycats-editor` `tests/test_1159_walkthrough_coverage.py`: `test_control_dispatches_through_the
+> _harness` drives each control through the #1130 `Scenario` harness, and two drift-guards fail if
+> a controls/census row gains no scenario. The §2 recipe is end-to-end in
+> `tests/test_1159_e2e_authoring.py`. Gesture-only rows (drag-to-move/resize, Shift-pan) map to
+> their existing `test_e8`/`test_e7` tests.
 
 ### Beyond the MVP (already built, not on the original list)
 
@@ -301,11 +322,11 @@ new ticket. **Prereq** = blocks a smooth roster-scale campaign; **QoL** = slows 
 | ID | Gap | Blocks | Size | Maps to |
 |---|---|---|---|---|
 | **G1** | **Editor writes JSON only; oracle stays stale → drift-guard/flip red on every geometry edit** (P1). No round-trip writes `<cat>_cat.py`. | **Prereq** — every move | M (decision + tool) | New ARC/decision (retire vs auto-write oracle); relates to #881 "demote, don't delete" |
-| **G2** | **No hurt-box authoring** — can't add a hurt box; hurt is whole-move only. | Prereq **iff** hurtbox placement is in campaign scope | M | #1036 (hurt-box letters/round-trip, OPEN) + a new "add hurt box" editor slice |
+| ~~**G2**~~ | ~~No hurt-box authoring~~ — **DONE (#1154):** `H` / Add-hurt button add a whole-move hurt box (`working.add_hurt_box`). Per-frame *moving* hurt is still deferred (#918). | — | — | Shipped #1154 (round-trip via #1036) |
 | **G3** | Live game consumes **windowed static** boxes; per-frame **motion** is D2-deferred (`scope.md` "Out of scope"). Editor stores a moving box as a staircase of 1-frame windows (over-covers, safe). | Nice-to-have unless a move *needs* smooth motion | L (accept) / XL (engine) | D2 decision (deferred by design); no action for "good-enough" |
 | **G4** | No **batch/copy across a frame range** (beyond single-frame extend/dup); no **L/R mirror** helper (facing fixed right). | QoL — slows roster scale | M | New editor (E-side) tickets |
-| **G5** | **No playback loop** (MVP bullet unbuilt) — frames only advance on manual scrub. | QoL | S | New editor ticket |
-| **G6** | UI polish: **add-hitbox button #1031**, **used-letter indicator #1034**, **text scaling #1012**, **persist zoom #908**. | QoL | S each | Existing OPEN issues (#1031/#1034/#1012/#908) |
+| ~~**G5**~~ | ~~No playback loop~~ — **DONE (#1142/#1152):** `Space` play/pause loops `[1,total]`, `\` cycles 25/50/75/100%, FPS indicator drawn while playing. | — | — | Shipped #1142 + #1152 |
+| **G6** | UI polish. **DONE:** add-hitbox button (#1031), used-letter indicator (#1034 via #1126), persist zoom (#908). **Remaining:** **text scaling #1012** (fonts fixed). | QoL | S | #1012 OPEN (only remaining); #1031/#1034/#908 CLOSED |
 | **G7** | **Provenance written only for the edited move**; switching move/character starts a fresh undo history and **drops unsaved edits with no guard**. | QoL — risk of lost work | S–M | New editor ticket ("unsaved-changes guard on switch") |
 | **G8** | **No author-settable box priority/z-order** — tipper-first (#299/#313) rides on insertion order, not an explicit control. | QoL — matters for multi-box tippers | S–M | New editor ticket (expose `priority` in inspector) |
 
@@ -326,12 +347,13 @@ new ticket. **Prereq** = blocks a smooth roster-scale campaign; **QoL** = slows 
   → Recommend deciding this **first**, with the human, as an ARC/decision child of #792. It sets
   the whole campaign's per-move cost.
 
-- **G2 — hurt-box authoring**, *if* hurtbox placement is in scope for the campaign. If the campaign
-  is hit-box-only for now, G2 drops to nice-to-have. This is Avi's scoping call.
+- ~~**G2 — hurt-box authoring**~~ **DONE (#1154)** — whole-move hurt placement shipped, so this is
+  no longer a prerequisite question. Per-frame *moving* hurt remains deferred (#918), a nice-to-have.
 
-**Nice-to-have** (slow but don't block): G4 (batch/mirror), G5 (loop), G6 (existing QoL issues),
-G7 (unsaved-changes guard), G8 (priority control). Mostly **E**-side editor slices; each is its own
-DEV, filed one at a time downstream.
+**Nice-to-have** (slow but don't block): G4 (batch/mirror), ~~G5 (loop — DONE #1142/#1152)~~,
+G6 (only #1012 text scaling remains), G7 (unsaved-changes guard), G8 (priority control), plus #918
+(per-frame moving hurt). Mostly **E**-side editor slices; each is its own DEV, filed one at a time
+downstream.
 
 **pycats-side (R) vs editor-side (E) split:** G1 is pycats-side (drift-guard/oracle) with an
 optional E-side writer; G2 is E-side (add-box) + the existing pycats #1036 round-trip; G3 is a
