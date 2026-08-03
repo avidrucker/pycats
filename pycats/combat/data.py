@@ -42,11 +42,20 @@ class Circle:
     """A 2-D circle, offset (dx, dy) from the fighter origin, radius r.
 
     All values in pixels. Offsets are facing-RIGHT-relative.
+
+    `label` is an optional stable per-circle display id (#1036): a letter A–Z
+    the editor (and a JSON reader) uses to tell which HURT circle is which, the
+    hurt-side counterpart of `Hitbox.label`. It carries the same leniency —
+    assigned editor-side, preserved across save→load, `None` for unlabeled
+    (migrated/hand-written) data so the serializer omits it and existing data is
+    byte-identical (golden-safe). Hit circles keep `None` here; a hitbox's letter
+    lives on `Hitbox.label`, not on its `Circle`.
     """
 
     dx: int
     dy: int
     r: int
+    label: str | None = None
 
 
 @dataclass(frozen=True)
@@ -408,8 +417,18 @@ def _select(node: dict, cls) -> dict:
     return {k: v for k, v in node.items() if k in names}
 
 
+def _hurt_circle_from_json(entry) -> Circle:
+    """One serialized hurt circle -> Circle (#1036). Accepts BOTH the old bare
+    triple ``[dx, dy, r]`` (label absent -> ``None``) and the labeled entry
+    ``{"circle": [dx, dy, r], "label": "A"}`` — the same optional-label leniency
+    ``Hitbox.label`` has, so old and new ``<char>.json`` both hydrate."""
+    if isinstance(entry, dict):
+        return Circle(*entry["circle"], label=entry.get("label"))
+    return Circle(*entry)
+
+
 def _hurtbox_from_json(node: dict) -> Hurtbox:
-    return Hurtbox(circles=tuple(Circle(*triple) for triple in node["circles"]))
+    return Hurtbox(circles=tuple(_hurt_circle_from_json(e) for e in node["circles"]))
 
 
 def _hitbox_from_json(node: dict) -> Hitbox:
@@ -518,8 +537,19 @@ def _circle_to_json(c: Circle) -> list:
     return [c.dx, c.dy, c.r]
 
 
+def _hurt_circle_to_json(c: Circle):
+    """One hurt circle -> its serialized form (#1036). Unlabeled -> the old bare
+    triple ``[dx, dy, r]`` (so existing files don't churn); labeled -> a labeled
+    entry ``{"circle": [dx, dy, r], "label": "A"}`` (not a parallel list, which
+    would reintroduce the index-coupling #1024 fixed). Mirrors the omit-when-None
+    leniency of ``Hitbox.label``."""
+    if c.label is None:
+        return _circle_to_json(c)
+    return {"circle": _circle_to_json(c), "label": c.label}
+
+
 def _hurtbox_to_json(h: Hurtbox) -> dict:
-    return {"circles": [_circle_to_json(c) for c in h.circles]}
+    return {"circles": [_hurt_circle_to_json(c) for c in h.circles]}
 
 
 def _hitbox_to_json(hb: Hitbox) -> dict:
