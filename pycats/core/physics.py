@@ -22,16 +22,21 @@ class _DropThrough(Protocol):
 from ..combat.units import u
 from ..config import (
     AIR_FRICTION,
+    DODGE_MIN_PLATFORM_OVERLAP_PX,
     GRAVITY,
     GROUND_FRICTION,
     JOSTLE_PUSH_UNITS,
     JOSTLE_TRIGGER_UNITS,
     MAX_FALL_SPEED,
+    VEL_DEADZONE,  # re-exported; friction dead-zone now lives in config so the ADR-0003 drift-guard covers it (#1135)
 )
 from .geometry import FrozenRect
 
-# Physics thresholds (#446: named from inline literals).
-VEL_DEADZONE = 0.05  # |vel.x| below this snaps to 0 after friction (dead-zone)
+# Incidental (NOT a tuning value, so deliberately not in the provenance registry,
+# #1135): px of integer-rounding slop allowed when deciding a fighter is standing on a
+# platform (see find_current_platform). It guards float→int coord comparison, not game
+# feel — the same category the registry excludes (render geometry, incidental slop).
+PLATFORM_STAND_TOLERANCE_PX = 2
 
 # Fighter-vs-fighter ground jostle (ADR-0012, #1020): raw Smash units authored in
 # config; the integer-pixel trigger / push derive here at the units seam (ADR-0011 —
@@ -246,9 +251,8 @@ def find_current_platform(actor_rect: pg.Rect, platforms):
         platform_rect = platform.rect
         # Check if actor is standing on this platform
         # Allow small tolerance for floating point precision
-        bottom_tolerance = 2
         if (
-            abs(actor_rect.bottom - platform_rect.top) <= bottom_tolerance
+            abs(actor_rect.bottom - platform_rect.top) <= PLATFORM_STAND_TOLERANCE_PX
             and actor_rect.right > platform_rect.left
             and actor_rect.left < platform_rect.right
         ):
@@ -279,14 +283,12 @@ def would_dodge_off_platform(actor_rect: pg.Rect, dodge_velocity: float, current
     future_rect = actor_rect.moved(dodge_velocity, 0)
 
     # We want to prevent the player from going completely off the platform
-    # Check if enough of the player would remain on the platform
-    min_overlap = 25  # Require at least 25 pixels of overlap to stay safe
-
+    # Check if enough of the player would remain on the platform (config, #1135).
     if dodge_velocity > 0:  # Moving right
         # Check if there would still be enough overlap on the right side
         overlap_after_move = platform_rect.right - future_rect.left
-        return overlap_after_move < min_overlap
+        return overlap_after_move < DODGE_MIN_PLATFORM_OVERLAP_PX
     else:  # Moving left (dodge_velocity < 0)
         # Check if there would still be enough overlap on the left side
         overlap_after_move = future_rect.right - platform_rect.left
-        return overlap_after_move < min_overlap
+        return overlap_after_move < DODGE_MIN_PLATFORM_OVERLAP_PX

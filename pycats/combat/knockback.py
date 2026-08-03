@@ -13,6 +13,13 @@ from ..config import (
     HITLAG_DAMAGE_FACTOR,
     HITSTUN_FLOOR,
     HITSTUN_MULTIPLIER,
+    KB_GROWTH_BASE,
+    KB_GROWTH_SCALE,
+    KB_KBG_DIVISOR,
+    KB_PERCENT_DAMAGE_DIVISOR,
+    KB_PERCENT_DIVISOR,
+    KB_WEIGHT_NUMERATOR,
+    KB_WEIGHT_OFFSET,
     SAKURAI_AIRBORNE_DEG,
     SAKURAI_GROUNDED_HIGH_KB,
     SAKURAI_GROUNDED_LOW_KB,
@@ -22,9 +29,11 @@ from ..config import (
 
 def knockback(percent: float, damage: float, weight: int, base_knockback: float, knockback_growth: float) -> float:
     """Knockback magnitude (Smash units). `percent` is the post-hit percent."""
-    growth = ((percent / 10.0) + (percent * damage / 20.0)) * (200.0 / (weight + 100.0))
-    growth = (growth * 1.4) + 18.0
-    return (growth * (knockback_growth / 100.0)) + base_knockback
+    growth = ((percent / KB_PERCENT_DIVISOR) + (percent * damage / KB_PERCENT_DAMAGE_DIVISOR)) * (
+        KB_WEIGHT_NUMERATOR / (weight + KB_WEIGHT_OFFSET)
+    )
+    growth = (growth * KB_GROWTH_SCALE) + KB_GROWTH_BASE
+    return (growth * (knockback_growth / KB_KBG_DIVISOR)) + base_knockback
 
 
 def set_knockback(wdsk: float, weight: int, base_knockback: float, knockback_growth: float) -> float:

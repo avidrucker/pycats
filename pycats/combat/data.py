@@ -890,7 +890,14 @@ def load_fighter_data(character: str) -> FighterData:
 # not via the move-selection seam — so the existing Attack/clank/multi-hit
 # plumbing is reused. One low front hitbox for v1; a back hitbox (PM hits both
 # sides) is a documented refinement. Frames/box are ⚠ playtest starting points.
+#
+# Provenance (#1135): every value here is an unsourced playtest starting point that
+# IS seeking canon (PM has a real getup attack) — a grounding DEBT, so GUESS at
+# per-VALUE granularity via the #1133 status seam. GETUP_ATTACK is a standalone
+# module move (not part of any FighterData / <char>.json), so the maps annotate it in
+# place; the round-trip test (test_fighter_to_json) carries the maps through unchanged.
 # ---------------------------------------------------------------------------
+_GETUP_GUESS = FieldStatus(Status.GUESS)  # shared frozen tag: every GETUP_ATTACK value is GUESS
 GETUP_ATTACK = MoveData(
     name="getup attack",
     in_air=False,
@@ -898,6 +905,24 @@ GETUP_ATTACK = MoveData(
     active=3,
     recovery=14,
     hitboxes=(
-        Hitbox(circle=Circle(dx=28, dy=42, r=24), damage=8.0, angle=70, base_knockback=40.0, knockback_growth=70.0),
+        Hitbox(
+            circle=Circle(
+                dx=28,
+                dy=42,
+                r=24,
+                status={"dx": _GETUP_GUESS, "dy": _GETUP_GUESS, "r": _GETUP_GUESS},
+            ),
+            damage=8.0,
+            angle=70,
+            base_knockback=40.0,
+            knockback_growth=70.0,
+            status={
+                "damage": _GETUP_GUESS,
+                "angle": _GETUP_GUESS,
+                "base_knockback": _GETUP_GUESS,
+                "knockback_growth": _GETUP_GUESS,
+            },
+        ),
     ),
+    status={"startup": _GETUP_GUESS, "active": _GETUP_GUESS, "recovery": _GETUP_GUESS},
 )

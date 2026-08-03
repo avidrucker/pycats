@@ -72,6 +72,8 @@ playtest starts) rows are out of scope — read them straight from the registry.
 | `LEDGE_GETUP_FRAMES` | `pycats/config/physics.py::LEDGE_GETUP_FRAMES` | TUNED | `pycats/combat/provenance.py` | neutral ledge-getup climb |
 | `GROUND_FRICTION` | `pycats/config/physics.py::GROUND_FRICTION` | TUNED | `pycats/combat/provenance.py` | friction knob (1.0=ice); no PM equivalent |
 | `AIR_FRICTION` | `pycats/config/physics.py::AIR_FRICTION` | TUNED | `pycats/combat/provenance.py` | air friction knob; no PM equivalent |
+| `VEL_DEADZONE` | `pycats/config/physics.py::VEL_DEADZONE` | TUNED | `pycats/combat/provenance.py` | friction dead-zone; relocated from core/physics.py (#1135) |
+| `DODGE_MIN_PLATFORM_OVERLAP_PX` | `pycats/config/physics.py::DODGE_MIN_PLATFORM_OVERLAP_PX` | TUNED | `pycats/combat/provenance.py` | dodge-off-ledge safety margin; relocated from core/physics.py (#1135) |
 | `HURT_TIME` | `pycats/config/physics.py::HURT_TIME` | TUNED | `pycats/combat/provenance.py` | hurt/flinch timer; no PM canon |
 | `LEDGE_REGRAB_LOCKOUT_FRAMES` | `pycats/config/physics.py::LEDGE_REGRAB_LOCKOUT_FRAMES` | TUNED | `pycats/combat/provenance.py` | post-release regrab-suppression window |
 | `PLAYER_ATTACK_DURATION` | `pycats/config/physics.py::PLAYER_ATTACK_DURATION` | TUNED | `pycats/combat/provenance.py` | default attack duration; no PM canon |

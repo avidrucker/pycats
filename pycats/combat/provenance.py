@@ -15,10 +15,17 @@ values. Each value is stated twice (here and in `config`) on purpose: the
 drift-guard exists to police the pair, so editing one without the other reds the
 suite (ADR-0003 constraint C4).
 
-Scope (v1): the sourced combat/physics **scalars** in `config.py`. Render/UI,
-cat-feature, tail-physics, platform, and menu constants are excluded by
-construction (no provenance noise on `BG_COLOR`). Per-character/move data in
-`characters/*.py` is a later slice.
+Scope: the combat/physics **tuning scalars** in `config.py`. A tuning scalar that
+lives elsewhere is RELOCATED into `config.py` to bring it under this drift-guard,
+not left unguarded for living in the wrong module — e.g. #1135 moved the friction
+dead-zone (`VEL_DEADZONE`) and the dodge edge-safety margin
+(`DODGE_MIN_PLATFORM_OVERLAP_PX`) here from `core/physics.py`. Excluded by
+construction (they are not tuning scalars, and location is not why): render/UI,
+cat-feature, tail-physics, platform, and menu constants (no provenance noise on
+`BG_COLOR`), and incidental implementation slop such as float-comparison tolerances
+(`core.physics.PLATFORM_STAND_TOLERANCE_PX`). Per-character/per-move data in
+`characters/*.py` has its OWN parallel registry — the #1133 value-status seam
+(`FieldStatus`/`Status` maps in `combat/data.py`), carried into `characters/data/*.json`.
 
 `status` values: FOUND (traced to a cited canon value), GUESS (unsourced /
 playtest starting point — the #319 value-sourcing pass resolves these),
@@ -173,6 +180,31 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "SHIELD_DRAIN_PER_FRAME": Provenance(
         0.2, "hp/frame", "pycats shield-HP model; deliberate drain/regain rate, no canon equivalent", "TUNED", 111
     ),
+    # ---- knockback formula coefficients (#39 §2 / #1135) ----
+    # Fixed terms of the canonical Brawl/PM knockback equation
+    # (SmashWiki:Knockback; the formula lives in combat/knockback.py). FOUND — these
+    # are the formula, not tuning knobs; changing one departs from Smash canon.
+    "KB_PERCENT_DIVISOR": Provenance(
+        10.0, "factor", "SmashWiki:Knockback — the p/10 percent term (spec #39 §2)", "FOUND", 1135
+    ),
+    "KB_PERCENT_DAMAGE_DIVISOR": Provenance(
+        20.0, "factor", "SmashWiki:Knockback — the p*d/20 percent-damage term (spec #39 §2)", "FOUND", 1135
+    ),
+    "KB_WEIGHT_NUMERATOR": Provenance(
+        200.0, "factor", "SmashWiki:Knockback — the 200/(w+100) weight-ratio numerator (spec #39 §2)", "FOUND", 1135
+    ),
+    "KB_WEIGHT_OFFSET": Provenance(
+        100.0, "factor", "SmashWiki:Knockback — the w+100 weight offset (spec #39 §2)", "FOUND", 1135
+    ),
+    "KB_GROWTH_SCALE": Provenance(
+        1.4, "factor", "SmashWiki:Knockback — the ×1.4 growth scale (spec #39 §2)", "FOUND", 1135
+    ),
+    "KB_GROWTH_BASE": Provenance(
+        18.0, "factor", "SmashWiki:Knockback — the +18 base term (spec #39 §2)", "FOUND", 1135
+    ),
+    "KB_KBG_DIVISOR": Provenance(
+        100.0, "factor", "SmashWiki:Knockback — the KBG/100 growth-percent→factor divisor (spec #39 §2)", "FOUND", 1135
+    ),
     # ---- hitstun (#43/#44) ----
     "HITSTUN_MULTIPLIER": Provenance(
         0.4,
@@ -285,6 +317,13 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "LEDGE_INTANGIBLE_BASE_FRAMES": Provenance(
         21, "frames", "PM 3.6 CliffCatch intangibility 1-21, flat across characters (rukaidata; #671)", "FOUND", 683
     ),
+    "LEDGE_REGRAB_INTANGIBLE_CUTOFF": Provenance(
+        5,
+        "grabs",
+        'PMDT 3.5 primary: "After a character regrabs the ledge five times without touching the ground, that character no longer receives intangibility for grabbing the ledge again" — grabs 1..5 grant the full burst, grab 6+ only the residual (#656, ratified #670). The COUNT is primary-sourced; the post-cutoff residual (LEDGE_POST_CUTOFF_RESIDUAL_FRAMES) is a separate acknowledged gap, deliberately unregistered.',  # noqa: E501
+        "FOUND",
+        670,
+    ),
     "LEDGE_GETUP_FRAMES": Provenance(
         16,
         "frames",
@@ -319,6 +358,13 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
         "GUESS",
         388,
     ),
+    "DOUBLE_TAP_WINDOW": Provenance(
+        8,
+        "frames",
+        "pycats double-tap dash window: frames after a fresh directional press in which a second same-direction press fires the dash (#388 slice 2b / #403); GUESS tuning start (config ⚠, ~8-10f), no canon single value",  # noqa: E501
+        "GUESS",
+        403,
+    ),
     # angled f-smash literals (#327 slice 4) — flagged ⚠ playtest in config
     "FSMASH_ANGLE_UP": Provenance(
         50,
@@ -344,6 +390,22 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     ),
     "AIR_FRICTION": Provenance(
         0.85, "factor", "pycats air friction; deliberate design knob, no PM equivalent", "TUNED", None
+    ),
+    # friction dead-zone + dodge edge-safety — relocated from core/physics.py to config
+    # so this registry covers them (#1135); both pycats-specific, no PM canon.
+    "VEL_DEADZONE": Provenance(
+        0.05,
+        "px/frame",
+        "pycats horizontal-velocity dead-zone: |vel.x| below this snaps to 0 after friction so a fighter stops instead of creeping; pycats implementation threshold, no PM equivalent",  # noqa: E501
+        "TUNED",
+        1135,
+    ),
+    "DODGE_MIN_PLATFORM_OVERLAP_PX": Provenance(
+        25,
+        "px",
+        "pycats dodge-off-ledge safety margin: a roll/dodge is cancelled if it would leave less than this body-overlap on the platform; pycats edge-safety rule, no PM equivalent",  # noqa: E501
+        "TUNED",
+        1135,
     ),
     # misc timers / match rules — pycats design, no canon
     "HURT_TIME": Provenance(
@@ -420,6 +482,14 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "SHIELDSTUN_FACTOR",
         "SHIELD_MAX_HP",
         "SHIELD_DRAIN_PER_FRAME",
+        # knockback-formula coefficients (#39 §2 / #1135)
+        "KB_PERCENT_DIVISOR",
+        "KB_PERCENT_DAMAGE_DIVISOR",
+        "KB_WEIGHT_NUMERATOR",
+        "KB_WEIGHT_OFFSET",
+        "KB_GROWTH_SCALE",
+        "KB_GROWTH_BASE",
+        "KB_KBG_DIVISOR",
         "HITSTUN_MULTIPLIER",
         "HITSTUN_FLOOR",
         "HITLAG_DAMAGE_FACTOR",
@@ -439,16 +509,20 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "GETUP_ROLL_SPEED",
         "CLANK_PRIORITY_RANGE",
         "LEDGE_INTANGIBLE_BASE_FRAMES",
+        "LEDGE_REGRAB_INTANGIBLE_CUTOFF",
         "LEDGE_GETUP_FRAMES",
         # Pass B guessed/tuned scalars (#582)
         "PROJECTILE_GRAVITY",
         "PROJECTILE_RESTITUTION",
         "PROJECTILE_MAX_BOUNCES",
         "DASH_DURATION",
+        "DOUBLE_TAP_WINDOW",
         "FSMASH_ANGLE_UP",
         "FSMASH_ANGLE_DOWN",
         "GROUND_FRICTION",
         "AIR_FRICTION",
+        "VEL_DEADZONE",
+        "DODGE_MIN_PLATFORM_OVERLAP_PX",
         "HURT_TIME",
         "LEDGE_REGRAB_LOCKOUT_FRAMES",
         "PLAYER_ATTACK_DURATION",

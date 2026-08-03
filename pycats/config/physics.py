@@ -54,6 +54,19 @@ MAX_JUMPS = 2  # single + double
 # ---------------- physics constants --------------
 GROUND_FRICTION = 0.5  # 1.0 = ice; 0.0 = instant stop
 AIR_FRICTION = 0.85
+# Horizontal-velocity dead-zone (#446/#1135): after friction multiplies vel.x, a
+# magnitude below this snaps to 0 so a fighter fully stops instead of creeping at a
+# sub-pixel speed forever. Third member of the friction model with GROUND/AIR_FRICTION
+# (all three read by core.physics.apply_horizontal_friction); relocated here from
+# core/physics.py so the provenance drift-guard (ADR-0003) covers it too — #1135.
+# TUNED: a pycats implementation threshold, no PM canon.
+VEL_DEADZONE = 0.05
+# Dodge-off-ledge safety margin (#1135): a ground roll/dodge is cancelled if it would
+# leave fewer than this many px of the fighter's body overlapping its platform, so a
+# dodge can't walk a fighter clean off the edge. Relocated from a would_dodge_off_platform
+# function local in core/physics.py for the same drift-guard coverage. TUNED: pycats
+# edge-safety rule, no PM canon.
+DODGE_MIN_PLATFORM_OVERLAP_PX = 25
 
 # Fighter-vs-fighter "jostle" (Project M ground push, #1/#1020, ADR-0012). A literal
 # port of meleelight's grounded jostle (schmooblidon/meleelight @ 27af171,
@@ -185,6 +198,22 @@ MIN_SHIELD_RADIUS = 10
 # Authentic Brawl/PM knockback feeds these. The formula lives in
 # pycats/combat/knockback.py; per-hitbox BKB/KBG and fighter weight are the
 # per-move/character inputs.
+# Knockback-formula coefficients (#39 §2 / #1135). The Brawl/PM knockback equation
+# (SmashWiki:Knockback), with p = post-hit percent, d = damage, w = weight:
+#   KB = (((((p/10) + (p*d/20)) * (200/(w+100)) * 1.4) + 18) * (KBG/100)) + BKB
+# Every literal below is a FIXED term of that canonical formula (FOUND) — named so
+# knockback.py reads as the equation and the ADR-0003 drift-guard covers each. These
+# are NOT tuning knobs: changing one departs from Smash canon. (BKB/KBG/weight are the
+# per-move/character inputs, not coefficients.) KB_WEIGHT_OFFSET and KB_KBG_DIVISOR are
+# both 100 but mean different things (the w+100 weight offset vs the KBG% → factor
+# divisor), so they are named apart.
+KB_PERCENT_DIVISOR = 10.0  # p/10 term
+KB_PERCENT_DAMAGE_DIVISOR = 20.0  # p*d/20 term
+KB_WEIGHT_NUMERATOR = 200.0  # 200/(w+100) weight-ratio numerator
+KB_WEIGHT_OFFSET = 100.0  # w+100 weight offset
+KB_GROWTH_SCALE = 1.4  # ×1.4 growth scale
+KB_GROWTH_BASE = 18.0  # +18 base term
+KB_KBG_DIVISOR = 100.0  # KBG/100 (knockback-growth percent → factor)
 HITSTUN_MULTIPLIER = 0.4  # hitstun_frames = floor(KB * this). ⚠🔬 verify (Brawl/PM ~0.4).
 HITSTUN_FLOOR = 1  # minimum hitstun frames for any clean hit. ⚠🔬 tuning, not sourced.
 # Hitlag / freeze frames (#138). SmashWiki Hitlag (Brawl onward):

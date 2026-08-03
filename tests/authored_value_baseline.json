@@ -7,14 +7,14 @@
       "undeclared": 362
     },
     "fighter:default": {
-      "guess": 0,
+      "guess": 2,
       "placeholder": 0,
-      "undeclared": 28
+      "undeclared": 26
     },
     "fighter:gnok": {
-      "guess": 0,
+      "guess": 2,
       "placeholder": 0,
-      "undeclared": 419
+      "undeclared": 417
     },
     "fighter:nalio": {
       "guess": 0,
@@ -22,12 +22,12 @@
       "undeclared": 426
     },
     "fighter:narz": {
-      "guess": 0,
+      "guess": 2,
       "placeholder": 0,
-      "undeclared": 250
+      "undeclared": 248
     },
     "physics_config": {
-      "guess": 8,
+      "guess": 9,
       "placeholder": 0,
       "undeclared": 0
     }
