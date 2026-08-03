@@ -22,11 +22,13 @@ engine ticket; selectability (making Birky human-pickable) is gated on #117/#127
 from pycats.characters.body_zones import zone_dy
 from pycats.combat.data import (
     Circle,
+    FieldStatus,
     FighterData,
     Hitbox,
     Hurtbox,
     LandingSpawn,
     MoveData,
+    Status,
     VelocityPhase,
     with_dense_hit_labels,
 )
@@ -551,8 +553,24 @@ _BIRKY_DSMASH = MoveData(
 def _fc_slash(dx, dy, r, angle, wdsk):
     # A rising-slash box: WDSK (weight-dependent set) knockback, KBG 100, 8%, active
     # f3-4. All four share one window -> first-box-wins picks one -> a single hit.
+    #
+    # Value status (#1133 seam, ratified #1129) — this is the MIXED box #1124 named:
+    # the datamine (docs/research/2026-07-31-birky-final-cutter-sourcing.md) sources
+    # the radius (u(3.5)=19), damage (8%), angle (~80-91), KBG (100) and WDSK
+    # (117/102); only dx/dy are body-fit playtest starting points (drawn in from the
+    # raw u(18) forward reach, #309/ADR-0003). So within ONE box the circle's `r` is
+    # FOUND while its `dx`/`dy` are PLACEHOLDER — the per-value granularity #1129 Q5.
     return Hitbox(
-        circle=Circle(dx=dx, dy=dy, r=r),
+        circle=Circle(
+            dx=dx,
+            dy=dy,
+            r=r,
+            status={
+                "r": FieldStatus(Status.FOUND, "datamine"),  # u(3.5)=19 maps cleanly
+                "dx": FieldStatus(Status.PLACEHOLDER),  # body-fit playtest (#309)
+                "dy": FieldStatus(Status.PLACEHOLDER),
+            },
+        ),
         damage=8.0,
         angle=angle,
         base_knockback=0.0,
@@ -560,20 +578,44 @@ def _fc_slash(dx, dy, r, angle, wdsk):
         set_knockback=wdsk,
         active_start=3,
         active_end=4,
+        status={
+            "damage": FieldStatus(Status.FOUND, "datamine"),  # 8%
+            "angle": FieldStatus(Status.FOUND, "datamine"),  # ~80-91
+            "knockback_growth": FieldStatus(Status.FOUND, "datamine"),  # KBG 100
+            "set_knockback": FieldStatus(Status.FOUND, "datamine"),  # WDSK 117/102
+        },
     )
 
 
 # The plunge spike (#973 phase 2): a single downward (angle 270) meteor box, centre at
 # the feet (r=22 reaches below the body), active across the plunge window f38-44. Centre
 # stays on-body per the #309 body-fit guard. Scalars are ⚠ playtest starting points.
+# Value status (#1133): phase 2 is entirely playtest starting points (#1110) wired
+# onto the #973 hook — NO parity claim, so every value is PLACEHOLDER (distinct from
+# GUESS; #1129 Q3), the deliberate V1 stand-in tuned in task 3 of the #1095 tracker.
 _fc_spike = Hitbox(
-    circle=Circle(dx=0, dy=zone_dy("feet", _H), r=22),
+    circle=Circle(
+        dx=0,
+        dy=zone_dy("feet", _H),
+        r=22,
+        status={
+            "r": FieldStatus(Status.PLACEHOLDER),
+            "dx": FieldStatus(Status.PLACEHOLDER),
+            "dy": FieldStatus(Status.PLACEHOLDER),
+        },
+    ),
     damage=6.0,
     angle=270,  # straight-down spike/meteor (same convention as d-air)
     base_knockback=30.0,
     knockback_growth=80.0,
     active_start=38,  # apex/plunge onset
     active_end=44,  # == move total (2+2+40); the plunge window closes as the move ends
+    status={
+        "damage": FieldStatus(Status.PLACEHOLDER),
+        "angle": FieldStatus(Status.PLACEHOLDER),
+        "base_knockback": FieldStatus(Status.PLACEHOLDER),
+        "knockback_growth": FieldStatus(Status.PLACEHOLDER),
+    },
 )
 
 # The landing shockwave (#974 phase 3): a feet-level ground beam, mirrored both ways.
@@ -619,6 +661,12 @@ _BIRKY_FINAL_CUTTER = MoveData(
         VelocityPhase(frame=38, vx=0.0, vy=12.0),  # phase 2 plunge SET at apex (vy = max_fall_speed cap)
     ),
     landing_spawn=_fc_shockwave,  # phase 3 touchdown ground beam
+    # MOVE-level value status (#1133): recovery_vy = -15.7 is FOUND — the datamined
+    # phase-1 apex rise (292.3px, ∫ root velocity) back-solved through Birky's gravity
+    # (√(2·g·h)); its source is the brawllib_rs datamine, not playtest.
+    status={
+        "recovery_vy": FieldStatus(Status.FOUND, "datamine"),
+    },
 )
 
 # --- Idle rest loop (#1105, Decision A #1104) ---------------------------------

@@ -464,7 +464,33 @@
           "active_end": 4,
           "set_knockback": 117,
           "label": "A",
-          "circle": [18, 7, 19]
+          "circle": [18, 7, 19],
+          "circle_status": {
+            "r": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "dx": "PLACEHOLDER",
+            "dy": "PLACEHOLDER"
+          },
+          "status": {
+            "damage": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "angle": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "knockback_growth": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "set_knockback": {
+              "status": "FOUND",
+              "source": "datamine"
+            }
+          }
         },
         {
           "damage": 8.0,
@@ -474,7 +500,33 @@
           "active_end": 4,
           "set_knockback": 117,
           "label": "B",
-          "circle": [38, 7, 19]
+          "circle": [38, 7, 19],
+          "circle_status": {
+            "r": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "dx": "PLACEHOLDER",
+            "dy": "PLACEHOLDER"
+          },
+          "status": {
+            "damage": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "angle": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "knockback_growth": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "set_knockback": {
+              "status": "FOUND",
+              "source": "datamine"
+            }
+          }
         },
         {
           "damage": 8.0,
@@ -484,7 +536,33 @@
           "active_end": 4,
           "set_knockback": 102,
           "label": "C",
-          "circle": [14, -7, 19]
+          "circle": [14, -7, 19],
+          "circle_status": {
+            "r": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "dx": "PLACEHOLDER",
+            "dy": "PLACEHOLDER"
+          },
+          "status": {
+            "damage": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "angle": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "knockback_growth": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "set_knockback": {
+              "status": "FOUND",
+              "source": "datamine"
+            }
+          }
         },
         {
           "damage": 8.0,
@@ -494,7 +572,33 @@
           "active_end": 4,
           "set_knockback": 102,
           "label": "D",
-          "circle": [32, -7, 19]
+          "circle": [32, -7, 19],
+          "circle_status": {
+            "r": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "dx": "PLACEHOLDER",
+            "dy": "PLACEHOLDER"
+          },
+          "status": {
+            "damage": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "angle": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "knockback_growth": {
+              "status": "FOUND",
+              "source": "datamine"
+            },
+            "set_knockback": {
+              "status": "FOUND",
+              "source": "datamine"
+            }
+          }
         },
         {
           "damage": 6.0,
@@ -504,7 +608,18 @@
           "active_start": 38,
           "active_end": 44,
           "label": "E",
-          "circle": [0, 37, 22]
+          "circle": [0, 37, 22],
+          "circle_status": {
+            "r": "PLACEHOLDER",
+            "dx": "PLACEHOLDER",
+            "dy": "PLACEHOLDER"
+          },
+          "status": {
+            "damage": "PLACEHOLDER",
+            "angle": "PLACEHOLDER",
+            "base_knockback": "PLACEHOLDER",
+            "knockback_growth": "PLACEHOLDER"
+          }
         }
       ],
       "velocity_phases": [[38, 0.0, 12.0]],
@@ -522,6 +637,12 @@
             "circle": [0, 37, 18]
           }
         ]
+      },
+      "status": {
+        "recovery_vy": {
+          "status": "FOUND",
+          "source": "datamine"
+        }
       }
     },
     "wait": {

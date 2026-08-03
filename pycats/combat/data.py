@@ -24,13 +24,75 @@ Design notes:
 from __future__ import annotations
 
 import json
-from dataclasses import MISSING, dataclass, fields, replace
+from dataclasses import MISSING, dataclass, field, fields, replace
+from enum import Enum
 from pathlib import Path
 
 # Movement-constant defaults live in config; FighterData uses them as field
 # defaults so any data that doesn't specify movement == today's globals (the
 # default cat / golden sim is unchanged). #126.
 from ..config import DASH_SPEED, GRAVITY, JUMP_VEL, MAX_FALL_SPEED, MAX_JUMPS, MOVE_SPEED
+
+# ---------------------------------------------------------------------------
+# Per-fighter value status (#1133, O3+O2 seam ratified in #1129)
+# ---------------------------------------------------------------------------
+# The machine-readable authored-vs-sourced status of each per-fighter move value,
+# the fighter-data counterpart of the config-scalar `Provenance` registry
+# (combat/provenance.py, ADR-0003). That registry covers config/physics scalars;
+# this seam covers the per-move data in `characters/*_cat.py` that flips to
+# `characters/data/*.json` — the gap #1124 found (G1/G2). Granularity is per-VALUE
+# (#1129 Q5): a `status` map on each authored dataclass keys the dataclass's OWN
+# field names, so a box's radius can be FOUND while its damage is PLACEHOLDER (the
+# mixed-box case, e.g. Final Cutter's datamined blade radius + playtest position).
+# CPU controller constants are OUT of this seam (#1129 Q4, ruling #704).
+
+
+class Status(Enum):
+    """Authored-vs-sourced status of one per-fighter value (#1129 Q3).
+
+    FOUND       — traced to a cited canon value (datamine / SmashWiki / decomp);
+                  MEASURED body geometry is FOUND with `source="datamine"` (there is
+                  no separate MEASURED status — #1129 Q3).
+    GUESS       — unsourced / playtest starting point that IS seeking canon; a
+                  grounding DEBT the #319-style sourcing pass resolves.
+    TUNED       — a deliberate design value, not seeking canon (pycats flavor).
+    DIVERGENCE  — an intentional departure from a known canon value.
+    PLACEHOLDER — a deliberate V1 no-parity-claim stand-in (#1129 Q3): the value
+                  makes NO parity claim and is not a grounding debt (distinct from
+                  GUESS), e.g. the #893-flattened sex-kick aerials, Final Cutter's
+                  phase-2/3 numbers. The #1125 ratchet counts these apart from GUESS.
+    """
+
+    FOUND = "FOUND"
+    GUESS = "GUESS"
+    TUNED = "TUNED"
+    DIVERGENCE = "DIVERGENCE"
+    PLACEHOLDER = "PLACEHOLDER"
+
+
+@dataclass(frozen=True)
+class FieldStatus:
+    """The status of one authored value, plus an optional citation `source`.
+
+    `source` is the machine-readable provenance string for a FOUND value —
+    "datamine" for brawllib_rs / rukaidata geometry, a SmashWiki page, a decomp
+    path — mirroring `Provenance.source`. None when a bare status carries no
+    citation (a PLACEHOLDER/GUESS makes no claim to cite). Serializes compactly:
+    a bare status string when `source is None` (`"PLACEHOLDER"`), else an object
+    (`{"status": "FOUND", "source": "datamine"}`) — the same lenient union the
+    hurt-circle label form uses (#1036).
+    """
+
+    status: Status
+    source: str | None = None
+
+
+# A per-value status map: field-name (of the owning dataclass) -> FieldStatus.
+# Empty by default on every authored dataclass, so the serializer omits it and all
+# existing data stays byte-identical (golden-safe). `dict` (unhashable) follows the
+# `FighterData.moves` precedent — nothing hashes these frozen dataclasses.
+StatusMap = dict[str, "FieldStatus"]
+
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -56,6 +118,11 @@ class Circle:
     dy: int
     r: int
     label: str | None = None
+    # Per-value status (#1133), keyed by this Circle's own field names ("r"/"dx"/
+    # "dy"). Empty by default → omitted from JSON → existing data byte-identical.
+    # A hit circle's status serializes as a `circle_status` sibling of its inlined
+    # `circle` triple; a hurt circle's rides inside its labeled dict form (#1036).
+    status: StatusMap = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -117,6 +184,12 @@ class Hitbox:
     set_knockback: int | None = None
     set_id: int | None = None
     label: str | None = None
+    # Per-value status (#1133), keyed by this Hitbox's own field names ("damage"/
+    # "angle"/"base_knockback"/...). Empty by default → omitted → byte-identical.
+    # The owning circle's radius/offset status lives on `circle.status`, not here,
+    # so the mixed box (sourced radius + authored scalars, #1124) is expressed by
+    # the two maps together.
+    status: StatusMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         s, e = self.active_start, self.active_end
@@ -150,6 +223,11 @@ class VelocityPhase:
     frame: int
     vx: float = 0.0
     vy: float = 0.0
+    # Per-value status (#1133), keyed by this phase's own field names ("frame"/
+    # "vx"/"vy"). Empty by default → the phase serializes as its compact
+    # [frame, vx, vy] triple (byte-identical); a non-empty map expands it to the
+    # object form so status can ride along.
+    status: StatusMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.frame < 1:
@@ -188,6 +266,10 @@ class LandingSpawn:
     landing_lag: int = 0
     both_directions: bool = False
     gravity: float = 0.0
+    # Per-value status (#1133), keyed by this spawn's own field names ("speed"/
+    # "lifetime"/"landing_lag"/...). The spawn's hitboxes carry their own maps.
+    # Empty by default → omitted → byte-identical.
+    status: StatusMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.hitboxes:
@@ -275,6 +357,10 @@ class MoveData:
     # serializer omits it (omit == default). Generalizes to any special's landing
     # effect (#1066 Q4), reusing the #223/#266 Projectile primitive.
     landing_spawn: LandingSpawn | None = None
+    # Per-value status (#1133), keyed by this move's own scalar field names
+    # ("recovery_vy"/"startup"/...). Per-box status lives on each Hitbox; this map
+    # is for the MOVE-level scalars. Empty by default → omitted → byte-identical.
+    status: StatusMap = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         # Per-hitbox temporal-window cross-check (#204). Per-box shape (paired,
@@ -417,14 +503,45 @@ def _select(node: dict, cls) -> dict:
     return {k: v for k, v in node.items() if k in names}
 
 
+def _field_status_from_json(value) -> FieldStatus:
+    """One serialized value-status -> FieldStatus (#1133). Lenient union (mirrors
+    the hurt-circle label form): a bare string ``"PLACEHOLDER"`` -> source-less;
+    an object ``{"status": "FOUND", "source": "datamine"}`` -> with a citation."""
+    if isinstance(value, dict):
+        return FieldStatus(Status(value["status"]), value.get("source"))
+    return FieldStatus(Status(value))
+
+
+def _status_map_from_json(node: dict) -> StatusMap:
+    """A serialized ``{field: value-status}`` map -> ``{field: FieldStatus}``. An
+    absent/empty map hydrates to ``{}`` (the dataclass default), so unannotated
+    data is byte-identical."""
+    return {name: _field_status_from_json(v) for name, v in node.items()}
+
+
 def _hurt_circle_from_json(entry) -> Circle:
     """One serialized hurt circle -> Circle (#1036). Accepts BOTH the old bare
     triple ``[dx, dy, r]`` (label absent -> ``None``) and the labeled entry
     ``{"circle": [dx, dy, r], "label": "A"}`` — the same optional-label leniency
     ``Hitbox.label`` has, so old and new ``<char>.json`` both hydrate."""
     if isinstance(entry, dict):
-        return Circle(*entry["circle"], label=entry.get("label"))
+        return Circle(
+            *entry["circle"],
+            label=entry.get("label"),
+            status=_status_map_from_json(entry.get("status", {})),  # per-value status (#1133)
+        )
     return Circle(*entry)
+
+
+def _velocity_phase_from_json(entry) -> VelocityPhase:
+    """One serialized velocity phase -> VelocityPhase (#1133). Lenient union: the
+    compact ``[frame, vx, vy]`` triple (no status) or the object form
+    ``{"frame":.., "vx":.., "vy":.., "status": {...}}`` that carries a status map."""
+    if isinstance(entry, dict):
+        kw = {k: entry[k] for k in ("frame", "vx", "vy") if k in entry}
+        kw["status"] = _status_map_from_json(entry.get("status", {}))
+        return VelocityPhase(**kw)
+    return VelocityPhase(*entry)
 
 
 def _hurtbox_from_json(node: dict) -> Hurtbox:
@@ -433,13 +550,17 @@ def _hurtbox_from_json(node: dict) -> Hurtbox:
 
 def _hitbox_from_json(node: dict) -> Hitbox:
     kw = _select(node, Hitbox)
-    kw["circle"] = Circle(*node["circle"])
+    kw["circle"] = Circle(*node["circle"], status=_status_map_from_json(node.get("circle_status", {})))
+    if "status" in node:  # per-value status map (#1133)
+        kw["status"] = _status_map_from_json(node["status"])
     return Hitbox(**kw)  # __post_init__ validates the window pairing
 
 
 def _landing_spawn_from_json(node: dict) -> LandingSpawn:
     kw = _select(node, LandingSpawn)
     kw["hitboxes"] = tuple(_hitbox_from_json(h) for h in node["hitboxes"])
+    if "status" in node:  # per-value status map (#1133)
+        kw["status"] = _status_map_from_json(node["status"])
     return LandingSpawn(**kw)  # __post_init__ validates lifetime/speed/lag
 
 
@@ -449,9 +570,11 @@ def _move_from_json(node: dict) -> MoveData:
     if node.get("hurtbox") is not None:  # optional per-move override (#831)
         kw["hurtbox"] = _hurtbox_from_json(node["hurtbox"])
     if node.get("velocity_phases"):  # scripted mid-move velocity SETs (#973)
-        kw["velocity_phases"] = tuple(VelocityPhase(*triple) for triple in node["velocity_phases"])
+        kw["velocity_phases"] = tuple(_velocity_phase_from_json(vp) for vp in node["velocity_phases"])
     if node.get("landing_spawn") is not None:  # touchdown shockwave (#974)
         kw["landing_spawn"] = _landing_spawn_from_json(node["landing_spawn"])
+    if "status" in node:  # per-value MOVE-level status map (#1133)
+        kw["status"] = _status_map_from_json(node["status"])
     return MoveData(**kw)  # __post_init__ validates windows + phases vs duration
 
 
@@ -494,9 +617,9 @@ def _fighter_from_json(doc: dict) -> FighterData:
 
 # Structural fields handled explicitly per dataclass (excluded from the generic
 # scalar sweep). Circles go inline; hurtboxes/moves/sizes get their own walk.
-_HITBOX_STRUCTURAL = frozenset({"circle"})
-_LANDING_SPAWN_STRUCTURAL = frozenset({"hitboxes"})
-_MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox", "velocity_phases", "landing_spawn"})
+_HITBOX_STRUCTURAL = frozenset({"circle", "status"})
+_LANDING_SPAWN_STRUCTURAL = frozenset({"hitboxes", "status"})
+_MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox", "velocity_phases", "landing_spawn", "status"})
 _FIGHTER_STRUCTURAL = frozenset(
     {"hurtbox", "moves", "stand_size", "crouch_size", "crouch_hurtbox", "prone_size", "prone_hurtbox"}
 )
@@ -533,19 +656,38 @@ def _nondefault_scalars(obj, structural: frozenset) -> dict:
     return out
 
 
+def _field_status_to_json(fs: FieldStatus):
+    """One FieldStatus -> its serialized form (#1133). Source-less -> the bare
+    status string; with a citation -> ``{"status": .., "source": ..}`` — the same
+    lenient union ``_field_status_from_json`` reads back."""
+    if fs.source is None:
+        return fs.status.value
+    return {"status": fs.status.value, "source": fs.source}
+
+
+def _status_map_to_json(m: StatusMap) -> dict:
+    """A ``{field: FieldStatus}`` map -> its serialized ``{field: value-status}``."""
+    return {name: _field_status_to_json(fs) for name, fs in m.items()}
+
+
 def _circle_to_json(c: Circle) -> list:
     return [c.dx, c.dy, c.r]
 
 
 def _hurt_circle_to_json(c: Circle):
-    """One hurt circle -> its serialized form (#1036). Unlabeled -> the old bare
-    triple ``[dx, dy, r]`` (so existing files don't churn); labeled -> a labeled
-    entry ``{"circle": [dx, dy, r], "label": "A"}`` (not a parallel list, which
-    would reintroduce the index-coupling #1024 fixed). Mirrors the omit-when-None
-    leniency of ``Hitbox.label``."""
-    if c.label is None:
+    """One hurt circle -> its serialized form (#1036, #1133). Unlabeled + no status
+    -> the old bare triple ``[dx, dy, r]`` (so existing files don't churn);
+    otherwise a dict entry ``{"circle": [dx, dy, r], "label": "A", "status": {...}}``
+    (not a parallel list, which would reintroduce the index-coupling #1024 fixed).
+    Mirrors the omit-when-empty leniency of ``Hitbox.label``."""
+    if c.label is None and not c.status:
         return _circle_to_json(c)
-    return {"circle": _circle_to_json(c), "label": c.label}
+    out: dict = {"circle": _circle_to_json(c)}
+    if c.label is not None:
+        out["label"] = c.label
+    if c.status:  # per-value status (#1133)
+        out["status"] = _status_map_to_json(c.status)
+    return out
 
 
 def _hurtbox_to_json(h: Hurtbox) -> dict:
@@ -555,12 +697,27 @@ def _hurtbox_to_json(h: Hurtbox) -> dict:
 def _hitbox_to_json(hb: Hitbox) -> dict:
     out = _nondefault_scalars(hb, _HITBOX_STRUCTURAL)
     out["circle"] = _circle_to_json(hb.circle)
+    if hb.circle.status:  # the box's radius/offset status (#1133), sibling of `circle`
+        out["circle_status"] = _status_map_to_json(hb.circle.status)
+    if hb.status:  # the box's scalar status (#1133)
+        out["status"] = _status_map_to_json(hb.status)
     return out
+
+
+def _velocity_phase_to_json(vp: VelocityPhase):
+    """One VelocityPhase -> its serialized form (#973, #1133). No status -> the
+    compact ``[frame, vx, vy]`` triple (byte-identical); with status -> the object
+    form so the map can ride along."""
+    if not vp.status:
+        return [vp.frame, vp.vx, vp.vy]
+    return {"frame": vp.frame, "vx": vp.vx, "vy": vp.vy, "status": _status_map_to_json(vp.status)}
 
 
 def _landing_spawn_to_json(ls: LandingSpawn) -> dict:
     out = _nondefault_scalars(ls, _LANDING_SPAWN_STRUCTURAL)
     out["hitboxes"] = [_hitbox_to_json(hb) for hb in ls.hitboxes]
+    if ls.status:  # per-value status (#1133)
+        out["status"] = _status_map_to_json(ls.status)
     return out
 
 
@@ -570,9 +727,11 @@ def _move_to_json(m: MoveData) -> dict:
     if m.hurtbox is not None:  # optional per-move override (#831)
         out["hurtbox"] = _hurtbox_to_json(m.hurtbox)
     if m.velocity_phases:  # scripted mid-move velocity SETs (#973); omit when empty
-        out["velocity_phases"] = [[vp.frame, vp.vx, vp.vy] for vp in m.velocity_phases]
+        out["velocity_phases"] = [_velocity_phase_to_json(vp) for vp in m.velocity_phases]
     if m.landing_spawn is not None:  # touchdown shockwave (#974); omit when absent
         out["landing_spawn"] = _landing_spawn_to_json(m.landing_spawn)
+    if m.status:  # per-value MOVE-level status (#1133); omit when empty
+        out["status"] = _status_map_to_json(m.status)
     return out
 
 
