@@ -452,7 +452,7 @@
       "in_air": true,
       "startup": 2,
       "active": 2,
-      "recovery": 16,
+      "recovery": 40,
       "grants_recovery": true,
       "recovery_vy": -15.7,
       "hitboxes": [
@@ -495,8 +495,34 @@
           "set_knockback": 102,
           "label": "D",
           "circle": [32, -7, 19]
+        },
+        {
+          "damage": 6.0,
+          "angle": 270,
+          "base_knockback": 30.0,
+          "knockback_growth": 80.0,
+          "active_start": 38,
+          "active_end": 44,
+          "label": "E",
+          "circle": [0, 37, 22]
         }
-      ]
+      ],
+      "velocity_phases": [[38, 0.0, 12.0]],
+      "landing_spawn": {
+        "speed": 8.0,
+        "lifetime": 20,
+        "landing_lag": 35,
+        "both_directions": true,
+        "hitboxes": [
+          {
+            "damage": 5.0,
+            "angle": 45,
+            "base_knockback": 25.0,
+            "knockback_growth": 70.0,
+            "circle": [0, 37, 18]
+          }
+        ]
+      }
     },
     "wait": {
       "name": "wait",

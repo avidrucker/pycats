@@ -25,7 +25,9 @@ from pycats.combat.data import (
     FighterData,
     Hitbox,
     Hurtbox,
+    LandingSpawn,
     MoveData,
+    VelocityPhase,
     with_dense_hit_labels,
 )
 
@@ -511,22 +513,41 @@ _BIRKY_DSMASH = MoveData(
 )
 
 
-# --- Up-B = Final Cutter (rise-only, #969) -----------------------------------
-# Birky's recovery special, wired onto the #578 recovery hook as DATA ONLY. Sourced
-# from PM3.6 Kirby `SpecialAirHi2` via the brawllib_rs datamine
-# (docs/research/2026-07-31-birky-final-cutter-sourcing.md). Final Cutter has three
-# phases (rising slash / descending plunge+spike / landing shockwave); Avi's 2026-07-31
-# scope ruling keeps #969 to the RISING SLASH + recovery only — phases 2 & 3 need new
-# engine code and are split to #973 (mid-move velocity flip) / #974 (landing spawn).
+# --- Up-B = Final Cutter (full 3-phase, #969 rise + #973 plunge + #974 shockwave) ----
+# Birky's recovery special: a canonical 3-phase move on ONE MoveData under the ratified
+# #1066 phase model C (per-frame behavior = MoveData + MoveClock; the whole move is a
+# single move-instance). Rise sourced from PM3.6 Kirby `SpecialAirHi2` via the
+# brawllib_rs datamine (docs/research/2026-07-31-birky-final-cutter-sourcing.md); the
+# phase-2/3 numbers below are the per-cat DATA (#1110) wired onto the engine hooks
+# #973 (mid-move velocity flip) / #974 (landing spawn) — playtest starting points,
+# tuned in task 3 of the #1095 tracker.
 #
-# Rising slash (datamine phase-1, active f1-2): 4 boxes, all `set_id`-shared so by
-# first-box-wins (#130) exactly ONE connects — an 8% hit, WDSK 117/102, KBG 100, angle
-# ~80-91, effect Slash. Radius u(3.5)=19 maps cleanly; dx/dy are body-fit `⚠ playtest
-# starting point`s (raw forward reach u(18)=97 is far too long for Birky's small
-# featherweight body — drawn in to short-reach + zone-anchored, #309/ADR-0003).
-# recovery_vy = -15.7: the datamined apex rise 292.3px (∫ root velocity, ≈2.03x jump)
-# back-solved through Birky's gravity 0.42 (v=√(2·g·h)). recovery_vx = 0: root-motion x
-# is 0.0 on every frame — Final Cutter is purely vertical (canon).
+# Phase 1 — rising slash + upward burst (#969, datamine phase-1, active f3-4): 4 boxes,
+# all `set_id`-shared so first-box-wins (#130) lands exactly ONE — an 8% hit, WDSK
+# 117/102, KBG 100, angle ~80-91, effect Slash. Radius u(3.5)=19 maps cleanly; dx/dy
+# are body-fit `⚠ playtest starting point`s (raw forward reach u(18)=97 is far too long
+# for Birky's small featherweight body — drawn in to short-reach + zone-anchored,
+# #309/ADR-0003). recovery_vy = -15.7: the datamined apex rise 292.3px (∫ root velocity,
+# ≈2.03x jump) back-solved through Birky's gravity 0.42 (v=√(2·g·h)). recovery_vx = 0:
+# root-motion x is 0.0 on every frame — Final Cutter is purely vertical (canon).
+#
+# Phase 2 — descending plunge + spike (#973): a VelocityPhase SETs a fast downward
+# velocity at the burst APEX. Apex ≈ f38: the -15.7 burst is cancelled by gravity 0.42
+# after 15.7/0.42 ≈ 37.4 frames (⚠ ADR-0003-class playtest frame, NOT the datamine's
+# f19 — that's a different animation's timing; pycats' apex is a function of our own
+# recovery_vy/gravity). plunge vy = 12.0 = Birky's max_fall_speed: `apply_gravity`
+# clamps vel.y to max_fall_speed each physics step, so 12 is the fastest a DATA-only
+# plunge can descend (a snap to terminal at apex vs the floaty gravity ease-in — the
+# visible plunge). A faster-than-terminal plunge needs the fast-fall engine work
+# (#1068), out of scope here. The downward `_fc_spike` box (angle 270) is active across
+# the plunge window (f38-44), a meteor as the drop initiates.
+#
+# Phase 3 — landing shockwave (#974): a LandingSpawn fires a feet-level ground beam on
+# the touchdown EVENT (not a move-clock frame — descent-to-floor distance varies).
+# both_directions → a symmetric pair; landing_lag 35 = PM `SpecialAirHi4` end-lag,
+# routed through the `landing_lag` chart state -> idle. speed/lifetime are ⚠ playtest
+# starting points. By touchdown the move has ended (routed to helpless mid-descent);
+# the descriptor is stashed at move start, so it survives the move-clock clearing.
 def _fc_slash(dx, dy, r, angle, wdsk):
     # A rising-slash box: WDSK (weight-dependent set) knockback, KBG 100, 8%, active
     # f3-4. All four share one window -> first-box-wins picks one -> a single hit.
@@ -542,22 +563,62 @@ def _fc_slash(dx, dy, r, angle, wdsk):
     )
 
 
+# The plunge spike (#973 phase 2): a single downward (angle 270) meteor box, centre at
+# the feet (r=22 reaches below the body), active across the plunge window f38-44. Centre
+# stays on-body per the #309 body-fit guard. Scalars are ⚠ playtest starting points.
+_fc_spike = Hitbox(
+    circle=Circle(dx=0, dy=zone_dy("feet", _H), r=22),
+    damage=6.0,
+    angle=270,  # straight-down spike/meteor (same convention as d-air)
+    base_knockback=30.0,
+    knockback_growth=80.0,
+    active_start=38,  # apex/plunge onset
+    active_end=44,  # == move total (2+2+40); the plunge window closes as the move ends
+)
+
+# The landing shockwave (#974 phase 3): a feet-level ground beam, mirrored both ways.
+# dx=0 (body-centred) because both_directions resolves the same circle against each
+# facing. Scalars (speed/lifetime/damage/knockback) are ⚠ playtest starting points;
+# landing_lag 35 = PM `SpecialAirHi4`.
+_fc_shockwave = LandingSpawn(
+    hitboxes=(
+        Hitbox(
+            circle=Circle(dx=0, dy=zone_dy("feet", _H), r=18),
+            damage=5.0,
+            angle=45,  # launch up-and-out along travel
+            base_knockback=25.0,
+            knockback_growth=70.0,
+        ),
+    ),
+    speed=8.0,
+    lifetime=20,
+    landing_lag=35,  # PM SpecialAirHi4 end-lag
+    both_directions=True,
+    gravity=0.0,  # a flat ground beam
+)
+
+
 _BIRKY_FINAL_CUTTER = MoveData(
     name="final cutter",
     in_air=True,  # aerial special — does not clank (#133)
     startup=2,
     active=2,
-    recovery=16,  # active f3-4 (rising slash); rest is the ascent to apex -> helpless
+    recovery=40,  # total 44: rise slash f3-4 -> ascent to apex -> plunge/spike f38-44
     grants_recovery=True,
     recovery_vy=-15.7,  # apex 292.3px (∫ root vel, §2) back-solved at g=0.42: √(2·g·h)
     recovery_vx=0.0,  # purely vertical — datamine root-motion x = 0.0 every frame
     hitboxes=(
-        # blade: 2 heights (head / above-head) x 2 forward reaches, r=u(3.5)=19
+        # phase 1 blade: 2 heights (head / above-head) x 2 forward reaches, r=u(3.5)=19
         _fc_slash(dx=18, dy=zone_dy("head", _H), r=19, angle=80, wdsk=117),  # id0 near-low (wins)
         _fc_slash(dx=38, dy=zone_dy("head", _H), r=19, angle=91, wdsk=117),  # id1 far-low
         _fc_slash(dx=14, dy=zone_dy("head", _H, -14), r=19, angle=90, wdsk=102),  # id2 near-high
         _fc_slash(dx=32, dy=zone_dy("head", _H, -14), r=19, angle=91, wdsk=102),  # id3 far-high
+        _fc_spike,  # phase 2 descending spike (f38-44)
     ),
+    velocity_phases=(
+        VelocityPhase(frame=38, vx=0.0, vy=12.0),  # phase 2 plunge SET at apex (vy = max_fall_speed cap)
+    ),
+    landing_spawn=_fc_shockwave,  # phase 3 touchdown ground beam
 )
 
 # --- Idle rest loop (#1105, Decision A #1104) ---------------------------------
