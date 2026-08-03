@@ -115,6 +115,7 @@ findings, kept for provenance, not a live spec.
 | `docs/research/2026-07-08-ergonomics-ssot-decisions.md` | the #724 SSOT-hygiene decision rationale | research-archive |
 | `docs/research/fighter-buffs-findings.md` | catalog of fighter buff mechanics (heal/armor/invincibility/jump/etc.) across PM 3.6 / Brawl / Melee / meleelight (#1106) | research-archive |
 | `docs/research/pm36-buff-primaries-findings.md` | PMDT primary-source grounding for the buff catalog — armor rework confirmed (Demo 2.6b), Starman/Timer/Curry items refuted, others still inferred (#1108) | research-archive |
+| `docs/research/pm36-buff-magnitudes-findings.md` | per-buff magnitudes/durations datamine — Brawl-inherited item figures (Metal Box 4.5×/2.0×/12s, etc.), Melee-inherited intangibility frames, super-armor tier numbers a documented GAP (#1115) | research-archive |
 
 PM canon lives under `docs/pm-reference/`; dated investigations under `docs/research/`;
 architecture decisions under `docs/adr/`. Full doc-tree classification is a separate pass
