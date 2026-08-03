@@ -52,14 +52,14 @@ from statistics import mean
 
 import pygame
 
-from pycats import runtime_settings
-from pycats.app import P1_KEYS, P2_KEYS
 from pycats.config import SCREEN_HEIGHT, SCREEN_WIDTH
 from pycats.core.input import InputFrame, merge_frames
 from pycats.entities.stages import DEFAULT_PLAYER_STAGE
 from pycats.render_battle import draw_shell_chrome
 from pycats.screens.battle_screen import BattleScreen
+from pycats.shell.app import P1_KEYS, P2_KEYS
 from pycats.sim.controllers import AttackerController
+from pycats.storage import runtime_settings
 
 EMPTY = InputFrame(held=set(), pressed=set(), released=set())
 
@@ -105,7 +105,7 @@ def make_inputs(mode, ledges):
 
 
 def render_playing(battle, surface, platforms, frame_input, fps):
-    # Exactly screen_render.render_active_screen's "playing" branch.
+    # Exactly the live "playing" render branch: battle.render + shell chrome.
     battle.render(surface, platforms)
     draw_shell_chrome(surface, fps, False, frame_input)
 
@@ -166,7 +166,7 @@ def bench_present_scale():
     display.scale_surface(game_surface, factor) — the MEASURABLE half of the
     headed present cost (the flip/vsync half is display-bound and not here).
     A fresh 960x540 surface scaled to representative window/fullscreen sizes."""
-    from pycats import display
+    from pycats.shell import display
 
     src = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     src.fill((20, 20, 30))
@@ -244,7 +244,7 @@ def bench_render_attacks_scaling():
 def _present_split(dm):
     """Replicate DisplayManager.present()'s body, timing the scale-blit and the
     flip separately (ms). Mirrors the real present exactly minus the zoom toast."""
-    from pycats import display
+    from pycats.shell import display
 
     t0 = time.perf_counter()
     if dm.is_fullscreen:
@@ -339,7 +339,7 @@ def probe_vsync():
 
 
 def main_headed():
-    from pycats.display_manager import DisplayManager
+    from pycats.shell.display_manager import DisplayManager
 
     pygame.init()
     pygame.font.init()
