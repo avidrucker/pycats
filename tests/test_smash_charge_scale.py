@@ -141,7 +141,7 @@ def test_zero_fraction_spawn_is_authored():
     grp = pg.sprite.Group()
     p.update(_frame(held=("smash", "right"), pressed=("smash", "right")), plats, grp)
     p.update(_frame(released=("smash",)), plats, grp)  # fires (recomputes fraction)
-    p.fighter.smash_charge_fraction = 0.0  # pin c=0 for the spawn
+    p.fighter.charge_fraction = 0.0  # pin c=0 for the spawn
     for _ in range(12):
         p.update(_frame(), plats, grp)
         if len(grp):

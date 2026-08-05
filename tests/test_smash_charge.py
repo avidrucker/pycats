@@ -1,8 +1,8 @@
 """Smash charge — hold-to-charge state machine (#327 slice 3a).
 
 A chargeable smash (Nalio's fsmash/usmash/dsmash, #366) is HELD to charge and
-RELEASED to fire. Pressing enters a `smash_charge` state and accumulates
-`smash_charge_timer` (0..SMASH_CHARGE_FRAMES); releasing (or reaching the cap)
+RELEASED to fire. Pressing enters a `charge` state and accumulates
+`charge_timer` (0..SMASH_CHARGE_FRAMES); releasing (or reaching the cap)
 fires the pending smash on the move clock. This slice adds the state + timer
 (which unblocks the #334 CHARGE bar); the damage/KB scaling is slice 3b, so the
 smash still fires at its authored (uncharged) values here.
@@ -69,10 +69,10 @@ def test_nalio_smashes_are_chargeable():
 def test_press_enters_charge_then_accumulates():
     p, plats = _mk()
     _step(p, plats, held=("smash", "right"), pressed=("smash", "right"))
-    assert p.state == "smash_charge"
+    assert p.state == "charge"
     assert p.current_move is None  # the swing has NOT started yet
     _step(p, plats, held=("smash",))  # keep holding
-    assert p.fighter.smash_charge_timer > 0  # accumulates while held
+    assert p.fighter.charge_timer > 0  # accumulates while held
     assert p.current_move is None  # still charging
 
 
@@ -82,7 +82,7 @@ def test_holding_caps_the_timer_at_max():
     # Hold to just before the auto-fire cap; the timer never exceeds the max.
     for _ in range(SMASH_CHARGE_FRAMES - 2):
         _step(p, plats, held=("smash",))
-    assert 0 < p.fighter.smash_charge_timer <= SMASH_CHARGE_FRAMES
+    assert 0 < p.fighter.charge_timer <= SMASH_CHARGE_FRAMES
 
 
 def test_release_fires_the_pending_smash_and_clears_charge():
@@ -91,8 +91,8 @@ def test_release_fires_the_pending_smash_and_clears_charge():
     _step(p, plats, held=("smash",))  # charge a bit
     _step(p, plats, released=("smash",))  # let go
     assert p.current_move is p.fighter_data.moves["fsmash"]
-    assert p.fighter.smash_charge_timer == 0
-    assert p.fighter.pending_smash_key is None
+    assert p.fighter.charge_timer == 0
+    assert p.fighter.pending_charge_key is None
 
 
 def test_reaching_max_autofires_without_release():
@@ -106,14 +106,14 @@ def test_reaching_max_autofires_without_release():
 def test_hit_mid_charge_exits_and_clears():
     p, plats = _mk()
     _step(p, plats, held=("smash", "right"), pressed=("smash", "right"))
-    assert p.state == "smash_charge"
+    assert p.state == "charge"
     # A hit sets hurt_timer AND cancels the charge (what the combat hit path does).
     p.fighter.hurt_timer = 20
-    p.fighter.cancel_smash_charge()
+    p.fighter.cancel_charge()
     _step(p, plats, held=("smash",))  # input is gated during hitstun
     assert p.state == "hurt"
-    assert p.fighter.pending_smash_key is None
-    assert p.fighter.smash_charge_timer == 0
+    assert p.fighter.pending_charge_key is None
+    assert p.fighter.charge_timer == 0
 
 
 def test_down_and_up_directions_charge_their_smash():
@@ -137,7 +137,7 @@ def test_uncharged_move_fires_on_press_no_charge():
     # A tilt (attack input, not smash) fires immediately — no charge state.
     p, plats = _mk()
     _step(p, plats, held=("attack", "right"), pressed=("attack", "right"))
-    assert p.state != "smash_charge"
+    assert p.state != "charge"
     assert p.current_move is p.fighter_data.moves["ftilt"]
 
 

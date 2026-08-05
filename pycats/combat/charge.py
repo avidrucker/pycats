@@ -2,7 +2,7 @@
 
 At Attack spawn, a smash's hitboxes are rewritten from live smash state:
 - charge output scaling (3b; damage-only per #437): a smash's **damage** scales by a
-  factor from the charge fraction `c ∈ [0,1]` (fighter.smash_charge_fraction, #371);
+  factor from the charge fraction `c ∈ [0,1]` (fighter.charge_fraction, #371);
   knockback rises through knockback() (damage is an input) — BKB/KBG are NOT scaled
   (scaling them too compounds, #423/#426). c=0 is an exact identity, so uncharged +
   non-chargeable moves are unchanged.

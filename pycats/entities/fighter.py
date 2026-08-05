@@ -177,14 +177,17 @@ class Fighter:
         self.hitlag_timer = 0  # freeze frames on a clean hit (#138); both fighters
         self.shieldstun_timer = 0  # locked-in-shield frames after a block (#140)
         # attack_timer is a derived property on Player over its MoveClock (#71).
-        # Smash charge (#327 slice 3a): while charging a chargeable smash, the
-        # timer accumulates 0..SMASH_CHARGE_FRAMES and pending_smash_key holds the
-        # move being charged; the release/max fires it (fighter_input). The #334
-        # CHARGE bar reads smash_charge_timer. smash_charge_fraction is captured at
-        # fire time for the slice-3b output scaling.
-        self.smash_charge_timer = 0
-        self.pending_smash_key = None
-        self.smash_charge_fraction = 0.0
+        # Charge (#327 slice 3a; #1189 button-neutral): while charging a chargeable
+        # move, the timer accumulates 0..SMASH_CHARGE_FRAMES and pending_charge_key
+        # holds the move being charged; the release/max fires it (fighter_input). The
+        # #334 CHARGE bar reads charge_timer. charge_fraction is captured at fire time
+        # for the slice-3b output scaling. charge_button (#1189) records which button
+        # started the charge ("smash" | "special") so the release reads that same
+        # button — a chargeable special (Shield Breaker) charges on B, not smash.
+        self.charge_timer = 0
+        self.pending_charge_key = None
+        self.charge_fraction = 0.0
+        self.charge_button = "smash"
         # Angled f-smash (#327 slice 4): None / "up" / "down", captured at the smash
         # press and applied (then cleared) at the fsmash's Attack spawn.
         self.smash_angle_dir = None
@@ -395,7 +398,7 @@ class Fighter:
             if is_crouching:
                 kb *= CROUCH_CANCEL_FACTOR
             self.hurt_timer = hitstun_frames(kb)
-            self.cancel_smash_charge()  # a hit mid-charge abandons the smash (#327/3a)
+            self.cancel_charge()  # a hit mid-charge abandons the smash (#327/3a)
             self.smash_angle_dir = None  # ...and its aimed angle (#327/4)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
             direction = 1 if atk.owner.fighter.facing_right else -1  # the direction of the attack
@@ -572,7 +575,7 @@ class Fighter:
         self.intangible = False
         self.invincible_timer = 0  # don't carry a respawn-invincibility window across a KO/respawn (#802)
         self.spot_dodge_shield_held = False
-        self.cancel_smash_charge()  # don't carry a pending charge across KO/respawn (#327/3a)
+        self.cancel_charge()  # don't carry a pending charge across KO/respawn (#327/3a)
         self.smash_angle_dir = None  # nor a pending aimed-fsmash angle (#327/4)
         self.dodge_blocked_by_edge = False
         # (#321/F3: done_attacking is derived on Player; the clock reset below
@@ -584,12 +587,12 @@ class Fighter:
         # resets self._clock + self.tail. The aggregate no longer reaches `owner`.
 
     # state starters ----------------------------
-    def cancel_smash_charge(self) -> None:
+    def cancel_charge(self) -> None:
         """Abandon an in-progress smash charge (#327/3a): drop the accumulated
         timer + the pending move. Called on a mid-charge hit (receive_hit) and on
         KO/respawn (reset_to_spawn); the input handler also uses it to release."""
-        self.smash_charge_timer = 0
-        self.pending_smash_key = None
+        self.charge_timer = 0
+        self.pending_charge_key = None
 
     def tick_shield(self, shielding: bool) -> None:
         """Per-frame shield-HP tick (#341).

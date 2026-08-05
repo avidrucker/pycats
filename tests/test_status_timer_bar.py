@@ -42,7 +42,7 @@ def _fake(
     dodge_timer=0,
     getup_roll_timer=0,
     getup_attack_timer=0,
-    smash_charge_timer=0,
+    charge_timer=0,
     ledge_intangible_timer=0,
     ledge_intangible_granted=0,
     cx=120,
@@ -60,7 +60,7 @@ def _fake(
         dodge_timer=dodge_timer,
         getup_roll_timer=getup_roll_timer,
         getup_attack_timer=getup_attack_timer,
-        smash_charge_timer=smash_charge_timer,
+        charge_timer=charge_timer,
         ledge_intangible_timer=ledge_intangible_timer,
         ledge_intangible_granted=ledge_intangible_granted,
         rect=pygame.Rect(cx - 20, top, 40, 60),
@@ -312,12 +312,12 @@ def test_ledge_intangible_bar_suppressed_by_toggle(monkeypatch):
 
 
 # --- CHARGE bar (#380, final slice of #334) — the one FILL bar -----------------
-# Grows 0->100% as smash_charge_timer accumulates (#371); readout = %-and-
+# Grows 0->100% as charge_timer accumulates (#371); readout = %-and-
 # seconds-to-full; holds at 100% when maxed.
 
 
 def test_charge_bar_fills_and_reads_percent_and_seconds():
-    p = _fake(state="smash_charge", smash_charge_timer=30)  # ~half of the 59f ramp (#599)
+    p = _fake(state="charge", charge_timer=30)  # ~half of the 59f ramp (#599)
     (bar,) = rb.timer_bar_specs(p)
     assert bar.label == "CHARGE"
     assert bar.color == rb.CHARGE_BAR_COLOR
@@ -331,27 +331,27 @@ def test_charge_bar_fills_and_reads_percent_and_seconds():
 
 
 def test_charge_bar_holds_at_full():
-    p = _fake(state="smash_charge", smash_charge_timer=SMASH_CHARGE_FRAMES)
+    p = _fake(state="charge", charge_timer=SMASH_CHARGE_FRAMES)
     (bar,) = rb.timer_bar_specs(p)
     assert bar.ratio == 1.0
     assert bar.readout == "100%·0s"  # holds at 100%, 0s to full
 
 
 def test_no_charge_bar_when_not_charging():
-    assert rb.timer_bar_specs(_fake(smash_charge_timer=0)) == []
+    assert rb.timer_bar_specs(_fake(charge_timer=0)) == []
 
 
 def test_charge_bar_suppressed_by_toggle(monkeypatch):
     monkeypatch.setattr(rb.runtime_settings, "show_status_timer_bars", lambda: False)
-    assert rb.timer_bar_specs(_fake(state="smash_charge", smash_charge_timer=30)) == []
+    assert rb.timer_bar_specs(_fake(state="charge", charge_timer=30)) == []
 
 
 def test_charge_and_lockout_coactivate_ordered_by_recency():
     # CHARGE just started (elapsed 3), LOCKOUT older (elapsed 25 of 30) -> CHARGE
     # nearer the head. Proves the fill bar's up-count joins the recency sort.
     p = _fake(
-        state="smash_charge",
-        smash_charge_timer=3,  # elapsed 3
+        state="charge",
+        charge_timer=3,  # elapsed 3
         ledge_regrab_lockout_timer=5,
     )  # elapsed 25
     labels = [b.label for b in rb.timer_bar_specs(p)]

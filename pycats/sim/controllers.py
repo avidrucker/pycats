@@ -622,14 +622,14 @@ class AttackerController(BaseController):
         combat. Also resets the hang/hog counters on the not-hanging fall-through path
         (so the next grab starts clean)."""
         # #714 kill-confirm smash — keep a smash we started held until it auto-fires.
-        # Pressing `smash`+direction puts the engine in the `smash_charge` state, which
+        # Pressing `smash`+direction puts the engine in the `charge` state, which
         # roots the fighter; holding `smash` there accumulates the charge and the engine
         # auto-fires at SMASH_CHARGE_FRAMES (fighter_input). So while that state is live
         # we do nothing but keep `smash` held. TEMPORARY_MECHANIC_DECISION (#714): V1
         # always charges to FULL — the situational (early-release) charge policy is
         # deferred to research #915. Gated on the "smashes" capability so the level-less
         # default / Lv1-4 never reach here (they never press smash) → golden-safe.
-        if "smashes" in self.enabled_moves and getattr(a, "state", None) == "smash_charge":
+        if "smashes" in self.enabled_moves and getattr(a, "state", None) == "charge":
             return {keys["smash"]}
 
         # Ledge recovery (#291 + #902 C1): a hanging fighter only escapes by pressing up

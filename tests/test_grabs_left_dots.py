@@ -35,7 +35,7 @@ def _fake(ledge_regrab_count=0, ledge_regrab_lockout_timer=0, state="idle", cx=1
         dodge_timer=0,
         getup_roll_timer=0,
         getup_attack_timer=0,
-        smash_charge_timer=0,
+        charge_timer=0,
         ledge_intangible_timer=0,
         ledge_intangible_granted=0,
         rect=pygame.Rect(cx - 20, top, 40, 60),

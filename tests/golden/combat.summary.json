@@ -12,11 +12,11 @@
       "percent_max": 0,
       "states": [
         "attack",
+        "charge",
         "fall",
         "idle",
         "jump",
         "shield",
-        "smash_charge",
         "walk"
       ]
     },

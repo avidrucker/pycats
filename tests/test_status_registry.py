@@ -39,7 +39,7 @@ def st(**kw):
         prone_timer=0,
         ledge_regrab_lockout_timer=0,
         intangible=False,
-        smash_charge_timer=0,
+        charge_timer=0,
     )
     fields.update(kw)
     ns = types.SimpleNamespace(**fields, rect=pygame.Rect(100, 200, 40, 60))
@@ -65,9 +65,9 @@ def _matrix():
         "intangible_getuproll": st(intangible=True, getup_roll_timer=10),
         "intangible_getupatk": st(intangible=True, getup_attack_timer=12),
         "intangible_suppressed_hang": st(state="ledge_hang", intangible=True, dodge_timer=15),
-        "charge": st(smash_charge_timer=30),
-        "overlay_combo": st(ledge_regrab_lockout_timer=20, intangible=True, dodge_timer=15, smash_charge_timer=30),
-        "excl+overlays": st(stun_timer=240, ledge_regrab_lockout_timer=20, smash_charge_timer=30),
+        "charge": st(charge_timer=30),
+        "overlay_combo": st(ledge_regrab_lockout_timer=20, intangible=True, dodge_timer=15, charge_timer=30),
+        "excl+overlays": st(stun_timer=240, ledge_regrab_lockout_timer=20, charge_timer=30),
     }
 
 

@@ -109,7 +109,7 @@ COMBAT_SCRIPT = (
     ]
     + [
         # fully-charged forward smash: right sets the f-smash direction; smash charges
-        # (movement locks during smash_charge) and auto-fires at full charge → side KO.
+        # (movement locks during charge) and auto-fires at full charge → side KO.
         InputSpan(_COMBAT_FSMASH_START, _COMBAT_FSMASH_START + 62, 1, "right"),
         InputSpan(_COMBAT_FSMASH_START, _COMBAT_FSMASH_START + 62, 1, "smash"),
     ]

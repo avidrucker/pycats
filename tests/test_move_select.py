@@ -232,15 +232,15 @@ def test_resolve_smash_prefers_smash_then_tilt_then_attack():
 
 def test_smash_through_player_begins_charge_since_slice3a():
     # Nalio's smashes are now CHARGEABLE (#327 slice 3a): a smash-forward press
-    # begins charging (pending_smash_key = fsmash) rather than firing immediately —
+    # begins charging (pending_charge_key = fsmash) rather than firing immediately —
     # the swing starts on release/max. (Slice 2's real-smash routing is now behind
-    # the charge; the fire path is covered by tests/test_smash_charge.py.)
+    # the charge; the fire path is covered by tests/test_charge.py.)
     pg.init()
     p = _mk("nalio")
     p.fighter.on_ground = True
     p.handle_actions(_press("smash", held_extra=("right",)), pg.sprite.Group())
     assert p.current_move is None  # not fired yet — charging
-    assert p.fighter.pending_smash_key == "fsmash"
+    assert p.fighter.pending_charge_key == "fsmash"
 
 
 def test_smash_in_air_alone_is_a_noop_this_slice():

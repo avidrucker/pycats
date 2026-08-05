@@ -53,33 +53,33 @@ def _mk():
 def test_forward_plus_up_is_an_up_angled_fsmash():
     p = _mk()
     p.handle_actions(_frame(held=("smash", "right", "up"), pressed=("smash",)), pg.sprite.Group())
-    assert p.fighter.pending_smash_key == "fsmash"
+    assert p.fighter.pending_charge_key == "fsmash"
     assert p.fighter.smash_angle_dir == "up"
 
 
 def test_forward_plus_down_is_a_down_angled_fsmash():
     p = _mk()
     p.handle_actions(_frame(held=("smash", "right", "down"), pressed=("smash",)), pg.sprite.Group())
-    assert p.fighter.pending_smash_key == "fsmash"
+    assert p.fighter.pending_charge_key == "fsmash"
     assert p.fighter.smash_angle_dir == "down"
 
 
 def test_forward_only_is_a_straight_fsmash():
     p = _mk()
     p.handle_actions(_frame(held=("smash", "right"), pressed=("smash", "right")), pg.sprite.Group())
-    assert p.fighter.pending_smash_key == "fsmash"
+    assert p.fighter.pending_charge_key == "fsmash"
     assert p.fighter.smash_angle_dir is None
 
 
 def test_pure_vertical_smash_is_updown_smash_no_angle():
     up = _mk()  # up HELD (not freshly pressed, else it would jump) + smash pressed
     up.handle_actions(_frame(held=("smash", "up"), pressed=("smash",)), pg.sprite.Group())
-    assert up.fighter.pending_smash_key == "usmash"
+    assert up.fighter.pending_charge_key == "usmash"
     assert up.fighter.smash_angle_dir is None
 
     dn = _mk()
     dn.handle_actions(_frame(held=("smash", "down"), pressed=("smash",)), pg.sprite.Group())
-    assert dn.fighter.pending_smash_key == "dsmash"
+    assert dn.fighter.pending_charge_key == "dsmash"
     assert dn.fighter.smash_angle_dir is None
 
 

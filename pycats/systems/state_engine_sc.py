@@ -27,7 +27,7 @@ LABELS = (
     "landing_lag",
     "ledge_hang",
     "ledge_getup",
-    "smash_charge",
+    "charge",
 )
 
 

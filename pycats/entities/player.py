@@ -638,7 +638,7 @@ class Player(pygame.sprite.Sprite):
                     # identity, so the default cat's spawns are byte-identical (golden-safe).
                     boxes = group_boxes
                     if getattr(mv, "chargeable", False):
-                        boxes = scale_hitboxes(boxes, self.fighter.smash_charge_fraction)
+                        boxes = scale_hitboxes(boxes, self.fighter.charge_fraction)
                     # Angled f-smash (#327/4): a forward smash aimed up/down replaces its
                     # launch angle. Only set for an fsmash press, consumed here so it
                     # never leaks onto a later move.

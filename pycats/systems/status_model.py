@@ -213,22 +213,22 @@ STATUS_SOURCES = [
         readout=lambda f, p: _secs(_intangible_remaining_max(p)[0]),
         recency=lambda f, p: _intangible_remaining_max(p)[1] - _intangible_remaining_max(p)[0],
     ),
-    # CHARGE (#380) — the one FILL bar: grows 0->100% as smash_charge_timer accumulates
+    # CHARGE (#380) — the one FILL bar: grows 0->100% as charge_timer accumulates
     # rather than draining; recency = the up-count (frames elapsed since charge began).
     StatusSource(
         "charge",
         8,
         kind="FILL",
-        active=lambda f, p: f.smash_charge_timer > 0,
+        active=lambda f, p: f.charge_timer > 0,
         bar_color=CHARGE_BAR_COLOR,
         bar_label="CHARGE",
         bar_class="overlay",
-        ratio=lambda f, p: min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES),
+        ratio=lambda f, p: min(1.0, f.charge_timer / SMASH_CHARGE_FRAMES),
         readout=lambda f, p: (
-            f"{round(min(1.0, f.smash_charge_timer / SMASH_CHARGE_FRAMES) * 100)}%·"
-            f"{math.ceil((SMASH_CHARGE_FRAMES - f.smash_charge_timer) / FPS)}s"
+            f"{round(min(1.0, f.charge_timer / SMASH_CHARGE_FRAMES) * 100)}%·"
+            f"{math.ceil((SMASH_CHARGE_FRAMES - f.charge_timer) / FPS)}s"
         ),
-        recency=lambda f, p: f.smash_charge_timer,
+        recency=lambda f, p: f.charge_timer,
     ),
     # RECHARGE (#597) — shield HP regenerating back to full after release. A FILL bar
     # (fills 0->100% as shield_hp climbs), shown ONLY while regenerating and never

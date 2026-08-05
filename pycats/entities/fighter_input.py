@@ -67,7 +67,7 @@ class FighterInput:
                 "shield",
                 "crouch",
                 "helpless",
-                "smash_charge",
+                "charge",
             )  # no walking while shielding/crouching (#124), helpless (#184), or charging a smash (#327/3a)
             # A grounded normal roots the fighter (#898): `handle_actions` starts
             # the move, then this runs the SAME frame — held left/right must not
@@ -160,24 +160,27 @@ class FighterInput:
         held = input_frame.held
         pressed = input_frame.pressed  # formerly prev_keys, refers to keys just freshly pressed this frame
 
-        # ------- Smash charge (#327 slice 3a): hold to charge, release to fire ---
-        # While a chargeable smash is being charged (pending_smash_key set, the
-        # `smash_charge` state), accumulate the timer (capped) and fire on release
+        # ------- Charge (#327 slice 3a; #1189 button-neutral): hold to charge, ----
+        # release to fire. While a chargeable move is being charged (pending_charge_key
+        # set, the `charge` state), accumulate the timer (capped) and fire on release
         # or at max. The fighter is rooted this frame (early return + handle_move
         # locks on the state). A mid-charge hit clears the charge via receive_hit
         # (input is gated during hitstun), so this block only runs while charging.
+        # The release watches `charge_button` — the button that STARTED the charge
+        # (#1189): a smash charges/releases on `smash`, a chargeable special on
+        # `special`, so a B-button move (Shield Breaker) never reads the smash button.
         f = p.fighter
-        if f.pending_smash_key is not None:
-            if f.smash_charge_timer < SMASH_CHARGE_FRAMES:
-                f.smash_charge_timer += 1
-            smash_held = self._pressed(held, "smash")
-            if (not smash_held) or f.smash_charge_timer >= SMASH_CHARGE_FRAMES:
+        if f.pending_charge_key is not None:
+            if f.charge_timer < SMASH_CHARGE_FRAMES:
+                f.charge_timer += 1
+            charge_held = self._pressed(held, f.charge_button)
+            if (not charge_held) or f.charge_timer >= SMASH_CHARGE_FRAMES:
                 # Capture the charge fraction for the slice-3b output scaling, then
                 # start the swing on the move clock and drop the charge.
-                f.smash_charge_fraction = f.smash_charge_timer / SMASH_CHARGE_FRAMES
-                p._clock.start(p.fighter_data.moves[f.pending_smash_key])
+                f.charge_fraction = f.charge_timer / SMASH_CHARGE_FRAMES
+                p._clock.start(p.fighter_data.moves[f.pending_charge_key])
                 f.record_attack_made()
-                f.cancel_smash_charge()
+                f.cancel_charge()
             return False  # rooted while charging; no other action this frame
 
         # ------- Double-tap dash (#388 slice 2b, #403) ------------
@@ -340,7 +343,7 @@ class FighterInput:
         # model, and PM 3.6 is faithful to the drop (no default input buffer — a
         # mid-move press is dropped, not buffered to IASA; research #1093,
         # docs/research/pm-input-buffer-findings.md). IASA-aware interrupt is post-V1
-        # (#1089). The `smash_charge` fire path returns above and never reaches here,
+        # (#1089). The `charge` fire path returns above and never reaches here,
         # and during a charge no move clock is active, so charging is unaffected.
         if (
             (atk_pressed or sp_pressed or ground_smash)
@@ -368,13 +371,18 @@ class FighterInput:
                 # Capture the aimed angle only when the smash resolves to a real
                 # fsmash (a u/d-smash or a tilt fallback clears it).
                 p.fighter.smash_angle_dir = angle_dir if key == "fsmash" else None
-                if is_smash and move.chargeable:
-                    # Chargeable smash (#327/3a): begin charging instead of firing —
-                    # the swing starts on release/max (the charge block above). A
-                    # smash that fell back to a tilt (not chargeable) fires normally.
-                    p.fighter.smash_charge_timer = 0
-                    p.fighter.pending_smash_key = key
-                    p.engine.force("smash_charge")
+                if move.chargeable and (is_smash or is_special):
+                    # Chargeable move (#327/3a; #1189 button-neutral): begin charging
+                    # instead of firing — the swing starts on release/max (the charge
+                    # block above). Either the smash button (a chargeable smash) or the
+                    # special button (a chargeable B move like Shield Breaker) starts a
+                    # charge; `charge_button` records which, so the release reads the
+                    # SAME button. A smash that fell back to a tilt (not chargeable), or
+                    # a non-chargeable special, fires normally via the else.
+                    p.fighter.charge_timer = 0
+                    p.fighter.pending_charge_key = key
+                    p.fighter.charge_button = "smash" if is_smash else "special"
+                    p.engine.force("charge")
                 else:
                     p._clock.start(move)
                     p.fighter.record_attack_made()  # Track attack statistics

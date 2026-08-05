@@ -316,7 +316,7 @@ class MoveData:
     projectile_speed: int | None = None
     projectile_lifetime: int | None = None
     # Smash charge (#327 slice 3a): a chargeable move is HELD to charge and
-    # released to fire (the smash_charge state). Defaults False, so every existing
+    # released to fire (the charge state). Defaults False, so every existing
     # move is byte-identical (golden-safe); slice 3b scales a charged hit's output.
     chargeable: bool = False
     # Special-recovery / up-B (#578, B1 of #566): a recovery move applies an upward
