@@ -41,6 +41,12 @@ HUD_LINE_COUNT = HUD_PLAYER_LINE_COUNT + HUD_DEV_LINE_COUNT  # 5, all secondary 
 CONTROLS_LINE_COUNT = 7  # rows drawn by draw_controls (header + 6 controls)
 HUD_BLOCK_GAP = 20  # vertical gap between stacked text blocks
 HUD_EMPHASIS_SPACING = 34  # row pitch for the larger emphasized rows (cf. HUD_SPACING for the size 24 rows)
+# Baseline y of the bottom 'P: Pause Game' hint row (draw_pause_hint). The emphasized
+# Damage%/Lives block (emphasis_row_y) anchors just above this same row, so the two
+# are coupled — naming the slot once means moving the pause-hint row propagates to the
+# emphasis baseline instead of drifting apart. Third bottom-anchored slot up (FPS/input
+# at HUD_SPACING, fullscreen hint at HUD_SPACING*2).
+PAUSE_HINT_ROW_Y = SCREEN_HEIGHT - HUD_SPACING * 3
 
 # Input-history GRID layout (#875). Replaces #21's one-line strip: one row per
 # control (in _GLYPHS order), one column per recent frame (newest on the right),
@@ -111,7 +117,7 @@ def emphasis_row_y(i, n):
     SCREEN_HEIGHT - HUD_SPACING*3) so the P2 (bottom-right) rows never overlap it,
     and grows UPWARD as the font scale enlarges the rows. Pure geometry — the
     testable seam for the emphasized-row placement."""
-    baseline = SCREEN_HEIGHT - HUD_SPACING * 3 - HUD_BLOCK_GAP
+    baseline = PAUSE_HINT_ROW_Y - HUD_BLOCK_GAP
     return baseline - (n - i) * HUD_EMPHASIS_SPACING
 
 
@@ -259,7 +265,7 @@ def draw_pause_hint(surface):
     text_utils.render_text(
         surface,
         "P: Pause Game",
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 3),
+        (SCREEN_WIDTH - HUD_PADDING, PAUSE_HINT_ROW_Y),
         HUD_FONT_SIZE,
         WHITE,
         right_align=True,

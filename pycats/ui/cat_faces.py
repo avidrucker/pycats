@@ -17,6 +17,10 @@ import pygame  # type: ignore
 PRIMITIVES, ASCII_PROFILE, ASCII_34 = 0, 1, 2
 FACE_STYLES = ("primitives", "profile", "3/4")
 
+# Perceived-luminance cutoff (ITU-R 601 weights, 0..255) above which a body counts as
+# "light" and gets dark face ink; at or below it, light ink. See ink_for.
+_FACE_INK_LUMA_THRESHOLD = 110
+
 # Pure-ASCII head art from #110. Profile is authored facing RIGHT (mirrored for
 # the left-facing fighter); the 3/4 head is symmetric, so it never flips.
 _ASCII_PROFILE_LINES = (
@@ -62,7 +66,7 @@ def ink_for(body_color):
     light ink on a dark cat."""
     r, g, b = body_color[:3]
     luminance = 0.299 * r + 0.587 * g + 0.114 * b
-    return (25, 25, 25) if luminance > 110 else (235, 235, 235)
+    return (25, 25, 25) if luminance > _FACE_INK_LUMA_THRESHOLD else (235, 235, 235)
 
 
 def face_style_label(idx):

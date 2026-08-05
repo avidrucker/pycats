@@ -23,10 +23,12 @@ from ..config import (
     TAIL_ANCHOR_FLIP_STEP,
     TAIL_BASE_OFFSET_X,
     TAIL_BASE_OFFSET_Y,
+    TAIL_BASE_TURN_STEP,
     TAIL_CONSTRAINT_ITERS,
     TAIL_CURL,
     TAIL_CURL_STRENGTH,
     TAIL_GRAVITY,
+    TAIL_PINNED_SEGMENTS,
     TAIL_SEGMENT_LENGTH,
     TAIL_SEGMENTS,
     TAIL_UNDULATE_AMP,
@@ -34,14 +36,10 @@ from ..config import (
     TAIL_UNDULATE_WAVELENGTH,
 )
 
-# How many points at the root are pinned to the body. 1 = the tail dangles from a
-# single hip point; 2 = the base also holds a backward orientation (more tail-like)
-# while everything past it swings freely.
-_PINNED = 2
-# Per-frame ease of the base's backward direction across a facing flip (in units
-# of the [-1, +1] direction), so the pinned base stub swings to the other side
-# smoothly instead of snapping (companion to the #3 hip-anchor ease).
-_BASE_TURN_STEP = 0.18
+# Tail base structure/feel knobs — now sourced from config (#1138) alongside the other
+# TAIL_* feel constants. Local aliases keep the internal call sites terse.
+_PINNED = TAIL_PINNED_SEGMENTS  # points at the root pinned to the body (see config)
+_BASE_TURN_STEP = TAIL_BASE_TURN_STEP  # base backward-direction ease per frame (see config)
 # When BOTH endpoints of a distance constraint are free, each moves half the
 # correction (Jakobsen relaxation) so the segment splits the error evenly.
 _CONSTRAINT_HALF_SPLIT = 0.5

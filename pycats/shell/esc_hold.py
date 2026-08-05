@@ -17,6 +17,17 @@ import pygame  # type: ignore
 
 from ..config import MAIN_MENU_SELECTED_COLOR, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE
 
+# Shared "hold Esc ~2s to back out / quit" threshold (#905). One SSOT so the in-game
+# screen ladder (ScreenStateManager.back_hold_frames / esc_quit_hold_frames) and the CLI
+# demo/sim playback all fire on the same 2-second hold. 120 = 2s @ 60fps.
+ESC_HOLD_FRAMES = 120
+
+# draw_esc_hold_arc geometry — the one place the progress-arc's pixel dims live.
+_ARC_RADIUS_PX = 28  # arc/ring radius
+_ARC_WIDTH_PX = 6  # filled progress-arc thickness
+_ARC_RING_WIDTH_PX = 2  # static outline-circle thickness
+_ARC_BOTTOM_OFFSET_PX = 155  # arc center's distance up from the screen bottom
+
 
 class EscHoldTimer:
     """Counts frames while Esc is held; fires at `hold_frames` (120 = 2s @ 60fps).
@@ -25,7 +36,7 @@ class EscHoldTimer:
     count, `tick(False)` (release) resets it to zero — a hold must be continuous.
     `complete` is the fired state; `progress` is a 0..1 ratio for the arc."""
 
-    def __init__(self, hold_frames: int = 120):
+    def __init__(self, hold_frames: int = ESC_HOLD_FRAMES):
         self.hold_frames = hold_frames
         self.timer = 0
 
@@ -53,13 +64,13 @@ def draw_esc_hold_arc(surface, progress: float) -> None:
     if progress <= 0:
         return
 
-    radius = 28
-    width = 6
-    center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 155)
+    radius = _ARC_RADIUS_PX
+    width = _ARC_WIDTH_PX
+    center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT - _ARC_BOTTOM_OFFSET_PX)
     rect = pygame.Rect(0, 0, radius * 2, radius * 2)
     rect.center = center
 
-    pygame.draw.circle(surface, WHITE, center, radius, 2)
+    pygame.draw.circle(surface, WHITE, center, radius, _ARC_RING_WIDTH_PX)
     pygame.draw.arc(
         surface,
         MAIN_MENU_SELECTED_COLOR,

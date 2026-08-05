@@ -71,6 +71,10 @@ from ..combat.move_clock import MoveClock
 from ..core.physics import apply_horizontal_friction
 from ..systems.state_engine import make_state_engine
 
+# Downward vy applied when leaving the ledge (eviction / drop) so the fighter reads as
+# airborne on the next engine tick (grabbed_ledge is None -> routes ledge_hang to fall).
+_LEDGE_DROP_NUDGE_VY = 1
+
 
 class PState(Enum):
     IDLE = auto()
@@ -231,7 +235,7 @@ class Player(pygame.sprite.Sprite):
         f.ledge_getup_timer = 0
         f.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
         f.grabbed_ledge = None
-        f.vel.y = 1  # nudge airborne so the next frame falls
+        f.vel.y = _LEDGE_DROP_NUDGE_VY  # nudge airborne so the next frame falls
         # The occupant's ledge_hang state routes to `fall` on its next engine tick
         # (grabbed_ledge is None while airborne) — no force event needed.
 
@@ -472,7 +476,7 @@ class Player(pygame.sprite.Sprite):
                     self.fighter.ledge_regrab_lockout_timer = LEDGE_REGRAB_LOCKOUT_FRAMES
                     ledge.occupied_by = None
                     self.fighter.grabbed_ledge = None
-                    self.fighter.vel.y = 1  # nudge so next frame is airborne
+                    self.fighter.vel.y = _LEDGE_DROP_NUDGE_VY  # nudge so next frame is airborne
 
     def _step_physics(self, platforms, held):
         """Gravity/dodge-clamp/movement/collision/landing via fighter_physics (#77).

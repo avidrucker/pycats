@@ -55,7 +55,24 @@ _LOSER_BODY_TOP_Y = 200  # #746: both cats lowered 50px (was 150); winner sits _
 # Seat body-center x: P1 in the left margin, P2 in the right margin of the ~420px
 # centered stats table (SCREEN_WIDTH 960 -> ~270px margins). Keyed off the seat,
 # never winner/loser — this is the #728 invariant the render test guards.
-_SEAT_CENTER_X = {1: 135, 2: SCREEN_WIDTH - 135}
+_SEAT_INSET_X = 135  # seat body-center x, inset from the screen edge (the #728 seat invariant)
+_SEAT_CENTER_X = {1: _SEAT_INSET_X, 2: SCREEN_WIDTH - _SEAT_INSET_X}
+
+# --- winner crown geometry (_draw_crown), band/points scaled by _CROWN_SCALE ---
+_CROWN_BAND_H = 8  # rectangular band height (base px, pre-scale)
+_CROWN_POINT_H = 22  # total crown height incl. the triangle points (base px, pre-scale)
+_CROWN_GAP = 8  # gap between the head and the crown band (px, unscaled)
+_CROWN_WIDTH_FRAC = 0.7  # crown width as a fraction of the body width
+_CROWN_POINTS = 3  # number of triangle points across the band
+
+# --- stats-table layout (_render_stats_table) ---
+_STATS_COL_W = 180  # stat-name column width (px)
+_PLAYER_COL_W = 100  # each player-value column width (px)
+_STATS_COL_SPACING = 20  # gap between stats-table columns (px)
+# Row pitches as fractions of WIN_SCREEN_LINE_SPACING (#446 named the base pitch).
+_SEPARATOR_GAP_FRAC = 0.5  # separator line -> first data row
+_DATA_ROW_FRAC = 0.75  # between consecutive data rows
+_HINT_GAP_FRAC = 0.8  # confirm-hint -> P1/P2 status line
 
 
 class WinScreenManager:
@@ -231,7 +248,7 @@ class WinScreenManager:
                     WIN_SCREEN_TEXT_COLOR,
                     center=True,
                 )
-                y_offset += WIN_SCREEN_LINE_SPACING * 0.8
+                y_offset += WIN_SCREEN_LINE_SPACING * _HINT_GAP_FRAC
 
             # Show individual player confirmation status with Unicode/ASCII fallback
             p1_status = "✓" if self.p1_confirmed else "..."
@@ -369,13 +386,13 @@ class WinScreenManager:
     def _draw_crown(screen, body_rect):
         """A yellow crown (three triangle points on a rectangular band) above the
         winner's head — #728's win marker, scaled `_CROWN_SCALE` (#746)."""
-        band_h, crown_h, gap = int(8 * _CROWN_SCALE), int(22 * _CROWN_SCALE), 8
-        cw = int(body_rect.width * 0.7 * _CROWN_SCALE)
+        band_h, crown_h, gap = int(_CROWN_BAND_H * _CROWN_SCALE), int(_CROWN_POINT_H * _CROWN_SCALE), _CROWN_GAP
+        cw = int(body_rect.width * _CROWN_WIDTH_FRAC * _CROWN_SCALE)
         left = body_rect.centerx - cw // 2
         band_top = body_rect.top - gap - band_h
         pygame.draw.rect(screen, YELLOW, (left, band_top, cw, band_h))
         points_top = band_top - (crown_h - band_h)
-        n = 3
+        n = _CROWN_POINTS
         for i in range(n):
             x0 = left + cw * i // n
             x1 = left + cw * (i + 1) // n
@@ -383,10 +400,10 @@ class WinScreenManager:
 
     def _render_stats_table(self, screen, stats_table, start_y):
         """Render the stats table with pixel-perfect column alignment."""
-        # Column widths in pixels
-        stat_col_width = 180  # Width for stat names
-        player_col_width = 100  # Width for player columns
-        col_spacing = 20  # Space between columns
+        # Column widths in pixels (module SSOT)
+        stat_col_width = _STATS_COL_W  # Width for stat names
+        player_col_width = _PLAYER_COL_W  # Width for player columns
+        col_spacing = _STATS_COL_SPACING  # Space between columns
 
         # Calculate column positions
         center_x = SCREEN_WIDTH // 2
@@ -469,7 +486,7 @@ class WinScreenManager:
             2,
         )
 
-        current_y += WIN_SCREEN_LINE_SPACING * 0.5
+        current_y += WIN_SCREEN_LINE_SPACING * _SEPARATOR_GAP_FRAC
 
         # Render data rows
         for row in stats_table["rows"]:
@@ -503,7 +520,7 @@ class WinScreenManager:
                 center=True,
             )
 
-            current_y += WIN_SCREEN_LINE_SPACING * 0.75
+            current_y += WIN_SCREEN_LINE_SPACING * _DATA_ROW_FRAC
 
         return current_y
 

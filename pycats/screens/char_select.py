@@ -78,6 +78,16 @@ SLOT_EMPTY_BORDER_COLOR = (120, 120, 130)  # unselected P1/P2 placeholder border
 START_PROMPT_Y = 322  # "START" line — sits in the gap under the grid names
 START_PROMPT_HINT_GAP = 28  # vertical step to each hint line below "START"
 START_ACCENT_COLOR = (100, 255, 100)  # green — the "START" word
+
+# Residual render offsets (#1138: named from inline literals).
+TITLE_Y = 50  # "Choose Your Cat!" title baseline y
+INSTRUCTION_START_Y = 90  # first instruction line's y
+INSTRUCTION_LINE_STEP = 20  # vertical step between instruction lines
+PREVIEW_EYE_DIVISOR = 12  # preview eye radius = preview width // this
+TILE_NAME_GAP = 10  # gap from a tile's bottom edge to its archetype name
+CURSOR_TAG_GAP = 15  # gap above a tile to its P1/P2 cursor tag
+SLOT_TAG_GAP = 12  # gap above a player slot to its P-number tag
+SLOT_CAPTION_GAP = 10  # gap below a player slot to its "Character · Skin" caption
 START_TITLE_FONT_SIZE = 30
 START_HINT_FONT_SIZE = 22
 
@@ -487,7 +497,7 @@ class CharacterSelector:
         pygame.draw.rect(screen, char_data["color"], right_ear)
 
         # Draw eyes
-        eye_size = max(2, int(preview_size[0] // 12))
+        eye_size = max(2, int(preview_size[0] // PREVIEW_EYE_DIVISOR))
         left_eye_pos = (
             cat_rect.x + preview_size[0] // 3,
             cat_rect.y + preview_size[1] // 4,
@@ -514,7 +524,7 @@ class CharacterSelector:
         text_utils.render_text(
             screen,
             "Choose Your Cat!",
-            (SCREEN_WIDTH // 2, 50),
+            (SCREEN_WIDTH // 2, TITLE_Y),
             CHAR_SELECT_TITLE_SIZE,
             CHAR_SELECT_TITLE_COLOR,
             center=True,
@@ -532,7 +542,7 @@ class CharacterSelector:
                 text_utils.render_text(
                     screen,
                     instruction,
-                    (SCREEN_WIDTH // 2, 90 + i * 20),
+                    (SCREEN_WIDTH // 2, INSTRUCTION_START_Y + i * INSTRUCTION_LINE_STEP),
                     CHAR_SELECT_INSTRUCTION_SIZE,
                     CHAR_SELECT_TITLE_COLOR,
                     center=True,
@@ -556,7 +566,7 @@ class CharacterSelector:
             text_utils.render_text(
                 screen,
                 ARCHETYPE_NAME[char_key],
-                (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + 10),
+                (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + TILE_NAME_GAP),
                 TILE_NAME_FONT_SIZE,
                 WHITE,
                 center=True,
@@ -608,7 +618,7 @@ class CharacterSelector:
         text_utils.render_text(
             screen,
             label,
-            (x + CHAR_SELECT_TILE_SIZE // 2, y - 15),
+            (x + CHAR_SELECT_TILE_SIZE // 2, y - CURSOR_TAG_GAP),
             CURSOR_LABEL_FONT_SIZE,
             color,
             center=True,
@@ -675,9 +685,16 @@ class CharacterSelector:
                 pygame.draw.rect(screen, SLOT_STUB_BORDER_COLOR, rect, 2)
                 caption, cap_color, tag_color = "N/A", SLOT_STUB_BORDER_COLOR, SLOT_STUB_BORDER_COLOR
 
-            text_utils.render_text(screen, tag, (x + size // 2, y - 12), PLAYER_SLOT_TAG_FONT, tag_color, center=True)
             text_utils.render_text(
-                screen, caption, (x + size // 2, y + size + 10), PLAYER_SLOT_CAPTION_FONT, cap_color, center=True
+                screen, tag, (x + size // 2, y - SLOT_TAG_GAP), PLAYER_SLOT_TAG_FONT, tag_color, center=True
+            )
+            text_utils.render_text(
+                screen,
+                caption,
+                (x + size // 2, y + size + SLOT_CAPTION_GAP),
+                PLAYER_SLOT_CAPTION_FONT,
+                cap_color,
+                center=True,
             )
 
     def _draw_control_instructions(self, screen):

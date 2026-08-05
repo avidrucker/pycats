@@ -18,6 +18,11 @@ from ..config import DODGE_SPEED, DOUBLE_TAP_WINDOW, SMASH_CHARGE_FRAMES
 from ..storage import dev_log
 from ..systems.movement import step_horizontal
 
+# Horizontal-velocity threshold (px/frame) below which an air dodge counts as having
+# "no horizontal velocity" — the seam between a neutral air dodge (redirectable) and a
+# momentum air dodge. Distinct from config.VEL_DEADZONE (0.05, the friction dead-zone).
+_AIRDODGE_VEL_DEADZONE = 0.1
+
 
 class FighterInput:
     """Reads the owning Player's controls + state and applies input actions."""
@@ -233,7 +238,7 @@ class FighterInput:
         can_modify_air_dodge = (
             p.state == "dodge"
             and not p.fighter.on_ground
-            and abs(p.fighter.vel.x) < 0.1  # Currently has no horizontal velocity
+            and abs(p.fighter.vel.x) < _AIRDODGE_VEL_DEADZONE  # Currently has no horizontal velocity
             and p.fighter.dodge_timer > 0  # Still dodging
         )
 
@@ -270,7 +275,7 @@ class FighterInput:
             elif shield_pressed and not can_modify_air_dodge:  # Don't allow shield-only during air dodge modification
                 if not p.fighter.on_ground:
                     dir_x = 0  # air dodge without direction pressed
-                elif abs(p.fighter.vel.x) > 0.1:
+                elif abs(p.fighter.vel.x) > _AIRDODGE_VEL_DEADZONE:
                     dir_x = 1 if p.fighter.vel.x > 0 else -1
             # Priority 3: Check if a direction is freshly pressed while shield is held (ground dodge)
             # OR if direction is pressed during neutral air dodge

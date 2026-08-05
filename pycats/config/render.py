@@ -22,6 +22,11 @@ GLINT_RADIUS = 4
 # ---------------- Other UI / visuals --------------------
 HUD_PADDING = 10
 HUD_SPACING = 22
+# Font px for the shell's overlay hints (display-mode hints, hold-B back hint, zoom
+# toast) — the size fed to text_utils.render_text, which scales it via
+# runtime_settings.scaled_font_size. One SSOT for the three bare-24 hint sites in
+# screen_render.render_active_screen (×2) and display_manager.present().
+HUD_HINT_FONT_PX = 24
 
 # ---------------- colors -------------------
 BG_COLOR = (60, 60, 70)
@@ -79,6 +84,15 @@ TAIL_BASE_OFFSET_Y = 5  # Vertical offset from player bottom to tail base
 TAIL_ANCHOR_FLIP_STEP = 3  # px/frame the tail-base anchor eases across a facing
 # flip (#3): caps the per-frame anchor move so a turn slides the base to the
 # other hip over ~2*offset/step frames instead of teleporting in one frame.
+# How many points at the root are pinned to the body (#1138: moved here from tail.py
+# to sit with the other tail feel knobs). 1 = the tail dangles from a single hip point;
+# 2 = the base also holds a backward orientation (more tail-like) while everything past
+# it swings freely.
+TAIL_PINNED_SEGMENTS = 2
+# Per-frame ease of the base's backward direction across a facing flip (in units of the
+# [-1, +1] direction), so the pinned base stub swings to the other side smoothly instead
+# of snapping (companion to the #3 hip-anchor ease).
+TAIL_BASE_TURN_STEP = 0.18
 TAPER_MODIFER = 0.2  # Tapering effect for tail segments
 
 # (#37) Verlet tail physics — secondary motion (trail / drag / whip / settle).

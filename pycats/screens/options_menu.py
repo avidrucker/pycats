@@ -53,6 +53,29 @@ CAPTION_SIZE = 18
 CAPTION_COLOR = MAIN_MENU_SELECTED_COLOR  # ties the caption to the focused row
 INSTRUCTION_FONT_SIZE = 20  # bottom nav-hint lines (also drives the instr-band height)
 MORE_CUE_FONT_SIZE = 18  # the "↑ more" / "↓ more" scroll affordances
+
+# Scaled UI-layout metrics (#1138): base (unscaled) pixels, each applied as
+# round(N * font_scale) so the layout grows with the live font scale. Named by ROLE,
+# not by value — several share a magnitude (30, 8, 6) yet move independently, so the
+# same literal used to mean three different things across _layout/_render_keybind/
+# _render_sets. --- options grid (_layout / render / _caption_layout) ---
+BAND_PAD = 10  # top margin above the title, and the title->grid gap
+GRID_ROW_GAP = 6  # extra height added to each grid row's pitch (row_spacing)
+INSTR_LINE_PAD = 4  # extra leading between the two bottom instruction lines
+INSTR_BOTTOM_PAD = 8  # margin below the instruction block, up from the screen bottom
+CAPTION_GAP = 8  # gap between the caption band and the instruction band
+CAPTION_TOP_PAD = 6  # extra padding above the caption band
+CAPTION_SIDE_MARGIN = 40  # left+right margin bounding the caption's max width
+MORE_STRIP_PAD = 6  # extra height of the "↓ more" scroll strip
+MORE_ABOVE_GAP = 12  # "↑ more" cue's offset above the grid top
+# --- keybind / schemes sub-views (_render_keybind / _render_sets) ---
+SUB_TITLE_TOP = 30  # sub-view title y (from the top)
+SUB_ROW_H = 30  # row pitch in the keybind / schemes lists
+SUB_MSG_GAP = 12  # gap above the status / conflict message line
+SUB_HINT_PAD = 4  # extra leading between the two bottom hint lines
+KEYBIND_LIST_TOP = 80  # first keybind action row's y
+SETS_LIST_TOP = 90  # first schemes row's y
+SETS_HINT_BOTTOM = 30  # schemes bottom-hint y, up from the screen bottom
 ROW_DESCRIPTIONS = {
     "status_bars": "Show the HUD stun / shield timer bars above each fighter.",
     "hitbox_overlay": "Draw debug hit / hurtbox outlines during battle.",
@@ -389,7 +412,9 @@ class OptionsMenu:
         """(text, rect) for the focused caption, ellipsized to fit and centred in the
         reserved caption band. Shared by render and the no-overlap test (#390)."""
         scale = runtime_settings.font_scale()
-        text = self._fit_caption(self._focused_caption(), CAPTION_SIZE, SCREEN_WIDTH - round(40 * scale))
+        text = self._fit_caption(
+            self._focused_caption(), CAPTION_SIZE, SCREEN_WIDTH - round(CAPTION_SIDE_MARGIN * scale)
+        )
         w, h = text_renderer._get_font(None, CAPTION_SIZE).size(text)
         rect = pygame.Rect(0, 0, w, h)
         rect.center = meta["caption_center"]
@@ -411,19 +436,19 @@ class OptionsMenu:
         title_h = text_renderer._get_font(None, MAIN_MENU_TITLE_SIZE).get_height()
         instr_h = text_renderer._get_font(None, INSTRUCTION_FONT_SIZE).get_height()
         cap_h = text_renderer._get_font(None, CAPTION_SIZE).get_height()
-        title_center_y = round(10 * scale) + title_h // 2
-        grid_top = round(10 * scale) + title_h + round(10 * scale)
-        instr_line = instr_h + round(4 * scale)
-        instr_top = SCREEN_HEIGHT - (2 * instr_line + round(8 * scale))
+        title_center_y = round(BAND_PAD * scale) + title_h // 2
+        grid_top = round(BAND_PAD * scale) + title_h + round(BAND_PAD * scale)
+        instr_line = instr_h + round(INSTR_LINE_PAD * scale)
+        instr_top = SCREEN_HEIGHT - (2 * instr_line + round(INSTR_BOTTOM_PAD * scale))
 
         # Reserved caption band (#390): one line just above the hints. The grid
         # viewport ends above it (and above a bottom strip for the "↓ more" cue), so a
         # caption can never overlap a button or the scroll affordance.
-        caption_center_y = instr_top - round(8 * scale) - cap_h // 2
-        caption_top = caption_center_y - cap_h // 2 - round(6 * scale)
-        more_strip = instr_h + round(6 * scale)
+        caption_center_y = instr_top - round(CAPTION_GAP * scale) - cap_h // 2
+        caption_top = caption_center_y - cap_h // 2 - round(CAPTION_TOP_PAD * scale)
+        more_strip = instr_h + round(MORE_STRIP_PAD * scale)
 
-        row_spacing = bh + round(6 * scale)
+        row_spacing = bh + round(GRID_ROW_GAP * scale)
         viewport_h = max(row_spacing, caption_top - grid_top - more_strip)
         visible_rows = max(1, viewport_h // row_spacing)
 
@@ -497,7 +522,11 @@ class OptionsMenu:
         # bottom strip, above the caption band (#390).
         if meta["more_above"]:
             text_renderer.render_mixed_centered(
-                "↑ more", MORE_CUE_FONT_SIZE, WHITE, surface, (SCREEN_WIDTH // 2, meta["grid_top"] - round(12 * scale))
+                "↑ more",
+                MORE_CUE_FONT_SIZE,
+                WHITE,
+                surface,
+                (SCREEN_WIDTH // 2, meta["grid_top"] - round(MORE_ABOVE_GAP * scale)),
             )
         if meta["more_below"]:
             text_renderer.render_mixed_centered(
@@ -539,12 +568,12 @@ class OptionsMenu:
             MAIN_MENU_TITLE_SIZE,
             MAIN_MENU_TITLE_COLOR,
             surface,
-            (SCREEN_WIDTH // 2, round(30 * scale)),
+            (SCREEN_WIDTH // 2, round(SUB_TITLE_TOP * scale)),
             center=True,
         )
 
-        row_h = round(30 * scale)
-        top = round(80 * scale)
+        row_h = round(SUB_ROW_H * scale)
+        top = round(KEYBIND_LIST_TOP * scale)
         for i, action in enumerate(kb.actions):
             focused = i == kb.action_index
             if focused and kb.capturing:
@@ -577,13 +606,13 @@ class OptionsMenu:
                 CAPTION_SIZE,
                 CAPTION_COLOR,
                 surface,
-                (SCREEN_WIDTH // 2, top + (len(kb.actions) + 1) * row_h + round(12 * scale)),
+                (SCREEN_WIDTH // 2, top + (len(kb.actions) + 1) * row_h + round(SUB_MSG_GAP * scale)),
                 center=True,
             )
 
         hints = ["Up/Down: row    Left/Right: player    A: rebind / open", "Shield: reset player    B: back"]
         instr_h = text_renderer._get_font(None, INSTRUCTION_FONT_SIZE).get_height()
-        step = instr_h + round(4 * scale)
+        step = instr_h + round(SUB_HINT_PAD * scale)
         base = SCREEN_HEIGHT - 2 * step
         for i, hint in enumerate(hints):
             text_renderer.render_text_mixed(
@@ -602,8 +631,8 @@ class OptionsMenu:
 
         surface.fill(MAIN_MENU_BG_COLOR)
         scale = runtime_settings.font_scale()
-        row_h = round(30 * scale)
-        top = round(90 * scale)
+        row_h = round(SUB_ROW_H * scale)
+        top = round(SETS_LIST_TOP * scale)
 
         if sm.view == "confirm":
             text_renderer.render_text_simple(
@@ -611,7 +640,7 @@ class OptionsMenu:
                 MAIN_MENU_TITLE_SIZE,
                 MAIN_MENU_TITLE_COLOR,
                 surface,
-                (SCREEN_WIDTH // 2, round(30 * scale)),
+                (SCREEN_WIDTH // 2, round(SUB_TITLE_TOP * scale)),
                 center=True,
             )
             text_renderer.render_text_mixed(
@@ -630,7 +659,7 @@ class OptionsMenu:
                 MAIN_MENU_TITLE_SIZE,
                 MAIN_MENU_TITLE_COLOR,
                 surface,
-                (SCREEN_WIDTH // 2, round(30 * scale)),
+                (SCREEN_WIDTH // 2, round(SUB_TITLE_TOP * scale)),
                 center=True,
             )
             rows, focus_i, hint = sm.sets, sm.list_index, "Up/Down: choose    A: select    B: back"
@@ -640,7 +669,7 @@ class OptionsMenu:
                 MAIN_MENU_TITLE_SIZE,
                 MAIN_MENU_TITLE_COLOR,
                 surface,
-                (SCREEN_WIDTH // 2, round(30 * scale)),
+                (SCREEN_WIDTH // 2, round(SUB_TITLE_TOP * scale)),
                 center=True,
             )
             rows, focus_i, hint = sm.MENU, sm.menu_index, "Up/Down: choose    A: select    B: back"
@@ -671,6 +700,6 @@ class OptionsMenu:
             INSTRUCTION_FONT_SIZE,
             WHITE,
             surface,
-            (SCREEN_WIDTH // 2, SCREEN_HEIGHT - round(30 * scale)),
+            (SCREEN_WIDTH // 2, SCREEN_HEIGHT - round(SETS_HINT_BOTTOM * scale)),
             center=True,
         )

@@ -13,6 +13,13 @@ DONE = "DONE"
 # Grid cells, in order: A-Z, 0-9, SPACE, DEL, DONE (spike #464). Uppercase.
 _CELLS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") + [" ", DEL, DONE]
 
+# draw_text_entry render layout (px): title/buffer baselines and the char-grid cell box.
+_TITLE_Y = 40  # title baseline y
+_ENTRY_Y = 95  # current-buffer baseline y
+_GRID_TOP = 160  # first grid row's y
+_CELL_W = 56  # grid cell width
+_CELL_H = 40  # grid cell height
+
 
 class TextEntry:
     def __init__(self, maxlen, cols=10):
@@ -64,13 +71,13 @@ def draw_text_entry(surface, entry, title="Enter name"):
 
     surface.fill(MAIN_MENU_BG_COLOR)
     text_renderer.render_text_simple(
-        title, MAIN_MENU_TITLE_SIZE, MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, 40), center=True
+        title, MAIN_MENU_TITLE_SIZE, MAIN_MENU_TITLE_COLOR, surface, (SCREEN_WIDTH // 2, _TITLE_Y), center=True
     )
     text_renderer.render_text_simple(
-        entry.text or "_", MAIN_MENU_OPTION_SIZE, WHITE, surface, (SCREEN_WIDTH // 2, 95), center=True
+        entry.text or "_", MAIN_MENU_OPTION_SIZE, WHITE, surface, (SCREEN_WIDTH // 2, _ENTRY_Y), center=True
     )
 
-    cols, cell_w, cell_h, top = entry.cols, 56, 40, 160
+    cols, cell_w, cell_h, top = entry.cols, _CELL_W, _CELL_H, _GRID_TOP
     x0 = (SCREEN_WIDTH - cols * cell_w) // 2 + cell_w // 2
     for i, cell in enumerate(entry.cells):
         row, col = divmod(i, cols)

@@ -15,7 +15,7 @@ from ..screens.options_menu import OptionsMenu
 from ..screens.pause_menu import PauseMenuManager
 from ..screens.win_screen import WinScreenManager
 from ..systems.screen_engine import make_screen_engine
-from .esc_hold import EscHoldTimer, draw_esc_hold_arc
+from .esc_hold import ESC_HOLD_FRAMES, EscHoldTimer, draw_esc_hold_arc
 
 
 class ScreenStateManager:
@@ -37,14 +37,14 @@ class ScreenStateManager:
 
         # Back to menu timer for character select
         self.back_timer = 0
-        self.back_hold_frames = 120  # 2 seconds at 60 FPS (#905: match the shared esc-hold 2s)
+        self.back_hold_frames = ESC_HOLD_FRAMES  # (#905: match the shared esc-hold 2s)
 
         # Hold-ESC-to-navigate (#113, generalised #453): a 2-second hold on ESC pops
         # one level up the screen ladder (guards read esc_hold_complete()); at
         # main_menu it quits the app. One shared timer, ticked once per frame in
         # update() regardless of state. The counter is the shared EscHoldTimer (#515,
         # #507 §3b) so the CLI demo/sim playback backs out on the same 2s threshold.
-        self.esc_quit_hold_frames = 120  # 2 seconds at 60 FPS
+        self.esc_quit_hold_frames = ESC_HOLD_FRAMES
         self._esc_hold = EscHoldTimer(self.esc_quit_hold_frames)
 
         # Screen-flow engine (epic #100): runs on statecharts-py, the sole screen
