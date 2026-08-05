@@ -35,6 +35,7 @@ from ..loadout import (  # noqa: E402
     assign_distinct_skins,
     build_fighter,
     character_for,
+    starting_lives,
 )
 from ..systems import hit_resolution  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
@@ -99,7 +100,7 @@ def _skin_for(char_key, default_skin_key):
     return Skin.from_palette_dict(char_key, palette_for(char_key))
 
 
-def build_players(p1_char=None, p2_char=None, p1_palette=None, p2_palette=None):
+def build_players(p1_char=None, p2_char=None, p1_palette=None, p2_palette=None, p1_cards=(), p2_cards=()):
     # #244: an optional per-player character loads that archetype's FighterData
     # (e.g. "nalio" → Nalio's moveset); unknown/None → the default cat. char_name
     # stays "P1"/"P2".
@@ -112,8 +113,12 @@ def build_players(p1_char=None, p2_char=None, p1_palette=None, p2_palette=None):
     # cosmetic palette comes from p*_palette when given. Used so a demo can pick a
     # high-visibility skin (e.g. the showcase) without changing the archetype; None keeps
     # the char-derived skin, so every existing caller is byte-identical.
-    sel1 = Selection(character_for(p1_char), _skin_for(p1_palette or p1_char, "calico"))
-    sel2 = Selection(character_for(p2_char), _skin_for(p2_palette or p2_char, "tabby"))
+    # #1202: an optional per-player drafted-card list rides the Selection. Defaults to
+    # () → starting_lives returns INITIAL_LIVES → every existing caller is byte-identical
+    # (the #244 sim-golden contract). The stocks seam is match-level (fighter.lives), so
+    # it is applied here as a starting-lives hook, not by build_fighter's FighterData patch.
+    sel1 = Selection(character_for(p1_char), _skin_for(p1_palette or p1_char, "calico"), tuple(p1_cards))
+    sel2 = Selection(character_for(p2_char), _skin_for(p2_palette or p2_char, "tabby"), tuple(p2_cards))
     # #718: two players on the SAME Character would otherwise render identically (both
     # skins come from `palette_for(char_key)`). De-collide through the #755 domain layer:
     # P2 falls to the next available skin in that Character's pool. Different-Character and
@@ -146,6 +151,10 @@ def build_players(p1_char=None, p2_char=None, p1_palette=None, p2_palette=None):
     )
     p1.stripe_color = built1.skin.stripe_color
     p2.stripe_color = built2.skin.stripe_color
+    # #1202: apply the match-level stocks seam. No cards → INITIAL_LIVES (Fighter's
+    # own default) → byte-identical; a drafted Phoenix raises the starting stock count.
+    p1.fighter.lives = starting_lives(sel1)
+    p2.fighter.lives = starting_lives(sel2)
     return p1, p2, pygame.sprite.Group(p1, p2)
 
 

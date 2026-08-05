@@ -68,3 +68,20 @@ def test_different_characters_are_untouched():
     sels = [Selection(nalio, SKINS["red-blue"]), Selection(narz, SKINS["blue-black"])]
     out = assign_distinct_skins(sels)
     assert out == sels  # no same-Character collision → identity
+
+
+def test_reskinned_player_keeps_their_drafted_cards():
+    # #1202: a same-Character collision re-skins P2. The re-skin must PRESERVE P2's
+    # drafted ROUNDS cards — rebuilding the Selection with only (character, skin)
+    # would drop them, silently zeroing a stocks/lives (or any) draft.
+    from pycats.loadout.cards import Card
+
+    nalio = CHARACTERS["nalio"]
+    phoenix = Card(id="phoenix", name="Phoenix", deltas=[{"seam": "stocks", "op": "add_n", "value": 1}], stackable=True)
+    both = [
+        Selection(nalio, SKINS["red-blue"]),
+        Selection(nalio, SKINS["red-blue"], (phoenix,)),
+    ]
+    out = assign_distinct_skins(both)
+    assert out[1].skin.key != out[0].skin.key  # P2 was re-skinned
+    assert out[1].cards == (phoenix,)  # …and kept its drafted card

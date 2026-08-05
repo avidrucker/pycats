@@ -17,6 +17,7 @@ from .resolvers import fighter_data_of, palette_of
 from .selection import BuiltFighter, Selection
 from .skin import RGB, Skin
 from .skin_assignment import SHARED_SKIN_KEYS, assign_distinct_skins, available_skins
+from .starting_lives import starting_lives
 
 __all__ = [
     "RGB",
@@ -40,4 +41,5 @@ __all__ = [
     "fighter_data_of",
     "palette_of",
     "build_fighter",
+    "starting_lives",
 ]

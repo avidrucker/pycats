@@ -67,5 +67,7 @@ def assign_distinct_skins(selections: Sequence[Selection]) -> list[Selection]:
                     skin = candidate
                     break
         used.add(skin.key)
-        result.append(selection if skin is selection.skin else Selection(character, skin))
+        # _replace (not Selection(character, skin)) so a re-skin preserves every other
+        # field — notably the drafted `cards` (#1202); a bare rebuild would drop them.
+        result.append(selection if skin is selection.skin else selection._replace(skin=skin))
     return result
