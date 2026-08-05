@@ -30,7 +30,7 @@ from pycats.sim import moveset_exerciser as mx
 EXPECTED_GAPS = {
     "nalio": {"down_b", "dtilt", "side_b"},
     "birky": {"down_b", "dtilt", "neutral_b", "side_b"},
-    "narz": {"neutral_b", "side_b"},
+    "narz": {"side_b"},
     "gnok": {"down_b", "neutral_b", "side_b", "up_b"},
 }
 
