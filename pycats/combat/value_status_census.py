@@ -78,7 +78,17 @@ from .provenance import TUNING_PROVENANCE
 VALUE_FIELDS: dict[type, frozenset[str]] = {
     Circle: frozenset({"dx", "dy", "r"}),
     Hitbox: frozenset(
-        {"damage", "angle", "base_knockback", "knockback_growth", "active_start", "active_end", "set_knockback"}
+        {
+            "damage",
+            "angle",
+            "base_knockback",
+            "knockback_growth",
+            "active_start",
+            "active_end",
+            "set_knockback",
+            "hitlag_mult",  # #1213: authored datamined multiplier (a value slot, like set_knockback)
+            "shield_damage",  # #1213: authored datamined shield-damage quantity (a value slot, like damage)
+        }
     ),
     VelocityPhase: frozenset({"frame", "vx", "vy"}),
     LandingSpawn: frozenset({"speed", "lifetime", "landing_lag", "gravity"}),
@@ -98,7 +108,17 @@ VALUE_FIELDS: dict[type, frozenset[str]] = {
 
 NON_VALUE_FIELDS: dict[type, frozenset[str]] = {
     Circle: frozenset({"label", "status"}),
-    Hitbox: frozenset({"circle", "set_id", "label", "status"}),
+    Hitbox: frozenset(
+        {
+            "circle",
+            "set_id",
+            "label",
+            "status",
+            "ground",  # #1213: behavioural target-state flag (bool), not a value slot
+            "aerial",  # #1213: behavioural target-state flag (bool), not a value slot
+            "hitbox_id",  # #1213: raw datamined id tag, not a value slot (like set_id)
+        }
+    ),
     VelocityPhase: frozenset({"status"}),
     LandingSpawn: frozenset({"hitboxes", "both_directions", "status"}),
     MoveData: frozenset(
