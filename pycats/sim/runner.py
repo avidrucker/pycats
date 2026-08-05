@@ -37,7 +37,7 @@ from ..loadout import (  # noqa: E402
     character_for,
     starting_lives,
 )
-from ..systems import hit_resolution  # noqa: E402
+from ..systems import hit_resolution, over_time  # noqa: E402
 from ..systems.match_engine import make_match_engine  # noqa: E402
 from .input_script import default_timeline  # noqa: E402
 
@@ -273,6 +273,7 @@ def run_battle(
             fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
         for p in players:
             p.update(fi, platforms, attacks, ledges)
+        over_time.tick(players)  # #1218: time-driven Health Regen, before process_hits (#1173 Q4-A)
         resolve_player_push(list(players), platforms)
         attacks.update(platforms)  # #266: projectiles need platforms to bounce
         hit_resolution.process_hits(players, attacks)

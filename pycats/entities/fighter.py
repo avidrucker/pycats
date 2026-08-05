@@ -217,6 +217,10 @@ class Fighter:
         # pycats.combat.tangibility. Distinct from `intangible` (pass-through). Ticked
         # down in Player.update alongside the other immunity timers.
         self.invincible_timer = 0
+        # ROUNDS Health Regen counter (#1218): transient per-fighter frame counter for
+        # the time-driven self-heal (systems/over_time.py). Idle at 0 and never touched
+        # unless a Health Regen card sets fighter_data.regen_interval > 0 — golden-safe.
+        self.regen_counter = 0
         # (#321/F3: done_attacking is a derived Player property now — no field here.)
 
         # ---------- shield / dodge flags ----------
