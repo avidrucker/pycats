@@ -20,6 +20,7 @@ cannot move — the round-trip here is an in-memory equality check, not a file.
 """
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -27,10 +28,12 @@ from pycats.combat.data import (
     GETUP_ATTACK,
     SCHEMA_VERSION,
     Circle,
+    FieldStatus,
     FighterData,
     Hitbox,
     Hurtbox,
     MoveData,
+    Status,
     _fighter_from_json,
     _move_from_json,
     _move_to_json,
@@ -184,6 +187,28 @@ def test_character_key_present_only_when_named():
     fd = load_fighter_data("nalio")
     assert fighter_to_json(fd, "nalio")["character"] == "nalio"
     assert "character" not in fighter_to_json(fd)
+
+
+def test_fighter_level_status_map_roundtrips():
+    # #1216: FighterData carries its own per-value status map (the fighter-scalar
+    # provenance seam), like the five #1133 carriers. A non-empty map survives
+    # serialize->reload, and serializes in the same lenient union form (an object
+    # when a source rides along). Able-to-fail: without the field + serializer
+    # wiring the map is dropped and rebuilt.status != tagged.status.
+    base = load_fighter_data("nalio")
+    tagged = replace(base, status={"weight": FieldStatus(Status.FOUND, "datamine")})
+    doc = fighter_to_json(tagged)
+    assert doc["status"] == {"weight": {"status": "FOUND", "source": "datamine"}}
+    rebuilt = _fighter_from_json(_through_json(doc))
+    assert rebuilt.status == tagged.status
+
+
+def test_fighter_level_status_omitted_when_empty():
+    # Every shipped cat authors no fighter-level status today -> the key is omitted
+    # -> existing <cat>.json stay byte-identical (golden-neutral), mirroring the
+    # omit-when-empty leniency the other #1133 carriers already have.
+    doc = fighter_to_json(load_fighter_data("nalio"))
+    assert "status" not in doc
 
 
 def test_optional_geometry_roundtrips():

@@ -482,6 +482,13 @@ class FighterData:
     crouch_hurtbox: Hurtbox | None = None
     prone_size: tuple[int, int] | None = None
     prone_hurtbox: Hurtbox | None = None
+    # Per-value status (#1216), keyed by this FighterData's OWN scalar field names
+    # ("weight"/"gravity"/… and the incoming per-character walk/dash/run, #1209).
+    # The fighter-LEVEL counterpart of the five #1133 carriers (Circle/Hitbox/
+    # MoveData/VelocityPhase/LandingSpawn), which the seam originally skipped
+    # (value_status_census: "Hurtbox and FighterData themselves carry no status
+    # map"). Empty by default → omitted from JSON → existing data byte-identical.
+    status: StatusMap = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -615,6 +622,8 @@ def _fighter_from_json(doc: dict) -> FighterData:
     for key in ("stand_size", "crouch_size", "prone_size"):
         if doc.get(key) is not None:
             kw[key] = tuple(doc[key])
+    if "status" in doc:  # per-value fighter-LEVEL status map (#1216)
+        kw["status"] = _status_map_from_json(doc["status"])
     return FighterData(**kw)
 
 
@@ -644,7 +653,7 @@ _HITBOX_STRUCTURAL = frozenset({"circle", "status"})
 _LANDING_SPAWN_STRUCTURAL = frozenset({"hitboxes", "status"})
 _MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox", "velocity_phases", "landing_spawn", "status"})
 _FIGHTER_STRUCTURAL = frozenset(
-    {"hurtbox", "moves", "stand_size", "crouch_size", "crouch_hurtbox", "prone_size", "prone_hurtbox"}
+    {"hurtbox", "moves", "stand_size", "crouch_size", "crouch_hurtbox", "prone_size", "prone_hurtbox", "status"}
 )
 
 
@@ -780,6 +789,8 @@ def fighter_to_json(fd: FighterData, character: str | None = None) -> dict:
         size = getattr(fd, key)
         if size is not None:
             out[key] = list(size)
+    if fd.status:  # per-value fighter-LEVEL status map (#1216); omit when empty
+        out["status"] = _status_map_to_json(fd.status)
     return out
 
 
