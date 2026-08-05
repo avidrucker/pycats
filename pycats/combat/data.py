@@ -172,6 +172,27 @@ class Hitbox:
                            (migrated/hand-written data, or a box with no assigned
                            letter), so every existing move is byte-identical (the
                            serializer omits it) — golden-safe.
+        hitlag_mult      — per-hitbox hitlag multiplier (ADR-0018 #1161, ruled
+                           into V1 by ADR-0021 #1150). Scales this box's hitlag
+                           (freeze) frames. 1.0 = the move's default hitlag
+                           (today's behavior). Consumer wiring (-> hitlag_frames)
+                           is a downstream DEV; this DEV stores it only.
+        shield_damage    — extra damage this box deals to a shield beyond its %
+                           (ADR-0018). 0 = no bonus (today's behavior). Consumer
+                           wiring (-> shield.py depletion) is downstream.
+        ground / aerial  — target-state gate: whether this box can hit a grounded
+                           / airborne target (ADR-0018). Both True = hits either
+                           (today's behavior). Mirrors the datamine's two
+                           independent flags 1:1 (not one enum). Consumer wiring
+                           (target-state gate in hit_resolution) is downstream.
+        hitbox_id        — the raw datamined per-box id (ADR-0018), authored in
+                           priority order. None = no id (today's behavior). The
+                           `max(damage)->min(hitbox_id)` same-frame box-selection
+                           swap is a separate downstream DEV (#1214); this DEV
+                           stores the field only, so all data stays byte-identical.
+    All five default to today's behavior -> the serializer omits them at their
+    default (§1 omit == default) -> every existing move is byte-identical and
+    schema_version stays 1 (ADR-0021).
     """
 
     circle: Circle
@@ -184,6 +205,11 @@ class Hitbox:
     set_knockback: int | None = None
     set_id: int | None = None
     label: str | None = None
+    hitlag_mult: float = 1.0
+    shield_damage: int = 0
+    ground: bool = True
+    aerial: bool = True
+    hitbox_id: int | None = None
     # Per-value status (#1133), keyed by this Hitbox's own field names ("damage"/
     # "angle"/"base_knockback"/...). Empty by default → omitted → byte-identical.
     # The owning circle's radius/offset status lives on `circle.status`, not here,
