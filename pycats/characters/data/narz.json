@@ -348,6 +348,78 @@
         }
       ]
     },
+    "up_b": {
+      "name": "dolphin slash",
+      "in_air": true,
+      "startup": 3,
+      "active": 7,
+      "recovery": 30,
+      "grants_recovery": true,
+      "recovery_vy": -15.2,
+      "recovery_vx": 2.0,
+      "hitboxes": [
+        {
+          "damage": 13.0,
+          "angle": 361,
+          "base_knockback": 80.0,
+          "knockback_growth": 70.0,
+          "active_start": 4,
+          "active_end": 5,
+          "label": "A",
+          "circle": [40, 21, 21]
+        },
+        {
+          "damage": 10.0,
+          "angle": 74,
+          "base_knockback": 60.0,
+          "knockback_growth": 70.0,
+          "active_start": 4,
+          "active_end": 5,
+          "label": "B",
+          "circle": [23, 34, 21]
+        },
+        {
+          "damage": 10.0,
+          "angle": 74,
+          "base_knockback": 60.0,
+          "knockback_growth": 70.0,
+          "active_start": 4,
+          "active_end": 5,
+          "label": "C",
+          "circle": [-3, 32, 21]
+        },
+        {
+          "damage": 7.0,
+          "angle": 361,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "active_start": 6,
+          "active_end": 10,
+          "label": "D",
+          "circle": [71, 81, 21]
+        },
+        {
+          "damage": 7.0,
+          "angle": 74,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "active_start": 6,
+          "active_end": 10,
+          "label": "E",
+          "circle": [49, 83, 21]
+        },
+        {
+          "damage": 6.0,
+          "angle": 74,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "active_start": 6,
+          "active_end": 10,
+          "label": "F",
+          "circle": [0, 62, 17]
+        }
+      ]
+    },
     "wait": {
       "name": "wait",
       "in_air": false,
