@@ -4,8 +4,14 @@
   "weight": 114,
   "gravity": 0.54,
   "max_fall_speed": 12.96,
-  "move_speed": 6.48,
-  "dash_speed": 9.72,
+  "walk": 1.2,
+  "dash": 1.8,
+  "run": 1.8,
+  "status": {
+    "walk": {"status": "FOUND", "source": "datamine"},
+    "dash": {"status": "FOUND", "source": "datamine"},
+    "run": {"status": "FOUND", "source": "datamine"}
+  },
   "jump_vel": -15.12,
   "hurtbox": {
     "circles": [[24, 28, 22], [52, 28, 22], [24, 60, 16], [52, 60, 16]]

@@ -29,6 +29,9 @@ def _jab_doc():
         "schema_version": 1,
         "character": "nalio",
         "weight": 100,
+        "walk": 1.1,
+        "dash": 1.5,
+        "run": 1.5,
         "hurtbox": {"circles": [[20, 15, 14], [20, 45, 14]]},
         "moves": {
             "jab": {

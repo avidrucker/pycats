@@ -98,12 +98,20 @@ def _effective(base: float, mods: list[Modifier], *, rounds: bool, floor: int | 
 # velocities & weight are int-contracted (round); gravity is the sole genuine float
 # (no round). weight and max_jumps floor at 1; the others have no floor. jump_vel
 # is negative, so it has no lower floor (a stronger jump is a larger magnitude).
+#
+# Walk/dash/run (#1209, ADR-0011): the move_speed/dash_speed/run_speed CARD seams now
+# target the raw-unit fields walk/dash/run (move_speed/etc. are read-only derived-px
+# properties — nothing to replace()). rounds=False: the scaled UNIT stays a float; the
+# integer px contract is honored downstream by the u() conversion in the property (a
+# fractional walk speed is meaningless — pygame.Rect truncates each frame). All shipped
+# speed cards are mult_pct (ratio, unit-agnostic); an additive speed delta would now be
+# in unit-space, not px.
 _SCALAR_SEAMS: dict[str, tuple[str, bool, int | None]] = {
     "weight": ("weight", True, 1),
     "jump_vel": ("jump_vel", True, None),
-    "move_speed": ("move_speed", True, None),
-    "dash_speed": ("dash_speed", True, None),
-    "run_speed": ("run_speed", True, None),
+    "move_speed": ("walk", False, None),
+    "dash_speed": ("dash", False, None),
+    "run_speed": ("run", False, None),
     "max_fall_speed": ("max_fall_speed", True, None),
     "gravity": ("gravity", False, None),
     "max_jumps": ("max_jumps", True, 1),

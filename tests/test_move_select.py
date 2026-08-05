@@ -187,6 +187,9 @@ def test_b_button_starts_a_defined_special():
         hitboxes=(Hitbox(circle=Circle(20, 30, 12), damage=7, angle=0),),
     )
     fd = FighterData(
+        walk=1.1,
+        dash=1.5,
+        run=1.5,
         hurtbox=Hurtbox(circles=(Circle(20, 30, 14),)),
         moves={"attack": _mk().fighter_data.moves["attack"], "neutral_b": sb},
     )

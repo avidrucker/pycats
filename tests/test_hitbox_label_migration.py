@@ -37,7 +37,7 @@ def _move(*hitboxes: Hitbox) -> MoveData:
 
 
 def _fighter(*hitboxes: Hitbox) -> FighterData:
-    return FighterData(hurtbox=_HURTBOX, moves={"jab": _move(*hitboxes)})
+    return FighterData(walk=1.1, dash=1.5, run=1.5, hurtbox=_HURTBOX, moves={"jab": _move(*hitboxes)})
 
 
 def _hb(dx: int, label: str | None = None) -> Hitbox:

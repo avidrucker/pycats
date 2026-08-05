@@ -30,8 +30,11 @@ from pathlib import Path
 
 # Movement-constant defaults live in config; FighterData uses them as field
 # defaults so any data that doesn't specify movement == today's globals (the
-# default cat / golden sim is unchanged). #126.
-from ..config import DASH_SPEED, GRAVITY, JUMP_VEL, MAX_FALL_SPEED, MAX_JUMPS, MOVE_SPEED
+# default cat / golden sim is unchanged). #126. The walk/dash/run globals
+# (MOVE_SPEED/DASH_SPEED) were removed in the ADR-0011 re-pin (#1209): those three
+# are now per-character raw units carried in <cat>.json, with px derived at read.
+from ..config import GRAVITY, JUMP_VEL, MAX_FALL_SPEED, MAX_JUMPS
+from .units import u
 
 # ---------------------------------------------------------------------------
 # Per-fighter value status (#1133, O3+O2 seam ratified in #1129)
@@ -447,7 +450,11 @@ class FighterData:
         weight  — fighter weight fed to the knockback formula (#117/#123). The
                   Smash convention is Mario = 100; defaults to 100 so existing
                   data (the default cat) is unchanged and stays the baseline.
-        gravity / max_fall_speed / move_speed / jump_vel / max_jumps —
+        walk / dash / run — the three grounded movement speeds as raw PM units
+                  (#1209, ADR-0011), REQUIRED per cat (no config fallback). The
+                  shipped pixel is derived via the move_speed/dash_speed/run_speed
+                  properties (`u(walk)` etc.).
+        gravity / max_fall_speed / jump_vel / max_jumps —
                   per-character movement constants (#126), read per-fighter by
                   the physics/input layer. Each defaults to the matching config
                   global, so data that omits them behaves exactly as before.
@@ -470,23 +477,20 @@ class FighterData:
 
     hurtbox: Hurtbox
     moves: dict[str, MoveData]
+    # Walk / dash / run raw PM units (#1209, ADR-0011). REQUIRED — no default: a cat
+    # with no speed data is an error, not a fallback (the MOVE_SPEED/DASH_SPEED globals
+    # were removed; this matches load_fighter_data raising on an unknown key, #887).
+    # Each `<cat>.json` stores these units verbatim from the #814 datamine; the shipped
+    # integer pixel is DERIVED — see the move_speed/dash_speed/run_speed properties
+    # below (`u(walk)` etc.). dash != run is a STATE distinction (sustained vs. decay,
+    # ADR-0011 §Decision 4), not necessarily a pixel one — where the units are equal
+    # (nalio 1.5/1.5) the derived px is equal (8/8) and that is correct, not forced.
+    walk: float
+    dash: float
+    run: float
     weight: int = 100
     gravity: float = GRAVITY
     max_fall_speed: float = MAX_FALL_SPEED
-    move_speed: float = MOVE_SPEED
-    # Walk/dash/run (#388): `move_speed` is the WALK; `dash_speed` is the faster
-    # tap-burst (#374 design). Defaults to the config global so existing data is
-    # unchanged; the dash is only reached via `_start_dash` (slice 2b's double-tap).
-    dash_speed: float = DASH_SPEED
-    # `run_speed` (#967, slice 3): the SUSTAINED speed after the dash burst, held by
-    # keeping the dash direction pressed past the burst window (the `run` leaf).
-    # Provisional home mirroring move_speed/dash_speed until the ADR-0011 re-pin folds
-    # all three into the raw-unit per-character JSON schema (no config fallback); this
-    # slice adds NO new run global, so it defaults to DASH_SPEED. dash != run is a
-    # STATE distinction (sustained vs. decay), not a pixel one (ADR-0011 §Decision 4):
-    # for nalio run == dash == round(mod_factor(1.5)) == 8, an equal pixel that is
-    # correct and intended, not a value to force apart.
-    run_speed: float = DASH_SPEED
     jump_vel: float = JUMP_VEL
     max_jumps: int = MAX_JUMPS
     # ROUNDS Leech knob-fields (#1208, ADR-0019 §2) — the cached patch targets for
@@ -515,6 +519,27 @@ class FighterData:
     # (value_status_census: "Hurtbox and FighterData themselves carry no status
     # map"). Empty by default → omitted from JSON → existing data byte-identical.
     status: StatusMap = field(default_factory=dict)
+
+    # Derived shipped pixels (#1209, ADR-0011 §Decision 3). The movement/input layer
+    # reads px; these convert the raw unit through `combat.units.u()`
+    # (`round(PX_PER_UNIT * unit)`). Integer (not the float `vel()`): `pygame.Rect`
+    # truncates fractions each frame (#80), so a fractional constant walk speed is
+    # meaningless. Read-only — a card modifier scales the UNIT (walk/dash/run) and
+    # the px re-derives; there is no stored pixel to set (loadout/modifiers.py).
+    @property
+    def move_speed(self) -> int:
+        """The WALK, in shipped px — `u(walk)`."""
+        return u(self.walk)
+
+    @property
+    def dash_speed(self) -> int:
+        """The dash tap-burst, in shipped px — `u(dash)`."""
+        return u(self.dash)
+
+    @property
+    def run_speed(self) -> int:
+        """The sustained post-burst run, in shipped px — `u(run)`."""
+        return u(self.run)
 
 
 # ---------------------------------------------------------------------------

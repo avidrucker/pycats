@@ -33,6 +33,9 @@ LEECH_SEAMS = ("lifesteal_fraction", "regen_rate", "regen_interval")
 def _baseline() -> FighterData:
     """A minimal defaults FighterData (leech fields at 0) with one real move."""
     return FighterData(
+        walk=1.1,
+        dash=1.5,
+        run=1.5,
         hurtbox=Hurtbox(circles=(Circle(0, -10, 20),)),
         moves={
             "attack": MoveData(

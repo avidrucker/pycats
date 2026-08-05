@@ -14,10 +14,13 @@ than dashing; and a hit-stunned fighter never dashes off a stale window (#370).
 
 import pygame as pg
 
-from pycats.config import DASH_SPEED, DOUBLE_TAP_WINDOW, P1_COLOR, WHITE
+from pycats.combat.units import u
+from pycats.config import DOUBLE_TAP_WINDOW, P1_COLOR, WHITE
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
+
+_DASH_PX = u(1.5)  # default cat dash 1.5u → 8 (#1209; DASH_SPEED global removed)
 
 CONTROLS = {
     "left": pg.K_a,
@@ -64,7 +67,7 @@ def test_double_tap_within_window_starts_dash():
     _step(p, plats, held={RIGHT}, pressed={RIGHT})  # second tap -> dash
     assert p.state == "dash"
     assert p.fighter.dash_timer > 0
-    assert p.fighter.vel.x == DASH_SPEED  # dashing right
+    assert p.fighter.vel.x == _DASH_PX  # dashing right
 
 
 def test_double_tap_left_dashes_left():
@@ -73,7 +76,7 @@ def test_double_tap_left_dashes_left():
     _step(p, plats, held=set(), pressed=set())
     _step(p, plats, held={LEFT}, pressed={LEFT})
     assert p.state == "dash"
-    assert p.fighter.vel.x == -DASH_SPEED
+    assert p.fighter.vel.x == -_DASH_PX
     assert p.fighter.facing_right is False
 
 

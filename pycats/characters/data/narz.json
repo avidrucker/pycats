@@ -1,6 +1,14 @@
 {
   "schema_version": 1,
   "character": "narz",
+  "walk": 1.6,
+  "dash": 1.5,
+  "run": 1.8,
+  "status": {
+    "walk": {"status": "FOUND", "source": "datamine"},
+    "dash": {"status": "FOUND", "source": "datamine"},
+    "run": {"status": "FOUND", "source": "datamine"}
+  },
   "weight": 87,
   "gravity": 0.45,
   "jump_vel": -12,

@@ -24,7 +24,7 @@ _HB = Hurtbox(circles=(Circle(0, 0, 1),))
 
 
 def _fighter() -> Fighter:
-    fd = FighterData(hurtbox=_HB, moves={})
+    fd = FighterData(walk=1.1, dash=1.5, run=1.5, hurtbox=_HB, moves={})
     return Fighter(x=100, y=100, facing_right=True, fighter_data=fd)
 
 

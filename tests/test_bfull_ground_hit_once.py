@@ -77,7 +77,9 @@ def _defender_at(cx, cy, r=44):
         intangible=False,
         invincible_timer=0,
         is_alive=True,
-        fighter_data=FighterData(hurtbox=Hurtbox(circles=(Circle(dx=int(cx), dy=int(cy), r=r),)), moves={}),
+        fighter_data=FighterData(
+            walk=1.1, dash=1.5, run=1.5, hurtbox=Hurtbox(circles=(Circle(dx=int(cx), dy=int(cy), r=r),)), moves={}
+        ),
         hits_received=0,
     )
     p.fighter = p

@@ -22,7 +22,9 @@ def _player(rect, *, hurtbox_circles, facing_right=True):
         facing_right=facing_right,
         intangible=False,
         is_alive=True,
-        fighter_data=FighterData(hurtbox=Hurtbox(circles=tuple(hurtbox_circles)), moves={}),
+        fighter_data=FighterData(
+            walk=1.1, dash=1.5, run=1.5, hurtbox=Hurtbox(circles=tuple(hurtbox_circles)), moves={}
+        ),
         hits_received=0,
         hits_landed=0,
         last_damage=None,

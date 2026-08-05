@@ -4,7 +4,14 @@
   "weight": 70,
   "gravity": 0.42,
   "max_fall_speed": 12,
-  "move_speed": 5,
+  "walk": 0.85,
+  "dash": 1.5,
+  "run": 1.5,
+  "status": {
+    "walk": {"status": "FOUND", "source": "datamine"},
+    "dash": {"status": "FOUND", "source": "datamine"},
+    "run": {"status": "FOUND", "source": "datamine"}
+  },
   "jump_vel": -11,
   "max_jumps": 6,
   "hurtbox": {

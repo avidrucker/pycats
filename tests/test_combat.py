@@ -38,7 +38,7 @@ def _make_rect(x=100, y=100, w=40, h=60):
 
 def _make_fighter_data(hurtbox_circles):
     hb = Hurtbox(circles=tuple(hurtbox_circles))
-    return FighterData(hurtbox=hb, moves={})
+    return FighterData(walk=1.1, dash=1.5, run=1.5, hurtbox=hb, moves={})
 
 
 def _make_player(rect, *, hurtbox_circles, facing_right=True, intangible=False, invincible_timer=0, is_alive=True):

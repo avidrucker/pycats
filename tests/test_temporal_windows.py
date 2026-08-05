@@ -228,7 +228,9 @@ def _hit_counting_defender(rect):
         facing_right=True,
         intangible=False,
         is_alive=True,
-        fighter_data=FighterData(hurtbox=Hurtbox(circles=(Circle(dx=0, dy=0, r=80),)), moves={}),
+        fighter_data=FighterData(
+            walk=1.1, dash=1.5, run=1.5, hurtbox=Hurtbox(circles=(Circle(dx=0, dy=0, r=80),)), moves={}
+        ),
         hits_received=0,
         percent=0.0,
     )

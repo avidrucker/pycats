@@ -18,11 +18,14 @@ import pytest
 
 from pycats.combat.data import Circle, Hitbox
 from pycats.combat.knockback import knockback
-from pycats.config import KNOCKBACK_LAUNCH_FACTOR, MOVE_SPEED, P1_COLOR, P2_COLOR, WHITE
+from pycats.combat.units import u
+from pycats.config import KNOCKBACK_LAUNCH_FACTOR, P1_COLOR, P2_COLOR, WHITE
 from pycats.core.input import InputFrame
 from pycats.entities.attack import Attack
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
+
+_WALK_PX = u(1.1)  # default cat walk 1.1u → 6 (#1209; MOVE_SPEED global removed)
 
 # The default cat jab's data (see characters/default_cat.py). These tests build a
 # real Hitbox so the launch is non-zero and the model is exercised end-to-end.
@@ -112,7 +115,7 @@ def test_moving_knockback_not_clobbered_by_input():
     defender.fighter.receive_hit(_jab(attacker))
     # frame after the hit, direction still held
     defender.update(_frame(held), plats, empty)
-    assert defender.fighter.vel.x > MOVE_SPEED + 0.5  # knockback survived, not clobbered
+    assert defender.fighter.vel.x > _WALK_PX + 0.5  # knockback survived, not clobbered
 
 
 def test_launch_decays_each_hitstun_frame_not_constant():

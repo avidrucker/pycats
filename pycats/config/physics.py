@@ -35,12 +35,12 @@ MAX_FALL_SPEED = 13
 PROJECTILE_GRAVITY = 0.5  # px/frame² downward accel
 PROJECTILE_RESTITUTION = 0.6  # vertical energy kept per bounce (<1)
 PROJECTILE_MAX_BOUNCES = 3  # bounces before despawn
-MOVE_SPEED = 6
-# Walk/dash/run layer (#388, design #374). MOVE_SPEED is the WALK (≈PM Mario walk
-# 1.1u ×5.4 ≈ 5.9px). DASH is the faster tap-burst (≈Mario dash 1.5u ×5.4 ≈ 8.1px).
-# DASH_DURATION = the initial-dash burst window in frames (⚠ tuning start; run — the
-# sustained state after the burst — is slice 3 of #388). Per-fighter via FighterData.
-DASH_SPEED = 8
+# Walk / dash / run are per-character raw PM units in <cat>.json (#1209, ADR-0011);
+# the MOVE_SPEED / DASH_SPEED globals were removed — a cat's speeds live on
+# FighterData.walk/dash/run, with the shipped px derived at read via
+# combat.units.u(). DASH_DURATION stays global: the initial-dash burst WINDOW in
+# frames (⚠ tuning start; the sustained run state after the burst is #967) — a
+# frame count, not a speed.
 DASH_DURATION = 12
 # Double-tap dash window (#388 slice 2b, #403): frames after a fresh directional
 # press during which a second same-direction press counts as a double-tap and

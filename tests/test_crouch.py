@@ -53,7 +53,7 @@ def _run(p, plats, frame, n=3):
 
 def test_fighter_data_crouch_defaults_none():
     """A FighterData that doesn't define crouch can't crouch (crouch_size None)."""
-    fd = FighterData(hurtbox=Hurtbox(circles=(Circle(0, 0, 1),)), moves={})
+    fd = FighterData(walk=1.1, dash=1.5, run=1.5, hurtbox=Hurtbox(circles=(Circle(0, 0, 1),)), moves={})
     assert fd.crouch_size is None
     assert fd.crouch_hurtbox is None
 

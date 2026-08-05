@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:  # pg is used only in (stringized) annotations — never at runtime,
     import pygame as pg  # type: ignore  # so this module carries no import-time pygame dep (#975, ADR-0004).
 
-from ..config import MOVE_SPEED
 from ..core.physics import apply_horizontal_friction
 
 
@@ -18,15 +17,17 @@ def step_horizontal(
     press_left: bool,
     press_right: bool,
     locked: bool = False,
-    move_speed: float = MOVE_SPEED,
+    *,
+    move_speed: float,
 ) -> tuple[pg.Vector2, bool]:
     """
     • Applies friction (ground or air) first.
     • If BOTH left & right are pressed → inputs cancel out.
     • Returns (new_vel, new_facing_right).
 
-    move_speed is per-fighter (#126); defaults to the config global so callers
-    that don't pass it behave exactly as before.
+    move_speed is per-fighter (#126) and REQUIRED (keyword-only): the config
+    MOVE_SPEED global was removed in the ADR-0011 re-pin (#1209), so a caller must
+    pass the fighter's shipped px (walk/dash/run selected by state upstream).
     """
     # 1) friction
     vel = apply_horizontal_friction(vel, on_ground)

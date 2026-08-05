@@ -64,7 +64,7 @@ def _fighter(rect, *, facing_right, hurtbox_circle):
         facing_right=facing_right,
         intangible=False,
         is_alive=True,
-        fighter_data=FighterData(hurtbox=Hurtbox(circles=(hurtbox_circle,)), moves={}),
+        fighter_data=FighterData(walk=1.1, dash=1.5, run=1.5, hurtbox=Hurtbox(circles=(hurtbox_circle,)), moves={}),
         hits_received=0,
         hits_landed=0,
     )

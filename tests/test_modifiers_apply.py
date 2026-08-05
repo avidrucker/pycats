@@ -14,15 +14,20 @@ from dataclasses import replace
 import pytest
 
 from pycats.combat.data import Circle, FighterData, Hitbox, Hurtbox, MoveData
-from pycats.config.physics import MOVE_SPEED
+from pycats.combat.units import u
 from pycats.loadout.cards import load_cards
 from pycats.loadout.modifiers import Modifier, apply, card_to_modifiers
 
 
 def _baseline() -> FighterData:
-    """A minimal FighterData with defaults (weight=100, move_speed=6, gravity=0.5)
-    plus one move carrying two hitboxes, so nested-seam scaling has real targets."""
+    """A minimal FighterData with the default-cat speed units (walk 1.1 → move_speed
+    6) + weight=100 / gravity=0.5, plus one move carrying two hitboxes so nested-seam
+    scaling has real targets. Speed modifiers scale the raw UNIT (walk/dash/run); the
+    shipped px re-derives via u() (#1209, ADR-0011)."""
     return FighterData(
+        walk=1.1,
+        dash=1.5,
+        run=1.5,
         hurtbox=Hurtbox(circles=(Circle(0, -10, 20), Circle(0, 20, 16))),
         moves={
             "attack": MoveData(
@@ -51,9 +56,10 @@ def test_card_to_modifiers_derives_one_modifier_per_delta() -> None:
     ]
 
 
-def test_move_speed_default_matches_config() -> None:
-    # Guards the concrete acceptance numbers below (base move_speed == 6).
-    assert _baseline().move_speed == MOVE_SPEED == 6
+def test_baseline_move_speed_is_six() -> None:
+    # Guards the concrete acceptance numbers below: base walk 1.1u derives u(1.1) = 6,
+    # the same px the removed MOVE_SPEED global used to hold.
+    assert _baseline().move_speed == u(1.1) == 6
 
 
 def test_apply_no_cards_is_identity() -> None:
@@ -77,34 +83,34 @@ def test_stocks_delta_is_not_consumed_by_apply() -> None:
 
 
 def test_single_mult_pct_rounds_int_seam() -> None:
-    # Chase: move_speed +20% → round(6 × 1.20) = 7.
+    # Chase: move_speed +20% scales the walk UNIT → u(1.1 × 1.20) = u(1.32) = 7.
     result = apply(_baseline(), [load_cards()["chase"]])
-    assert result.move_speed == round(MOVE_SPEED * 1.20) == 7
+    assert result.move_speed == u(1.1 * 1.20) == 7
 
 
 def test_compound_same_seam_multiplies_factors_not_percents() -> None:
-    # Chase (+20%) + Metal (−15%) on move_speed → round(6 × 1.20 × 0.85) = 6.
+    # Chase (+20%) + Metal (−15%) on the walk unit → u(1.1 × 1.20 × 0.85) = 6.
     # (This documents the spec's acceptance example; note it does NOT by itself
-    # distinguish product from summed percents — 6×1.05 also rounds to 6. The
+    # distinguish product from summed percents — 1.1×1.05 also rounds to 6. The
     # distinguishing case is test_two_factors_compound_distinguishable below.)
     cards = load_cards()
     result = apply(_baseline(), [cards["chase"], cards["metal"]])
-    assert result.move_speed == round(MOVE_SPEED * 1.20 * 0.85) == 6
+    assert result.move_speed == u(1.1 * 1.20 * 0.85) == 6
 
 
 def test_two_factors_compound_distinguishable_from_summed_percents() -> None:
-    # Two +50% factors on move_speed compound to 6 × 1.5 × 1.5 = 13.5 → 14, which
-    # summed percents (6 × 2.0 = 12) could never produce — this is the test the
-    # compound-vs-sum ruling actually hangs on. Synthetic cards keep the base tuning
-    # values free to change without touching this invariant.
+    # Two +50% factors on the walk unit compound to 1.1 × 1.5 × 1.5 = 2.475 →
+    # u = 13, which summed percents (1.1 × 2.0 = 2.2 → u = 12) could never produce —
+    # this is the test the compound-vs-sum ruling actually hangs on. Synthetic cards
+    # keep the base tuning values free to change without touching this invariant.
     from pycats.loadout.cards import Card
 
     def boost(cid: str) -> Card:
         return Card(id=cid, name=cid, deltas=[dict(seam="move_speed", op="mult_pct", value=50)], stackable=True)
 
     result = apply(_baseline(), [boost("a"), boost("b")])
-    assert result.move_speed == round(MOVE_SPEED * 1.5 * 1.5) == 14
-    assert result.move_speed != round(MOVE_SPEED * (1 + 0.5 + 0.5))  # 12, the summed-percents answer
+    assert result.move_speed == u(1.1 * 1.5 * 1.5) == 13
+    assert result.move_speed != u(1.1 * (1 + 0.5 + 0.5))  # 12, the summed-percents answer
 
 
 def test_mixed_ops_apply_flats_after_the_scaled_base() -> None:
@@ -184,7 +190,7 @@ def test_deletion_is_reversible_recompute_from_pristine_baseline() -> None:
     after_delete = apply(baseline, [cards["chase"]])
     fresh = apply(baseline, [cards["chase"]])
     assert after_delete == fresh
-    assert after_delete.move_speed == round(MOVE_SPEED * 1.20) == 7
+    assert after_delete.move_speed == u(1.1 * 1.20) == 7
 
 
 def test_selection_defaults_to_no_cards() -> None:

@@ -156,7 +156,7 @@ def _synthetic_fighter_with_status_everywhere() -> FighterData:
         status={"startup": FieldStatus(Status.FOUND, "datamine")},
     )
     hurt = Hurtbox(circles=(Circle(dx=0, dy=0, r=10, status={"r": FieldStatus(Status.FOUND, "datamine")}),))
-    return FighterData(hurtbox=hurt, moves={"up_b": move})
+    return FighterData(walk=1.1, dash=1.5, run=1.5, hurtbox=hurt, moves={"up_b": move})
 
 
 def test_status_survives_serialize_reload_on_every_carrier():

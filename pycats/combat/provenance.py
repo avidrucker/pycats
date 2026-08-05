@@ -66,9 +66,6 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
         "DIVERGENCE",
         384,
     ),
-    "MOVE_SPEED": Provenance(
-        6, "px/frame", "PM Mario walk 1.1 u/f (SmashWiki:Mario_(PM); #120)", "FOUND", 384, "round(1.1 * PX_PER_UNIT)"
-    ),
     "JUMP_VEL": Provenance(
         -13,
         "px/frame",
@@ -83,14 +80,6 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
         "data-authoring units->px calibration ~=5.4 (docs/research-120-smash-units-and-sources.md; #120/#195); the base every spatial derivation in this registry references",  # noqa: E501
         "FOUND",
         195,
-    ),
-    "DASH_SPEED": Provenance(
-        8,
-        "px/frame",
-        "PM Mario dash ~1.5 u/f (config #388 comment; docs/research-120) -> round(1.5 * PX_PER_UNIT) = round(8.1)",
-        "FOUND",
-        388,
-        "round(1.5 * PX_PER_UNIT)",
     ),
     "MAX_JUMPS": Provenance(
         2,
@@ -462,10 +451,8 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
     {
         "GRAVITY",
         "MAX_FALL_SPEED",
-        "MOVE_SPEED",
         "JUMP_VEL",
         "PX_PER_UNIT",
-        "DASH_SPEED",
         "MAX_JUMPS",
         "SMASH_CHARGE_FRAMES",
         "SMASH_CHARGE_SCALE",

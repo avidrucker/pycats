@@ -5,7 +5,7 @@
 > `pycats/combat/provenance.py` registry (#233): 🟢 FOUND · 🟡 TUNED/GUESS · 🔴 DIVERGENCE.
 > Legend: [docs/parity-labeling-legend.md](parity-labeling-legend.md) (#452). Design: #448 (Pass C of #451).
 
-**Summary:** 32 🟢 / 35 🟡 / 4 🔴  (71 constants)
+**Summary:** 30 🟢 / 35 🟡 / 4 🔴  (69 constants)
 
 ## 🟢 Sourced — FOUND (PM-valid, checked)
 
@@ -13,7 +13,6 @@
 |---|---|---|---|---|
 | `CLANK_PRIORITY_RANGE` | 9 | FOUND | 🟢 | SmashWiki:Priority — 9% across the Melee/Brawl/PM family |
 | `CROUCH_CANCEL_FACTOR` | 0.67 | FOUND | 🟢 | Melee/PM crouch-cancel knockback scale (0.67x); value cited, still a tuning starting point |
-| `DASH_SPEED` | 8 | FOUND | 🟢 | PM Mario dash ~1.5 u/f (config #388 comment; docs/research-120) -> round(1.5 * PX_PER_UNIT) = round(8.1) |
 | `DODGE_AIR_SPEED` | 17 | FOUND | 🟢 | doldecomp/melee escapeair_force=3.1u/f; meleelight ESCAPEAIR.js; SmashWiki:Air_dodge |
 | `GRAVITY` | 0.5 | FOUND | 🟢 | PM Mario gravity 0.095 u/f^2 (SmashWiki:Mario_(PM); #120) |
 | `HITLAG_BASE` | 5 | FOUND | 🟢 | SmashWiki:Hitlag (Brawl onward) — base term |
@@ -33,7 +32,6 @@
 | `LEDGE_INTANGIBLE_BASE_FRAMES` | 21 | FOUND | 🟢 | PM 3.6 CliffCatch intangibility 1-21, flat across characters (rukaidata; #671) |
 | `LEDGE_REGRAB_INTANGIBLE_CUTOFF` | 5 | FOUND | 🟢 | PMDT 3.5 primary: "After a character regrabs the ledge five times without touching the ground, that character no longer receives intangibility for grabbing the ledge again" — grabs 1..5 grant the full burst, grab 6+ only the residual (#656, ratified #670). The COUNT is primary-sourced; the post-cutoff residual (LEDGE_POST_CUTOFF_RESIDUAL_FRAMES) is a separate acknowledged gap, deliberately unregistered. |
 | `MAX_JUMPS` | 2 | FOUND | 🟢 | Mario/PM jump count: 1 ground + 1 midair = 2 (standard 2-jump character; SmashWiki:Mario_(PM)) |
-| `MOVE_SPEED` | 6 | FOUND | 🟢 | PM Mario walk 1.1 u/f (SmashWiki:Mario_(PM); #120) |
 | `PX_PER_UNIT` | 5.4 | FOUND | 🟢 | data-authoring units->px calibration ~=5.4 (docs/research-120-smash-units-and-sources.md; #120/#195); the base every spatial derivation in this registry references |
 | `SAKURAI_ANGLE_CODE` | 361 | FOUND | 🟢 | SmashWiki:Sakurai_angle — the 361 sentinel (not a literal degree) |
 | `SHIELDSTUN_FACTOR` | 0.345 | FOUND | 🟢 | SmashWiki:Shieldstun — Brawl/PM factor 0.345 |

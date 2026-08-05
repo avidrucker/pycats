@@ -10,27 +10,34 @@ the sim/golden path loads the default cat via "P1"/"P2".
 from pycats.characters import roster
 from pycats.combat.data import load_fighter_data
 from pycats.combat.knockback import knockback
-from pycats.combat.units import vel
+from pycats.combat.units import u, vel
 
 
-def test_gnok_scalars_come_from_the_vel_seam_not_hand_typed_px():
-    # The #785 raw-first authoring path: the faithful PM3.6 unit rates go through vel(),
-    # so the source value stays visible and the ×PX_PER_UNIT factor lives in one place.
-    # A hand-typed px literal that drifts from the converter fails here.
+def test_gnok_speeds_derive_from_datamine_units():
+    # #1209 (ADR-0011): walk/dash/run are raw PM units in gnok.json; the shipped px
+    # derives via the INTEGER u() (constant speeds truncate each frame, #80). Jump /
+    # gravity / fall keep the float vel() seam (accelerating velocities accumulate, so
+    # sub-pixel precision matters). A hand-typed px literal that drifts fails here.
     gnok = load_fighter_data("gnok")
-    assert gnok.move_speed == vel(1.2)  # 6.48 — fastest-walking cat
-    assert gnok.dash_speed == vel(1.8)  # 9.72 — fastest-dashing cat
-    assert gnok.jump_vel == -vel(2.8)  # -15.12 — jumps highest
+    assert (gnok.walk, gnok.dash, gnok.run) == (1.2, 1.8, 1.8)
+    assert gnok.move_speed == u(1.2) == 6
+    assert gnok.dash_speed == u(1.8) == 10  # fastest-dashing cat
+    assert gnok.run_speed == u(1.8) == 10
+    assert gnok.jump_vel == -vel(2.8)  # -15.12 — jumps highest (float vel, unchanged)
     assert gnok.gravity == vel(0.1)  # 0.54
     assert gnok.max_fall_speed == vel(2.4)  # 12.96
 
 
-def test_gnok_is_the_fastest_and_highest_jumping_cat():
+def test_gnok_is_the_fastest_dashing_and_highest_jumping_cat():
     # The archetype is heavy AND mobile (spec §1/§3) — not the generic slow-heavy trope.
+    # Its walk UNIT (1.2) tops the default's (1.1), but the integer u() rounds both to 6
+    # px (#1209), so the mobility edge shows in the dash/run/jump, not the walk pixel.
     gnok = load_fighter_data("gnok")
     default = load_fighter_data("default")
-    assert gnok.move_speed > default.move_speed
-    assert gnok.dash_speed > default.dash_speed
+    assert gnok.walk > default.walk  # 1.2u > 1.1u (unit-level)
+    assert gnok.move_speed == default.move_speed == 6  # both round to 6 px
+    assert gnok.dash_speed > default.dash_speed  # 10 > 8
+    assert gnok.run_speed > default.run_speed  # 10 > 8
     assert gnok.jump_vel < default.jump_vel  # more negative = higher jump
 
 
@@ -70,7 +77,7 @@ def test_gnok_differs_from_default_on_scalars_and_body():
     default = load_fighter_data("default")
     assert gnok.stand_size != default.stand_size  # default has None (global PLAYER_SIZE)
     assert gnok.weight != default.weight
-    assert gnok.move_speed != default.move_speed
+    assert gnok.dash_speed != default.dash_speed  # 10 vs 8 (walk px ties at 6 post-#1209)
     assert gnok.hurtbox != default.hurtbox
 
 

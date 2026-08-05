@@ -161,6 +161,9 @@ def test_nondefault_scalar_is_emitted_and_roundtrips():
     heavy = FighterData(
         hurtbox=base.hurtbox,
         moves=base.moves,
+        walk=base.walk,
+        dash=base.dash,
+        run=base.run,
         weight=123,
     )
     doc = fighter_to_json(heavy)
@@ -204,10 +207,12 @@ def test_fighter_level_status_map_roundtrips():
 
 
 def test_fighter_level_status_omitted_when_empty():
-    # Every shipped cat authors no fighter-level status today -> the key is omitted
-    # -> existing <cat>.json stay byte-identical (golden-neutral), mirroring the
-    # omit-when-empty leniency the other #1133 carriers already have.
-    doc = fighter_to_json(load_fighter_data("nalio"))
+    # A FighterData with no fighter-level status omits the key -> data that authored
+    # none stays byte-identical (golden-neutral), the omit-when-empty leniency the
+    # other #1133 carriers have. (Shipped cats now DO tag walk/dash/run FOUND, #1209,
+    # so this uses a bare fighter to exercise the empty case.)
+    fd = FighterData(hurtbox=Hurtbox(circles=(Circle(0, 0, 1),)), moves={}, walk=1.1, dash=1.5, run=1.5)
+    doc = fighter_to_json(fd)
     assert "status" not in doc
 
 
@@ -227,6 +232,9 @@ def test_optional_geometry_roundtrips():
     fd = FighterData(
         hurtbox=hb,
         moves={"poke": move},
+        walk=1.1,
+        dash=1.5,
+        run=1.5,
         stand_size=(40, 60),
         crouch_size=(40, 40),
         crouch_hurtbox=Hurtbox(circles=(Circle(10, 30, 8),)),
