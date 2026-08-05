@@ -111,6 +111,8 @@ NON_VALUE_FIELDS: dict[type, frozenset[str]] = {
             "velocity_phases",
             "hurtbox",
             "landing_spawn",
+            "is_counter",  # #1199: behavioural flag (counter-detect stance), not a value slot
+            "counter_riposte_key",  # #1199: sibling move key for the riposte, not a value slot
             "status",
         }
     ),

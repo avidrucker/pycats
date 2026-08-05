@@ -57,6 +57,13 @@ class Attack(pygame.sprite.Sprite):
     # (#326/H-b) The attack's visual colours moved to render_battle with the
     # Surface-building — the entity holds only combat data + its bounds rect.
 
+    # #1199: a plain melee hitbox. Narz's Counter (down-B) intercepts melee hits only
+    # (ruled #1194 D2); `Projectile` overrides this to True so the counter detect
+    # branch in hit_resolution.process_hits lets projectiles pass through in V1. A
+    # class attribute (not per-instance) so the check is a cheap getattr with no
+    # systems→entities import.
+    is_projectile = False
+
     def __init__(
         self,
         owner,
@@ -170,6 +177,10 @@ class Projectile(Attack):
     ``gravity`` / ``restitution`` / ``max_bounces`` are ⚠ GUESS tuning starting points
     (no measured PM values exist — see docs/research/2026-06-30-nalio-fireball-…md).
     """
+
+    # #1199: a projectile is NOT a melee hitbox — Narz's Counter (down-B) does not
+    # intercept it in V1 (ruled #1194 D2; projectile-countering is post-V1 #1201).
+    is_projectile = True
 
     def __init__(
         self,

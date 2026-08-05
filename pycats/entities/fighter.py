@@ -188,6 +188,22 @@ class Fighter:
         self.pending_charge_key = None
         self.charge_fraction = 0.0
         self.charge_button = "smash"
+        # Counter (#1199, ruled #1194 D5): Narz's down-B. A DETECT stance — while
+        # `counter_timer > 0` the fighter is committed (input gated in fighter_input,
+        # movement locked); during the active sub-window (`counter_active`, the ruled
+        # detect frames) an incoming MELEE hit is intercepted in
+        # hit_resolution.process_hits, which negates it and sets
+        # `pending_counter_riposte`. Player._maybe_spawn_counter_riposte then starts
+        # the fixed-7% riposte (the move keyed by `counter_riposte_key`) on the move
+        # clock the next frame, and the chart routes counter -> attacking. All idle
+        # by default so a fighter with no counter move is unaffected (golden-safe).
+        self.counter_timer = 0
+        self.counter_total = 0
+        self.counter_detect_start = 0
+        self.counter_detect_end = 0
+        self.counter_active = False
+        self.pending_counter_riposte = False
+        self.counter_riposte_key = None
         # Angled f-smash (#327 slice 4): None / "up" / "down", captured at the smash
         # press and applied (then cleared) at the fsmash's Attack spawn.
         self.smash_angle_dir = None
@@ -399,6 +415,7 @@ class Fighter:
                 kb *= CROUCH_CANCEL_FACTOR
             self.hurt_timer = hitstun_frames(kb)
             self.cancel_charge()  # a hit mid-charge abandons the smash (#327/3a)
+            self.cancel_counter()  # a hit outside the detect window abandons the counter (#1199)
             self.smash_angle_dir = None  # ...and its aimed angle (#327/4)
             # (the red hurt-flash is now render-time: render_battle.body_tint #75)
             direction = 1 if atk.owner.fighter.facing_right else -1  # the direction of the attack
@@ -576,6 +593,7 @@ class Fighter:
         self.invincible_timer = 0  # don't carry a respawn-invincibility window across a KO/respawn (#802)
         self.spot_dodge_shield_held = False
         self.cancel_charge()  # don't carry a pending charge across KO/respawn (#327/3a)
+        self.cancel_counter()  # nor a pending counter stance/riposte (#1199)
         self.smash_angle_dir = None  # nor a pending aimed-fsmash angle (#327/4)
         self.dodge_blocked_by_edge = False
         # (#321/F3: done_attacking is derived on Player; the clock reset below
@@ -593,6 +611,58 @@ class Fighter:
         KO/respawn (reset_to_spawn); the input handler also uses it to release."""
         self.charge_timer = 0
         self.pending_charge_key = None
+
+    # ----------- counter (#1199, ruled #1194) ------------
+    def start_counter(self, move) -> None:
+        """Enter the counter DETECT stance for Narz's down-B (#1199).
+
+        `move` is the `is_counter` MoveData (its down-B): its
+        startup/active/recovery describe the detect window — the stance runs
+        startup+active+recovery frames, and the active detect sub-window (during
+        which an incoming melee hit is intercepted) is the frames
+        (startup, startup+active] in the same 1-indexed post-increment convention a
+        hitbox's active window uses. `counter_riposte_key` is stashed so the deferred
+        riposte spawn (Player._maybe_spawn_counter_riposte) knows which move to fire.
+        """
+        total = move.startup + move.active + move.recovery
+        self.counter_timer = total
+        self.counter_total = total
+        self.counter_detect_start = move.startup + 1
+        self.counter_detect_end = move.startup + move.active
+        self.counter_active = False  # opens once elapsed reaches counter_detect_start
+        self.pending_counter_riposte = False
+        self.counter_riposte_key = move.counter_riposte_key
+
+    def tick_counter(self) -> None:
+        """Advance the counter detect stance one frame (#1199).
+
+        Decrements `counter_timer` and recomputes `counter_active` from the elapsed
+        frame against the ruled detect sub-window. `counter_active` is False before
+        the window opens, during the tail after it closes, and once the stance ends
+        (`counter_timer == 0`) — so a hit outside the window resolves normally."""
+        if self.counter_timer > 0:
+            self.counter_timer -= 1
+            elapsed = self.counter_total - self.counter_timer
+            self.counter_active = (
+                self.counter_timer > 0 and self.counter_detect_start <= elapsed <= self.counter_detect_end
+            )
+
+    def register_counter(self) -> None:
+        """A melee hit connected during the detect window (#1199): consume the stance
+        and arm the deferred riposte. Called by hit_resolution.process_hits (which has
+        already negated the incoming hit); Player._maybe_spawn_counter_riposte starts
+        the fixed-7% riposte on the move clock the next frame."""
+        self.pending_counter_riposte = True
+        self.counter_timer = 0
+        self.counter_active = False
+
+    def cancel_counter(self) -> None:
+        """Abandon the counter stance (#1199): drop the detect window + any pending
+        riposte. Called on a non-countered hit that lands during the stance
+        (receive_hit) and on KO/respawn (reset_to_spawn)."""
+        self.counter_timer = 0
+        self.counter_active = False
+        self.pending_counter_riposte = False
 
     def tick_shield(self, shielding: bool) -> None:
         """Per-frame shield-HP tick (#341).

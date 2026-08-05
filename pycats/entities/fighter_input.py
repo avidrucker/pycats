@@ -68,7 +68,8 @@ class FighterInput:
                 "crouch",
                 "helpless",
                 "charge",
-            )  # no walking while shielding/crouching (#124), helpless (#184), or charging a smash (#327/3a)
+                "counter",
+            )  # no walking while shielding/crouching (#124), helpless (#184), charging (#327/3a), or countering (#1199)
             # A grounded normal roots the fighter (#898): `handle_actions` starts
             # the move, then this runs the SAME frame — held left/right must not
             # apply walk speed, or a forward-tilt slides ~10px instead of staying
@@ -182,6 +183,16 @@ class FighterInput:
                 f.record_attack_made()
                 f.cancel_charge()
             return False  # rooted while charging; no other action this frame
+
+        # ------- Counter (#1199, ruled #1194): committed during the detect stance ----
+        # While the counter stance runs (`counter_timer > 0`) or a successful counter
+        # is waiting one frame for its riposte to spawn (`pending_counter_riposte`), no
+        # new action starts — the fighter is committed (mirrors the charge early-return
+        # above). The riposte then spawns via Player._maybe_spawn_counter_riposte and
+        # the chart routes counter -> attacking. The ARMING frame does not hit this
+        # guard (counter_timer is still 0 when the down-B is resolved below).
+        if f.counter_timer > 0 or f.pending_counter_riposte:
+            return False  # rooted while countering; no other action this frame
 
         # ------- Double-tap dash (#388 slice 2b, #403) ------------
         # A fast double-tap of one direction fires the dash burst (_start_dash,
@@ -371,7 +382,16 @@ class FighterInput:
                 # Capture the aimed angle only when the smash resolves to a real
                 # fsmash (a u/d-smash or a tilt fallback clears it).
                 p.fighter.smash_angle_dir = angle_dir if key == "fsmash" else None
-                if move.chargeable and (is_smash or is_special):
+                if move.is_counter and is_special:
+                    # Counter (#1199, ruled #1194): a down-B counter arms the DETECT
+                    # stance instead of starting a hitbox move — the fighter commits
+                    # (the early-return guard above holds subsequent frames), and a
+                    # melee hit during the detect window fires the fixed-7% riposte
+                    # (process_hits + Player._maybe_spawn_counter_riposte). Only a
+                    # special (B) reaches this — a counter move is never a smash/tilt.
+                    p.fighter.start_counter(move)
+                    p.engine.force("counter")
+                elif move.chargeable and (is_smash or is_special):
                     # Chargeable move (#327/3a; #1189 button-neutral): begin charging
                     # instead of firing — the swing starts on release/max (the charge
                     # block above). Either the smash button (a chargeable smash) or the

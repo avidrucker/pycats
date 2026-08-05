@@ -420,6 +420,54 @@
         }
       ]
     },
+    "down_b": {
+      "name": "counter",
+      "in_air": false,
+      "startup": 4,
+      "active": 26,
+      "recovery": 30,
+      "is_counter": true,
+      "counter_riposte_key": "down_b_riposte",
+      "hitboxes": [],
+      "status": {
+        "startup": {"status": "GUESS", "source": "meleelight DOWNSPECIALGROUND (Melee basis; not PM-confirmed, #1194 D3)"},
+        "active": {"status": "GUESS", "source": "meleelight DOWNSPECIALGROUND (Melee basis; not PM-confirmed, #1194 D3)"},
+        "recovery": {"status": "GUESS", "source": "playtest: detect-stance tail to ~60f SpecialLw, #1194 D3"}
+      }
+    },
+    "down_b_riposte": {
+      "name": "counter riposte",
+      "in_air": false,
+      "startup": 4,
+      "active": 5,
+      "recovery": 28,
+      "hitboxes": [
+        {
+          "damage": 7.0,
+          "angle": 361,
+          "base_knockback": 60.0,
+          "knockback_growth": 70.0,
+          "label": "A",
+          "circle": [40, 30, 22],
+          "circle_status": {
+            "dx": "GUESS",
+            "dy": "GUESS",
+            "r": "GUESS"
+          },
+          "status": {
+            "damage": {"status": "FOUND", "source": "SmashWiki Marth (PM): Counter deals 7%, regardless of the countered attack"},
+            "angle": "GUESS",
+            "base_knockback": "GUESS",
+            "knockback_growth": "GUESS"
+          }
+        }
+      ],
+      "status": {
+        "startup": {"status": "FOUND", "source": "SmashWiki Marth (PM): riposte hitbox active frames 5-9, #1194 D3"},
+        "active": {"status": "FOUND", "source": "SmashWiki Marth (PM): riposte hitbox active frames 5-9, #1194 D3"},
+        "recovery": {"status": "FOUND", "source": "gif-index SpecialLwHit=37 total, #1194 D3"}
+      }
+    },
     "wait": {
       "name": "wait",
       "in_air": false,

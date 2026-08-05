@@ -357,6 +357,18 @@ class MoveData:
     # serializer omits it (omit == default). Generalizes to any special's landing
     # effect (#1066 Q4), reusing the #223/#266 Projectile primitive.
     landing_spawn: LandingSpawn | None = None
+    # Counter special (#1199, ruled #1194 D5): Narz's down-B. `is_counter` marks a
+    # move as a counter-DETECT stance — it is NOT run on the move clock (it arms the
+    # `counter` fighter state instead, via Fighter.start_counter), so its startup /
+    # active / recovery describe the DETECT window (active sub-window = the ruled
+    # detect frames) rather than a hitbox window, and its `hitboxes` are empty. On a
+    # successful counter, the move keyed by `counter_riposte_key` is spawned as the
+    # riposte (a normal clocked move — the fixed-7% SpecialLwHit). Both default
+    # off/None → every existing move is byte-identical (golden-safe); the serializer
+    # omits them (omit == default). Behavioural flags, not authored value slots
+    # (classified NON_VALUE in value_status_census).
+    is_counter: bool = False
+    counter_riposte_key: str | None = None
     # Per-value status (#1133), keyed by this move's own scalar field names
     # ("recovery_vy"/"startup"/...). Per-box status lives on each Hitbox; this map
     # is for the MOVE-level scalars. Empty by default → omitted → byte-identical.

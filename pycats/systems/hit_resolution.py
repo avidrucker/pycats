@@ -167,6 +167,21 @@ def process_hits(players, attacks):
                 None,
             )
             if hit_box is not None:
+                # Counter (#1199, ruled #1194 D2/D5): a defender in the counter DETECT
+                # window intercepts an incoming MELEE hit — a fourth path beside the
+                # INTANGIBLE-skip (above) and INVINCIBLE-register (below). Negate the
+                # incoming hitbox (mirror the clank `_negate`), consume the stance, and
+                # arm a pending riposte (spawned next Player.update); the defender takes
+                # no percent / knockback / hitlag. Projectiles are NOT intercepted in V1
+                # (they fall through to normal resolution — post-V1 #1201). Read both
+                # sides defensively: a minimal combat stand-in has no `counter_active`
+                # (getattr False → never counters), and a stub attack no `is_projectile`
+                # (getattr False → treated as melee), so this branch is inert until a
+                # real counter fighter meets a real Attack.
+                if getattr(defender.fighter, "counter_active", False) and not getattr(atk, "is_projectile", False):
+                    _negate(atk)
+                    defender.fighter.register_counter()
+                    break  # incoming hit consumed; this attack connects with no one else
                 # B-full hit-set dedup (#888): if the connecting box carries a
                 # set_id, consult the owner's per-move-instance registry. A box
                 # sharing a set_id with one that already hit THIS defender (an

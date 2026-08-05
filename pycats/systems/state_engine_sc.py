@@ -28,6 +28,7 @@ LABELS = (
     "ledge_hang",
     "ledge_getup",
     "charge",
+    "counter",  # #1199: Narz down-B counter detect stance
 )
 
 

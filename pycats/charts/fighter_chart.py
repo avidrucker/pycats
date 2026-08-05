@@ -403,16 +403,35 @@ def build_fighter_chart(p):
         ),
     )
 
+    # Counter (#1199, ruled #1194 D5): Narz's down-B DETECT stance, force-entered on
+    # a down-B `is_counter` press (fighter_input sends force_counter). The stance runs
+    # counter_timer down (Fighter.tick_counter); while counter_active a melee hit is
+    # intercepted in process_hits, which arms a pending riposte. On a successful
+    # counter the riposte starts on the move clock (attack_timer > 0) and this routes
+    # into `attacking` for the swing; a mid-stance hit outside the detect window sets
+    # hurt_timer (cancel_counter clears the stance) -> exit to hurt; otherwise the
+    # stance expires to idle/fall. Mirrors the `charge` state's shape.
+    counter = state(
+        {"id": "counter"},
+        _tick(lambda e, d: p.attack_timer > 0, "attacking"),  # riposte started -> swing
+        _tick(lambda e, d: p.fighter.hurt_timer > 0, "hurt"),  # hit outside the detect window
+        _tick(lambda e, d: p.fighter.stun_timer > 0, "stun"),
+        _tick(lambda e, d: not p.fighter.is_alive, "ko"),
+        _tick(lambda e, d: p.fighter.counter_timer <= 0 and p.fighter.on_ground, "idle"),
+        _tick(lambda e, d: p.fighter.counter_timer <= 0 and not p.fighter.on_ground, "fall"),
+    )
+
     action = state(
         {"id": "action", "initial": "idle"},
-        # force_ko / force_idle / force_prone / force_ledge_grab / force_charge
-        # hoisted to the action parent: they fire on distinct events, so they never
-        # reorder the per-leaf tick transitions.
+        # force_ko / force_idle / force_prone / force_ledge_grab / force_charge /
+        # force_counter hoisted to the action parent: they fire on distinct events, so
+        # they never reorder the per-leaf tick transitions.
         on("force_ko", "ko"),
         on("force_idle", "idle"),
         on("force_prone", "prone"),
         on("force_ledge_grab", "ledge_hang"),
         on("force_charge", "charge"),
+        on("force_counter", "counter"),
         actionable,
         attacking,
         dodging,
@@ -426,6 +445,7 @@ def build_fighter_chart(p):
         ledge_hang,
         ledge_getup,
         charge,
+        counter,
     )
 
     defensive_status = state(

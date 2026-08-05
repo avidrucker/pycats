@@ -338,6 +338,7 @@ class Player(pygame.sprite.Sprite):
         self._step_physics(platforms, held)
         self._try_ledge_grab(ledges)
         self._tick_timers_and_getup(input_frame, held)
+        self._maybe_spawn_counter_riposte()
         self._spawn_move_hitbox(attack_group)
         self._apply_velocity_phases()
         self._spawn_landing_shockwave(attack_group)
@@ -546,6 +547,7 @@ class Player(pygame.sprite.Sprite):
         start spawns its hitbox this frame; landing_lag_timer is decremented before the
         dodge-end read of it (`landing_lag_timer == 0`)."""
         self.fighter.tick_timers()
+        self.fighter.tick_counter()  # #1199: advance the counter detect stance (drives the `counter` state exit)
         expired = self.fighter.tick_action_timers()
         if "prone_timer" in expired and self.fighter.on_ground:
             # Getup-roll (#146): the frame the prone window closes, a held
@@ -590,6 +592,26 @@ class Player(pygame.sprite.Sprite):
                     self.fighter.shield_attempting = True
                     # print(f"SPOT DODGE TRANSITION: {self.char_name} shield_attempting set to True")
                 self.fighter.spot_dodge_shield_held = False  # reset spot dodge flag
+
+    def _maybe_spawn_counter_riposte(self):
+        """Start the counter riposte on the move clock the frame after a successful
+        counter (#1199, ruled #1194 D5).
+
+        `hit_resolution.process_hits` armed `pending_counter_riposte` when a melee hit
+        was intercepted during the detect window (`Fighter.register_counter`). Consume
+        it here — before `_spawn_move_hitbox` advances the clock — so the fixed-7%
+        `counter_riposte_key` move spawns via the normal move-clock path (its hitbox on
+        its active window) and the chart routes `counter -> attacking` (attack_timer >
+        0). The value is fixed, so there is no `scale_hitboxes` / incoming-param capture
+        — the pending flag is a boolean (ruled #1194 D5). Mirrors the deferred
+        `_pending_landing_spawn` seam: the connect site (`process_hits`) has no move-clock
+        handle, so the spawn is deferred one frame to `Player.update`."""
+        f = self.fighter
+        if f.pending_counter_riposte:
+            f.pending_counter_riposte = False
+            riposte = self.fighter_data.moves[f.counter_riposte_key]
+            self._clock.start(riposte)
+            f.record_attack_made()  # the riposte is an attack this fighter initiated
 
     def _spawn_move_hitbox(self, attack_group):
         """Advance the move clock one frame and spawn its hitbox/projectile once.
