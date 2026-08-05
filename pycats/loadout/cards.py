@@ -37,12 +37,13 @@ CARDS_PATH = Path(__file__).parent.parent / "characters" / "data" / "cards.json"
 # The two fixed ADR-0014 ops. `mult_pct` = multiplicative ±%, `add_n` = additive ±N.
 VALID_OPS: frozenset[str] = frozenset({"mult_pct", "add_n"})
 
-# The live v1 seam vocabulary — ADR-0013's per-seam ledger, seams 1–10 (the
-# readable/scalable FighterData & Hitbox fields). A `seam` names the field a delta
-# patches; the DEV 2 apply-layer maps each to its target. Deferred/out seams are
-# deliberately absent so authoring one raises: frame data (11) & recovery (13) are
-# DEFERRED, angle (12) is OUT, and the novel "%-per-second" family (14 —
-# lifesteal_fraction/regen_rate/regen_interval) waits for DEV 3.
+# The live v1 seam vocabulary — ADR-0013's per-seam ledger, seams 1–10 plus the
+# Leech family (14). A `seam` names the field a delta patches; the DEV 2 apply-layer
+# maps each to its target. Deferred/out seams are deliberately absent so authoring one
+# raises: frame data (11) & recovery (13) are DEFERRED, angle (12) is OUT. The novel
+# "%-per-second" Leech family (14 — lifesteal_fraction/regen_rate/regen_interval) was
+# registered by DEV 3 (#1208); its cards' consumers (Vampire DEV 5, Health Regen DEV 4)
+# read the knobs, not this catalog.
 LIVE_SEAMS: frozenset[str] = frozenset(
     {
         "weight",  # seam 1
@@ -59,6 +60,9 @@ LIVE_SEAMS: frozenset[str] = frozenset(
         "base_knockback",  # seam 9
         "knockback_growth",  # seam 9
         "stocks",  # seam 10 (fighter.lives)
+        "lifesteal_fraction",  # seam 14 (Leech: Vampire on-hit lifesteal — #1208)
+        "regen_rate",  # seam 14 (Leech: Health Regen heal chunk — #1208)
+        "regen_interval",  # seam 14 (Leech: Health Regen interval frames — #1208)
     }
 )
 

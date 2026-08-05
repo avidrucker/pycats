@@ -463,6 +463,17 @@ class FighterData:
     run_speed: float = DASH_SPEED
     jump_vel: float = JUMP_VEL
     max_jumps: int = MAX_JUMPS
+    # ROUNDS Leech knob-fields (#1208, ADR-0019 §2) — the cached patch targets for
+    # the two Leech cards, all defaulted OFF so every existing cat is byte-identical
+    # (missing JSON keys hydrate to these defaults, #1196 precedent). This slice adds
+    # the fields + their seams only; nothing reads them yet — Vampire's on-hit
+    # lifesteal is DEV 5 (process_hits), Health Regen's per-interval tick is DEV 4
+    # (systems/over_time.py). Kept as three flat scalars (the #1208 /decomplect ruling
+    # — Option A), matching the top-level scalar seams above; grouping deferred until a
+    # consumer needs it.
+    lifesteal_fraction: float = 0.0  # Vampire: fraction of damage dealt healed (e.g. 0.3)
+    regen_rate: float = 0.0  # Health Regen: heal chunk per interval (percent)
+    regen_interval: int = 0  # Health Regen: frames between heals (0 = off)
     # Per-fighter standing body box (#275). None = the global config.PLAYER_SIZE
     # (via owner.SIZE), so the default cat / sim path is unchanged. Symmetric with
     # crouch_size/prone_size; a small archetype (Kirby) sets a shorter box here.
@@ -471,6 +482,13 @@ class FighterData:
     crouch_hurtbox: Hurtbox | None = None
     prone_size: tuple[int, int] | None = None
     prone_hurtbox: Hurtbox | None = None
+    # Per-value status (#1216), keyed by this FighterData's OWN scalar field names
+    # ("weight"/"gravity"/… and the incoming per-character walk/dash/run, #1209).
+    # The fighter-LEVEL counterpart of the five #1133 carriers (Circle/Hitbox/
+    # MoveData/VelocityPhase/LandingSpawn), which the seam originally skipped
+    # (value_status_census: "Hurtbox and FighterData themselves carry no status
+    # map"). Empty by default → omitted from JSON → existing data byte-identical.
+    status: StatusMap = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -604,6 +622,8 @@ def _fighter_from_json(doc: dict) -> FighterData:
     for key in ("stand_size", "crouch_size", "prone_size"):
         if doc.get(key) is not None:
             kw[key] = tuple(doc[key])
+    if "status" in doc:  # per-value fighter-LEVEL status map (#1216)
+        kw["status"] = _status_map_from_json(doc["status"])
     return FighterData(**kw)
 
 
@@ -633,7 +653,7 @@ _HITBOX_STRUCTURAL = frozenset({"circle", "status"})
 _LANDING_SPAWN_STRUCTURAL = frozenset({"hitboxes", "status"})
 _MOVE_STRUCTURAL = frozenset({"hitboxes", "hurtbox", "velocity_phases", "landing_spawn", "status"})
 _FIGHTER_STRUCTURAL = frozenset(
-    {"hurtbox", "moves", "stand_size", "crouch_size", "crouch_hurtbox", "prone_size", "prone_hurtbox"}
+    {"hurtbox", "moves", "stand_size", "crouch_size", "crouch_hurtbox", "prone_size", "prone_hurtbox", "status"}
 )
 
 
@@ -769,6 +789,8 @@ def fighter_to_json(fd: FighterData, character: str | None = None) -> dict:
         size = getattr(fd, key)
         if size is not None:
             out[key] = list(size)
+    if fd.status:  # per-value fighter-LEVEL status map (#1216); omit when empty
+        out["status"] = _status_map_to_json(fd.status)
     return out
 
 

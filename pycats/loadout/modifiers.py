@@ -107,6 +107,14 @@ _SCALAR_SEAMS: dict[str, tuple[str, bool, int | None]] = {
     "max_fall_speed": ("max_fall_speed", True, None),
     "gravity": ("gravity", False, None),
     "max_jumps": ("max_jumps", True, 1),
+    # ROUNDS Leech knobs (#1208, ADR-0019/ADR-0020). lifesteal_fraction & regen_rate
+    # are genuine floats (a fraction / a percent) — no round, like gravity. All three
+    # floor at 0: no negative lifesteal or regen in v1. regen_interval is a frame count
+    # (int-contracted → round); its floor stays 0 (0 = off), deferring the divide/modulo
+    # guard to DEV 4's over_time.py tick (#1208 /decomplect ruling).
+    "lifesteal_fraction": ("lifesteal_fraction", False, 0),
+    "regen_rate": ("regen_rate", False, 0),
+    "regen_interval": ("regen_interval", True, 0),
 }
 
 # Nested per-hitbox scalar seams -> (field, rounds), applied to EVERY hitbox of
