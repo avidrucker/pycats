@@ -40,6 +40,15 @@ def _clank_strength(atk) -> float:
     return getattr(atk, "damage", 0.0)
 
 
+def _box_priority_key(box):
+    """Same-frame box-selection sort key (#1214, ADR-0018): lowest hitbox_id wins,
+    with None ids sorting AFTER any real id (None-last). Read the id defensively —
+    a stub attack used as its own box carries no hitbox_id (getattr None → sorts
+    last, but a single-box move returns it regardless)."""
+    hid = getattr(box, "hitbox_id", None)
+    return (hid is None, hid if hid is not None else 0)
+
+
 def _negate(atk):
     """End a clanked hitbox for the frame (no rebound state/freeze yet — #38)."""
     if atk.disappear_on_hit:
@@ -160,12 +169,20 @@ def process_hits(players, attacks):
                 for c in hurtbox.circles
             ]
 
-            # First box (priority order) that overlaps this defender wins — a
-            # single move-instance hits a given target at most once.
-            hit_box = next(
-                (box for (cx, cy, r, box) in boxes if circles_overlap(cx, cy, r, resolved_hurtbox)),
-                None,
-            )
+            # #1214 (ADR-0018, grounded in #829 findings): among the boxes that
+            # overlap this defender, the one with the LOWEST hitbox_id wins — the
+            # canon PM/Brawl id-priority rule (meleelight ascending-id loop;
+            # SmashWiki "hitbox stack": lowest id registers the hit, exactly one
+            # box connects, damage is not summed). A single move-instance hits a
+            # given target at most once.
+            #   - None ids sort AFTER any real id (None-last), so unmigrated data
+            #     falls back to authored order.
+            #   - min() returns the FIRST element with the minimal key, and
+            #     `overlapping` is in authored order, so ties/all-None preserve
+            #     authored order — byte-identical to the pre-#1214 first-in-order
+            #     rule until real ids are datamined in.
+            overlapping = [box for (cx, cy, r, box) in boxes if circles_overlap(cx, cy, r, resolved_hurtbox)]
+            hit_box = min(overlapping, key=_box_priority_key, default=None)
             if hit_box is not None:
                 # Counter (#1199, ruled #1194 D2/D5): a defender in the counter DETECT
                 # window intercepts an incoming MELEE hit — a fourth path beside the

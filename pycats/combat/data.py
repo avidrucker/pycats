@@ -189,10 +189,11 @@ class Hitbox:
                            independent flags 1:1 (not one enum). Consumer wiring
                            (target-state gate in hit_resolution) is downstream.
         hitbox_id        — the raw datamined per-box id (ADR-0018), authored in
-                           priority order. None = no id (today's behavior). The
-                           `max(damage)->min(hitbox_id)` same-frame box-selection
-                           swap is a separate downstream DEV (#1214); this DEV
-                           stores the field only, so all data stays byte-identical.
+                           priority order. None = no id. Same-frame box selection
+                           picks the LOWEST hitbox_id among overlapping boxes
+                           (#1214, in hit_resolution.process_hits); None sorts
+                           after any real id (None-last), so all-None data keeps
+                           authored-order behavior and stays byte-identical.
     All five default to today's behavior -> the serializer omits them at their
     default (§1 omit == default) -> every existing move is byte-identical and
     schema_version stays 1 (ADR-0021).

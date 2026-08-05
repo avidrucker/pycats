@@ -66,6 +66,17 @@ def _hb(dx, dy, r, *, damage, angle):
     )
 
 
+def _hb_id(dx, dy, r, *, damage, angle, hitbox_id):
+    return Hitbox(
+        circle=Circle(dx=dx, dy=dy, r=r),
+        damage=damage,
+        angle=angle,
+        base_knockback=30.0,
+        knockback_growth=80.0,
+        hitbox_id=hitbox_id,
+    )
+
+
 def test_non_first_hitbox_can_connect():
     """A move whose only connecting box is box[2] still lands — and applies
     box[2]'s params (today's engine drops everything past hitboxes[0])."""
@@ -105,6 +116,48 @@ def test_overlapping_boxes_hit_once_in_priority_order():
     assert defender.hits_received == 1, "two overlapping boxes of one move = one hit"
     assert defender.last_damage == 9, "priority (first) box's params must win"
     assert defender.last_angle == 80
+
+
+def test_lowest_hitbox_id_wins_over_authored_order():
+    """#1214: when overlapping boxes carry real hitbox_ids, the LOWEST id wins —
+    even when it is authored LATER in the tuple. Revert-check: the old
+    first-in-authored-order rule picks box[0] (damage 9); min(hitbox_id) picks
+    box[1] (id=0, damage 5)."""
+    pygame.init()
+    owner = _player(pygame.Rect(0, 0, 40, 60), hurtbox_circles=_DEF_HURTBOX)
+    defender = _player(pygame.Rect(100, 100, 40, 60), hurtbox_circles=_DEF_HURTBOX)
+
+    move_boxes = (
+        _hb_id(120, 130, 12, damage=9, angle=80, hitbox_id=1),  # authored first, id=1
+        _hb_id(118, 130, 12, damage=5, angle=361, hitbox_id=0),  # authored second, id=0 → lowest
+    )
+    atk = Attack(owner, hitboxes=move_boxes, lifetime=4)
+
+    process_hits([owner, defender], [atk])
+
+    assert defender.hits_received == 1, "two overlapping boxes of one move = one hit"
+    assert defender.last_damage == 5, "lowest-id box (id=0) must win over authored-first box (id=1)"
+    assert defender.last_angle == 361
+
+
+def test_none_hitbox_id_sorts_after_real_id():
+    """#1214: a box with hitbox_id=None sorts AFTER any real id, so an authored-FIRST
+    None box loses to an authored-second real-id box. Guards the None-last rule."""
+    pygame.init()
+    owner = _player(pygame.Rect(0, 0, 40, 60), hurtbox_circles=_DEF_HURTBOX)
+    defender = _player(pygame.Rect(100, 100, 40, 60), hurtbox_circles=_DEF_HURTBOX)
+
+    move_boxes = (
+        _hb_id(120, 130, 12, damage=9, angle=80, hitbox_id=None),  # authored first, None
+        _hb_id(118, 130, 12, damage=5, angle=361, hitbox_id=3),  # authored second, id=3
+    )
+    atk = Attack(owner, hitboxes=move_boxes, lifetime=4)
+
+    process_hits([owner, defender], [atk])
+
+    assert defender.hits_received == 1, "one hit"
+    assert defender.last_damage == 5, "a real id beats None even when None is authored first"
+    assert defender.last_angle == 361
 
 
 def test_single_box_via_hitbox_kwarg_unchanged():
