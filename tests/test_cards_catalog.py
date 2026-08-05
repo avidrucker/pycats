@@ -101,11 +101,14 @@ def test_unknown_op_raises():
 def test_unknown_seam_raises():
     from pycats.loadout.cards import CardCatalogError, _card_from_json
 
-    # `regen_rate` is ADR-0013 seam 14 (novel %-per-second) — not live until DEV 3.
+    # `recovery` is ADR-0013 seam 13 (frame-data recovery) — DEFERRED, not live.
+    # (The Leech seam 14 family — lifesteal_fraction/regen_rate/regen_interval — went
+    # live in DEV 3 / #1208, so it is no longer the not-live exemplar; see
+    # test_leech_knob_fields for its catalog legality.)
     bad = {
-        "id": "premature_leech",
-        "name": "Premature Leech",
-        "deltas": [{"seam": "regen_rate", "op": "add_n", "value": 2}],
+        "id": "premature_recovery",
+        "name": "Premature Recovery",
+        "deltas": [{"seam": "recovery", "op": "add_n", "value": 2}],
         "stackable": True,
     }
     with pytest.raises(CardCatalogError):

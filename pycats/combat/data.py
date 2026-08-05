@@ -463,6 +463,17 @@ class FighterData:
     run_speed: float = DASH_SPEED
     jump_vel: float = JUMP_VEL
     max_jumps: int = MAX_JUMPS
+    # ROUNDS Leech knob-fields (#1208, ADR-0019 §2) — the cached patch targets for
+    # the two Leech cards, all defaulted OFF so every existing cat is byte-identical
+    # (missing JSON keys hydrate to these defaults, #1196 precedent). This slice adds
+    # the fields + their seams only; nothing reads them yet — Vampire's on-hit
+    # lifesteal is DEV 5 (process_hits), Health Regen's per-interval tick is DEV 4
+    # (systems/over_time.py). Kept as three flat scalars (the #1208 /decomplect ruling
+    # — Option A), matching the top-level scalar seams above; grouping deferred until a
+    # consumer needs it.
+    lifesteal_fraction: float = 0.0  # Vampire: fraction of damage dealt healed (e.g. 0.3)
+    regen_rate: float = 0.0  # Health Regen: heal chunk per interval (percent)
+    regen_interval: int = 0  # Health Regen: frames between heals (0 = off)
     # Per-fighter standing body box (#275). None = the global config.PLAYER_SIZE
     # (via owner.SIZE), so the default cat / sim path is unchanged. Symmetric with
     # crouch_size/prone_size; a small archetype (Kirby) sets a shorter box here.
