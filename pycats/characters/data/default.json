@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "character": "default",
+  "hurtbox": {
+    "circles": [[20, 15, 14], [20, 45, 14]]
+  },
+  "moves": {
+    "attack": {
+      "name": "attack",
+      "in_air": false,
+      "startup": 3,
+      "active": 3,
+      "recovery": 6,
+      "hitboxes": [
+        {
+          "damage": 10.0,
+          "angle": 0,
+          "base_knockback": 30.0,
+          "knockback_growth": 100.0,
+          "label": "A",
+          "circle": [46, 30, 12],
+          "status": {
+            "base_knockback": "GUESS",
+            "knockback_growth": "GUESS"
+          }
+        }
+      ]
+    }
+  },
+  "crouch_hurtbox": {
+    "circles": [[20, 20, 14], [20, 32, 12]]
+  },
+  "prone_hurtbox": {
+    "circles": [[18, 12, 11], [26, 14, 9]]
+  },
+  "crouch_size": [40, 40],
+  "prone_size": [40, 22]
+}

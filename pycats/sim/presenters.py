@@ -1,0 +1,358 @@
+# pycats/sim/presenters.py
+"""Presenters let the deterministic runner replay headless, live, or to video."""
+
+from __future__ import annotations
+
+import pygame
+
+from ..config import BG_COLOR, FPS, HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, tick_fps
+from ..render_battle import draw_input_history, render_attacks, render_battle
+from ..shell.esc_hold import EscHoldTimer, draw_esc_hold_arc
+from ..shell.input_history import InputHistory
+from ..ui import text_utils
+from .captions import caption_hold_frames, draw_captions
+
+# Live-replay overlay text sizes (#444: named from inline literals).
+OVERLAY_FPS_FONT_SIZE = 24  # the FPS readout (top-right)
+OVERLAY_STAT_FONT_SIZE = 22  # each fighter's stocks/damage line
+OVERLAY_STAT_LINE_SPACING = 22  # vertical stride between fighter stat lines
+
+# Section-skip key (#508): fast-forwards the gameplay between caption beats to the next
+# section's start. A DISTINCT action from the any-key dwell-skip (#514) and hold-Esc exit
+# (#515), so it gets its own key — the → arrow (ratified 2026-07-06).
+SECTION_SKIP_KEY = pygame.K_RIGHT
+
+
+# --- Playback-speed scalar (#351) --------------------------------------------
+# Slow-motion is presentation-only: the sim is fixed-timestep (#166/#80), so we pace
+# the DISPLAY of frames, never the sim. `speed` < 1 is slow-mo, > 1 is fast-forward;
+# 1.0 is real time (the default, byte-identical to before).
+
+
+def frames_per_output(speed: float) -> int:
+    """Video frames to emit per sim frame at `speed`. 0.5 -> 2 (each sim frame is
+    written twice, so the 60fps video plays back 2x longer / half speed). Never < 1
+    (fast-forward can't drop frames here — that would desync captions)."""
+    if speed <= 0:
+        return 1
+    return max(1, round(1 / speed))
+
+
+# `tick_fps` moved to config (its only dependency is FPS) so the live game (#932) can reuse
+# it without importing this sim/video module; imported above and re-exported here (#351
+# callers of `presenters.tick_fps` keep working).
+
+
+# --- Watch/demo input display (#434) -----------------------------------------
+# Reuse #21's per-fighter InputHistory + render_battle.draw_input_history in the
+# presenters, instead of the reverted #405 held-only overlay. One notation, one
+# component, one maintenance site — the watch path shows the same strip the live
+# game (battle_screen) does.
+
+
+def record_player_histories(histories, players, pressed, held):
+    """Record this frame's pressed + held into each player's InputHistory via that
+    player's own keymap (``player.controls``). Pure (no surface) so the data path
+    is unit-testable; the pixel draw is separate. Mirrors ``battle_screen.step``'s
+    ``p1_history.record(pressed, held, self.p1_keys)`` — but reuses each player's
+    controls (the presenter has ``players``, not the P1_KEYS/P2_KEYS globals)."""
+    for hist, player in zip(histories, players):
+        hist.record(pressed, held, player.controls)
+
+
+class _InputStripMixin:
+    """Optional #21 input strip for a presenter. Recording is split from drawing so
+    a sampling presenter (ScreenshotPresenter) can still build a correct history every
+    frame while only drawing on the frames it saves."""
+
+    def _init_input_strip(self, show_inputs):
+        self.show_inputs = show_inputs
+        self._input_histories = None  # lazily sized to len(players) on first record
+
+    def _record_input_strip(self, players, inputs):
+        if not self.show_inputs or inputs is None:
+            return
+        if self._input_histories is None:
+            self._input_histories = [InputHistory() for _ in players]
+        pressed = getattr(inputs, "pressed", None) or ()
+        held = getattr(inputs, "held", None) or ()
+        record_player_histories(self._input_histories, players, pressed, held)
+
+    def _draw_input_strip(self, surface):
+        if not self.show_inputs or not self._input_histories:
+            return
+        for i, hist in enumerate(self._input_histories):
+            draw_input_history(surface, hist, f"P{i + 1}", topright=(i == 1))
+
+
+class HeadlessPresenter:
+    def show(self, platforms, players, attacks, frame, inputs=None): ...
+    def close(self): ...
+
+
+class LivePresenter(_InputStripMixin):
+    """Opens a real window and renders the replay.
+
+    `cap_fps=True` paces the window to 60 FPS (so the on-screen FPS reads ~60
+    when the renderer is keeping up). `cap_fps=False` runs uncapped, so the FPS
+    readout shows the true achievable rate. `overlay=True` draws an FPS counter
+    plus each fighter's stocks/damage. `show_inputs=True` adds the #21 input strip
+    (#434), same as the live game."""
+
+    def __init__(
+        self,
+        caption="PyCats replay",
+        cap_fps=True,
+        overlay=True,
+        captions=(),
+        speed=1.0,
+        show_inputs=False,
+    ):
+        import os
+
+        os.environ.pop("SDL_VIDEODRIVER", None)
+        pygame.display.quit()
+        pygame.display.init()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption(caption)
+        self.clock = pygame.time.Clock()
+        self.cap_fps = cap_fps
+        self.overlay = overlay
+        self.captions = list(captions)  # demo captions (#306); presentation overlay
+        self.speed = speed  # <1 slow-mo (#351); paces the tick, not the sim
+        # Hold-Esc-2s to exit the run (#515): the SAME EscHoldTimer the in-game screen
+        # ladder uses (#453/#507 §3b), ticked once per displayed frame from the live
+        # keyboard. A tap does nothing; a full 2s hold raises the quit signal.
+        self._esc_hold = EscHoldTimer()
+        self._init_input_strip(show_inputs)  # #434 input strip (default off)
+
+    def _draw_overlay(self, players):
+        cap = "capped@60" if self.cap_fps else "uncapped"
+        text_utils.render_text(
+            self.screen,
+            f"FPS: {self.clock.get_fps():.1f} ({cap})",
+            (SCREEN_WIDTH - HUD_PADDING, HUD_PADDING),
+            OVERLAY_FPS_FONT_SIZE,
+            WHITE,
+            right_align=True,
+        )
+        for i, p in enumerate(players):
+            text_utils.render_text(
+                self.screen,
+                f"{p.identity.name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
+                (HUD_PADDING, HUD_PADDING + i * OVERLAY_STAT_LINE_SPACING),
+                OVERLAY_STAT_FONT_SIZE,
+                WHITE,
+            )
+
+    def _tick(self):
+        """Advance the display clock one frame at the current speed (#351)."""
+        self.clock.tick(tick_fps(self.speed)) if self.cap_fps else self.clock.tick()
+
+    def _esc_held(self):
+        """Whether a quit key is currently held on the live keyboard: Esc (#515) or
+        the alternate `q` (#907), either of which drives the same 2s hold-to-quit.
+        Non-interactive playback reads an all-released keyboard, so the hold timer
+        never advances."""
+        keys = pygame.key.get_pressed()
+        return bool(keys[pygame.K_ESCAPE] or keys[pygame.K_q])
+
+    def _service_esc_hold(self):
+        """Tick the shared hold-Esc timer once per displayed frame; raise
+        KeyboardInterrupt once Esc has been held the full 2s (#515). This mirrors the
+        in-game screen ladder's hold-Esc-to-back-out (#453) via the same EscHoldTimer,
+        so CLI and in-app share one threshold. A tap never accumulates to the threshold
+        (the count resets the frame Esc is released) — replacing #393's tap-Esc-quit."""
+        self._esc_hold.tick(self._esc_held())
+        if self._esc_hold.complete:
+            raise KeyboardInterrupt
+
+    @staticmethod
+    def _pressed_section_skip(events):
+        """True if the section-skip key (#508, →) is among this batch's KEYDOWNs."""
+        return any(ev.type == pygame.KEYDOWN and ev.key == SECTION_SKIP_KEY for ev in events)
+
+    @staticmethod
+    def _dwell_interrupt(events):
+        """Classify a batch of pygame events for the timed dwell (#514):
+        ``"skip"`` on **any** KEYDOWN (end the remaining dwell early), ``"quit"``
+        on window-close, else ``None`` (keep counting down). Pure — no window/loop,
+        so it's unit-testable. This is the CLI-near-term slice of #507's shared
+        interaction reducer: interruptibility is a property of the dwell itself, so
+        any key — not a designated advance key — ends it."""
+        for ev in events:
+            if ev.type == pygame.QUIT:
+                return "quit"
+            if ev.type == pygame.KEYDOWN:
+                return "skip"
+        return None
+
+    def _hold(self, frame):
+        """Freeze on a caption's dwell frame (#352). No hold on a non-dwell frame.
+        Returns a ``"skip"`` section-skip intent (#508) when the → key ended the dwell,
+        else ``None``.
+
+        The dwell stays timed (auto-advances after `hold`), but any key ends the
+        remaining dwell early (#514), and a held Esc keeps counting toward the 2s
+        exit (#515) so a hold that spans a dwell quits instead of stalling."""
+        hold = caption_hold_frames(self.captions, frame)
+        if not hold:
+            return None
+        # Timed dwell: keep showing the same frame for `hold` more sim-frame-durations
+        # WITHOUT advancing the sim. Events still pump so the window stays quittable, and
+        # any key ends the remaining dwell early (#514) — the dwell stays timed (it still
+        # auto-advances after `hold`), a keypress only skips the rest of the wait. Non-
+        # interactive playback gets an empty queue every tick -> full `hold` (golden-safe).
+        for _ in range(hold):
+            events = pygame.event.get()
+            action = self._dwell_interrupt(events)
+            if action == "quit":
+                raise KeyboardInterrupt
+            if action == "skip":
+                # Any key ended the dwell (#514); if it was → , also begin a section
+                # fast-forward (#508 — #394's "→ during a pause begins fast-forward").
+                return "skip" if self._pressed_section_skip(events) else None
+            self._service_esc_hold()  # #515: a held Esc across dwell ticks still quits at 2s
+            self._tick()
+        return None
+
+    def show(self, platforms, players, attacks, frame, inputs=None):
+        skip = None
+        for ev in pygame.event.get():
+            if ev.type == pygame.QUIT:
+                raise KeyboardInterrupt
+            if ev.type == pygame.KEYDOWN and ev.key == SECTION_SKIP_KEY:
+                skip = "skip"  # #508: fast-forward gameplay to the next caption section
+        self._service_esc_hold()  # #515: hold Esc ~2s to exit the run
+        self.screen.fill(BG_COLOR)
+        render_battle(self.screen, players, platforms)
+        render_attacks(self.screen, attacks)
+        if self.overlay:
+            self._draw_overlay(players)
+        self._record_input_strip(players, inputs)  # #434
+        self._draw_input_strip(self.screen)
+        draw_captions(self.screen, self.captions, frame)
+        draw_esc_hold_arc(self.screen, self._esc_hold.progress)  # #515 hold-Esc feedback
+        pygame.display.flip()
+        self._tick()
+        # → can also be pressed during the dwell that follows this frame (#508); _hold
+        # surfaces it. Either source reports the skip intent up to run_battle.
+        return self._hold(frame) or skip
+
+    def close(self):
+        pygame.display.quit()
+
+
+class VideoPresenter(_InputStripMixin):
+    """Writes each frame to a video file. Requires imageio (+ imageio-ffmpeg)."""
+
+    def __init__(self, path="battle.mp4", fps=FPS, captions=(), speed=1.0, show_inputs=False):
+        try:
+            import imageio.v2 as imageio
+        except Exception as exc:  # pragma: no cover - optional dep
+            raise RuntimeError("video mode needs imageio: pip install imageio imageio-ffmpeg") from exc
+        self._imageio = imageio
+        self._writer = imageio.get_writer(path, fps=fps)
+        self._surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.captions = list(captions)  # demo captions (#306); presentation overlay
+        # Slow-mo (#351): write each sim frame `_dup` times at the same fps, so the
+        # video plays back `1/speed`x longer while staying 60fps-smooth (not choppy
+        # half-fps). speed 1.0 -> 1 (unchanged).
+        self._dup = frames_per_output(speed)
+        self._init_input_strip(show_inputs)  # #434 input strip (default off)
+
+    def show(self, platforms, players, attacks, frame, inputs=None):
+        self._surface.fill(BG_COLOR)
+        render_battle(self._surface, players, platforms)
+        render_attacks(self._surface, attacks)
+        self._record_input_strip(players, inputs)  # #434
+        self._draw_input_strip(self._surface)
+        draw_captions(self._surface, self.captions, frame)
+        arr = pygame.surfarray.array3d(self._surface).transpose(1, 0, 2)
+        # `_dup` copies for slow-mo (#351); a caption's start frame also freezes for
+        # `hold` more sim-frame-durations (#352), each of which is `_dup` video frames.
+        reps = self._dup * (1 + caption_hold_frames(self.captions, frame))
+        for _ in range(reps):
+            self._writer.append_data(arr)
+
+    def close(self):
+        self._writer.close()
+
+
+class ScreenshotPresenter(_InputStripMixin):
+    """Renders chosen frames to an off-screen Surface and saves them as PNGs — for
+    visual inspection of a demo (e.g. a shot per caption). Headless: it never opens a
+    window, so it works under the `dummy` SDL driver the runner sets by default.
+
+    `frames` (a {frame: label} dict) picks which frames to save. When omitted it
+    defaults to each caption's window **start** (the dwelled frame a viewer reads),
+    **mid** (the beat's action, still within the window and the run), and **end**
+    (clamped to the run) — so flipping through the shots shows what each beat looks
+    like. A `MANIFEST.txt` maps each shot to its caption text.
+
+    `overlay=True` draws a per-fighter stocks/%/state line (no FPS — it's a still),
+    so the inspector can read what each fighter is doing in the frame."""
+
+    def __init__(self, out_dir, captions=(), frames=None, overlay=True, show_inputs=False):
+        import os
+
+        os.makedirs(out_dir, exist_ok=True)
+        self.out_dir = out_dir
+        self.captions = list(captions)
+        self.overlay = overlay
+        self._surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self._frames = frames if frames is not None else self._default_frames(self.captions)
+        self.saved = []  # (frame, path) in save order — inspection manifest
+        self._manifest = []  # (label, caption text) lines
+        self._init_input_strip(show_inputs)  # #434 input strip (default off)
+
+    @staticmethod
+    def _default_frames(captions):
+        """{frame: label} for each caption's start / mid / end, plus its `dwell` frame —
+        the one the presenter actually FREEZES on (#412: `dwell_at`, else the window
+        start), i.e. what a viewer reads. Dedup by frame."""
+        out = {}
+        for i, c in enumerate(captions, 1):
+            if c.frames is None:
+                continue
+            s, e = c.frames
+            mid = (s + e) // 2
+            dwell = s if c.dwell_at is None else c.dwell_at
+            for tag, f in (("start", s), ("dwell", dwell), ("mid", mid), ("end", e)):
+                out.setdefault(f, f"cap{i:02d}_{tag}_f{f:04d}")
+        return out
+
+    def _draw_overlay(self, players):
+        for i, p in enumerate(players):
+            text_utils.render_text(
+                self._surface,
+                f"{p.identity.name}: {p.fighter.lives} stocks  {int(p.fighter.percent)}%  [{p.state}]",
+                (HUD_PADDING, HUD_PADDING + i * OVERLAY_STAT_LINE_SPACING),
+                OVERLAY_STAT_FONT_SIZE,
+                WHITE,
+            )
+
+    def show(self, platforms, players, attacks, frame, inputs=None):
+        # Record every frame so a saved frame's strip reflects the full recent history,
+        # even though only selected frames are rendered (#434).
+        self._record_input_strip(players, inputs)
+        if frame not in self._frames:
+            return
+        self._surface.fill(BG_COLOR)
+        render_battle(self._surface, players, platforms)
+        render_attacks(self._surface, attacks)
+        if self.overlay:
+            self._draw_overlay(players)
+        self._draw_input_strip(self._surface)  # #434
+        draw_captions(self._surface, self.captions, frame)
+        label = self._frames[frame]
+        path = f"{self.out_dir}/{label}.png"
+        pygame.image.save(self._surface, path)
+        self.saved.append((frame, path))
+        active = " | ".join(c.text for c in self.captions if c.frames and c.frames[0] <= frame <= c.frames[1])
+        self._manifest.append(f"{label}.png  (frame {frame})  captions: {active}")
+
+    def close(self):
+        if self._manifest:
+            with open(f"{self.out_dir}/MANIFEST.txt", "w", encoding="utf-8") as fh:
+                fh.write("\n".join(self._manifest) + "\n")

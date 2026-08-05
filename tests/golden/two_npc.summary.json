@@ -1,0 +1,38 @@
+{
+  "attack_active_frames": 4,
+  "final_phase": "in_play",
+  "frames": 600,
+  "players": {
+    "P1": {
+      "character": "testcat",
+      "ko_frames": [],
+      "lives_end": 3,
+      "lives_min": 3,
+      "lives_start": 3,
+      "percent_max": 0,
+      "states": [
+        "attack",
+        "crouch",
+        "fall",
+        "idle",
+        "walk"
+      ]
+    },
+    "P2": {
+      "character": "testcat",
+      "ko_frames": [],
+      "lives_end": 3,
+      "lives_min": 3,
+      "lives_start": 3,
+      "percent_max": 10.0,
+      "states": [
+        "fall",
+        "hurt",
+        "idle",
+        "ledge_hang",
+        "walk"
+      ]
+    }
+  },
+  "winner": 0
+}

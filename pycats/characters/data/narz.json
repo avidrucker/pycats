@@ -1,0 +1,543 @@
+{
+  "schema_version": 1,
+  "character": "narz",
+  "weight": 87,
+  "gravity": 0.45,
+  "jump_vel": -12,
+  "hurtbox": {
+    "circles": [[20, 15, 14], [20, 45, 14]]
+  },
+  "moves": {
+    "attack": {
+      "name": "attack",
+      "in_air": false,
+      "startup": 3,
+      "active": 3,
+      "recovery": 6,
+      "hitboxes": [
+        {
+          "damage": 10.0,
+          "angle": 0,
+          "base_knockback": 30.0,
+          "knockback_growth": 100.0,
+          "label": "A",
+          "circle": [46, 30, 12],
+          "status": {
+            "base_knockback": "GUESS",
+            "knockback_growth": "GUESS"
+          }
+        }
+      ]
+    },
+    "ftilt": {
+      "name": "ftilt",
+      "in_air": false,
+      "startup": 6,
+      "active": 3,
+      "recovery": 21,
+      "hitboxes": [
+        {
+          "damage": 13.0,
+          "angle": 361,
+          "base_knockback": 30.0,
+          "knockback_growth": 80.0,
+          "label": "A",
+          "circle": [72, 30, 12]
+        },
+        {
+          "damage": 10.0,
+          "angle": 361,
+          "base_knockback": 18.0,
+          "knockback_growth": 55.0,
+          "label": "B",
+          "circle": [48, 30, 14]
+        }
+      ]
+    },
+    "jab": {
+      "name": "jab",
+      "in_air": false,
+      "startup": 4,
+      "active": 2,
+      "recovery": 8,
+      "hitboxes": [
+        {
+          "damage": 4.0,
+          "angle": 361,
+          "base_knockback": 15.0,
+          "knockback_growth": 30.0,
+          "label": "A",
+          "circle": [58, 28, 10]
+        }
+      ]
+    },
+    "dtilt": {
+      "name": "dtilt",
+      "in_air": false,
+      "startup": 5,
+      "active": 2,
+      "recovery": 13,
+      "hitboxes": [
+        {
+          "damage": 9.0,
+          "angle": 30,
+          "base_knockback": 20.0,
+          "knockback_growth": 70.0,
+          "label": "A",
+          "circle": [66, 46, 10]
+        },
+        {
+          "damage": 7.0,
+          "angle": 30,
+          "base_knockback": 12.0,
+          "knockback_growth": 50.0,
+          "label": "B",
+          "circle": [44, 48, 12]
+        }
+      ]
+    },
+    "utilt": {
+      "name": "utilt",
+      "in_air": false,
+      "startup": 6,
+      "active": 3,
+      "recovery": 14,
+      "hitboxes": [
+        {
+          "damage": 12.0,
+          "angle": 90,
+          "base_knockback": 25.0,
+          "knockback_growth": 80.0,
+          "label": "A",
+          "circle": [24, -8, 14]
+        },
+        {
+          "damage": 9.0,
+          "angle": 90,
+          "base_knockback": 18.0,
+          "knockback_growth": 60.0,
+          "label": "B",
+          "circle": [24, 8, 12]
+        }
+      ]
+    },
+    "nair": {
+      "name": "nair",
+      "in_air": true,
+      "startup": 4,
+      "active": 4,
+      "recovery": 12,
+      "hitboxes": [
+        {
+          "damage": 11.0,
+          "angle": 45,
+          "base_knockback": 15.0,
+          "knockback_growth": 90.0,
+          "label": "A",
+          "circle": [60, 30, 12]
+        },
+        {
+          "damage": 8.0,
+          "angle": 45,
+          "base_knockback": 10.0,
+          "knockback_growth": 70.0,
+          "label": "B",
+          "circle": [40, 30, 14]
+        }
+      ]
+    },
+    "fair": {
+      "name": "fair",
+      "in_air": true,
+      "startup": 5,
+      "active": 3,
+      "recovery": 16,
+      "hitboxes": [
+        {
+          "damage": 12.0,
+          "angle": 45,
+          "base_knockback": 15.0,
+          "knockback_growth": 95.0,
+          "label": "A",
+          "circle": [70, 28, 12]
+        },
+        {
+          "damage": 9.0,
+          "angle": 45,
+          "base_knockback": 10.0,
+          "knockback_growth": 75.0,
+          "label": "B",
+          "circle": [46, 30, 14]
+        }
+      ]
+    },
+    "bair": {
+      "name": "bair",
+      "in_air": true,
+      "startup": 5,
+      "active": 3,
+      "recovery": 15,
+      "hitboxes": [
+        {
+          "damage": 13.0,
+          "angle": 45,
+          "base_knockback": 18.0,
+          "knockback_growth": 90.0,
+          "label": "A",
+          "circle": [-64, 28, 12]
+        },
+        {
+          "damage": 9.0,
+          "angle": 45,
+          "base_knockback": 10.0,
+          "knockback_growth": 70.0,
+          "label": "B",
+          "circle": [-42, 30, 14]
+        }
+      ]
+    },
+    "uair": {
+      "name": "uair",
+      "in_air": true,
+      "startup": 5,
+      "active": 3,
+      "recovery": 14,
+      "hitboxes": [
+        {
+          "damage": 12.0,
+          "angle": 90,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "label": "A",
+          "circle": [22, -10, 14]
+        },
+        {
+          "damage": 9.0,
+          "angle": 90,
+          "base_knockback": 12.0,
+          "knockback_growth": 70.0,
+          "label": "B",
+          "circle": [22, 8, 12]
+        }
+      ]
+    },
+    "dair": {
+      "name": "dair",
+      "in_air": true,
+      "startup": 6,
+      "active": 3,
+      "recovery": 16,
+      "hitboxes": [
+        {
+          "damage": 12.0,
+          "angle": 270,
+          "base_knockback": 15.0,
+          "knockback_growth": 80.0,
+          "label": "A",
+          "circle": [24, 76, 12]
+        },
+        {
+          "damage": 9.0,
+          "angle": 270,
+          "base_knockback": 10.0,
+          "knockback_growth": 60.0,
+          "label": "B",
+          "circle": [24, 56, 14]
+        }
+      ]
+    },
+    "fsmash": {
+      "name": "fsmash",
+      "in_air": false,
+      "startup": 10,
+      "active": 3,
+      "recovery": 31,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 18.0,
+          "angle": 361,
+          "base_knockback": 35.0,
+          "knockback_growth": 95.0,
+          "label": "A",
+          "circle": [78, 30, 12]
+        },
+        {
+          "damage": 14.0,
+          "angle": 361,
+          "base_knockback": 25.0,
+          "knockback_growth": 72.0,
+          "label": "B",
+          "circle": [52, 30, 14]
+        }
+      ]
+    },
+    "usmash": {
+      "name": "usmash",
+      "in_air": false,
+      "startup": 9,
+      "active": 3,
+      "recovery": 28,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 18.0,
+          "angle": 90,
+          "base_knockback": 32.0,
+          "knockback_growth": 95.0,
+          "label": "A",
+          "circle": [22, -16, 12]
+        },
+        {
+          "damage": 13.0,
+          "angle": 90,
+          "base_knockback": 22.0,
+          "knockback_growth": 72.0,
+          "label": "B",
+          "circle": [22, 6, 14]
+        }
+      ]
+    },
+    "dsmash": {
+      "name": "dsmash",
+      "in_air": false,
+      "startup": 5,
+      "active": 9,
+      "recovery": 20,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 15.0,
+          "angle": 361,
+          "base_knockback": 30.0,
+          "knockback_growth": 80.0,
+          "active_start": 6,
+          "active_end": 7,
+          "label": "A",
+          "circle": [52, 48, 12]
+        },
+        {
+          "damage": 12.0,
+          "angle": 361,
+          "base_knockback": 22.0,
+          "knockback_growth": 65.0,
+          "active_start": 6,
+          "active_end": 7,
+          "label": "B",
+          "circle": [34, 48, 14]
+        },
+        {
+          "damage": 13.0,
+          "angle": 361,
+          "base_knockback": 28.0,
+          "knockback_growth": 78.0,
+          "active_start": 13,
+          "active_end": 14,
+          "label": "C",
+          "circle": [-52, 48, 12]
+        },
+        {
+          "damage": 10.0,
+          "angle": 361,
+          "base_knockback": 20.0,
+          "knockback_growth": 63.0,
+          "active_start": 13,
+          "active_end": 14,
+          "label": "D",
+          "circle": [-34, 48, 14]
+        }
+      ]
+    },
+    "neutral_b": {
+      "name": "shield breaker",
+      "in_air": false,
+      "startup": 4,
+      "active": 6,
+      "recovery": 23,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 7.0,
+          "angle": 361,
+          "base_knockback": 30.0,
+          "knockback_growth": 100.0,
+          "label": "A",
+          "circle": [76, 28, 14],
+          "circle_status": {
+            "dx": "GUESS",
+            "dy": "GUESS",
+            "r": "GUESS"
+          },
+          "status": {
+            "damage": {
+              "status": "FOUND",
+              "source": "datamine: Marth SpecialNEnd hitbox 7% uncharged (28% at max = SpecialNEnd_1); pycats reuses SMASH_CHARGE_SCALE not the real 4x (divergence, #1184)"
+            },
+            "angle": {
+              "status": "FOUND",
+              "source": "datamine: Marth SpecialNEnd trajectory 361 (Sakurai angle)"
+            },
+            "base_knockback": {
+              "status": "FOUND",
+              "source": "datamine: Marth SpecialNEnd hitbox id 0 bkb 30"
+            },
+            "knockback_growth": {
+              "status": "FOUND",
+              "source": "datamine: Marth SpecialNEnd hitbox kbg 100"
+            }
+          }
+        }
+      ],
+      "status": {
+        "startup": {
+          "status": "FOUND",
+          "source": "datamine: Marth SpecialNEnd first hitbox 1-based frame 5 (0-based 4)"
+        },
+        "active": {
+          "status": "FOUND",
+          "source": "datamine: Marth SpecialNEnd hitbox active 1-based frames 5-10 (frame-32 blip excluded as loop artifact)"
+        },
+        "recovery": {
+          "status": "FOUND",
+          "source": "datamine: Marth SpecialNEnd 33 total frames - startup 4 - active 6"
+        }
+      }
+    },
+    "up_b": {
+      "name": "dolphin slash",
+      "in_air": true,
+      "startup": 3,
+      "active": 7,
+      "recovery": 30,
+      "grants_recovery": true,
+      "recovery_vy": -15.2,
+      "recovery_vx": 2.0,
+      "hitboxes": [
+        {
+          "damage": 13.0,
+          "angle": 361,
+          "base_knockback": 80.0,
+          "knockback_growth": 70.0,
+          "active_start": 4,
+          "active_end": 5,
+          "label": "A",
+          "circle": [40, 21, 21]
+        },
+        {
+          "damage": 10.0,
+          "angle": 74,
+          "base_knockback": 60.0,
+          "knockback_growth": 70.0,
+          "active_start": 4,
+          "active_end": 5,
+          "label": "B",
+          "circle": [23, 34, 21]
+        },
+        {
+          "damage": 10.0,
+          "angle": 74,
+          "base_knockback": 60.0,
+          "knockback_growth": 70.0,
+          "active_start": 4,
+          "active_end": 5,
+          "label": "C",
+          "circle": [-3, 32, 21]
+        },
+        {
+          "damage": 7.0,
+          "angle": 361,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "active_start": 6,
+          "active_end": 10,
+          "label": "D",
+          "circle": [71, 81, 21]
+        },
+        {
+          "damage": 7.0,
+          "angle": 74,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "active_start": 6,
+          "active_end": 10,
+          "label": "E",
+          "circle": [49, 83, 21]
+        },
+        {
+          "damage": 6.0,
+          "angle": 74,
+          "base_knockback": 20.0,
+          "knockback_growth": 90.0,
+          "active_start": 6,
+          "active_end": 10,
+          "label": "F",
+          "circle": [0, 62, 17]
+        }
+      ]
+    },
+    "down_b": {
+      "name": "counter",
+      "in_air": false,
+      "startup": 4,
+      "active": 26,
+      "recovery": 30,
+      "is_counter": true,
+      "counter_riposte_key": "down_b_riposte",
+      "hitboxes": [],
+      "status": {
+        "startup": {"status": "GUESS", "source": "meleelight DOWNSPECIALGROUND (Melee basis; not PM-confirmed, #1194 D3)"},
+        "active": {"status": "GUESS", "source": "meleelight DOWNSPECIALGROUND (Melee basis; not PM-confirmed, #1194 D3)"},
+        "recovery": {"status": "GUESS", "source": "playtest: detect-stance tail to ~60f SpecialLw, #1194 D3"}
+      }
+    },
+    "down_b_riposte": {
+      "name": "counter riposte",
+      "in_air": false,
+      "startup": 4,
+      "active": 5,
+      "recovery": 28,
+      "hitboxes": [
+        {
+          "damage": 7.0,
+          "angle": 361,
+          "base_knockback": 60.0,
+          "knockback_growth": 70.0,
+          "label": "A",
+          "circle": [40, 30, 22],
+          "circle_status": {
+            "dx": "GUESS",
+            "dy": "GUESS",
+            "r": "GUESS"
+          },
+          "status": {
+            "damage": {"status": "FOUND", "source": "SmashWiki Marth (PM): Counter deals 7%, regardless of the countered attack"},
+            "angle": "GUESS",
+            "base_knockback": "GUESS",
+            "knockback_growth": "GUESS"
+          }
+        }
+      ],
+      "status": {
+        "startup": {"status": "FOUND", "source": "SmashWiki Marth (PM): riposte hitbox active frames 5-9, #1194 D3"},
+        "active": {"status": "FOUND", "source": "SmashWiki Marth (PM): riposte hitbox active frames 5-9, #1194 D3"},
+        "recovery": {"status": "FOUND", "source": "gif-index SpecialLwHit=37 total, #1194 D3"}
+      }
+    },
+    "wait": {
+      "name": "wait",
+      "in_air": false,
+      "startup": 0,
+      "active": 0,
+      "recovery": 71,
+      "hitboxes": []
+    }
+  },
+  "crouch_hurtbox": {
+    "circles": [[20, 20, 14], [20, 32, 12]]
+  },
+  "prone_hurtbox": {
+    "circles": [[18, 12, 11], [26, 14, 9]]
+  },
+  "crouch_size": [40, 40],
+  "prone_size": [40, 22]
+}
