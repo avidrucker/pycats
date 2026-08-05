@@ -108,6 +108,31 @@ use std::path::PathBuf;
 // println!("{}", serde_json::to_string_pretty(&hl).unwrap());   // needs serde_json dev-dep
 ```
 
+### 4. Per-frame HIT-box JSON table — `hitbox_dump` (#1207, no new dep)
+
+The datamine-grounded hitbox proposer (#1206) needs, per subaction, each hitbox's id / radius /
+resolved world position / damage / angle per frame. That dumper exists and is **version-controlled in
+pycats** — `scripts/brawllib/hitbox_dump.rs` — with a wrapper that copies it into the clone's
+untracked `examples/` and runs it:
+
+```bash
+# writes JSON to <out.json> (relative to repo root); omit the 3rd arg to print to stdout
+scripts/datamine_hitboxes.sh Mario Attack11 tests/fixtures/datamine/mario_attack11_hitboxes.json
+```
+
+It sidesteps the `serde_json` gate above by **hand-formatting** the JSON (each field is a `u8`/`f32`/
+`i32`), so it needs **no new dependency**. Output schema `pycats.datamine.hitboxes/v1`: top-level
+`fighter` / `subaction` / `frame_count`, a `summary` (`count` of distinct `hitbox_id`s + per-id active
+`windows` as inclusive `[start, end]` frame ranges), and `frames[]` each `{index, boxes[]}` where a
+box is `{hitbox_id, size, pos: [x, y, z], damage, angle}`. `pos` is the **resolved WORLD** position
+(x=depth, y=vertical up+, z=horizontal), unscaled — the same space `gif_generator_fixed` renders from
+(`next_pos = hitbox_position` via `transform_bones`; `src/renderer/draw.rs`). The world→pycats-px
+transform + `Circle` synthesis are **out of scope** here (that is I.1b) — this slice extracts only.
+
+The pycats consumer is `pycats.combat.datamine_hitboxes.load_hitbox_table(path)`; a committed one-move
+fixture (`tests/fixtures/datamine/mario_attack11_hitboxes.json`) keeps downstream slices + tests
+runnable without this gated env.
+
 ## Refs
 
 - [`tooling-brawllib-rs-gif-recipe.md`](./tooling-brawllib-rs-gif-recipe.md) — the **visual** sibling:
