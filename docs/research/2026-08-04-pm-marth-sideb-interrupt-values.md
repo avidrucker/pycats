@@ -238,10 +238,22 @@ boundary). A PMDT changelog or frame-lab count could independently pin the windo
 
 ## 5. What this unblocks / does not
 
-- **Unblocks the Dancing Blade DEV** on its two gating values: **(a) windows** — Melee `[min,max]`
-  basis, #1193-ratified, and now known to be the *only* possible source (PM stores no frame literal),
-  with the disable-latch nuance surfaced; **(b) stick map** — **PM-confirmed in structure** (Y-only,
-  symmetric, `lsX`-ignored, attack-or-special re-press) with the numeric cutoff Melee-sourced.
+**V1 scope (game-designer decision, Avi, 2026-08-04):** for pycats **V1, only the timing matters** —
+Dancing Blade advances on a re-press within the window, with **no directional (stick-held) variant
+selection**. The up/forward/down branch is **post-V1**. Consequences for these findings:
+
+- **(a) the advance window is the only V1-relevant value.** It is sourced as far as it can be: PM
+  stores no frame literal (§1a), so the Melee `[min,max]` table (§3a) is the basis by necessity,
+  #1193-ratified. V1 needs nothing further here.
+- **(b) the stick→variant map is post-V1.** The PM-confirmed branch structure (§1a) and the unresolved
+  `Address(3186)` cutoff (§1b) are captured for when it lands, but are **not needed for V1**. The
+  "resolve the engine data-section constants via a DOL/RAM dump" avenue is therefore **post-V1** — do
+  not spend it on V1.
+
+- **Unblocks the Dancing Blade DEV** on its V1 gating value: **(a) windows** — Melee `[min,max]` basis,
+  #1193-ratified, now known to be the *only* possible source (PM stores no frame literal), with the
+  disable-latch nuance surfaced. **(b) stick map** is captured (PM-confirmed structure + Melee cutoff)
+  for the post-V1 directional feature.
 - **Out of scope (unchanged):** per-branch hitbox / damage / angle / KB (Spike 2, #1147/#1150); the
   step-2 forward/default fallback policy (already ruled #1193 Q3b); building the move or the shared
   primitive (the DEV, downstream); general mid-move IASA (#1089).
