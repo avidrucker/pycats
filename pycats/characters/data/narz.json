@@ -348,6 +348,61 @@
         }
       ]
     },
+    "neutral_b": {
+      "name": "shield breaker",
+      "in_air": false,
+      "startup": 4,
+      "active": 6,
+      "recovery": 23,
+      "chargeable": true,
+      "hitboxes": [
+        {
+          "damage": 7.0,
+          "angle": 361,
+          "base_knockback": 30.0,
+          "knockback_growth": 100.0,
+          "label": "A",
+          "circle": [76, 28, 14],
+          "circle_status": {
+            "dx": "GUESS",
+            "dy": "GUESS",
+            "r": "GUESS"
+          },
+          "status": {
+            "damage": {
+              "status": "FOUND",
+              "source": "datamine: Marth SpecialNEnd hitbox 7% uncharged (28% at max = SpecialNEnd_1); pycats reuses SMASH_CHARGE_SCALE not the real 4x (divergence, #1184)"
+            },
+            "angle": {
+              "status": "FOUND",
+              "source": "datamine: Marth SpecialNEnd trajectory 361 (Sakurai angle)"
+            },
+            "base_knockback": {
+              "status": "FOUND",
+              "source": "datamine: Marth SpecialNEnd hitbox id 0 bkb 30"
+            },
+            "knockback_growth": {
+              "status": "FOUND",
+              "source": "datamine: Marth SpecialNEnd hitbox kbg 100"
+            }
+          }
+        }
+      ],
+      "status": {
+        "startup": {
+          "status": "FOUND",
+          "source": "datamine: Marth SpecialNEnd first hitbox 1-based frame 5 (0-based 4)"
+        },
+        "active": {
+          "status": "FOUND",
+          "source": "datamine: Marth SpecialNEnd hitbox active 1-based frames 5-10 (frame-32 blip excluded as loop artifact)"
+        },
+        "recovery": {
+          "status": "FOUND",
+          "source": "datamine: Marth SpecialNEnd 33 total frames - startup 4 - active 6"
+        }
+      }
+    },
     "up_b": {
       "name": "dolphin slash",
       "in_air": true,
