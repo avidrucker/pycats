@@ -15,12 +15,12 @@ drop the label from the JSON) and the shipped-data test goes red for that stem.
 import pytest
 
 from pycats.combat.data import (
-    CHARACTER_DATA_DIR,
     Circle,
     FighterData,
     Hitbox,
     Hurtbox,
     MoveData,
+    fighter_json_paths,
     load_fighter_data,
     with_dense_hit_labels,
 )
@@ -70,7 +70,7 @@ def test_with_dense_hit_labels_leaves_geometry_and_timing_untouched():
     assert [hb.circle for hb in out.hitboxes] == [hb.circle for hb in src.hitboxes]
 
 
-_STEMS = sorted(p.stem for p in CHARACTER_DATA_DIR.glob("*.json"))
+_STEMS = [p.stem for p in fighter_json_paths()]
 
 
 @pytest.mark.parametrize("stem", _STEMS)

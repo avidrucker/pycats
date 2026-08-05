@@ -1,0 +1,81 @@
+{
+  "cards": [
+    {
+      "id": "phoenix",
+      "name": "Phoenix",
+      "deltas": [
+        {"seam": "stocks", "op": "add_n", "value": 1}
+      ],
+      "stackable": true
+    },
+    {
+      "id": "chase",
+      "name": "Chase",
+      "deltas": [
+        {"seam": "move_speed", "op": "mult_pct", "value": 20},
+        {"seam": "dash_speed", "op": "mult_pct", "value": 20},
+        {"seam": "run_speed", "op": "mult_pct", "value": 20}
+      ],
+      "stackable": true
+    },
+    {
+      "id": "springs",
+      "name": "Springs",
+      "deltas": [
+        {"seam": "jump_vel", "op": "mult_pct", "value": 18}
+      ],
+      "stackable": true
+    },
+    {
+      "id": "compact",
+      "name": "Compact",
+      "deltas": [
+        {"seam": "body_size", "op": "mult_pct", "value": -15}
+      ],
+      "stackable": true
+    },
+    {
+      "id": "glass_cannon",
+      "name": "Glass Cannon",
+      "deltas": [
+        {"seam": "damage", "op": "mult_pct", "value": 25},
+        {"seam": "weight", "op": "add_n", "value": -8}
+      ],
+      "stackable": true
+    },
+    {
+      "id": "metal",
+      "name": "Metal",
+      "deltas": [
+        {"seam": "weight", "op": "mult_pct", "value": 30},
+        {"seam": "move_speed", "op": "mult_pct", "value": -15}
+      ],
+      "stackable": false
+    },
+    {
+      "id": "bruiser",
+      "name": "Bruiser",
+      "deltas": [
+        {"seam": "knockback_growth", "op": "mult_pct", "value": 20},
+        {"seam": "damage", "op": "mult_pct", "value": -12}
+      ],
+      "stackable": true
+    },
+    {
+      "id": "long_arms",
+      "name": "Long Arms",
+      "deltas": [
+        {"seam": "reach", "op": "mult_pct", "value": 20}
+      ],
+      "stackable": true
+    },
+    {
+      "id": "floaty",
+      "name": "Floaty",
+      "deltas": [
+        {"seam": "gravity", "op": "mult_pct", "value": -20}
+      ],
+      "stackable": true
+    }
+  ]
+}

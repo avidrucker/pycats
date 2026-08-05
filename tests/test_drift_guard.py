@@ -23,8 +23,8 @@ from dataclasses import replace
 
 from pycats.combat.collapse import collapse
 from pycats.combat.data import (
-    CHARACTER_DATA_DIR,
     _fighter_from_json,
+    fighter_json_paths,
     fighter_to_json,
     load_fighter_data,
 )
@@ -77,7 +77,7 @@ def test_shipped_json_provenance_matches_hitboxes():
     # For every shipped file: any move carrying provenance must recompile to its
     # committed hitboxes. Vacuously green today (migrated data has no provenance);
     # the assertion still runs so a future provenance-bearing file is guarded.
-    for path in sorted(CHARACTER_DATA_DIR.glob("*.json")):
+    for path in fighter_json_paths():
         doc = json.loads(path.read_text())
         assert _drift_mismatches(doc) == [], f"{path.name} has canonical/provenance drift"
 

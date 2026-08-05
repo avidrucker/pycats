@@ -52,10 +52,8 @@ reported, not gated.
 from __future__ import annotations
 
 from dataclasses import MISSING, fields
-from pathlib import Path
 
 from .data import (
-    CHARACTER_DATA_DIR,
     Circle,
     FighterData,
     Hitbox,
@@ -63,6 +61,7 @@ from .data import (
     LandingSpawn,
     MoveData,
     VelocityPhase,
+    fighter_json_paths,
     load_fighter_data,
 )
 from .provenance import TUNING_PROVENANCE
@@ -252,8 +251,12 @@ def _fighter_bucket(fd: FighterData) -> dict:
 
 
 def _fighter_stems() -> list[str]:
-    """The fighter data files to census, by JSON stem (sorted, self-updating)."""
-    return sorted(p.stem for p in Path(CHARACTER_DATA_DIR).glob("*.json"))
+    """The fighter data files to census, by JSON stem (sorted, self-updating).
+
+    Uses `fighter_json_paths()` so a co-located non-fighter file (e.g. the ROUNDS
+    card catalog cards.json, ADR-0020 §1) is never censused as a fighter.
+    """
+    return [p.stem for p in fighter_json_paths()]
 
 
 # ---------------------------------------------------------------------------

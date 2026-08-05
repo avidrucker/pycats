@@ -794,6 +794,22 @@ def with_dense_hit_labels(fd: FighterData) -> FighterData:
 # constant to exercise the branch without touching the repo.
 CHARACTER_DATA_DIR = Path(__file__).parent.parent / "characters" / "data"
 
+# Files in CHARACTER_DATA_DIR that are NOT per-fighter data, so fighter-JSON
+# discovery must skip them. cards.json is the ROUNDS card catalog (ADR-0020 §1):
+# co-located with fighter data by design, but hydrated by loadout/cards.py, not by
+# this seam. Fighter-file consumers glob via fighter_json_paths(), never a bare
+# CHARACTER_DATA_DIR.glob("*.json").
+NON_FIGHTER_DATA_FILES = frozenset({"cards.json"})
+
+
+def fighter_json_paths() -> list[Path]:
+    """Sorted per-fighter ``<character>.json`` paths in CHARACTER_DATA_DIR.
+
+    Excludes non-fighter data files (NON_FIGHTER_DATA_FILES, e.g. the ROUNDS card
+    catalog) so a co-located catalog file is never mistaken for a fighter mirror.
+    """
+    return sorted(p for p in CHARACTER_DATA_DIR.glob("*.json") if p.name not in NON_FIGHTER_DATA_FILES)
+
 
 # Keys that resolve to the default cat rather than a distinct archetype: the sim
 # seats "P1"/"P2" (sim/runner.py, game.py), the migration key "default", and the

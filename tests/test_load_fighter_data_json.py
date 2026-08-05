@@ -119,11 +119,11 @@ def test_shipped_json_files_hydrate_cleanly():
     guard scales to each new file with no edit. Per-fighter byte-equality to the
     Python oracle — the golden-safety proof — lives in that fighter's own flip
     test (e.g. tests/test_nalio_json_flip.py), not here."""
-    from pycats.combat.data import CHARACTER_DATA_DIR, SCHEMA_VERSION
+    from pycats.combat.data import CHARACTER_DATA_DIR, SCHEMA_VERSION, fighter_json_paths
 
     if not CHARACTER_DATA_DIR.exists():
         return
-    for path in sorted(CHARACTER_DATA_DIR.glob("*.json")):
+    for path in fighter_json_paths():
         doc = json.loads(path.read_text())
         assert doc.get("schema_version") == SCHEMA_VERSION, f"{path.name}: wrong/absent schema_version"
         _fighter_from_json(doc)  # raises if malformed / off-schema
