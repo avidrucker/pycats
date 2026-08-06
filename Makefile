@@ -10,7 +10,7 @@ RUFF := $(VENV)/ruff
 HEADLESS := SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=.
 ARGS ?=
 
-.PHONY: help test run run-cmd lint format bench goldens census
+.PHONY: help test run run-cmd lint format bench profile goldens census
 
 help:
 	@echo "pycats — command SSOT (see #724). Targets:"
@@ -20,12 +20,14 @@ help:
 	@echo "  make lint                     ruff format --check + check on pycats/ (close-gate)"
 	@echo "  make format                   ruff format pycats/ (write; lint is its --check twin)"
 	@echo "  make bench [ARGS=\"...\"]        bench.py headless (extra flags via ARGS)"
+	@echo "  make profile [ARGS=\"...\"]      profile_loop.py cProfile hot-function harness (#1247; --state/--frames/--top via ARGS)"
 	@echo "  make goldens                  regen file-based goldens (3 modules); review sidecars — see tests/golden/REGEN_PROTOCOL.md"
 	@echo "  make census                   print the authored-vs-sourced value census (#1151); re-bless its ratchet baseline with PYCATS_UPDATE_AUTHORED_BASELINE=1"
 	@echo ""
 	@echo "SIM (run: python -m pycats.game):"
 	@echo "  python -m pycats.game                   play the game (same as make run)"
 	@echo "  SDL_VIDEODRIVER=dummy python bench.py   headless state-engine benchmark (same as make bench)"
+	@echo "  SDL_VIDEODRIVER=dummy python profile_loop.py  cProfile App.step() hot-function harness (same as make profile)"
 	@echo ""
 	@"$(PY)" scripts/help_scripts.py
 
@@ -57,6 +59,11 @@ format:
 # bench.py headless; extra flags via ARGS
 bench:
 	SDL_VIDEODRIVER=dummy PYTHONPATH=. "$(PY)" bench.py $(ARGS)
+
+# profile_loop.py — cProfile App.step() hot-function harness (#1247); flags via ARGS
+# e.g. make profile ARGS="--state playing --frames 900 --top 40"
+profile:
+	SDL_VIDEODRIVER=dummy PYTHONPATH=. "$(PY)" profile_loop.py $(ARGS)
 
 # regenerate the file-based goldens — the three modules that honor
 # PYCATS_UPDATE_GOLDENS (not the full suite; the flag is read only by these).

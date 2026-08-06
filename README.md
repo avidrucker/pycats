@@ -173,6 +173,19 @@ make bench                                                       # quick run
 make bench ARGS="--frames 20000 --json bench_results/run.json"   # longer, with JSON output
 ```
 
+### Profiling (hot functions)
+
+`make bench` times the state engine only; `make profile` (#1247) profiles the full
+`App.step()` loop — poll → update → **render** → present — under `cProfile`, printing a
+ranked hot-function table plus a #1236 hypothesis check (each named suspect confirmed or
+refuted with a measured call count + time).
+
+```bash
+make profile                                       # representative session (menu → play → pause)
+make profile ARGS="--state playing --frames 900"   # profile one FSM state in isolation
+make profile ARGS="--state options --out prof.txt" # also write the full report to a file
+```
+
 ### Running an unmerged (worktree) change
 
 To run code that still lives on a claimed worktree branch (not yet merged to `main`), let
