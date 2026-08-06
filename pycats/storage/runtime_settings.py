@@ -25,8 +25,15 @@ def seed(prefs=None):
 
 
 def get(key):
-    """Current live value for `key`, falling back to the schema default."""
-    return _state.get(key, settings.defaults().get(key))
+    """Current live value for `key`, falling back to the schema default.
+
+    The present-key path (the hot one — the render loop reads ~160 keys/frame)
+    allocates nothing: only a genuinely-absent key pays for a fresh defaults()
+    dict. Guarding this, rather than passing settings.defaults() as `dict.get`'s
+    default arg, avoids minting a throwaway ~15-key copy on every read (#1262/B3)."""
+    if key in _state:
+        return _state[key]
+    return settings.defaults().get(key)
 
 
 def set(key, value):

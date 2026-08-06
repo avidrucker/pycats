@@ -42,3 +42,22 @@ def test_seed_without_arg_loads_from_settings(tmp_path, monkeypatch):
 def test_unknown_key_falls_back_to_schema_default():
     runtime_settings.seed({})  # empty
     assert runtime_settings.show_status_timer_bars() is True
+
+
+def test_present_key_get_does_not_evaluate_settings_defaults(monkeypatch):
+    """#1262 (B3): get() must not build a throwaway defaults() dict on the hot path.
+
+    The old body `_state.get(key, settings.defaults().get(key))` evaluated the
+    default-arg expression `settings.defaults()` unconditionally — a fresh ~15-key
+    dict minted on *every* read, even a present-key cache hit (measured 160
+    get-calls/frame, the dict allocated 31.6k× over 600 profiled frames). The
+    fallback must fire only when the key is genuinely absent."""
+    runtime_settings.seed(settings.defaults())  # every schema key present
+    calls = []
+    real_defaults = settings.defaults
+    monkeypatch.setattr(settings, "defaults", lambda: (calls.append(1), real_defaults())[1])
+
+    val = runtime_settings.get("show_status_timer_bars")
+
+    assert val is True  # return value unchanged
+    assert calls == []  # defaults() NOT evaluated for a present key
