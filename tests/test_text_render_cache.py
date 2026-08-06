@@ -99,6 +99,39 @@ def test_cached_output_is_byte_identical_to_direct_blit():
         assert pygame.image.tobytes(a, "RGBA") == pygame.image.tobytes(b, "RGBA"), txt
 
 
+# --- mixed cache LRU eviction (#1267 — B5) ----------------------------------
+
+
+def test_mixed_cache_lru_keeps_still_visible_key_at_cap():
+    """At cap, a still-visible (re-accessed) key survives eviction (#1267).
+
+    The old code did a wholesale `clear()` at cap, so a live HUD/menu key was
+    dropped alongside the dynamic churn and recomposed the next frame — a periodic
+    hitch. LRU eviction (evict oldest, move-to-end on access) must keep the still-
+    visible key. Able to fail: under wholesale-clear the final live render is a miss.
+    """
+    tr = _tr()
+    tr._MIXED_CACHE_CAP = 8
+    s = pygame.Surface((400, 80))
+
+    def render(txt):
+        tr.render_text_mixed(txt, 20, (255, 255, 255), s, (10, 10))
+
+    live = "LIVES: 3"
+    render(live)  # the still-visible key
+    for i in range(7):  # fill the cache to exactly cap (1 live + 7 dynamic = 8)
+        render(f"{i}%")
+    render(live)  # re-access the live key — LRU marks it most-recently-used
+    misses_before = tr.mixed_cache_misses
+
+    render("99%")  # new key at cap → triggers eviction (evict oldest, not wholesale)
+    render(live)  # still-visible key must still be cached → a HIT
+
+    # Only "99%" composed; the live key survived eviction. Under wholesale-clear the
+    # live render would be a second miss (== misses_before + 2).
+    assert tr.mixed_cache_misses == misses_before + 1
+
+
 # --- render_text_simple surface cache (#1263 — B4) --------------------------
 
 

@@ -7,6 +7,8 @@ This module provides:
 - Consistent text rendering across different screens
 """
 
+from collections import OrderedDict
+
 import pygame
 
 from ..config import TEXT_PROBE_SIZE  # font-probe size: single font-size source (#344)
@@ -28,9 +30,12 @@ class TextRenderer:
         # once per (text, size, colour) instead of glyph-by-glyph every frame (#372
         # — the per-frame per-glyph render storm hard-hung the menus on a real
         # display). mixed_cache_misses counts compositions (the regression guard).
-        self._mixed_surface_cache = {}
+        # OrderedDict for LRU eviction: at cap, evict the least-recently-used entry
+        # (move-to-end on hit) instead of a wholesale clear, so a still-visible key
+        # survives the dynamic-HUD churn instead of recomposing every frame (#1267).
+        self._mixed_surface_cache = OrderedDict()
         self.mixed_cache_misses = 0
-        self._MIXED_CACHE_CAP = 1024  # soft cap; clear if dynamic text grows it
+        self._MIXED_CACHE_CAP = 1024  # cap; LRU-evict oldest when dynamic text grows it
 
         # Same cache for the ASCII/simple path (#1263 — B4). render_text_simple
         # re-rasterised HUD/status/lives/damage/FPS via font.render() every frame
@@ -391,6 +396,7 @@ class TextRenderer:
         key = (text, runtime_settings.scaled_font_size(size), color)
         cached = self._mixed_surface_cache.get(key)
         if cached is not None:
+            self._mixed_surface_cache.move_to_end(key)  # mark most-recently-used (LRU)
             return cached
 
         self.mixed_cache_misses += 1
@@ -438,7 +444,10 @@ class TextRenderer:
 
         result = (out, total_width, max_height, top)
         if len(self._mixed_surface_cache) >= self._MIXED_CACHE_CAP:
-            self._mixed_surface_cache.clear()  # bound growth from dynamic HUD text
+            # Evict the least-recently-used entry, not the whole cache — still-live
+            # keys (re-accessed each frame) stay resident; only cold dynamic-HUD keys
+            # age out (#1267). move_to_end on hit keeps live keys off the oldest slot.
+            self._mixed_surface_cache.popitem(last=False)
         self._mixed_surface_cache[key] = result
         return result
 
