@@ -37,6 +37,11 @@ def _fighter_data(*, regen_rate: float = 0.0, regen_interval: int = 0) -> Fighte
                 hitboxes=(Hitbox(circle=Circle(30, 0, 10), damage=8.0, angle=45),),
             ),
         },
+        # Default-cat grounded units (#1209 made walk/dash/run required, no default);
+        # this helper landed via #1218's merge race on a pre-#1209 base.
+        walk=1.1,
+        dash=1.5,
+        run=1.5,
         regen_rate=regen_rate,
         regen_interval=regen_interval,
     )
