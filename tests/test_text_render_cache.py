@@ -97,3 +97,69 @@ def test_cached_output_is_byte_identical_to_direct_blit():
         tr.render_text_mixed(txt, 24, (255, 255, 0), a, (260, 40), center=center)
         _direct_blit_reference(tr, txt, 24, (255, 255, 0), b, (260, 40), center)
         assert pygame.image.tobytes(a, "RGBA") == pygame.image.tobytes(b, "RGBA"), txt
+
+
+# --- render_text_simple surface cache (#1263 — B4) --------------------------
+
+
+def test_simple_repeated_render_rasterises_only_once():
+    tr = _tr()
+    s = pygame.Surface((300, 60))
+    tr.render_text_simple("Lives: 3", 24, (255, 255, 255), s, (10, 10))
+    first = tr.simple_cache_misses
+    for _ in range(30):
+        tr.render_text_simple("Lives: 3", 24, (255, 255, 255), s, (10, 10))
+    assert first == 1
+    assert tr.simple_cache_misses == first  # 30 more renders, zero new rasterisations
+
+
+def test_simple_distinct_key_rerasterises():
+    tr = _tr()
+    s = pygame.Surface((300, 60))
+    tr.render_text_simple("Damage: 0%", 24, (255, 0, 0), s, (10, 10))
+    m = tr.simple_cache_misses
+    tr.render_text_simple("Damage: 0%", 24, (0, 255, 0), s, (10, 10))  # new colour
+    tr.render_text_simple("Damage: 5%", 24, (255, 0, 0), s, (10, 10))  # new text
+    assert tr.simple_cache_misses == m + 2
+
+
+def test_simple_repeat_call_does_not_recall_font_render(monkeypatch):
+    """The acceptance guard: a repeat call must NOT re-invoke font.render (#1263)."""
+    tr = _tr()
+
+    class _CountingFont:
+        def __init__(self, real):
+            self._real = real
+            self.render_calls = 0
+
+        def render(self, *a, **k):
+            self.render_calls += 1
+            return self._real.render(*a, **k)
+
+        def __getattr__(self, name):
+            return getattr(self._real, name)
+
+    counting = _CountingFont(pygame.font.Font(None, 24))
+    monkeypatch.setattr(tr, "_get_font", lambda name, size: counting)
+    s = pygame.Surface((300, 60))
+    tr.render_text_simple("FPS: 60", 24, (255, 255, 255), s, (10, 10))
+    tr.render_text_simple("FPS: 60", 24, (255, 255, 255), s, (10, 10))
+    assert counting.render_calls == 1  # rasterised once across two identical calls
+
+
+def test_simple_cached_output_is_byte_identical_to_direct_render():
+    # ASCII-only strings → fallback_text == text, so the reference is a bare
+    # font.render(); proves the cached blit matches an uncached one pixel-for-pixel.
+    for txt, center in [("Lives: 3", False), ("Damage: 88%", True), ("P1  WINS", True)]:
+        tr = _tr()
+        a = pygame.Surface((360, 70))
+        a.fill((5, 8, 12))
+        b = pygame.Surface((360, 70))
+        b.fill((5, 8, 12))
+        tr.render_text_simple(txt, 24, (240, 240, 40), a, (180, 30), center=center)
+        rendered = tr._get_font(None, 24).render(txt, True, (240, 240, 40))
+        if center:
+            b.blit(rendered, rendered.get_rect(center=(180, 30)))
+        else:
+            b.blit(rendered, (180, 30))
+        assert pygame.image.tobytes(a, "RGBA") == pygame.image.tobytes(b, "RGBA"), txt

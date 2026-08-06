@@ -32,6 +32,14 @@ class TextRenderer:
         self.mixed_cache_misses = 0
         self._MIXED_CACHE_CAP = 1024  # soft cap; clear if dynamic text grows it
 
+        # Same cache for the ASCII/simple path (#1263 — B4). render_text_simple
+        # re-rasterised HUD/status/lives/damage/FPS via font.render() every frame
+        # (#1247 measured 12.8 calls/frame); cache the surface per (text, size,
+        # colour) so an unchanged string reuses it. simple_cache_misses is the guard.
+        self._simple_surface_cache = {}
+        self.simple_cache_misses = 0
+        self._SIMPLE_CACHE_CAP = 1024  # soft cap; clear if dynamic text grows it
+
         # Run diagnostic test if requested
         if run_diagnostics:
             self.test_font_capabilities()
@@ -464,8 +472,6 @@ class TextRenderer:
         Returns:
             pygame.Rect of the rendered text area
         """
-        regular_font = self._get_font(None, size)
-
         # Replace common Unicode characters with ASCII equivalents if fallback is enabled
         if unicode_fallback:
             fallback_text = (
@@ -485,7 +491,20 @@ class TextRenderer:
         # Convert to string in case we get non-string input
         fallback_text = str(fallback_text)
 
-        rendered_text = regular_font.render(fallback_text, True, color)
+        # Rasterise once per (text, effective-size, colour) and blit the cached
+        # surface — an unchanged HUD string (Lives / Damage % / FPS) otherwise
+        # re-rendered its glyphs every frame (#1263/B4). Key by the EFFECTIVE scaled
+        # size so a live font_scale change (#345) invalidates it, mirroring the
+        # mixed-surface cache. The cached surface is only ever blitted (read), never
+        # drawn onto, so sharing it across frames is byte-identical to re-rendering.
+        key = (fallback_text, runtime_settings.scaled_font_size(size), color)
+        rendered_text = self._simple_surface_cache.get(key)
+        if rendered_text is None:
+            self.simple_cache_misses += 1
+            rendered_text = self._get_font(None, size).render(fallback_text, True, color)
+            if len(self._simple_surface_cache) >= self._SIMPLE_CACHE_CAP:
+                self._simple_surface_cache.clear()  # bound growth from dynamic HUD text
+            self._simple_surface_cache[key] = rendered_text
 
         if center:
             rect = rendered_text.get_rect(center=position)
