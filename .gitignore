@@ -10,6 +10,7 @@ media/
 *.mp4
 repros/
 logs/
+frames.log
 .claude/worktrees/
 assignments/
 
