@@ -1,20 +1,16 @@
 """Tests for hold-ESC-to-quit feature (#113).
 
 RED phase: these tests should FAIL before implementation, PASS after.
+
+Config isolation is scoped per test by the ``_isolated_config`` fixture below
+(``monkeypatch.setenv("PYCATS_CONFIG_DIR", tmp_path)``, auto-restored on
+teardown) — not an import-time ``os.environ`` write. See #1257 (the #345
+env-at-import class): ``settings._config_dir`` reads ``PYCATS_CONFIG_DIR``
+lazily at call time, so no module-level override is needed, and pygame is not
+used here at all.
 """
 
-import os
-import tempfile
-
-# Isolate settings to a tmp dir so save/load don't touch the user's config.
-_TMP_CONFIG = tempfile.mkdtemp(prefix="pycats_test_")
-os.environ["PYCATS_CONFIG_DIR"] = _TMP_CONFIG
-
-import pygame
 import pytest
-
-# Initialize pygame before importing pycats modules
-pygame.init()
 
 from pycats.storage.settings import defaults, load, save
 
