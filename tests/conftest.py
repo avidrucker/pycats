@@ -44,7 +44,23 @@ def two_fighters(p1_controls, p2_controls):
     )
 
 
-@pytest.fixture
+def _clear_render_caches():
+    """Drop every stale render cache so the next render runs on the cold-cache path.
+
+    The six caches below each go stale after a ``pygame.quit()`` or across test
+    order (see ``render_isolation`` for the four failure modes). Extracted from the
+    fixture body so a guard can call it directly and assert the caches are empty,
+    without depending on fixture-setup ordering (#1274).
+    """
+    text_utils.text_renderer.font_cache.clear()
+    text_utils.text_renderer._mixed_surface_cache.clear()  # #1256: stale mixed-glyph surfaces mask stub-font gaps
+    rb._body_cache.clear()
+    rb._body_layers_cache.clear()  # #585: split ring/body layers, same staleness
+    rb._tail_seg_cache.clear()  # #330: rotated tail surfaces go stale after a quit
+    rb._tail_outline_cache.clear()  # #564: tail outline halos, same staleness
+
+
+@pytest.fixture(autouse=True)
 def render_isolation():
     """Isolate render tests from global pygame.font / cache pollution (#63).
 
@@ -68,17 +84,16 @@ def render_isolation():
     a neighbour's cached surface (#1256).
 
     Re-initialize font and drop the stale caches before each render test so they
-    pass regardless of suite execution order. Opt in per render module with
-    ``pytestmark = pytest.mark.usefixtures("render_isolation")``.
+    pass regardless of suite execution order. Now ``autouse=True`` (#1274): every
+    test starts on cold render caches, so a new render module can't reopen the hole
+    by forgetting the old ``pytestmark = pytest.mark.usefixtures("render_isolation")``
+    opt-in (the surviving opt-in lines are harmless no-ops, kept for provenance).
+    The six clears live in ``_clear_render_caches()`` so a guard can exercise them
+    without fighting fixture-setup order.
     """
     if not pygame.font.get_init():
         pygame.font.init()
-    text_utils.text_renderer.font_cache.clear()
-    text_utils.text_renderer._mixed_surface_cache.clear()  # #1256: stale mixed-glyph surfaces mask stub-font gaps
-    rb._body_cache.clear()
-    rb._body_layers_cache.clear()  # #585: split ring/body layers, same staleness
-    rb._tail_seg_cache.clear()  # #330: rotated tail surfaces go stale after a quit
-    rb._tail_outline_cache.clear()  # #564: tail outline halos, same staleness
+    _clear_render_caches()
     yield
 
 
