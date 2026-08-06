@@ -59,13 +59,22 @@ def render_isolation():
     * a ``render_battle._body_cache`` surface built under polluted state would be
       reused and yield wrong pixels.
 
-    Re-initialize font and drop the two stale caches before each render test so
-    they pass regardless of suite execution order. Opt in per render module with
+    A fourth, subtler mode is order-dependence rather than a quit: a mixed-glyph
+    surface cached in ``text_renderer._mixed_surface_cache`` by an earlier test
+    lets a later test's ``_compose_mixed`` return on a cache hit *before* it
+    touches the fonts, masking an incomplete stub font (a fake missing
+    ``get_ascent``) that a cold cache would expose. Clearing that cache too keeps
+    every opted-in render test on the cold-cache path, so it can't false-green off
+    a neighbour's cached surface (#1256).
+
+    Re-initialize font and drop the stale caches before each render test so they
+    pass regardless of suite execution order. Opt in per render module with
     ``pytestmark = pytest.mark.usefixtures("render_isolation")``.
     """
     if not pygame.font.get_init():
         pygame.font.init()
     text_utils.text_renderer.font_cache.clear()
+    text_utils.text_renderer._mixed_surface_cache.clear()  # #1256: stale mixed-glyph surfaces mask stub-font gaps
     rb._body_cache.clear()
     rb._body_layers_cache.clear()  # #585: split ring/body layers, same staleness
     rb._tail_seg_cache.clear()  # #330: rotated tail surfaces go stale after a quit

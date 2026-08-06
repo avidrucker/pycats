@@ -15,17 +15,37 @@ exercises the title.
 """
 
 import pygame
+import pytest
 
 from pycats.screens import main_menu
 from pycats.screens.main_menu import MainMenuManager
 
+# Run against a cold render-cache set (incl. _mixed_surface_cache) so this guard
+# exercises the live _compose_mixed path in BOTH isolation and the full suite,
+# rather than false-greening off a neighbour's cached mixed surface (#1256).
+pytestmark = pytest.mark.usefixtures("render_isolation")
+
 
 class _DummyFont:
+    """A stub font covering the full protocol _compose_mixed calls (#1256).
+
+    render_mixed_centered -> _compose_mixed reads get_ascent()/get_height() on the
+    fonts before blitting glyphs; a stub missing either raises AttributeError the
+    moment the mixed cache misses (i.e. always, in isolation). Cover the whole
+    protocol so the stub is order-independent, not just the methods a warm cache
+    happens to skip."""
+
     def size(self, text):
         return (10, 10)
 
     def render(self, *args, **kwargs):
         return pygame.Surface((1, 1))
+
+    def get_ascent(self):
+        return 10
+
+    def get_height(self):
+        return 10
 
 
 def test_start_screen_renders_cat_fight_title(monkeypatch):
