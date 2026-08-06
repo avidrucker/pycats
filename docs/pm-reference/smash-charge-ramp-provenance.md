@@ -137,8 +137,67 @@ inference** — do not act on it; it needs symbol-mapped identification.
 (b) the **live Dolphin RAM read** at the charge-computation site (needs the Brawl ISO). Both are
 later #638 children; neither is opened here.
 
+## 2026-08-05 — `doldecomp/brawl` symbol-map route tested (#1249): dead-end
+
+The prior "Route" note's **option (a)** — "analyze `main.dol` against the `doldecomp/brawl`
+symbol map to find the charge routine **by name**" — was tested here (#1249, the #652
+"viable-with-X" child). **It does not reach the value.** Recorded so option (a) is not re-attempted.
+
+**Source read.** `doldecomp/brawl` @ commit **`d2ed7c96946f8eb8b34a0d085ed371ca257b0387`**
+(`main`, pushed 2026-06-22), read via the GitHub API against that pinned SHA rather than a local
+clone — the probe below closes the route before a 5 MB gitignored checkout would add evidence, and
+reading raw blobs at the pinned commit is the same authoritative data. (Ticket scoped a clone +
+recorded clone SHA; substituting "read @ pinned SHA" yields the identical files and the same
+finding. The pinned SHA above is the provenance anchor.)
+
+**Probe (all against `config/RSBE01_02/symbols.txt` @ that SHA — 34,802 symbols, 20,448
+`type:object` data entries; the full DOL symbol map, every entry mangled-named, no `func_` stubs):**
+
+- `grep -i 'charge|smash|tame|hold'` over **all** 34,802 symbols → **1 hit**:
+  `create__20IfFoxSmashAppearTaskFP9gfArchive` (`.text:0x800F6374`) — Fox's on-screen-appearance
+  task, unrelated to smash-attack charging. `grep 'Smash'` (case-sensitive) count over the whole
+  map = **1** (the same line).
+- Over the 20,448 `type:object` data symbols, `smash|charge|attack|tame|hold|squat` → **0 hits**.
+  No named data constant for a charge cap/multiplier.
+- Repo code-search (`gh api search/code repo:doldecomp/brawl`) for `SmashCharge`, `smash_charge`,
+  `ChargeFrame`, `charge_frame`, `SmashHold`, `smashHold` → **0** each.
+- Decompile coverage of the fighter engine is near-zero: `src/sora/ft/` (the HAL/Sora fighter
+  engine module) holds only `ft_system.cpp`; `src/mo_fighter/` holds only `ft_marth`, `ft_purin`,
+  and a **592-byte** `mo_fighter.cpp` stub; `include/` is entirely `st_*` stage headers — no
+  fighter param header. The generic smash-charge status handler is **not** decompiled.
+
+**Why the route dead-ends (two independent reasons).**
+
+1. **Not a discoverable named symbol.** The charge cap/multiplier is not exposed as a named
+   function or data object — 1 of 34,802 symbols matches any charge vocabulary and it is unrelated.
+   Searching the map by name cannot surface it.
+2. **It is an inline ASM immediate, and the map only maps _address → name_.** Even granting the
+   map names every address, extracting the value needs the **DOL bytes at a known address** (to
+   read the immediate in the `cmpwi …, 60`-style compare). That requires either the target
+   **address** — which #649 established the PM GCT does **not** carry (no `59`/`60`/`1.3671`
+   literal in the diff; a Brawl-inherited value never appears in a diff at all) — or the **`main.dol`
+   itself**, which is ISO-gated (the no-ISO premise of this route). No address + no DOL ⇒ the symbol
+   map cannot be anchored to the charge site.
+
+**No value extracted.** `SMASH_CHARGE_FRAMES` (59) stays **`⚠ primary-unconfirmed`**;
+`SMASH_CHARGE_SCALE` (1.3671) is unchanged (already **[primary]**-confirmed via meleelight, above).
+
+**Route update for #637.** Option (a) is now closed as insufficient on its own. Remaining primary
+paths:
+- **(b) live Dolphin RAM read at the charge-computation site — #1250** (ISO-gated): reads the value
+  regardless of naming; the only offline route that does not depend on a named symbol. This is now
+  the **leading** reachable primary.
+- **(c) new lead — `doldecomp/melee`** (a *different* decomp, far more complete than Brawl's): PM
+  restores Melee's smash-charge behavior, and the meleelight **[primary]** already gives **60** for
+  Melee; the Melee decomp could corroborate the ramp at engine-source level (named function + the
+  immediate in decompiled C). This is **outside #1249's scope** (a Brawl-decomp ticket) and
+  `doldecomp/melee` is cited-but-not-cloned (#1239 finding) — a **candidate follow-up**, not opened
+  here.
+
 ## Sources
 
+- doldecomp/brawl (partial Brawl decomp — no named charge symbol, fighter engine un-decompiled) —
+  <https://github.com/doldecomp/brawl> @ `d2ed7c9`; `config/RSBE01_02/symbols.txt` (34,802 symbols)
 - meleelight (Melee engine reimpl, **[primary]** literal) — `~/Documents/Study/JavaScript/meleelight/src/characters/*/moves/*SMASH.js` (clone #616)
 - brawllib_rs (no charge-cap constant) — `~/Documents/Study/Rust/brawllib_rs/src/` (clone #614)
 - SmashWiki — *Smash attack*: <https://www.ssbwiki.com/Smash_attack> (60 frames, all games; 1.3671× Melee / 1.4× Brawl+)
