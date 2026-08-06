@@ -27,6 +27,7 @@ from .body import (
     IDLE_BREATH_BOB_PX,
     IDLE_BREATH_SQUASH_PX,
     _cat_body_layers,
+    _cat_body_layers_scaled,
     idle_breath_wave,
     render_tail,
     slot_accent_color,
@@ -70,7 +71,8 @@ def render_battle(surface, players, platforms):
         # junction: ring BEHIND -> tail (its own ring + bodies) -> body pixels + name
         # in FRONT. The tail bodies cover the body ring where the two overlap, so no
         # ring segment is left cutting across the join.
-        ring_layer, body_layer = _cat_body_layers(p, getattr(p, "face_style", cat_faces.PRIMITIVES))
+        face_style = getattr(p, "face_style", cat_faces.PRIMITIVES)
+        ring_layer, body_layer = _cat_body_layers(p, face_style)
         # Posture squash (#124 crouch / #173 prone): vertically scale the body
         # toward the active lowered height, feet planted, eased over a few frames.
         # Purely visual — driven by a render-only progress var, so the
@@ -101,8 +103,8 @@ def render_battle(surface, players, platforms):
         if anim > 0.0 and low_h != stand_h:
             s = (stand_h + (low_h - stand_h) * anim) / stand_h
             size = (ring_layer.get_width(), max(1, round(ring_layer.get_height() * s)))
-            ring_layer = pygame.transform.scale(ring_layer, size)
-            body_layer = pygame.transform.scale(body_layer, size)
+            # #1266: memoized transform.scale — a settled crouch revisits one size
+            ring_layer, body_layer = _cat_body_layers_scaled(p, face_style, size)
             blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s)
         elif breath_w:
             # Idle breathing (#567/#760): a whole-body BOB (translation) plus a small
@@ -113,8 +115,9 @@ def render_battle(surface, players, platforms):
             bob_px = IDLE_BREATH_BOB_PX * breath_w
             s = (stand_h + squash_px) / stand_h
             size = (ring_layer.get_width(), max(1, round(ring_layer.get_height() * s)))
-            ring_layer = pygame.transform.scale(ring_layer, size)
-            body_layer = pygame.transform.scale(body_layer, size)
+            # #1266: memoized transform.scale — the periodic breath revisits a
+            # bounded set of rounded heights, so each size is scaled once per look
+            ring_layer, body_layer = _cat_body_layers_scaled(p, face_style, size)
             # feet-anchored squash, then lift the whole composite by the bob (feet lift too)
             blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s - bob_px)
         else:
@@ -132,9 +135,8 @@ def render_battle(surface, players, platforms):
             ratio = p.fighter.shield_hp / SHIELD_MAX_HP
             shield_radius = int(MAX_SHIELD_RADIUS * ratio)
             r = max(MIN_SHIELD_RADIUS, shield_radius)
-            s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-            pygame.draw.circle(s, (*SHIELD_COLOR, SHIELD_FILL_ALPHA), (r, r), r)
-            surface.blit(s, (p.rect.centerx - r, p.rect.centery - r))
+            # #1266: cache the bubble by radius — a steady shield holds one radius
+            surface.blit(_shield_bubble(r), (p.rect.centerx - r, p.rect.centery - r))
         # Above-head timer bars (#111 -> #340) — drawn last so they sit above the
         # dizzy stars; the spec list is empty when SHOW_STATUS_TIMER_BARS is off.
         draw_timer_bars(surface, p, timer_bar_specs(p))
@@ -143,11 +145,47 @@ def render_battle(surface, players, platforms):
         draw_grabs_left_dots(surface, p, grabs_left_dots(p))
 
 
-def _attack_surface(a):
+# #1266: shield bubbles keyed by radius. A shield holds one radius while its HP is
+# steady, so a held shield reuses one bubble instead of rebuilding it each frame.
+# Cleared with the other render caches (#63) — see tests/conftest _clear_render_caches.
+_shield_bubble_cache: dict = {}  # radius (px) -> SRCALPHA bubble surface
+
+
+def _shield_bubble(r):
+    """Return the translucent shield bubble of radius `r` (px), cached by radius.
+    Byte-identical to the pre-cache per-frame build (#1266)."""
+    surf = _shield_bubble_cache.get(r)
+    if surf is None:
+        surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+        pygame.draw.circle(surf, (*SHIELD_COLOR, SHIELD_FILL_ALPHA), (r, r), r)
+        _shield_bubble_cache[r] = surf
+    return surf
+
+
+# #1266: attack visuals keyed by their pixel-determining shape (single-vs-multi,
+# rect size, and each circle's rect-local centre + radius). A rigid attack shifted
+# by whole pixels keeps the same local layout, so it reuses one surface across the
+# frames it lives. Cleared with the other render caches — see conftest.
+_attack_surface_cache: dict = {}  # shape key -> visual surface
+
+
+def _attack_surface_key(a):
+    """The pixel-determining shape key for an attack's visual surface. Single-hitbox
+    surfaces are all identical (one flat-red `ATTACK_SIZE` rect), so they share one
+    key; multi keys on `rect.size` and each circle's rect-local centre + radius,
+    which are position-independent as the attack translates rigidly."""
+    if len(a.resolved) == 1:
+        return ("single",)
+    left, top = a.rect.topleft
+    circles = tuple((round(cx - left), round(cy - top), round(r)) for cx, cy, r, _hb in a.resolved)
+    return ("multi", a.rect.size, circles)
+
+
+def _build_attack_surface(a):
     """Build an attack's visual Surface from its resolved circles (#326/H-b — was
-    Attack.image). Pure presentation, rebuilt per frame; combat uses `a.resolved`,
-    not this. Single-hitbox keeps the legacy flat-red `ATTACK_SIZE` rect; multi
-    draws each circle (fill + outline) offset by the attack's rect top-left."""
+    Attack.image). Pure presentation; combat uses `a.resolved`, not this.
+    Single-hitbox keeps the legacy flat-red `ATTACK_SIZE` rect; multi draws each
+    circle (fill + outline) offset by the attack's rect top-left."""
     if len(a.resolved) == 1:
         surf = pygame.Surface(ATTACK_SIZE, pygame.SRCALPHA)
         surf.fill(ATTACK_SINGLE_FILL)
@@ -158,6 +196,17 @@ def _attack_surface(a):
         local = (round(cx - left), round(cy - top))
         pygame.draw.circle(surf, ATTACK_FILL, local, round(r))
         pygame.draw.circle(surf, ATTACK_OUTLINE, local, round(r), ATTACK_OUTLINE_WIDTH)
+    return surf
+
+
+def _attack_surface(a):
+    """Return the attack's visual surface, cached by its shape (#1266). Byte-identical
+    to `_build_attack_surface`; reused across frames an attack keeps the same shape."""
+    key = _attack_surface_key(a)
+    surf = _attack_surface_cache.get(key)
+    if surf is None:
+        surf = _build_attack_surface(a)
+        _attack_surface_cache[key] = surf
     return surf
 
 

@@ -56,8 +56,11 @@ def _clear_render_caches():
     text_utils.text_renderer._mixed_surface_cache.clear()  # #1256: stale mixed-glyph surfaces mask stub-font gaps
     rb._body_cache.clear()
     rb._body_layers_cache.clear()  # #585: split ring/body layers, same staleness
+    rb._body_scaled_cache.clear()  # #1266: crouch/breath-rescaled layers, same staleness
     rb._tail_seg_cache.clear()  # #330: rotated tail surfaces go stale after a quit
     rb._tail_outline_cache.clear()  # #564: tail outline halos, same staleness
+    rb._shield_bubble_cache.clear()  # #1266: shield bubbles, same staleness
+    rb._attack_surface_cache.clear()  # #1266: attack hitbox visuals, same staleness
 
 
 @pytest.fixture(autouse=True)

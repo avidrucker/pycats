@@ -446,6 +446,31 @@ def _cat_body_layers(p, face_style=cat_faces.PRIMITIVES):
     return layers
 
 
+# #1266: rescaled body layers, keyed by (body look, target size). render_battle
+# rescales the ring/body layers every crouch- or breath-animated frame; a steady
+# crouch (settled scale) or a periodic breath (a bounded set of rounded heights)
+# revisits the same sizes, so memoizing transform.scale by (look, size) reuses one
+# surface per size instead of reallocating two per player per frame. Cleared with
+# the other render caches (#63) — see tests/conftest _clear_render_caches.
+_body_scaled_cache: dict = {}  # (_body_cache_key, size) -> (scaled_ring, scaled_body)
+
+
+def _cat_body_layers_scaled(p, face_style, size):
+    """Return player `p`'s ``(ring_layer, body_layer)`` scaled to `size`.
+
+    Byte-identical to ``pygame.transform.scale`` on the cold layers — it *is* that
+    call, memoized by (body look, `size`) so frames that resolve to the same target
+    size (a settled crouch, a periodic breath phase) reuse one scaled pair (#1266).
+    `size` is `(w, h)`; pass the face_style render_battle resolved for `p`."""
+    ring, body = _cat_body_layers(p, face_style)
+    key = (_body_cache_key(p, face_style), size)
+    scaled = _body_scaled_cache.get(key)
+    if scaled is None:
+        scaled = (pygame.transform.scale(ring, size), pygame.transform.scale(body, size))
+        _body_scaled_cache[key] = scaled
+    return scaled
+
+
 def _cat_body_surface(p, face_style=cat_faces.PRIMITIVES):
     """Return the cached merged body composite (ring behind + body + name) as one
     surface. Byte-identical to the pre-#585 single-surface build — the render-cache

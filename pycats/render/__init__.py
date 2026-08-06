@@ -44,7 +44,15 @@ from ..systems.status_model import (  # noqa: F401
 from .battle import *  # noqa: F401,F403
 
 # Private names + module-level caches the test suite / render_isolation reach into.
-from .battle import _CROUCH_ANIM_RATE, _attack_surface  # noqa: F401
+from .battle import (  # noqa: F401
+    _CROUCH_ANIM_RATE,
+    _attack_surface,
+    _attack_surface_cache,
+    _attack_surface_key,
+    _build_attack_surface,
+    _shield_bubble,
+    _shield_bubble_cache,
+)
 from .body import *  # noqa: F401,F403
 from .body import (  # noqa: F401
     _BODY_PAD_BOT,
@@ -56,7 +64,9 @@ from .body import (  # noqa: F401
     _body_cache,
     _body_cache_key,
     _body_layers_cache,
+    _body_scaled_cache,
     _cat_body_layers,
+    _cat_body_layers_scaled,
     _cat_body_surface,
     _CatShim,
     _dilated_silhouette,
