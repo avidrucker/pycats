@@ -123,13 +123,26 @@ def test_release_before_threshold_resets_the_hold():
 
 
 def test_setting_off_makes_esc_inert(monkeypatch):
-    import pycats.storage.settings as settings_mod
+    import pycats.storage.runtime_settings as rs
 
-    monkeypatch.setattr(settings_mod, "load", lambda: {"esc_hold_to_navigate": False})
+    monkeypatch.setattr(rs, "esc_hold_to_navigate", lambda: False)
     sm = _mk("options")
     _hold_esc(sm, HOLD * 2)
     assert sm.get_state() == "options"
     assert sm.should_quit_game() is False
+
+
+def test_esc_hold_tick_reads_live_value_not_disk(monkeypatch):
+    """A1/#1265: the per-frame esc-hold tick reads the live value from
+    runtime_settings, never settings.load() (a disk read once per frame)."""
+    import pycats.storage.settings as settings_mod
+
+    sm = _mk("options")  # build first so construction-time loads don't count
+    calls = []
+    real_load = settings_mod.load
+    monkeypatch.setattr(settings_mod, "load", lambda: (calls.append(1), real_load())[1])
+    sm._tick_esc_hold(_esc())
+    assert calls == []
 
 
 def test_popping_one_level_does_not_cascade_to_a_second():

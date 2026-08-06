@@ -84,6 +84,9 @@ def test_playing_run_profiles_the_app_and_render_path():
 
 def test_playing_run_exercises_a_1236_hypothesis_function():
     stats = profile_state("playing", frames=5)
-    # settings.load() runs every frame via _tick_esc_hold — the A1 hotspot — so a
-    # 5-frame run must show it. This ties the harness output to a #1236 target.
-    assert find_functions(stats, "load", file_substr="settings.py"), "A1 (settings.load) must appear"
+    # runtime_settings.get() runs ~160x/frame in the render loop — the B3 read path —
+    # so a 5-frame run must show it. This ties the harness output to a #1236 target.
+    # (A1's per-frame settings.load() was removed in #1265, so it no longer appears.)
+    assert find_functions(stats, "get", file_substr="runtime_settings.py"), (
+        "a #1236 hotspot (runtime_settings.get) must appear"
+    )

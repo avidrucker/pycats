@@ -337,8 +337,9 @@ class OptionsMenu:
             if hook:
                 hook()
         elif row == "esc_quit":
-            prefs = settings.load()
-            settings.save({"esc_hold_to_navigate": not prefs.get("esc_hold_to_navigate", True)})
+            new = not runtime_settings.esc_hold_to_navigate()
+            runtime_settings.set("esc_hold_to_navigate", new)
+            settings.save({"esc_hold_to_navigate": new})
         elif row == "keybindings":
             self.keybind_mode = True  # hand input + render to the KeybindMenu
             self.keybind.player = 0
@@ -372,7 +373,7 @@ class OptionsMenu:
             getter = self.display_hooks.get("is_fullscreen")
             return "Fullscreen: " + (("ON" if getter() else "OFF") if getter else "F11")
         if row == "esc_quit":
-            return "Hold-ESC Back: " + ("ON" if settings.load().get("esc_hold_to_navigate", True) else "OFF")
+            return "Hold-ESC Back: " + ("ON" if runtime_settings.esc_hold_to_navigate() else "OFF")
         if row == "keybindings":
             return "Keybindings"
         if row == "back":

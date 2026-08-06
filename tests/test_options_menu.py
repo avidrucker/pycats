@@ -79,26 +79,40 @@ def test_fullscreen_row_calls_injected_hook():
 
 def test_esc_quit_row_toggles_setting_and_persists(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    settings.save({"esc_hold_to_navigate": True})
+    runtime_settings.seed(settings.defaults())  # ON by default
     m = _opts()
     m.selected_option = m.rows.index("esc_quit")
     m.update({ATTACK})
-    assert settings.load()["esc_hold_to_navigate"] is False
+    assert runtime_settings.esc_hold_to_navigate() is False  # live flip
+    assert settings.load()["esc_hold_to_navigate"] is False  # persisted
 
     m.input_cooldown = 0
     m.update({ATTACK})
+    assert runtime_settings.esc_hold_to_navigate() is True
     assert settings.load()["esc_hold_to_navigate"] is True
 
 
-def test_esc_quit_row_label_reflects_persisted_setting(tmp_path, monkeypatch):
+def test_esc_quit_row_label_reflects_live_setting(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
     m = _opts()
 
-    settings.save({"esc_hold_to_navigate": True})
+    runtime_settings.set("esc_hold_to_navigate", True)
     assert m._row_label("esc_quit") == "Hold-ESC Back: ON"
 
-    settings.save({"esc_hold_to_navigate": False})
+    runtime_settings.set("esc_hold_to_navigate", False)
     assert m._row_label("esc_quit") == "Hold-ESC Back: OFF"
+
+
+def test_esc_quit_row_label_reads_live_runtime_not_disk(tmp_path, monkeypatch):
+    """A2/#1265: the esc_quit row label reads the live value from runtime_settings,
+    never settings.load() (a disk read once per visible Options row per frame)."""
+    monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
+    m = _opts()
+    calls = []
+    real_load = settings.load
+    monkeypatch.setattr(settings, "load", lambda: (calls.append(1), real_load())[1])
+    m._row_label("esc_quit")
+    assert calls == []
 
 
 def test_back_row_requests_back():
