@@ -194,8 +194,99 @@ paths:
   `doldecomp/melee` is cited-but-not-cloned (#1239 finding) — a **candidate follow-up**, not opened
   here.
 
+## 2026-08-05 — `doldecomp/melee` decomp route (#1268): ramp math + `/256` multiplier confirmed at T1; cap is per-move script data
+
+The #1249 dead-end's **new lead (c)** — corroborate the ramp against **`doldecomp/melee`** (the
+Melee decompilation, far more complete than Brawl's; PM restores Melee's smash-charge behavior) —
+was worked here (#1268). Unlike the Brawl route, this one **reaches source**: the generic
+smash-charge engine handler is decompiled, so the ramp *form* and the multiplier *encoding* are now
+confirmed against a **T1 primary** (the decompiled original, stronger than the meleelight T2 reimpl
+already cited above). The cap and multiplier *scalars*, however, are **not** decomp C literals — the
+engine reads them as **per-move subaction-script operands**, so the number `60`/`1.3671` still lives
+in binary move data, not in the source.
+
+**Source read.** `doldecomp/melee` @ commit **`b5530e1d918afce454efb5000ea6371e0306f93c`**
+(`master` HEAD as of 2026-08-05), read via the GitHub API against that pinned SHA rather than a local
+clone — same substitution as #1249 (raw blobs at a pinned commit are the identical authoritative data;
+the ticket scoped a clone + recorded clone SHA, and the pinned SHA above is the provenance anchor, so
+nothing gitignored needs to land). Files below are all at that SHA.
+
+**What the decomp shows (T1 primary — the engine mechanism).**
+
+- **Damage ramp — linear interpolation, cap-relative** (`ftCo_800DEEB8`, `src/melee/ft/ft_0DF0.c`):
+
+  ```c
+  return arg1 * ((attrs->x2120_damageMul - 1.0F) *
+                     (attrs->x2118_frames / attrs->x211C_holdFrame) + 1.0F);
+  ```
+
+  i.e. `damage = base × (1 + (damageMul − 1) · frames / holdFrame)` — a straight lerp from `×1.0`
+  at 0 frames to `×damageMul` at the cap. This **confirms pycats' `1 + chargeFrames·(0.3671/60)`
+  ramp form exactly** (`holdFrame` = cap, `damageMul − 1` = `0.3671` at full charge), against the
+  decompiled original rather than the meleelight reimpl.
+
+- **Cap enforcement** (`ftCo_800DEF38`, same file): while `state == Charging`, `x2118_frames++`
+  each tick; once `x2118_frames >= x211C_holdFrame` it clamps `frames` to `holdFrame` and
+  transitions to `SmashState_Release`. So `x211C_holdFrame` **is** the charge cap; `SmashAttr`
+  (`src/melee/ft/types.h`) documents `x2118_frames` as "number of frames fp has charged for" and
+  `x211C_holdFrame` as "frame that charge begins/ends".
+
+- **Cap + multiplier are caller-supplied, from the move's subaction command** — not engine
+  constants. `ftCo_800DEE84` (init) stores `holdFrame = arg2` and `damageMul = dmg_mult` verbatim
+  from its parameters. Its one caller, the `smash_charge` command handler `ftAction_80073008`
+  (`src/melee/ft/ftaction.c`), reads both from the animation-command stream:
+
+  ```c
+  charge_rate   = cmd->u->smash_charge_0.charge_rate;
+  charge_frames = cmd->u->smash_charge_0.charge_frames;
+  dmg_mult      = 0.003906f * charge_rate;                 // = charge_rate / 256
+  ftCo_800DEE84(gobj, (s32) color_anim, charge_frames, dmg_mult);
+  ```
+
+  and the command is a bitfield (`struct smash_charge_0`, `src/melee/lb/types.h`):
+
+  ```c
+  struct smash_charge_0 { u32 opcode : 6; u32 charge_frames : 10; u32 charge_rate : 16; };
+  ```
+
+**Two conclusions.**
+
+1. **The `1.3671` multiplier is a clean fixed-point `350/256`.** `dmg_mult = charge_rate / 256`, and
+   `1.3671875 = 350/256` (⇒ `charge_rate` operand `= 350`); the ramp's `0.3671875 = 94/256`. This
+   pins the origin of pycats' `SMASH_CHARGE_SCALE` (and meleelight's `0.3671`) as an exact `/256`
+   value — the multiplier *encoding* is now T1-confirmed. The **scalar 350 itself is per-move
+   subaction data**, not a decomp literal (consistent with the meleelight `1.3671` [primary] above).
+
+2. **In Melee the charge cap is scripted-move-data, not an engine-hardcoded global.** `charge_frames`
+   is a 10-bit operand of each smash attack's `smash_charge` subaction command; the engine caps at
+   whatever the move script carries (meleelight/SmashWiki: `60`). The decomp therefore **cannot
+   distinguish PM's `59` from Melee's `60`** — that lives in binary move data, and the PM-specific
+   value is a PM-side question either way.
+
+**Route update for #637.**
+
+- **`SMASH_CHARGE_SCALE` (1.3671):** ramp *form* + the `/256` multiplier *encoding* are now
+  **T1-primary-confirmed** (decompiled Melee engine), one rung above the meleelight T2 already cited;
+  the value is exactly `350/256`. **Recommend upgrading the provenance note** to add this T1
+  corroboration (value unchanged). Still no separate PM read is needed for the multiplier's *form*.
+- **`SMASH_CHARGE_FRAMES` (59):** stays **`⚠ primary-unconfirmed` for PM**. The Melee decomp gives
+  the mechanism and the Melee baseline (`60`, via the move script) but not PM's `59`.
+- **New lead this route surfaces (for the Brawl-side routes, unverified for PM).** Because Melee
+  encodes the cap as a **subaction-script operand** rather than an engine global, *if* Brawl/PM uses
+  an analogous per-move command, the cap could be reachable by a **scripted-move-data datamine** of
+  the smash attack's subaction script (brawllib_rs / rukaidata territory) — not only a live RAM dump.
+  Caveat: Brawl's action-script system differs from Melee's, so this does **not** transfer
+  automatically; it is a hypothesis to test on the Brawl side (#1250, or a possible new
+  subaction-datamine child), **not** a settled fact and **not** a Melee value. The leading reachable
+  primary for the PM-specific `59` remains **#1250** (live Dolphin RAM read).
+
 ## Sources
 
+- doldecomp/melee (Melee decomp — **T1 primary** for the ramp mechanism; ramp lerp `ftCo_800DEEB8`,
+  cap clamp `ftCo_800DEF38`, init `ftCo_800DEE84` in `src/melee/ft/ft_0DF0.c`; `smash_charge` command
+  handler `ftAction_80073008` in `src/melee/ft/ftaction.c`; `struct smash_charge_0` in
+  `src/melee/lb/types.h`; `SmashAttr` in `src/melee/ft/types.h`) —
+  <https://github.com/doldecomp/melee> @ `b5530e1d`
 - doldecomp/brawl (partial Brawl decomp — no named charge symbol, fighter engine un-decompiled) —
   <https://github.com/doldecomp/brawl> @ `d2ed7c9`; `config/RSBE01_02/symbols.txt` (34,802 symbols)
 - meleelight (Melee engine reimpl, **[primary]** literal) — `~/Documents/Study/JavaScript/meleelight/src/characters/*/moves/*SMASH.js` (clone #616)
