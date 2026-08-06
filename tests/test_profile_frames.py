@@ -112,6 +112,35 @@ def test_visualstall_logs_a_frozen_render_surface():
     assert "surface unchanged" in text
 
 
+def test_visualstall_logs_total_duration_when_render_resumes():
+    """The onset line always reads as the threshold (e.g. 0.41s), so it alone can't tell a
+    brief hitch from the 1-2s freeze #1236 reported. When the surface moves again, _VisualStall
+    logs the TOTAL frozen span -- that's the number that answers 'was it 1-2s?'. Red without the
+    resumed branch."""
+
+    import io
+
+    class _Cap:
+        def __init__(self):
+            self.buf = io.StringIO()
+
+        def line(self, msg):
+            self.buf.write(msg + "\n")
+
+    sink = _Cap()
+    stall = _VisualStall(sink, no_progress_ms=100.0, watch_states=["playing"])
+    t = 5000.0
+    frozen = hash("scene-frozen")
+    stall.sample(frozen, frame_no=1, state="playing", now=t)  # freeze begins
+    stall.sample(frozen, frame_no=2, state="playing", now=t + 0.20)  # onset fires (0.20 > 0.10)
+    # Surface moves again 1.50s after the freeze began -> resumed line carries the total.
+    stall.sample(hash("scene-moved"), frame_no=3, state="playing", now=t + 1.50)
+
+    text = sink.buf.getvalue()
+    assert "render frozen" in text  # onset still logged
+    assert "render resumed after  1.50s frozen" in text  # TOTAL span, not the threshold
+
+
 def test_visualstall_ignores_a_legitimately_static_menu():
     """A static menu (a state NOT in watch_states) is expected to hold a still image, so an
     unchanging surface there must NOT be flagged -- otherwise every idle menu reads as a

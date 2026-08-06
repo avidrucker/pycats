@@ -207,7 +207,12 @@ class _VisualStall:
     (watch_states), a surface fingerprint that stops changing for longer than no_progress_ms
     means the picture is frozen even though every frame is quick. A legitimately static screen
     (an idle menu) is expected to hold a still image, so states outside watch_states are
-    ignored -- otherwise every idle menu would read as a freeze."""
+    ignored -- otherwise every idle menu would read as a freeze.
+
+    Two lines per freeze: an onset line at no_progress_ms, then a `render resumed after Xs`
+    line with the TOTAL frozen span when the surface moves again -- so a brief hitch is
+    distinguishable from the 1-2s freeze #1236 reported (the onset alone always reads as the
+    threshold, which can't tell them apart)."""
 
     def __init__(self, sink, no_progress_ms, watch_states):
         self.sink = sink
@@ -225,6 +230,12 @@ class _VisualStall:
             self._reported = False
             return
         if fp != self._last_fp:
+            # Surface moved. If we'd flagged a freeze, log its TOTAL span now that it resolved.
+            if self._reported and self._since is not None:
+                total = now - self._since
+                self.sink.line(
+                    f"NO-PROGRESS frame={frame_no} state={state!r} render resumed after {total:5.2f}s frozen"
+                )
             self._last_fp = fp
             self._since = now
             self._reported = False
