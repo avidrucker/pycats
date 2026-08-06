@@ -89,18 +89,21 @@ Critical rules:
   suite** (a green suite proves pixels are stable, not that they look right). Non-visible
   changes (logic / tooling / docs, or a byte-identical render-oracle refactor) are
   exempt. See [RULES.md](./RULES.md) → "Closing work" (step 4).
+<!-- banned-words-ok:start — this rule necessarily names the banned words to define them -->
 - **Banned words in ALL output** (replies, tickets, commits, docs): avoid **crisp**,
-  **honest / honestly / honesty**, **candid / candidly / candor**, and
-  **genuine / genuinely / genuineness** — they read as vague filler / throat-clearing.
+  **honest / honestly / honesty**, **candid / candidly / candor**,
+  **genuine / genuinely / genuineness**, **real**, **actual / actually**, and
+  **substantive** — they read as vague filler / throat-clearing.
   Also avoid the reflexive phrases **"You're right"** and **"I apologize" / "I'm sorry"** —
   concede or correct concretely instead ("The probe was the ticket's work, not filing.").
   Name the concrete quality instead (crisp → specific / precise / clean; honest / candid →
-  plain / direct / accurate / faithful; genuine → real / actual / reproducible).
+  plain / direct / accurate / faithful; genuine → specific / concrete / reproducible).
   Proofread the closing line, where they slip in.
   Also banned here: **PR / pull request** — this repo has no pull-request workflow
   (work merges to `main` via `pmtools` direct-push, or an attended in-session `git merge`
   + push); say "the change" / "the branch" / "the merge" / "the ticket" instead.
   Full list + replacements: [docs/banned_words.md](./docs/banned_words.md).
+<!-- banned-words-ok:end -->
 - **Reference locations by named landmark, not raw line number** — in tickets, reviews,
   commits, and docs, point at a **function/class + file path** (or a bare symbol) for
   code and a **section heading** for markdown; line numbers drift and misdirect. A line

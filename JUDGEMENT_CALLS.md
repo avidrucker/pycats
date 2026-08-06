@@ -18,11 +18,11 @@ Each entry: what was decided, why, and how to undo/revisit.
 
 2. **Corrected docs beyond the strict code change.**
    - Fixed the *inverted* prose in `docs/pm-reference/combat-knockback-hitstun.md`
-     (it claimed weak hits = ~44°, flattening as KB rises — backwards from real
-     Smash) and flipped the `current-parity-progress-report.md` Sakurai row ⬜→✅.
+     (it claimed weak hits = ~44°, flattening as KB rises — backwards from
+     Smash's behavior) and flipped the `current-parity-progress-report.md` Sakurai row ⬜→✅.
    - *Why:* the doc would have actively misled the next agent authoring an aerial,
      and a regression test was about to pin the *correct* behaviour. In the spirit
-     of #194 (keep the parity report honest).
+     of #194 (keep the parity report accurate).
    - *Revisit:* if either doc is "owned" elsewhere, fold these into that owner's flow.
 
 3. **Test pins the mechanism, not magic angles.**
@@ -44,11 +44,11 @@ Each entry: what was decided, why, and how to undo/revisit.
      `move_clock.py` (spawn tracking) change.
    - *Constraint accepted:* hitboxes that share a start frame must share the same
      window (same end) — they spawn as one `Attack`. Rare in practice; documented
-     v1 limit, rejected by validation rather than silently merged.
-   - *Revisit:* if a real move ever needs two different-length windows starting on
+     v1 limit, rejected by validation rather than merged with no error.
+   - *Revisit:* if an authored move ever needs two different-length windows starting on
      the same frame, lift the constraint (then `MoveTick` does need the list shape).
 
-2. **Scope: engine capability + synthetic test only; no real-move enrichment.**
+2. **Scope: engine capability + synthetic test only; no authored-move enrichment.**
    - *Why:* the approved plan separates the gate (A2) from move authoring (C) and
      n-air's late-hit enrichment (D). Council (REQ/plan rung-1) confirmed
      engine+synthetic-test is the complete, single deliverable.
@@ -74,7 +74,7 @@ Each entry: what was decided, why, and how to undo/revisit.
 3. **Positions approximated (no skeleton), same convention as jab/d-tilt.**
    - Along the forward arm at dy 28; mid box at the #64 reach dx 46; fist (id0,
      r21) outermost → dx 57/46/37. Documented in the move's code comment.
-4. **First real consumer of the A1 Sakurai gate** — f-tilt uses `angle=361`, no
+4. **First live consumer of the A1 Sakurai gate** — f-tilt uses `angle=361`, no
    literal placeholder (unlike n-air's 45). End-to-end validation that #203 works.
 
 ---
@@ -84,7 +84,7 @@ Each entry: what was decided, why, and how to undo/revisit.
 1. **Rejected the web-search summary; read the rukaidata move page instead.**
    - *Why:* the search summary returned implausible u-tilt values (15-16 damage,
      259° angle) — a retrieval-trust red flag (a u-tilt is a ~8% poke). Fetching
-     the actual `AttackHi3` page gave the believable set used: damage 8, angle 96,
+     the `AttackHi3` page itself gave the believable set used: damage 8, angle 96,
      BKB 26, KBG 125/122/120, sizes 2.73/3.52/4.69. *Lesson:* verify search
      summaries of datamined values against the primary page before authoring.
 2. **Per-box KBG recorded faithfully (125/122/120), not averaged.**
@@ -100,10 +100,10 @@ Each entry: what was decided, why, and how to undo/revisit.
 
 ## C1 — Nalio f-air (#208, PM3.6 Mario AttackAirF) — first A2 consumer
 
-1. **Authored as a real two-window move (early hit → meteor), not clean-only.**
+1. **Authored as a full two-window move (early hit → meteor), not clean-only.**
    - *Why:* unlike n-air (#136, authored clean-only because A2 didn't exist), the
      #204 gate now exists, so f-air uses it: early window [16,17] angle 60, late
-     window [18,22] angle 280. This is the first real consumer of A2.
+     window [18,22] angle 280. This is the first live consumer of A2.
 2. **Meteor uses literal angle 280 (no A1 sentinel).**
    - 280° resolves down-and-forward via the existing launch code (`vel.y = -sin280
      > 0` = downward). Only 361 needs the A1 path; 280 is a normal angle.
@@ -143,7 +143,7 @@ Each entry: what was decided, why, and how to undo/revisit.
      ends at the interruptible point. rukaidata also lists a 34-frame total duration;
      used IASA as the move's pycats total.
 3. **BKB 0 recorded faithfully** — u-air's knockback is pure KBG (juggle tool), so
-   base_knockback is genuinely 0, not a placeholder.
+   base_knockback is 0 by design, not a placeholder.
 
 ---
 
@@ -194,14 +194,14 @@ Each entry: what was decided, why, and how to undo/revisit.
    - rukaidata lists 4 phase-1 / 2 phase-2 boxes at one spot with descending WDSK.
      pycats picks the FIRST overlapping box (priority), so only the priority box
      ever connects — the rest are redundant under first-box-wins. One box per phase.
-2. **rehit_rate=4 is a playtest starting point.** The real per-hitbox rehit cadence
+2. **rehit_rate=4 is a playtest starting point.** The exact per-hitbox rehit cadence
    isn't in the basic frame-data table; picked 4 and flagged it ⚠, like the
    crouch/prone/Sakurai tuning values. In-game cadence/feel is a playtest follow-up.
 3. **Two windows + rehit + WDSK compose cleanly.** #204 gives the 3→2 damage phases
    ([7,15] and [16,27]), #213 loops within each (each spawned Attack carries the
    move-level rehit_rate), #211 makes every hit a set-knockback launch (BKB 0).
 4. **In-game caveat (documented, not blocking):** WDSK launches each loop hit, which
-   could knock a victim out of the drill before the next loop — real PM tunes this
+   could knock a victim out of the drill before the next loop — PM tunes this
    to keep them in. That's an in-game tuning matter; the data + structure are
    faithful and the regression tests pin them. Playtest follow-up if it feels off.
 5. **Positions approximated below the body** (downward drill, large dy), no skeleton.

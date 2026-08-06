@@ -14,8 +14,9 @@ pycats is a **personal learning project**, so its goals are shaped by that:
   down in [docs/project-m-parity.md](./docs/project-m-parity.md).
 - **Deterministic and headless-first.** The simulation is frame-counted, RNG-free at
   its core, and runs without a display, so recorded "golden" snapshots reproduce a
-  fight exactly and act as the regression oracle. This constraint is load-bearing —
-  see the determinism/headless contract in [CONTEXT.md](./CONTEXT.md).
+  fight exactly and act as the regression oracle. The whole golden-oracle contract
+  depends on this constraint — see the determinism/headless contract in
+  [CONTEXT.md](./CONTEXT.md).
 - **Local, keyboard, two players.** Two humans on one keyboard, or a human against a
   computer-controlled cat (see [Play against the computer](#play-against-the-computer)).
 
@@ -155,7 +156,7 @@ make format                        # apply ruff formatting (write-twin of lint's
 
 The lint hook is ruff-only so it stays fast; `pytest` remains the on-demand source of
 truth (there is no CI gate). Legacy debug scripts that once masqueraded as tests now
-live in `scripts/`, so a bare `pytest` collects only real assert-based tests.
+live in `scripts/`, so a bare `pytest` collects only assert-based tests.
 
 The whole tree (`pycats/` **and** `tests/`) is ruff-formatted and the close-gate checks
 both (#910). The one-time reflow of `tests/` is a mechanical commit listed in

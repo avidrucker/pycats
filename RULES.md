@@ -13,14 +13,14 @@
 ## Labels & priority
 
 - **`severity:*` is for DEFECTS ONLY** (bugs). It describes the *impact of a
-  defect*: `high` = data corruption / broken output / blocking; `medium` = real,
+  defect*: `high` = data corruption / broken output / blocking; `medium` = a
   visible defect; `low` = cosmetic or latent.
 - **Features / enhancements do NOT get a `severity:*` label.** They carry
   `enhancement` and rank *below* triaged bugs in the work queue — this is
   intentional: fix what's broken before adding more. To pull a specific feature
   forward, **assign it directly** — the ranked queue is advisory and the human
   orchestrator overrides it.
-- **`blocked`** encodes real dependencies (e.g. a feature gated on a
+- **`blocked`** encodes hard dependencies (e.g. a feature gated on a
   prerequisite). Prefer it over faking severity to express ordering.
 - The label taxonomy is a **shared cross-project convention** created by
   `scripts/create-standard-labels.sh`. Don't invent project-local severity
@@ -40,7 +40,7 @@
 
   **One area per issue:** if it spans two, pick the dominant one (the orchestrator
   uses the *first-listed*) and **make a suggestion of how to effectively split the
-  ticket** if it genuinely needs two lanes. **Why:** `/fruit-agent-orchestrate`
+  ticket** if it truly needs two lanes. **Why:** `/fruit-agent-orchestrate`
   partitions the backlog into per-agent lanes by `area:*` (at most one cluster per
   agent), so an unlabelled ticket lands in the wildcard pool and weakens the
   same-file collision guard. (Reproducible label *creation*: `avidrucker/pmtools#69`.)
@@ -144,7 +144,7 @@
   clauses from the #535/#536 misnumbering (errors db 51), ratified in **#541**:
   **(A) Verify before you state.** Never tell the human — or write into any doc,
   commit, or comment — a ticket's **number or title** until it's confirmed from a
-  real lookup: the `pmtools file` (→ `gh issue create`) return URL *for that specific
+  confirmed lookup: the `pmtools file` (→ `gh issue create`) return URL *for that specific
   create*, or `gh issue view <N>`. Never infer a number from filing order or from a
   batched command's stdout ordering.
   **(B) Mint IDs/refs sequentially, never concurrently.** Never run **ID/ref-minting
@@ -166,7 +166,7 @@
   asking: **using** a declared dep (`pygame-ce`, `pytest`, `statecharts-py`), and
   **suggesting/explaining** a library — the gate is on installing, not discussing.
   **Why:** a new dep is supply-chain + reproducibility surface, and "it's
-  dev-only/harmless" is how silent installs get normalized. pycats is stdlib-only by
+  dev-only/harmless" is how unreviewed installs get normalized. pycats is stdlib-only by
   design (`settings.py`, "no new dependency, per #94").
 
 ## Fixing bugs
@@ -205,15 +205,15 @@
   render-parity oracle test, and prefer this to regenerating or hand-editing goldens to chase
   a diff — regenerate only once every remaining diff is explained. See
   `docs/learnings/today-i-learned-2026-07-01-dragonfruit.md`.
-- **AI / behavioral integration tests must (a) drive the REAL loop and (b) be
+- **AI / behavioral integration tests must (a) drive the LIVE loop and (b) be
   discriminating.** A controller test that calls `decide()` on a stub can pass while the live
   loop **drops** the input — the #248/#370 "emit-but-don't-convert" gotcha — so drive the
-  actual `run_battle` loop, not just the policy. And a real-loop test that *also passes with
+  `run_battle` loop itself, not just the policy. And a live-loop test that *also passes with
   the feature turned off* is not testing the feature: **revert-check the integration test**
   (mutate the feature off, confirm the test goes red), exactly as for a unit test (see *Fixing
   bugs* → "able to fail"). Both halves bit in one session — a melee-poke test the ordinary
   attack already satisfied (fixed with a below-the-lip foe, `dy > 60`; #413) and a recovery
-  `y`-comparison silently broken by a KO→respawn to `y = -1000` (switched to asserting the
+  `y`-comparison broken with no test failure by a KO→respawn to `y = -1000` (switched to asserting the
   input is emitted in-loop; #409). See
   `docs/learnings/today-i-learned-2026-07-01-dragonfruit.md`.
 
@@ -269,8 +269,8 @@
 
 - **Point at named landmarks, not raw line numbers.** When an *authored* reference — a
   ticket, issue comment, review, commit message, or doc — points at a location, use a
-  **stable landmark**. Line numbers drift the moment a file changes and then silently
-  misdirect the next reader to the wrong (or deleted) line; a landmark is greppable and
+  **stable landmark**. Line numbers drift the moment a file changes and then
+  misdirect the next reader to the wrong (or deleted) line with no warning; a landmark is greppable and
   self-correcting.
   - **Code** → the **function / method / class name** + the **file path**
     (`build_stage()` in `pycats/sim/runner.py`), or the bare **symbol** when there's no
@@ -324,7 +324,7 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
 - **Game-feel alone is not a basis.** A round number, a mid-band guess, or bare "it feels
   better" is **not** sufficient — such a change is declined and closed **`wont-do` /
   `vapid`** (precedent: **#489**, a `DOUBLE_TAP_WINDOW` bump that rested on a feel-pick
-  after **#407** found PM has no faithful number to copy). A genuinely un-pinned value
+  after **#407** found PM has no faithful number to copy). A truly un-pinned value
   **stays at its current number**, carrying its `⚠`/GUESS marker, until basis (1) or (2) exists.
 - **Picking a surrogate is a decision, not a DEV edit.** When no faithful value exists,
   *choosing* one is a `decision:` ticket (e.g. **#491**); the ratified choice then becomes
@@ -358,8 +358,8 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
      `combat/provenance.py`, ADR-0003). A decision-grounded claim must carry a **"not canon"** tag.
 - **No authority in hand → don't assert from a proxy.** Emit an **evidence-deviation
   notice** and get consent (interactive), or **withhold + log** the claim as a grounding
-  debt (autonomous / fleet). A `GUESS`/unsourced value is a debt to drive to zero, never a
-  silent assertion. The **`grounded-claim`** skill runs this reflex; **#575** is the
+  debt (autonomous / fleet). A `GUESS`/unsourced value is a debt to drive to zero, never an
+  unflagged assertion. The **`grounded-claim`** skill runs this reflex; **#575** is the
   detective backstop. (Protocol: `docs/superpowers/specs/2026-07-05-grounded-claim-protocol-design.md`;
   origin #571 / #611 / #620.)
 - **Cite primary sources for parity/mechanics claims** (the PM instance of the reflex above).
@@ -369,7 +369,7 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
   Smashboards). **Label inference as inference** — never issue a **"refuted"/"confirmed"**
   verdict from a chain of reasoning over secondary facts; scope the verdict to what a primary
   quote supports and record the rest as a flagged **`gap`**. Flag Melee/Brawl/Smash-4/Ultimate
-  values so they are **never silently attributed to PM**. (Origin: #520 → correction #537,
+  values so they are **never attributed to PM unlabeled**. (Origin: #520 → correction #537,
   reframe #527, audit #536; ratified **#562**.)
 - **The verify-claims ledger lives outside the repo.** The claims ledger (`PYC-*` IDs,
   per-area subtrees, generated `INDEX.md`) was relocated to the sibling
@@ -384,10 +384,10 @@ Working-discipline lessons distilled from session retrospectives (TILs), codifie
 they outlive the session that surfaced them.
 
 - **Calibrate before executing a planned sweep.** Before trusting a multi-module plan's
-  ordering, recon the *actual* current state — a module the plan lists may already be
-  factored. Report an already-clean module as an explicit **finding**, not a silent skip,
+  ordering, recon the *current* state on disk — a module the plan lists may already be
+  factored. Report an already-clean module as an explicit **finding**, not an unreported skip,
   so the plan's premise is corrected rather than quietly diverged from. (From the #410
-  magic-number audit: combat/systems were already factored via ADR-0003; the real debt lived
+  magic-number audit: combat/systems were already factored via ADR-0003; the debt lived
   in render/UI.)
 - **An identity refactor needs a proof, and the proof needs an able-to-fail check.** A
   "behaviour-unchanged" refactor must be backed by evidence that behaviour did not change —
@@ -480,10 +480,10 @@ Study tree do not inherit this rule.
   `EnterWorktree` tool with the worktree path.** `claim` runs `git worktree add` (an
   external command): it creates the worktree directory on disk but does **not** change
   the session's working directory, so the shell stays pinned to the main checkout.
-  Leaving it there forces a `cd <worktree>` prefix on every command and hides the real
-  cwd from the human — the footgun behind editing or running against `main` instead of
+  Leaving it there forces a `cd <worktree>` prefix on every command and hides the working
+  directory from the human — the footgun behind editing or running against `main` instead of
   the worktree (#763; error rows id=150 wrong-checkout, id=158 wrong run-command).
-  `EnterWorktree` with the claimed path changes cwd for real: bare commands run in the
+  `EnterWorktree` with the claimed path changes cwd for the session: bare commands run in the
   worktree, `CLAUDE.md`/memory reload for that directory, `pwd` is accurate, and the
   #769 run/sim `cd` becomes implicit. Do this before the suite run above so pytest
   imports the worktree's package. (Return to main at close time — see "Closing work".)
@@ -535,7 +535,7 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    `pmtools close <N>` from the main checkout.** Because you entered the worktree at
    claim time (see "Claiming work"), the session is now *inside* the worktree — call
    the `ExitWorktree` tool with `action: keep` to move it back to the main checkout
-   first. Use **`keep`**, never `remove`: `pmtools close` owns the actual teardown, so
+   first. Use **`keep`**, never `remove`: `pmtools close` owns the teardown, so
    your job is only to leave the directory, not delete it. Then run `close` from the
    main repo root — it resolves the worktree + branch from the issue number
    (pmtools#104, `008cb2a`), so it must run from main, **not** from inside the worktree
@@ -576,8 +576,8 @@ close`). The go-ahead permits the *push route*, **not** skipping the gate: the c
 still ships with the suite green and the pre-close error self-audit done, and a
 hand-close should still clean up its `refs/claims/issue-N` (via `pmtools release` or
 by deleting the ref). Absent an explicit in-session go-ahead, always route through the
-tool. (Basis: error id=74 — an agent refused a direct commit+push and invented a PR
-flow; #600.)
+tool. (Basis: error id=74 — an agent refused a direct commit+push and invented a
+review-gated merge flow this repo doesn't have; #600.)
 
 **pycats specifics (differences from lccjs):**
 
