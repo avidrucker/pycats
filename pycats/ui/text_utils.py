@@ -26,6 +26,13 @@ class TextRenderer:
         # Cache fonts to avoid recreating them
         self.font_cache = {}
 
+        # Resolve each named font to a file path ONCE (#1264 — B1). _get_font builds
+        # every new size with Font(path, size) instead of taking the SysFont/match_font
+        # fontconfig miss path per size — that miss path hard-hangs on an on-screen
+        # display (#375) and a font_scale change mints many new sizes at once. Keyed by
+        # font_name; value is the resolved path or None (name doesn't resolve).
+        self._font_path_cache = {}
+
         # Cache composed mixed-text surfaces so static menu/HUD text is rasterised
         # once per (text, size, colour) instead of glyph-by-glyph every frame (#372
         # — the per-frame per-glyph render storm hard-hung the menus on a real
@@ -244,10 +251,31 @@ class TextRenderer:
             self.font_cache[key] = font
         return font
 
+    def _resolve_font_path(self, font_name):
+        """Resolve `font_name` to a font-file path ONCE, memoised (#1264 — B1).
+
+        `pygame.font.match_font` is a fontconfig lookup; before #1264 `_get_font` took
+        it (via SysFont) on every new size, so a font_scale change bursts hundreds of
+        lookups and hard-hangs on an on-screen display (#375). Resolving once per name and
+        building each size from the path removes that per-size miss path. Returns the
+        path, or None when the name doesn't resolve (caller falls back to the default
+        font)."""
+        if font_name not in self._font_path_cache:
+            try:
+                self._font_path_cache[font_name] = pygame.font.match_font(font_name)
+            except Exception:
+                self._font_path_cache[font_name] = None
+        return self._font_path_cache[font_name]
+
     def _get_font(self, font_name, size):
         """Get a font from cache or create it. The authored size resolves through
         the live global font_scale (#345) — the single UI-font chokepoint; standard
-        scale is the identity, so the default render is byte-identical."""
+        scale is the identity, so the default render is byte-identical.
+
+        A named font is built with Font(path, size) from a path resolved once per name
+        (#1264), not SysFont(name, size) per size — pixel-identical (SysFont with no
+        bold/italic IS Font(match_font(name), size)) but with no per-size fontconfig
+        miss path."""
         size = runtime_settings.scaled_font_size(size)
         cache_key = (font_name, size)
         if cache_key not in self.font_cache:
@@ -256,21 +284,12 @@ class TextRenderer:
                     # Use default font
                     self.font_cache[cache_key] = pygame.font.Font(None, size)
                 else:
-                    # Try SysFont first
-                    try:
-                        self.font_cache[cache_key] = pygame.font.SysFont(font_name, size)
-                        ### print(f"Successfully loaded font: {font_name} at size {size}")
-                    except Exception:
-                        ### print(f"SysFont failed for {font_name}: {e}")
-                        # Try finding font file path
-                        font_path = pygame.font.match_font(font_name)
-                        if font_path:
-                            self.font_cache[cache_key] = pygame.font.Font(font_path, size)
-                            ### print(f"Successfully loaded font from path: {font_path} at size {size}")
-                        else:
-                            # Fall back to default font
-                            ### print(f"Could not load font {font_name}, using default")
-                            self.font_cache[cache_key] = pygame.font.Font(None, size)
+                    font_path = self._resolve_font_path(font_name)
+                    if font_path:
+                        self.font_cache[cache_key] = pygame.font.Font(font_path, size)
+                    else:
+                        # Name doesn't resolve to a path — fall back to default font
+                        self.font_cache[cache_key] = pygame.font.Font(None, size)
             except Exception:
                 ### print(f"Error creating font {font_name}: {e}, using default")
                 self.font_cache[cache_key] = pygame.font.Font(None, size)
