@@ -140,6 +140,8 @@
   to rule, or further `research`); those cite the findings doc as their source and are
   filed **one at a time** per *Lazy decomposition* and the sequential-minting rule
   below. Filing follow-ups is optional; the findings doc (A) is not.
+  **(C) The findings doc carries the provenance header.** Every findings doc opens with
+  the agent / authored-date / ticket header — see *Authoring docs*.
 - **Verify a ticket's identity before stating it; mint IDs/refs one at a time.** Two
   clauses from the #535/#536 misnumbering (errors db 51), ratified in **#541**:
   **(A) Verify before you state.** Never tell the human — or write into any doc,
@@ -276,7 +278,8 @@
     enclosing definition (`LEDGE_GETUP_FRAMES` in `pycats/config/physics.py`) — never
     `runner.py:73` / `config.py:142`.
   - **Markdown docs** → the **section heading** (under `## Filing work` in RULES.md) —
-    never `RULES.md:47`.
+    never `RULES.md:47`. (An authored doc also carries a provenance header — see
+    *Authoring docs*.)
 - A line number **may** ride along as a secondary, clearly-as-of hint (`~L73 at time of
   writing`), but never stand alone as the reference.
 - **Carve-outs** — these don't rot, so a line number is fine: a **commit-pinned
@@ -284,6 +287,29 @@
   commit, not the moving branch), and **quoted tool output** (stack traces, `pytest` /
   `ruff` output, diffs) keeps its own line numbers. The rule governs the refs you *write*,
   not machine output you paste.
+
+## Authoring docs
+
+- **Every authored doc carries a provenance header at the top.** Any prose deliverable
+  an agent writes — a `docs/research/*` findings doc, a spec, an ADR, a catalog, any
+  standalone markdown produced as a ticket's artifact — opens with a one-line header,
+  directly under the H1 title, naming **three** things:
+  1. **Agent** — the authoring agent's fruit name (`FIG`, `CHERRY`, …).
+  2. **Authored** — the absolute date `YYYY-MM-DD` the doc was written (never "today" /
+     a relative date — matches the repo's absolute-date convention).
+  3. **Ticket** — the issue the doc was produced for (`#N`).
+- **Recommended format** — a blockquote line immediately below the H1, so headers are
+  uniform and greppable:
+  > `> **Agent:** FIG · **Authored:** 2026-08-07 · **Ticket:** #1298`
+- **Why:** without the header, *who wrote a doc, when, and for which ticket* is not
+  recoverable from the doc itself — you have to reverse it out of `git blame` + the
+  filename. The header makes provenance self-contained and `grep`-able (`grep -rl
+  '**Agent:**' docs/`).
+- Related doc rules point at each other: the **findings-doc requirement** (under
+  *Filing work* — every `research` ticket produces ≥1 findings doc) says a doc **must
+  exist**; this rule says **how it's stamped**; **Referencing code & docs** says how to
+  **point at** one (section heading, not a line number). Not in scope here: back-filling
+  headers onto existing docs, or enforcing the header via tooling — file those separately.
 
 ## PM-parity markers (`⚠` / `🔬` / `❓`)
 

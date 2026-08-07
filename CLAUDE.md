@@ -109,3 +109,9 @@ Critical rules:
   code and a **section heading** for markdown; line numbers drift and misdirect. A line
   number may ride along as a secondary as-of hint; commit-pinned permalinks and quoted
   tool output are exempt. See [RULES.md](./RULES.md) → "Referencing code & docs".
+- **Every authored doc carries a provenance header** — any prose deliverable an agent
+  writes (research/findings/spec/ADR/catalog) opens, directly under its H1, with a
+  one-line header naming the **agent** (fruit name), the **authored date** (absolute
+  `YYYY-MM-DD`), and the **ticket** (`#N`). Recommended:
+  `> **Agent:** FIG · **Authored:** 2026-08-07 · **Ticket:** #NNNN`.
+  See [RULES.md](./RULES.md) → "Authoring docs".
