@@ -25,8 +25,8 @@ import sys
 
 import pygame  # type: ignore
 
-from .shell.app import App
-from .storage import runtime_settings, settings
+from .shell.app import P1_KEYS, P2_KEYS, App
+from .storage import keybind_store, runtime_settings, settings
 
 
 def parse_args(argv):
@@ -64,10 +64,21 @@ def main():
     # Seed the live present-layer settings (#121) so the render path reads the saved HUD
     # toggles immediately; the Options sub-menu mutates this live.
     runtime_settings.seed(prefs)
+    # Restore the implicit "last used" keybindings (#1306, ruling C on #1305) onto the
+    # shared P1/P2 keymaps before App wires them into the battle + Options screens, so a
+    # rebind from a prior session survives a restart. Missing/invalid slot -> factory
+    # defaults (keybind_store.load_last_used). Loaded here, not in App, for the same
+    # reason as settings.load: App construction does zero file I/O (#707 Q2).
+    keybind_store.load_last_used(P1_KEYS, P2_KEYS)
 
     app = App(prefs=prefs, speed=args.speed)
     while app.running:
         app.step()
+
+    # Persist the bindings the player is quitting with as the "last used" slot (#1306).
+    # On-exit realizes the "last used" semantic exactly — whatever the live keymaps hold
+    # at quit (a rebind, a reset, or a loaded named scheme) is what next launch restores.
+    keybind_store.save_last_used(P1_KEYS, P2_KEYS)
 
     pygame.quit()
     sys.exit()
