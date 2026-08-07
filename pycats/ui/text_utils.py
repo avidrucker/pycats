@@ -48,9 +48,12 @@ class TextRenderer:
         # re-rasterised HUD/status/lives/damage/FPS via font.render() every frame
         # (#1247 measured 12.8 calls/frame); cache the surface per (text, size,
         # colour) so an unchanged string reuses it. simple_cache_misses is the guard.
-        self._simple_surface_cache = {}
+        # OrderedDict for LRU eviction (#1287), mirroring the mixed cache above: at
+        # cap, evict the least-recently-used entry instead of a wholesale clear that
+        # drops still-visible HUD keys with the cold dynamic churn (a periodic hitch).
+        self._simple_surface_cache = OrderedDict()
         self.simple_cache_misses = 0
-        self._SIMPLE_CACHE_CAP = 1024  # soft cap; clear if dynamic text grows it
+        self._SIMPLE_CACHE_CAP = 1024  # cap; LRU-evict oldest when dynamic text grows it
 
         # Run diagnostic test if requested
         if run_diagnostics:
@@ -531,8 +534,12 @@ class TextRenderer:
             self.simple_cache_misses += 1
             rendered_text = self._get_font(None, size).render(fallback_text, True, color)
             if len(self._simple_surface_cache) >= self._SIMPLE_CACHE_CAP:
-                self._simple_surface_cache.clear()  # bound growth from dynamic HUD text
+                # LRU-evict the oldest (#1287) — move_to_end on hit keeps live keys
+                # off the oldest slot, so a still-visible string survives the cap.
+                self._simple_surface_cache.popitem(last=False)
             self._simple_surface_cache[key] = rendered_text
+        else:
+            self._simple_surface_cache.move_to_end(key)  # mark most-recently-used (LRU)
 
         if center:
             rect = rendered_text.get_rect(center=position)

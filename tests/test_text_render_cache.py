@@ -180,6 +180,38 @@ def test_simple_repeat_call_does_not_recall_font_render(monkeypatch):
     assert counting.render_calls == 1  # rasterised once across two identical calls
 
 
+def test_simple_cache_lru_keeps_still_visible_key_at_cap():
+    """At cap, a still-visible (re-accessed) key survives eviction (#1287).
+
+    Mirrors the #1267 mixed-cache guard onto _simple_surface_cache. The old code
+    did a wholesale `clear()` at cap, dropping a live HUD key (Lives / damage /
+    pause hint) alongside the cold dynamic churn — the same periodic recompose
+    hitch #1267 removed from the mixed cache. LRU eviction (evict oldest, move-to-
+    end on access) must keep the still-visible key. Able to fail: under wholesale-
+    clear the final live render is a second miss.
+    """
+    tr = _tr()
+    tr._SIMPLE_CACHE_CAP = 8
+    s = pygame.Surface((300, 60))
+
+    def render(txt):
+        tr.render_text_simple(txt, 24, (255, 255, 255), s, (10, 10))
+
+    live = "Lives: 3"
+    render(live)  # the still-visible key
+    for i in range(7):  # fill the cache to exactly cap (1 live + 7 dynamic = 8)
+        render(f"FPS: {i}")
+    render(live)  # re-access the live key — LRU marks it most-recently-used
+    misses_before = tr.simple_cache_misses
+
+    render("FPS: 99")  # new key at cap → triggers eviction (evict oldest, not wholesale)
+    render(live)  # still-visible key must still be cached → a HIT
+
+    # Only "FPS: 99" composed; the live key survived eviction. Under wholesale-clear
+    # the live render would be a second miss (== misses_before + 2).
+    assert tr.simple_cache_misses == misses_before + 1
+
+
 def test_simple_cached_output_is_byte_identical_to_direct_render():
     # ASCII-only strings → fallback_text == text, so the reference is a bare
     # font.render(); proves the cached blit matches an uncached one pixel-for-pixel.
