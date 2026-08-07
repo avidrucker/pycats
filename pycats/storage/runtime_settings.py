@@ -14,6 +14,13 @@ from . import settings
 
 _state = settings.defaults()
 
+# Process-wide dev-mode gate (#1312, ruling A1 on #1297). Deliberately NOT part of
+# `_state`: dev_mode is a per-launch flag sourced from the --dev CLI arg / PYCATS_DEV
+# env (game.main), never a persisted preference, so seed() must not touch it. One owner
+# every dev-gated surface reads via dev_mode() (later #1311 slices: char-select, HUD,
+# overlays, F1 screen). Default off — the shipping/default launch is unchanged.
+_dev_mode = False
+
 
 def seed(prefs=None):
     """Replace the live state from `prefs` (or settings.load() if omitted).
@@ -39,6 +46,21 @@ def get(key):
 def set(key, value):
     """Update the live value for `key` (does not persist — caller saves)."""
     _state[key] = value
+
+
+def set_dev_mode(value):
+    """Set the process-wide dev-mode gate (#1312). Called once at boot (game.main) from
+    the resolved --dev / PYCATS_DEV state; not persisted. Idempotent — pass a bool."""
+    global _dev_mode
+    _dev_mode = bool(value)
+
+
+def dev_mode():
+    """Live process-wide dev-mode flag (#1312, ruling A1 on #1297). False in the default
+    launch; True when started with --dev or a truthy PYCATS_DEV. The single owner every
+    dev-gated surface reads. This slice ships only the flag — no consumer flips behaviour
+    on it yet (char-select, dev HUD, overlay gating, F1 screen are later #1311 slices)."""
+    return _dev_mode
 
 
 def show_status_timer_bars():

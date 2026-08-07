@@ -21,6 +21,7 @@ collaborators live on `App` (#707, C3 — see pycats/shell/app.py).
 """
 
 import argparse
+import os
 import sys
 
 import pygame  # type: ignore
@@ -35,7 +36,11 @@ def parse_args(argv):
     `--speed` sets a present-rate slow-motion factor (#932): 1.0 = real time (default),
     0.5 = half speed, 0.25 = quarter speed. It paces only how long each already-computed
     frame is DISPLAYED (App.step → tick_fps) — never the sim — mirroring the sim-side
-    `watch.py --demo-speed` (#351). The in-app Options picker is the post-v1 sibling (#933)."""
+    `watch.py --demo-speed` (#351). The in-app Options picker is the post-v1 sibling (#933).
+
+    `--dev` requests dev mode (#1312, ruling A1 on #1297): main() resolves it (with the
+    PYCATS_DEV env var) into the process-wide runtime_settings.dev_mode gate. Default off;
+    this slice only sets the flag — no surface changes behaviour on it yet."""
     ap = argparse.ArgumentParser(prog="pycats.game", description="Run the interactive game.")
     ap.add_argument(
         "--speed",
@@ -44,7 +49,22 @@ def parse_args(argv):
         help="present-rate speed factor (1.0 real time, 0.5 half, 0.25 quarter); "
         "presentation-only, the sim is unchanged.",
     )
+    ap.add_argument(
+        "--dev",
+        action="store_true",
+        default=False,
+        help="launch in dev mode (sets runtime_settings.dev_mode); also settable via the "
+        "PYCATS_DEV env var. Enables dev surfaces as later slices land (#1311).",
+    )
     return ap.parse_args(argv)
+
+
+def resolve_dev_mode(args):
+    """Whether dev mode is on for this launch: the `--dev` CLI flag OR a truthy `PYCATS_DEV`
+    env var (#1312). Env truthiness mirrors dev_log.enabled() (#587). The third ruled door,
+    the in-game F1 debug screen, is a later #1311 slice — this resolves only the two
+    boot-time doors. Pure apart from the env read, so it's unit-testable."""
+    return bool(args.dev) or bool(os.environ.get("PYCATS_DEV"))
 
 
 def main():
@@ -64,6 +84,12 @@ def main():
     # Seed the live present-layer settings (#121) so the render path reads the saved HUD
     # toggles immediately; the Options sub-menu mutates this live.
     runtime_settings.seed(prefs)
+    # Resolve the process-wide dev-mode gate (#1312, ruling A1 on #1297) from the --dev
+    # flag / PYCATS_DEV env and set it as the one owner every dev-gated surface reads.
+    # Set after seed() because dev_mode is a launch flag, not a persisted pref — seed()
+    # replaces the pref state but never touches dev_mode. No consumer flips behaviour on
+    # it yet; later #1311 slices (char-select, HUD, overlays, F1 screen) read it.
+    runtime_settings.set_dev_mode(resolve_dev_mode(args))
     # Restore the implicit "last used" keybindings (#1306, ruling C on #1305) onto the
     # shared P1/P2 keymaps before App wires them into the battle + Options screens, so a
     # rebind from a prior session survives a restart. Missing/invalid slot -> factory
