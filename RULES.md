@@ -55,7 +55,7 @@
 - **When to apply — at file/claim time, going forward.** When you file or claim a
   ticket, tag it `parent` if it has sub-issues, `child` if it has a parent, both if
   it's mid-tree. **Why:** GitHub's native sub-issue links (`parent:` / `sub-issues:`)
-  don't surface in the issue **list** view, so while working a child you can't
+  don't surface in the issue **list** view (as of GitHub's 2026 UI), so while working a child you can't
   glance-see it's a slice of a bigger tracker, or that a parent has siblings you should
   finish/close alongside it. The label makes the tree visible in the list.
 - **Backfill of already-open tickets is a one-time sweep, tracked separately** — this
@@ -184,8 +184,8 @@
   uncommitted fix along with the mutation — a footgun that has recurred repeatedly.
   Mutating via Edit keeps the undo symmetric so `git checkout` never enters the loop;
   see `docs/research/2026-07-20-revert-check-footgun-findings.md` (#791). A test that
-  has never been red proves nothing (it may assert the wrong thing or never reach the
-  branch). See `docs/learnings/today-i-learned-2026-06-23-dragonfruit.md` §1 & §4.
+  has never been red proves nothing (it may assert the wrong thing, never reach the intended
+  branch, nor whether a given fix is even guarded against regressions). See `docs/learnings/today-i-learned-2026-06-23-dragonfruit.md` §1 & §4.
 - **Already-fixed / non-reproducing bug?** If a reported bug does not reproduce on
   current `main`, the deliverable is still the *missing* regression test (find the
   commit that fixed it, add the can-fail guard), not a no-op close. Surface the
@@ -208,10 +208,9 @@
 - **AI / behavioral integration tests must (a) drive the LIVE loop and (b) be
   discriminating.** A controller test that calls `decide()` on a stub can pass while the live
   loop **drops** the input — the #248/#370 "emit-but-don't-convert" gotcha — so drive the
-  `run_battle` loop itself, not just the policy. And a live-loop test that *also passes with
-  the feature turned off* is not testing the feature: **revert-check the integration test**
-  (mutate the feature off, confirm the test goes red), exactly as for a unit test (see *Fixing
-  bugs* → "able to fail"). Both halves bit in one session — a melee-poke test the ordinary
+  `run_battle` loop itself, not just the policy. And revert-check it exactly as a unit test
+  (see *Fixing bugs* → "able to fail"): a live-loop test that *also passes with the feature
+  turned off* isn't testing the feature. Both halves bit in one session — a melee-poke test the ordinary
   attack already satisfied (fixed with a below-the-lip foe, `dy > 60`; #413) and a recovery
   `y`-comparison broken with no test failure by a KO→respawn to `y = -1000` (switched to asserting the
   input is emitted in-loop; #409). See
@@ -389,9 +388,9 @@ they outlive the session that surfaced them.
   so the plan's premise is corrected rather than quietly diverged from. (From the #410
   magic-number audit: combat/systems were already factored via ADR-0003; the debt lived
   in render/UI.)
-- **An identity refactor needs a proof, and the proof needs an able-to-fail check.** A
-  "behaviour-unchanged" refactor must be backed by evidence that behaviour did not change —
-  and that evidence must be shown to *fail* when behaviour does. Where goldens are thin (e.g.
+- **An identity refactor needs an able-to-fail proof** (see *Fixing bugs*). A
+  "behaviour-unchanged" refactor must be backed by evidence that behaviour did not change.
+  Where goldens are thin (e.g.
   `screen_parity` is an FSM state-trace, not pixels), use a **before/after render-hash across
   the affected states**, and confirm the harness reds by flipping one constant before
   trusting a green. (Same able-to-fail discipline as *Fixing bugs* above; precedents #420 /
@@ -415,40 +414,24 @@ Study tree do not inherit this rule.
 - **When it applies:** the change is runnable/observable. A pure-internal refactor
   with full test coverage and no behaviour change doesn't strictly need it, though a
   run command is still welcome.
-- **Full paths, not `python -m pycats.game` alone.** Worktrees have no `.venv`, so
-  the interpreter is **always** the main repo's `.venv` — but the **working directory
-  selects the code**: under `-m`, cwd is `sys.path[0]`, so `-m pycats.game` imports
-  the `pycats/` package from whatever directory you `cd` into. Present it as a
-  `REPO=` / `PY=` variable block (one assignment per line), not an opaque one-liner.
-  - **Merged change (default):** run from the main checkout.
-
-        REPO=/abs/path/to/pycats                   # the main checkout
-        PY="$REPO/.venv/bin/python"                # ALWAYS the main repo's venv
-        cd "$REPO" && "$PY" -m pycats.game
-  - **Unmerged change (still on your claimed worktree branch):** `cd` into the
-    **worktree**, not the main checkout — otherwise `-m pycats.game` imports `main`'s
-    package and the reviewer sees the OLD, pre-change behavior. **Don't hand-assemble
-    the `WT=` path** — that is exactly the recurring mistake (a `WT` pointing at main
-    launches the pre-change build). Instead generate the block with the helper, which
-    resolves an issue number / branch name / worktree path to the exact worktree and
-    fails loudly if none matches (never falling back to main):
+- **Use `make run-cmd`, don't hand-assemble paths.** The interpreter is **always** the
+  main repo's `.venv` (worktrees have none), but the **working directory selects the code**:
+  under `-m`, cwd is `sys.path[0]`, so `-m pycats.game` imports `pycats/` from whatever
+  directory you `cd` into. Hand-typing a `WT=` path is the recurring mistake — a `WT`
+  pointing at `main` launches the pre-change build and the reviewer sees the OLD behavior.
+  Generate the command instead; it resolves an issue number / branch name / worktree path to
+  the right worktree and fails loudly if none matches (never falling back to `main`):
 
         make run-cmd WHAT=<issue|branch|worktree-path>   # e.g. WHAT=859
         # prints:  cd '<resolved-worktree>' && make run
 
-    `make run` already resolves the main repo's venv from a worktree cwd
-    (`VENV := $(GIT_COMMON)/../.venv/bin`), so `cd <worktree> && make run` needs no
-    hand-typed `PY=`/`WT=` at all — that is why it is the mistake-proof default.
-    (`scripts/run_cmd.py <what>` is the same generator if you want it without `make`.)
+  `make run` resolves the main repo's venv from a worktree cwd
+  (`VENV := $(GIT_COMMON)/../.venv/bin`), so no hand-typed `PY=`/`WT=` is needed.
+  (`scripts/run_cmd.py <what>` is the same generator without `make`.)
+  - **What it expands to** (moving parts — interpreter stays the main venv, only cwd changes):
 
-    The raw block below is what that expands to — kept only as the explanation of the
-    moving parts, no longer the recipe to type by hand: the interpreter stays the main
-    repo's venv (the worktree has none); only the cwd changes.
-
-        REPO=/abs/path/to/pycats
-        PY="$REPO/.venv/bin/python"                # ALWAYS the main repo's venv
-        WT="$REPO/.claude/worktrees/wt-<fruit>-<proj>-<N>"   # the UNMERGED change lives here
-        cd "$WT" && "$PY" -m pycats.game
+        REPO=/abs/path/to/pycats; PY="$REPO/.venv/bin/python"   # ALWAYS the main repo's venv
+        cd <REPO (merged) | worktree (unmerged)> && "$PY" -m pycats.game
 
 - **Pick the command that shows the change:** the live game (`-m pycats.game`), a
   replay/match (`watch.py`, `watch.py --match`), or a recorded video
