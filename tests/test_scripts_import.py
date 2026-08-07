@@ -21,6 +21,7 @@ the call into `main()`, not to skip the script here.
 """
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -38,10 +39,20 @@ _SCRIPTS = _SCRIPTS_DIR + _ROOT_SCRIPTS
 
 
 def _import_by_path(path: Path):
-    """Import `path` as an isolated module (not registered in sys.modules) and
-    return it. Raises whatever the module's top-level code raises."""
+    """Import `path` and return it. Raises whatever the module's top-level code raises.
+
+    The module IS registered in ``sys.modules`` before ``exec_module`` (#1259): a
+    ``@dataclass`` with a string ``InitVar``/``ClassVar`` annotation resolves the type by
+    ``sys.modules.get(cls.__module__)`` at class-creation time, which returns ``None`` — and
+    raises ``AttributeError`` — for a module that was exec'd but never registered. Without
+    the registration, ``scripts/compare_representative_frames.py`` (a frozen dataclass) only
+    imported here because a neighbor test (``test_compare_representative_frames.py``) had
+    already put it in ``sys.modules`` — an isolation false-green the per-file sweep
+    (``make test-isolated``) reddens. ``path.stem`` matches the ``spec_from_file_location``
+    name, so the dataclass's ``__module__`` and the registry key agree."""
     spec = importlib.util.spec_from_file_location(path.stem, path)
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[path.stem] = mod
     spec.loader.exec_module(mod)
     return mod
 

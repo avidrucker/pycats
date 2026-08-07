@@ -10,11 +10,13 @@ RUFF := $(VENV)/ruff
 HEADLESS := SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy PYTHONPATH=.
 ARGS ?=
 
-.PHONY: help test run run-cmd lint format bench profile goldens census
+.PHONY: help test test-isolated test-shuffle run run-cmd lint format bench profile goldens census
 
 help:
 	@echo "pycats — command SSOT (see #724). Targets:"
 	@echo "  make test [ARGS=\"-k expr\"]   full suite headless (subset via ARGS)"
+	@echo "  make test-isolated            per-file isolation sweep: each test_*.py alone in its own process (#1259)"
+	@echo "  make test-shuffle             whole suite under pytest-randomly seeds — catches inter-test order-dependence (#1259)"
 	@echo "  make run                      play: python -m pycats.game"
 	@echo "  make run-cmd WHAT=<issue|branch|path>  print the run block for an UNMERGED worktree change (#859)"
 	@echo "  make lint                     ruff format --check + check on pycats/ (close-gate)"
@@ -34,6 +36,18 @@ help:
 # full suite headless; subset via ARGS="-k expr"
 test:
 	$(HEADLESS) "$(PY)" -m pytest -q $(ARGS)
+
+# per-file isolation sweep — each tests/test_*.py alone in its own process (#1259).
+# Surfaces a test that only greens because a neighbor set up global state; exit-5
+# ("no tests collected") is filtered, not treated as a failure.
+test-isolated:
+	$(HEADLESS) "$(PY)" scripts/isolation_sweep.py $(ARGS)
+
+# shuffle-order run — the whole suite under pytest-randomly seeds (#1258 dep, #1259).
+# Catches inter-test order-dependence rather than single-file isolation. Seeds via
+# ARGS="--seed 42 --seed 7"; defaults to 0 and 1259.
+test-shuffle:
+	$(HEADLESS) "$(PY)" scripts/isolation_sweep.py --shuffle $(ARGS)
 
 # play the game
 run:

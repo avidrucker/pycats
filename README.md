@@ -96,7 +96,8 @@ run-to-run; pass an int for a reproducible one.
 ## For contributors
 
 Common dev commands run through the root `Makefile` — the command SSOT (#724). The targets
-are `make test`, `run`, `run-cmd`, `lint`, `format`, `bench`, and `goldens`; each resolves
+are `make test`, `test-isolated`, `test-shuffle`, `run`, `run-cmd`, `lint`, `format`,
+`bench`, and `goldens`; each resolves
 the project `.venv` automatically (including from a `git` worktree, which has no local
 `.venv`). `make help` prints the authoritative one-line list — the Make targets, the
 sim/run invocations, and every root/`scripts/` entry point with its one-line purpose (the
@@ -112,6 +113,20 @@ make test                          # full suite, headless
 make test ARGS="-m 'not slow'"     # skip the benchmark tests
 make test ARGS="-k dodge"          # run a subset (any pytest args pass through)
 ```
+
+Two isolation guards catch a test that only greens because a neighbor in the same process
+set up global state — green in the full suite, red when run alone or in a different order
+(the #1244 audit found one such leak by hand; these turn that into a standing check, #1259):
+
+```bash
+make test-isolated                 # run each tests/test_*.py alone in its own process
+make test-shuffle                  # run the whole suite under pytest-randomly seeds (order-dependence)
+make test-shuffle ARGS="--seed 42" # a specific shuffle seed (repeatable; defaults 0 and 1259)
+```
+
+`make test-isolated` reports any file that reds alone (pytest exit-5 "no tests collected"
+is filtered, not a failure); `make test-shuffle` reds if a randomized order breaks the suite.
+Neither runs in the default `make test` — they are on-demand hardening sweeps.
 
 A green run with some skips is expected. Golden snapshots live in `tests/golden/`;
 regenerate them intentionally with `make goldens` (it sets `PYCATS_UPDATE_GOLDENS=1` for the
