@@ -30,7 +30,7 @@ imageio. No new dependency.
 Usage:
     scripts/compare_representative_frames.py \
         --gif  repros/rep-frame-compare/gifs/output_Mario_AttackHi4.gif \
-        --datamine tests/fixtures/datamine/mario_attackhi4_hitboxes.json \
+        --datamine pycats/combat/datamine_data/mario_attackhi4_hitboxes.json \
         --move "u-smash (AttackHi4)" \
         --out  repros/rep-frame-compare/compare_AttackHi4.gif
 """

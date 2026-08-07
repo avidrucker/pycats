@@ -18,8 +18,7 @@ way `propose` does. These tests pin, off the committed fixture (no gated env):
 
 from __future__ import annotations
 
-from pathlib import Path
-
+from pycats.combat import datamine_data
 from pycats.combat.data import Circle, FieldStatus, Status
 from pycats.combat.datamine_hitboxes import load_hitbox_table
 from pycats.combat.datamine_proposer import (
@@ -30,7 +29,7 @@ from pycats.combat.datamine_proposer import (
 )
 from pycats.combat.units import u
 
-FIXTURE = Path(__file__).parent / "fixtures" / "datamine" / "mario_attack11_hitboxes.json"
+FIXTURE = datamine_data.table_path("mario_attack11_hitboxes.json")
 
 
 def _table():

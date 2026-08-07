@@ -19,13 +19,14 @@ from pathlib import Path
 
 import pytest
 
+from pycats.combat import datamine_data
 from pycats.combat.datamine_hitboxes import (
     SCHEMA,
     HitboxTable,
     load_hitbox_table,
 )
 
-FIXTURE = Path(__file__).parent / "fixtures" / "datamine" / "mario_attack11_hitboxes.json"
+FIXTURE = datamine_data.table_path("mario_attack11_hitboxes.json")
 
 
 @pytest.fixture

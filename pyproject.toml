@@ -28,3 +28,9 @@ dependencies = [
 # repo-root helper modules (bench.py, watch.py, ...) are not packaged.
 [tool.setuptools.packages.find]
 include = ["pycats*"]
+
+# Ship the canonical datamine hitbox-table dumps (relocated from tests/fixtures/ in
+# #1314) as package data so the pycats-editor datamine-truth review layer can read
+# them via the editable-install import seam. Guard: tests/test_1314_datamine_data_packaged.py.
+[tool.setuptools.package-data]
+"pycats.combat.datamine_data" = ["*.json"]

@@ -51,7 +51,7 @@ gated (a human runs it); there is no numeric pass/fail.
 Usage:
     scripts/datamine_hitbox_qa_viewer.py \
         pycats/characters/data/nalio.json \
-        tests/fixtures/datamine/mario_attackhi4_hitboxes.json \
+        pycats/combat/datamine_data/mario_attackhi4_hitboxes.json \
         usmash
 
 Keys:  <- / -> step (pauses) · space play/pause · d datamine · a authored · b body ·

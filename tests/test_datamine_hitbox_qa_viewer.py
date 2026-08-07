@@ -36,10 +36,12 @@ from pathlib import Path
 
 import pytest
 
+from pycats.combat import datamine_data
+
 REPO = Path(__file__).resolve().parents[1]
 VIEWER = REPO / "scripts" / "datamine_hitbox_qa_viewer.py"
 NALIO = REPO / "pycats" / "characters" / "data" / "nalio.json"
-FIXTURES = REPO / "tests" / "fixtures" / "datamine"
+FIXTURES = datamine_data.data_dir()
 
 # datamine fixture <-> nalio move key — the four moves #1278 verified the mapping across.
 CASES = {

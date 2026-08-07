@@ -23,11 +23,12 @@ from pathlib import Path
 
 import pytest
 
+from pycats.combat import datamine_data
 from pycats.combat.datamine_hitboxes import load_hitbox_table
 from pycats.combat.datamine_proposer import RepresentativeFrame, _active_boxes, propose
 
 _REPO = Path(__file__).resolve().parent.parent
-_FIXTURES = _REPO / "tests" / "fixtures" / "datamine"
+_FIXTURES = datamine_data.data_dir()
 
 
 def _load_tool():

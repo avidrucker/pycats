@@ -117,7 +117,7 @@ untracked `examples/` and runs it:
 
 ```bash
 # writes JSON to <out.json> (relative to repo root); omit the 3rd arg to print to stdout
-scripts/datamine_hitboxes.sh Mario Attack11 tests/fixtures/datamine/mario_attack11_hitboxes.json
+scripts/datamine_hitboxes.sh Mario Attack11 pycats/combat/datamine_data/mario_attack11_hitboxes.json
 ```
 
 It sidesteps the `serde_json` gate above by **hand-formatting** the JSON (each field is a `u8`/`f32`/
@@ -130,8 +130,8 @@ box is `{hitbox_id, size, pos: [x, y, z], damage, angle}`. `pos` is the **resolv
 transform + `Circle` synthesis are **out of scope** here (that is I.1b) — this slice extracts only.
 
 The pycats consumer is `pycats.combat.datamine_hitboxes.load_hitbox_table(path)`; a committed one-move
-fixture (`tests/fixtures/datamine/mario_attack11_hitboxes.json`) keeps downstream slices + tests
-runnable without this gated env.
+table (`pycats/combat/datamine_data/mario_attack11_hitboxes.json`, packaged since #1314) keeps
+downstream slices + tests runnable without this gated env.
 
 ## Refs
 

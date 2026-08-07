@@ -15,7 +15,7 @@
 # Subaction names (recipe §2): Jab=Attack11, U-tilt=AttackHi3, F-smash release=AttackS4S, ...
 #
 # Usage:  scripts/datamine_hitboxes.sh <Fighter> <Subaction> [out.json]
-#   scripts/datamine_hitboxes.sh Mario Attack11 tests/fixtures/datamine/mario_attack11_hitboxes.json
+#   scripts/datamine_hitboxes.sh Mario Attack11 pycats/combat/datamine_data/mario_attack11_hitboxes.json
 #   scripts/datamine_hitboxes.sh Mario Attack11            # no out => print to stdout
 set -euo pipefail
 . ~/.cargo/env
