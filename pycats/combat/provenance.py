@@ -215,6 +215,13 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     ),
     "HITLAG_BASE": Provenance(5, "frames", "SmashWiki:Hitlag (Brawl onward) — base term", "FOUND", 138),
     "HITLAG_CAP": Provenance(30, "frames", "SmashWiki:Hitlag — Brawl-onward cap (Melee was 20)", "FOUND", 138),
+    "HITLAG_VICTIM_CROUCH_CAP": Provenance(
+        20,
+        "frames",
+        "SmashWiki:Hitlag — victim cap when crouch-cancelling (Brawl-onward; 30 otherwise). #825 findings",
+        "FOUND",
+        1230,
+    ),
     # ---- knockback decay model (#44 from #43) ----
     "KNOCKBACK_LAUNCH_FACTOR": Provenance(
         0.085,
@@ -482,6 +489,7 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "HITLAG_DAMAGE_FACTOR",
         "HITLAG_BASE",
         "HITLAG_CAP",
+        "HITLAG_VICTIM_CROUCH_CAP",
         "KNOCKBACK_LAUNCH_FACTOR",
         "KNOCKBACK_DECAY",
         "SAKURAI_ANGLE_CODE",

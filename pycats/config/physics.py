@@ -224,6 +224,11 @@ HITSTUN_FLOOR = 1  # minimum hitstun frames for any clean hit. ⚠🔬 tuning, n
 HITLAG_DAMAGE_FACTOR = 0.3846154
 HITLAG_BASE = 5
 HITLAG_CAP = 30  # Brawl-onward cap (Melee was 20).
+# Victim-only hitlag cap when crouch-cancelling (#1230, C-slice of #1228). SmashWiki
+# Hitlag: "30 frames (20 for the victim if crouch cancelling) from Brawl onward". The
+# attacker keeps HITLAG_CAP (30); only the crouch-cancelling victim's freeze is capped
+# here. See docs/research/2026-08-04-full-hitlag-model-findings.md (the cap table).
+HITLAG_VICTIM_CROUCH_CAP = 20
 # Knockback decay model (#44, from #43 research). A hit sets an initial launch
 # velocity of KB * KNOCKBACK_LAUNCH_FACTOR (px/frame), which then bleeds off by
 # KNOCKBACK_DECAY (px/frame) every frame during hitstun — mirroring Smash's
@@ -249,9 +254,10 @@ SAKURAI_GROUNDED_HIGH_KB = 88.0
 # Crouch-cancel (#135). A hit taken while in the `crouch` state (#124) has its
 # knockback magnitude scaled by this factor before launch + hitstun are derived
 # — Melee/PM's signature defensive use of crouch. 0.67x is the Melee/PM value;
-# ⚠ tuning starting point. Hitlag scaling (the "c" multiplier in knockback.py)
-# stays deferred this slice — knockback only. A single global factor for v1;
-# per-character/game tweaks can move it into FighterData later.
+# ⚠ tuning starting point. This same 0.67 factor is the hitlag "c" multiplier: as
+# of #1230 it also scales the crouch-cancelling VICTIM's hitlag (attacker unchanged),
+# floored + capped at HITLAG_VICTIM_CROUCH_CAP in knockback.hitlag_frames. A single
+# global factor for v1; per-character/game tweaks can move it into FighterData later.
 CROUCH_CANCEL_FACTOR = 0.67
 # Auto landing-velocity knockdown (#145). A fighter that lands while still in
 # hitstun (tumble) and hits the ground at/above KNOCKDOWN_VY_THRESHOLD downward

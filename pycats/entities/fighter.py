@@ -414,7 +414,8 @@ class Fighter:
             # Crouch-cancel (#135): a hit taken while in the `crouch` state (#124)
             # has its knockback scaled down by CROUCH_CANCEL_FACTOR (0.67x, PM)
             # before launch + hitstun are derived — crouch as a defensive tool.
-            # Hitlag scaling (the "c" multiplier) stays deferred this slice.
+            # The matching hitlag "c" scaling (victim-only ×0.67 + cap-20) lands on
+            # the victim's hitlag_timer below (#1230), not on knockback.
             if is_crouching:
                 kb *= CROUCH_CANCEL_FACTOR
             self.hurt_timer = hitstun_frames(kb)
@@ -444,9 +445,13 @@ class Fighter:
             # early while hitlag_timer > 0, so position is held, hitstun does not
             # tick, and the attacker's move clock pauses. Knockback then proceeds
             # intact. Percent (above) already applied, so damage shows at impact.
-            hl = hitlag_frames(atk.damage, getattr(atk, "hitlag_mult", 1.0))
-            self.hitlag_timer = hl
-            atk.owner.fighter.hitlag_timer = hl
+            # Attacker vs victim hitlag are split (#1230): the crouch-cancelling
+            # victim's freeze takes the canon "c" scaling (×0.67, cap 20); the
+            # attacker's is unscaled (c=1, cap 30). Off crouch-cancel both calls
+            # return the same value, so this is byte-identical to the shared `hl`.
+            h = getattr(atk, "hitlag_mult", 1.0)
+            self.hitlag_timer = hitlag_frames(atk.damage, h, crouch_cancel=is_crouching)
+            atk.owner.fighter.hitlag_timer = hitlag_frames(atk.damage, h)
 
     def receive_hit_invincible(self, atk) -> None:
         """INVINCIBLE defender (#802, decision #784): the hit CONNECTS but this

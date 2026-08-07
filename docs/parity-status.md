@@ -5,7 +5,7 @@
 > `pycats/combat/provenance.py` registry (#233): 🟢 FOUND · 🟡 TUNED/GUESS · 🔴 DIVERGENCE.
 > Legend: [docs/parity-labeling-legend.md](parity-labeling-legend.md) (#452). Design: #448 (Pass C of #451).
 
-**Summary:** 30 🟢 / 35 🟡 / 4 🔴  (69 constants)
+**Summary:** 31 🟢 / 35 🟡 / 4 🔴  (70 constants)
 
 ## 🟢 Sourced — FOUND (PM-valid, checked)
 
@@ -18,6 +18,7 @@
 | `HITLAG_BASE` | 5 | FOUND | 🟢 | SmashWiki:Hitlag (Brawl onward) — base term |
 | `HITLAG_CAP` | 30 | FOUND | 🟢 | SmashWiki:Hitlag — Brawl-onward cap (Melee was 20) |
 | `HITLAG_DAMAGE_FACTOR` | 0.3846154 | FOUND | 🟢 | SmashWiki:Hitlag (Brawl onward) — d-term coefficient 1/2.6 |
+| `HITLAG_VICTIM_CROUCH_CAP` | 20 | FOUND | 🟢 | SmashWiki:Hitlag — victim cap when crouch-cancelling (Brawl-onward; 30 otherwise). #825 findings |
 | `HITSTUN_MULTIPLIER` | 0.4 | FOUND | 🟢 | SmashWiki:Hitstun — 0.4 frames per unit of knockback (Melee; Brawl same; PM = Melee model) |
 | `JOSTLE_PUSH_UNITS` | 0.3 | FOUND | 🟢 | meleelight @27af171 src/physics/physics.js `pos.x += sign(...) * -0.3` (SECONDARY proxy; retail PM 3.6 magnitude UNDOCUMENTED) |
 | `JOSTLE_TRIGGER_UNITS` | 6.5 | FOUND | 🟢 | meleelight @27af171 src/physics/physics.js `if (diff < 6.5 && diff > 0)` (SECONDARY proxy; retail PM 3.6 magnitude UNDOCUMENTED) |

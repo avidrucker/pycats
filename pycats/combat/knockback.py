@@ -8,9 +8,11 @@ Source: https://www.ssbwiki.com/Knockback  (see spec #39 §2).
 import math
 
 from ..config import (
+    CROUCH_CANCEL_FACTOR,
     HITLAG_BASE,
     HITLAG_CAP,
     HITLAG_DAMAGE_FACTOR,
+    HITLAG_VICTIM_CROUCH_CAP,
     HITSTUN_FLOOR,
     HITSTUN_MULTIPLIER,
     KB_GROWTH_BASE,
@@ -71,21 +73,26 @@ def hitstun_frames(kb: float) -> int:
     return max(HITSTUN_FLOOR, math.floor(kb * HITSTUN_MULTIPLIER))
 
 
-def hitlag_frames(damage: float, hitlag_mult: float = 1.0) -> int:
+def hitlag_frames(damage: float, hitlag_mult: float = 1.0, crouch_cancel: bool = False) -> int:
     """Whole frames of hitlag (freeze frames) for a clean hit of `damage`%.
 
     Canon nested double-floor (SmashWiki Hitlag, Brawl/PM 3.6):
-        H = min(HITLAG_CAP, ⌊⌊(damage·HITLAG_DAMAGE_FACTOR + HITLAG_BASE)·h·e⌋·c⌋)
-    This slice (#1229) wires `h` — the per-hitbox `hitlag_mult` authored on every
-    `Hitbox` (ADR-0018/#1161) and previously inert. The electric `e` (×1.5) and
-    crouch-cancel `c` multipliers stay 1; the inner/outer floors are already split
-    here so the later #1228 C-slice (victim `c` + cap-20) and the deferred `e`-slice
-    drop in without restructuring this seam. Byte-identical to the old single-floor
-    form while every authored move has `hitlag_mult = 1.0`. Both attacker and
-    defender freeze for this many frames before the knockback slide.
+        H = min(cap, ⌊⌊(damage·HITLAG_DAMAGE_FACTOR + HITLAG_BASE)·h·e⌋·c⌋)
+    `h` (#1229) is the per-hitbox `hitlag_mult` authored on every `Hitbox`
+    (ADR-0018/#1161); the electric `e` (×1.5) stays 1 in the inner floor.
+
+    `crouch_cancel` (#1230, C-slice of #1228) wires the outer-floor `c` term: a
+    crouch-cancelling VICTIM freezes for ⌊inner·CROUCH_CANCEL_FACTOR⌋ (0.67×,
+    victim-only per canon) capped at HITLAG_VICTIM_CROUCH_CAP (20). The attacker
+    always passes `crouch_cancel=False` → `c = 1`, HITLAG_CAP (30). Byte-identical
+    to the old single-floor form while `hitlag_mult = 1.0` and nobody crouch-cancels
+    (the inner/outer floors collapse onto the already-integer base). Both attacker
+    and defender freeze before the knockback slide.
     """
-    inner = math.floor((damage * HITLAG_DAMAGE_FACTOR + HITLAG_BASE) * hitlag_mult)  # ·e (=1)
-    return min(HITLAG_CAP, math.floor(inner))  # ·c (=1)
+    inner = math.floor((damage * HITLAG_DAMAGE_FACTOR + HITLAG_BASE) * hitlag_mult)  # ·h·e (e=1)
+    if crouch_cancel:
+        return min(HITLAG_VICTIM_CROUCH_CAP, math.floor(inner * CROUCH_CANCEL_FACTOR))  # ·c, victim cap 20
+    return min(HITLAG_CAP, math.floor(inner))  # ·c (=1), cap 30
 
 
 def decay_velocity(vx: float, decay: float) -> float:
