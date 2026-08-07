@@ -38,7 +38,7 @@ def _expected(fps, is_fullscreen, frame_input):
         )
     text_utils.render_text(
         s,
-        f"FPS: {fps:.2f}",
+        f"FPS: {fps:.1f}",
         (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
         24,
         WHITE,
@@ -93,7 +93,7 @@ def _fs_hud_ref(fps, fs_text):
     s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     text_utils.render_text(
         s,
-        f"FPS: {fps:.2f}",
+        f"FPS: {fps:.1f}",
         (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
         24,
         WHITE,
@@ -116,6 +116,55 @@ def _fs_hud_ref(fps, fs_text):
             WHITE,
         )
     return s
+
+
+def _chrome_fps_literal(fps_literal):
+    """The windowed, no-input shell chrome (matching _actual(fps, False, None)) but
+    with the FPS readout painted from a caller-supplied literal string instead of a
+    formatted float — lets a test pin the exact FPS wording draw_shell_chrome emits."""
+    pygame.init()
+    s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    text_utils.render_text(
+        s,
+        fps_literal,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+        24,
+        WHITE,
+        right_align=True,
+    )
+    fs_text = "F11: Toggle Fullscreen | F10: Window Size"
+    text_utils.render_text(
+        s,
+        fs_text,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+        24,
+        WHITE,
+        right_align=True,
+    )
+    if runtime_settings.show_controls() and runtime_settings.esc_hold_to_navigate():
+        text_utils.render_text(
+            s,
+            "Hold ESC to leave match",
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+            24,
+            WHITE,
+        )
+    return s
+
+
+def test_shell_chrome_fps_renders_one_decimal():
+    """#1295: the FPS HUD readout renders at ONE decimal place (`x.x`), not two, to cut
+    per-frame text-cache key churn (#1288 epic / #1289 census / #1291 design). Renders
+    draw_shell_chrome at fps=59.97 and proves, at the pixel level, that its FPS region
+    reads "FPS: 60.0" (1 dp, rounded) and NOT "FPS: 59.97" (the old 2-dp form). Able to
+    fail: under the pre-fix `.2f` the source paints "59.97", matching the with-2dp
+    reference and mismatching the 1-dp one, so both assertions flip."""
+    fps = 59.97  # .1f → "60.0"; .2f → "59.97" — the two forms differ, so this discriminates
+    actual = _actual(fps, False, None)  # windowed, no debug-input line
+    one_dp = _chrome_fps_literal("FPS: 60.0")
+    two_dp = _chrome_fps_literal("FPS: 59.97")
+    assert _raw(actual) == _raw(one_dp)
+    assert _raw(actual) != _raw(two_dp)
 
 
 def test_fullscreen_hud_omits_esc_exit_fullscreen_hint():

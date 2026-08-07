@@ -289,7 +289,7 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
         )
     text_utils.render_text(
         surface,
-        f"FPS: {fps:.2f}",
+        f"FPS: {fps:.1f}",
         (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
         HUD_FONT_SIZE,
         WHITE,
