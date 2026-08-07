@@ -5,8 +5,9 @@ Hitlag / freeze frames on clean hits (#38 slice, #138).
 A clean hit freezes BOTH the attacker and the defender for hitlag_frames(damage)
 frames before the knockback slide. SmashWiki Hitlag (Brawl/PM):
     floor((d * 0.3846154 + 5) * h * e) * c, capped at 30
-with h = e = c = 1 in this slice. Position, velocity, move-clock and the hitstun
-timer are all held during the freeze, then resume intact.
+The per-hitbox h (`hitlag_mult`) is wired end-to-end (#1229); e (electric) and c
+(crouch-cancel) remain 1. Position, velocity, move-clock and the hitstun timer are
+all held during the freeze, then resume intact.
 """
 
 import pygame
@@ -43,6 +44,22 @@ def test_hitlag_frames_capped_at_30():
     assert hitlag_frames(1000) == 30, "hitlag caps at 30 frames (Brawl onward)"
 
 
+def test_hitlag_frames_scales_by_hitlag_mult_h():
+    # #1229: the per-hitbox hitlag_mult (h) enters the canon inner floor:
+    #   H = min(30, ⌊⌊(d·0.3846154 + 5)·h·e⌋·c⌋), e = c = 1.
+    # h = 2.0 doubles the pre-cap value, differing from the h = 1 result — the
+    # able-to-fail: with the field inert (old single-floor, h ignored) both calls
+    # returned floor(d·0.3846154 + 5) and this assert failed.
+    assert hitlag_frames(9, 2.0) == 16  # floor((9*0.3846154 + 5)*2) = floor(16.92) = 16
+    assert hitlag_frames(9, 2.0) != hitlag_frames(9), "h must change the result"
+    assert hitlag_frames(9, 1.0) == hitlag_frames(9), "h = 1.0 is byte-identical to the default"
+
+
+def test_hitlag_frames_h_still_capped_at_30():
+    # The cap applies AFTER the h scaling — a large h does not uncap.
+    assert hitlag_frames(100, 2.0) == 30  # floor((100*0.3846154 + 5)*2) = 86 -> min(30, 86)
+
+
 # ---- behaviour ------------------------------------------------------------
 
 
@@ -66,6 +83,30 @@ def test_clean_hit_freezes_both_attacker_and_defender():
     hl = hitlag_frames(12)
     assert defender.fighter.hitlag_timer == hl, "defender should freeze"
     assert attacker.fighter.hitlag_timer == hl, "attacker should freeze too"
+
+
+def test_runtime_wires_authored_hitlag_mult_end_to_end():
+    # #1229: a move authored with hitlag_mult != 1.0 freezes both fighters for the
+    # h-scaled duration — proves the field is no longer inert from Hitbox -> Attack
+    # -> receive_hit -> hitlag_frames. Able-to-fail: before the wiring the Attack
+    # dropped the field and both timers used the h = 1 value.
+    pygame.init()
+    attacker = _mk("P1", 100, True)
+    defender = _mk("P2", 130, False)
+    hb = Hitbox(
+        circle=Circle(dx=20, dy=30, r=14),
+        damage=12,
+        angle=45,
+        base_knockback=30.0,
+        knockback_growth=100.0,
+        hitlag_mult=2.0,
+    )
+    atk = Attack(attacker, hitbox=hb, lifetime=2)
+    defender.fighter.receive_hit(atk)
+    hl = hitlag_frames(12, 2.0)
+    assert hl != hitlag_frames(12), "the h = 2.0 move must not freeze for the h = 1 duration"
+    assert defender.fighter.hitlag_timer == hl
+    assert attacker.fighter.hitlag_timer == hl
 
 
 def test_position_and_hitstun_held_during_freeze_then_resume():

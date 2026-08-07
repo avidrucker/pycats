@@ -223,6 +223,7 @@ def process_hits(players, attacks):
                 atk.base_knockback = hit_box.base_knockback
                 atk.knockback_growth = hit_box.knockback_growth
                 atk.set_knockback = getattr(hit_box, "set_knockback", None)  # WDSK (#211)
+                atk.hitlag_mult = getattr(hit_box, "hitlag_mult", 1.0)  # per-hitbox hitlag h (#1229)
                 if tang is Tangibility.INVINCIBLE:
                     # Register-but-zero (#802/#784; #797 §6): the hit connects — the
                     # attacker freezes — but the invincible defender is "otherwise

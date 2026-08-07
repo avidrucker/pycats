@@ -71,15 +71,21 @@ def hitstun_frames(kb: float) -> int:
     return max(HITSTUN_FLOOR, math.floor(kb * HITSTUN_MULTIPLIER))
 
 
-def hitlag_frames(damage: float) -> int:
+def hitlag_frames(damage: float, hitlag_mult: float = 1.0) -> int:
     """Whole frames of hitlag (freeze frames) for a clean hit of `damage`%.
 
-    SmashWiki Hitlag (Brawl/PM): floor(damage * HITLAG_DAMAGE_FACTOR + HITLAG_BASE),
-    capped at HITLAG_CAP. The per-move (h), electric (e) and crouch-cancel (c)
-    multipliers are 1 in this slice (#138). Both attacker and defender freeze for
-    this many frames before the knockback slide.
+    Canon nested double-floor (SmashWiki Hitlag, Brawl/PM 3.6):
+        H = min(HITLAG_CAP, ⌊⌊(damage·HITLAG_DAMAGE_FACTOR + HITLAG_BASE)·h·e⌋·c⌋)
+    This slice (#1229) wires `h` — the per-hitbox `hitlag_mult` authored on every
+    `Hitbox` (ADR-0018/#1161) and previously inert. The electric `e` (×1.5) and
+    crouch-cancel `c` multipliers stay 1; the inner/outer floors are already split
+    here so the later #1228 C-slice (victim `c` + cap-20) and the deferred `e`-slice
+    drop in without restructuring this seam. Byte-identical to the old single-floor
+    form while every authored move has `hitlag_mult = 1.0`. Both attacker and
+    defender freeze for this many frames before the knockback slide.
     """
-    return min(HITLAG_CAP, math.floor(damage * HITLAG_DAMAGE_FACTOR + HITLAG_BASE))
+    inner = math.floor((damage * HITLAG_DAMAGE_FACTOR + HITLAG_BASE) * hitlag_mult)  # ·e (=1)
+    return min(HITLAG_CAP, math.floor(inner))  # ·c (=1)
 
 
 def decay_velocity(vx: float, decay: float) -> float:

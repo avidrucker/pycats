@@ -391,7 +391,7 @@ class Fighter:
                 # (the #138 deferral). Player.update runs the hitlag freeze first,
                 # then ticks shieldstun — Smash ordering (hitlag, then shieldstun).
                 self.shieldstun_timer = shieldstun_frames(atk.damage)
-                hl = hitlag_frames(atk.damage)
+                hl = hitlag_frames(atk.damage, getattr(atk, "hitlag_mult", 1.0))
                 self.hitlag_timer = hl
                 atk.owner.fighter.hitlag_timer = hl
         #### TODO: elif dodging
@@ -444,7 +444,7 @@ class Fighter:
             # early while hitlag_timer > 0, so position is held, hitstun does not
             # tick, and the attacker's move clock pauses. Knockback then proceeds
             # intact. Percent (above) already applied, so damage shows at impact.
-            hl = hitlag_frames(atk.damage)
+            hl = hitlag_frames(atk.damage, getattr(atk, "hitlag_mult", 1.0))
             self.hitlag_timer = hl
             atk.owner.fighter.hitlag_timer = hl
 
@@ -463,7 +463,7 @@ class Fighter:
         skip in `hit_resolution.process_hits` (pass-through, no attacker hitlag)."""
         # Attacker freezes exactly as on a normal hit; the invincible defender is left
         # untouched — no percent, knockback, hitstun, or hitlag applied to it.
-        atk.owner.fighter.hitlag_timer = hitlag_frames(atk.damage)
+        atk.owner.fighter.hitlag_timer = hitlag_frames(atk.damage, getattr(atk, "hitlag_mult", 1.0))
 
     def _handle_landing(self, was_airborne: bool) -> bool:
         """Resolve a landing. Returns True when the #145 auto-knockdown triggers
