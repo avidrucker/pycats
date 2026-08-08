@@ -27,6 +27,7 @@ import pygame  # type: ignore
 
 from ..config import tick_fps
 from ..core.keymap import Keymap
+from ..entities import fighter  # #1315 throwaway: toggle EXPERIMENTAL_WIDE_BLAST with the camera
 from ..entities.stages import DEFAULT_PLAYER_STAGE
 from ..screens.battle_screen import BattleScreen
 from ..storage import settings
@@ -184,6 +185,14 @@ class App:
                         getattr(self.battle.player2, "face_style", cat_faces.PRIMITIVES)
                     )
                     self.dm.zoom_toast.show("P2 face: " + cat_faces.face_style_label(self.battle.player2.face_style))
+                elif ev.key == pygame.K_k:
+                    # #1315 THROWAWAY: toggle the follow+zoom camera prototype. Flips the
+                    # camera on the battle AND the on-branch wide-blast hack together, so
+                    # a launched fighter has blast-zone room to be followed into. Default
+                    # OFF = today's fixed view + screen-edge KO (byte-for-byte).
+                    self.battle.camera_on = not self.battle.camera_on
+                    fighter.EXPERIMENTAL_WIDE_BLAST = self.battle.camera_on
+                    self.dm.zoom_toast.show("Camera: " + ("ON" if self.battle.camera_on else "OFF"))
 
         # Update screen state manager. `platforms` is threaded so the playing state's
         # engine action owns the per-frame battle.step + winner-set (#246).

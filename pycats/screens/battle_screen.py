@@ -29,6 +29,7 @@ from ..core.physics import resolve_player_push
 from ..entities import Player
 from ..entities.ledge import ledges_from_platforms
 from ..loadout import Selection, Skin, assign_distinct_skins, build_fighter, character_for, starting_lives
+from ..render.camera import Camera  # #1315 throwaway follow+zoom camera prototype
 from ..render_battle import (
     draw_controls,
     draw_hud,
@@ -64,6 +65,11 @@ class BattleScreen:
         # on the press-edge; does not participate in the sim.
         self.p1_history = InputHistory()
         self.p2_history = InputHistory()
+        # #1315 throwaway follow+zoom camera. Default OFF -> render is byte-for-byte
+        # today's fixed view; the toggle key (App: K_k) flips camera_on (and the
+        # on-branch wide-blast hack). Not merged unless the human approves the feel.
+        self.camera = Camera()
+        self.camera_on = False
 
     def create_from_selection(self, p1_char, p2_char, p1_palette=None, p2_palette=None, p1_cards=(), p2_cards=()):
         """Build the two fighters from the selected ARCHETYPES (#268, #127 Part 1):
@@ -194,12 +200,30 @@ class BattleScreen:
                 draw_input_history(surface, self.p1_history, "P1")
                 draw_input_history(surface, self.p2_history, "P2", topright=True)
 
+    def _draw_battle_camera(self, surface, platforms):
+        """#1315 throwaway: the camera-on composite. The WORLD (platforms/fighters/
+        attacks) is drawn through the follow+zoom camera; the HUD + input-history are
+        drawn in SCREEN space afterward so they are not warped by the camera. The
+        hit/hurtbox overlay is skipped here (it draws in world==screen coords and would
+        be mispositioned under the transform; it is a dev-only default-OFF surface)."""
+        self.camera.update(self.players)
+        self.camera.render_world(surface, self.players, platforms, self.attacks)
+        if self.player1 and self.player2:
+            draw_hud(surface, self.player1, "P1")
+            draw_hud(surface, self.player2, "P2", topright=True)
+            if runtime_settings.show_input_history():
+                draw_input_history(surface, self.p1_history, "P1")
+                draw_input_history(surface, self.p2_history, "P2", topright=True)
+
     def render(self, surface, platforms):
         """Render one live battle frame onto `surface` (the playing branch's draw
         block) + the static 'P: Pause Game' battle-HUD hint (#279). The shell chrome
         (FPS/fullscreen/debug text) reads loop globals, not battle state, so it stays
         out of here — game.py calls render_battle.draw_shell_chrome for that."""
-        self._draw_battle(surface, platforms)
+        if self.camera_on:
+            self._draw_battle_camera(surface, platforms)
+        else:
+            self._draw_battle(surface, platforms)
         draw_pause_hint(surface)
 
     def render_paused(self, surface, platforms, pause_menu):

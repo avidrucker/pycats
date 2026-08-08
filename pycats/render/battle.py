@@ -53,16 +53,21 @@ SHIELD_FILL_ALPHA = 100  # alpha of the translucent shield-bubble fill
 _CROUCH_ANIM_RATE = 0.34
 
 
-def render_battle(surface, players, platforms):
+def render_battle(surface, players, platforms, offset=(0, 0)):
     """Draw platforms, alive fighters, and their attacks onto `surface`.
-    Mirrors game.py's playing-branch draw block (no HUD/controls/FPS text)."""
+    Mirrors game.py's playing-branch draw block (no HUD/controls/FPS text).
+
+    `offset` (#1315 throwaway camera) shifts every world draw by (ox, oy) px so the
+    world can be rendered into an oversized surface at a positive base offset. The
+    default (0, 0) is byte-identical to the pre-camera renderer (goldens/parity safe)."""
+    ox, oy = offset
     for pl in platforms:
         # #317/H-b: the platform holds only data (rect + thin); the adapter paints
         # its thickness colour (was Platform.image, an entity-owned Surface). The
         # sim box is a pygame-free FrozenRect (#975); pygame.draw.rect takes an
         # (x, y, w, h) sequence, so hand it the box's tuple form at this boundary.
         r = pl.rect
-        pygame.draw.rect(surface, PLATFORM_THIN if pl.thin else PLATFORM_THICK, (r.x, r.y, r.w, r.h))
+        pygame.draw.rect(surface, PLATFORM_THIN if pl.thin else PLATFORM_THICK, (r.x + ox, r.y + oy, r.w, r.h))
     for p in players:
         if not p.fighter.is_alive:
             continue
@@ -122,27 +127,27 @@ def render_battle(surface, players, platforms):
             blit_y = round(p.rect.bottom - (_BODY_PAD_TOP + stand_h) * s - bob_px)
         else:
             blit_y = p.rect.y - _BODY_PAD_TOP
-        pos = (p.rect.x - _BODY_PAD_X, blit_y)
+        pos = (p.rect.x - _BODY_PAD_X + ox, blit_y + oy)
         surface.blit(ring_layer, pos)  # silhouette ring, behind everything
         # #330: adapter draws the tail; #572: its outline ring takes the slot accent.
         # Drawn between the ring and the body so the tail sits over the body's ring
         # (killing the junction seam) but still behind the body pixels themselves.
-        render_tail(surface, p.tail, tinted(p.char_color, p), slot_accent_color(p))
+        render_tail(surface, p.tail, tinted(p.char_color, p), slot_accent_color(p), offset=offset)
         surface.blit(body_layer, pos)  # body fill + features + name, in front
         if p.fighter.stun_timer > 0:
-            draw_dizzy_stars(surface, p)
+            draw_dizzy_stars(surface, p, offset=offset)
         if p.state == "shield":
             ratio = p.fighter.shield_hp / SHIELD_MAX_HP
             shield_radius = int(MAX_SHIELD_RADIUS * ratio)
             r = max(MIN_SHIELD_RADIUS, shield_radius)
             # #1266: cache the bubble by radius — a steady shield holds one radius
-            surface.blit(_shield_bubble(r), (p.rect.centerx - r, p.rect.centery - r))
+            surface.blit(_shield_bubble(r), (p.rect.centerx - r + ox, p.rect.centery - r + oy))
         # Above-head timer bars (#111 -> #340) — drawn last so they sit above the
         # dizzy stars; the spec list is empty when SHOW_STATUS_TIMER_BARS is off.
-        draw_timer_bars(surface, p, timer_bar_specs(p))
+        draw_timer_bars(surface, p, timer_bar_specs(p), offset=offset)
         # Grabs-left dots (#657) — the ledge anti-plank budget, below the bars (#720
         # stack). Separate pass so it composes with the bars; 0 = nothing drawn.
-        draw_grabs_left_dots(surface, p, grabs_left_dots(p))
+        draw_grabs_left_dots(surface, p, grabs_left_dots(p), offset=offset)
 
 
 # #1266: shield bubbles keyed by radius. A shield holds one radius while its HP is
@@ -210,8 +215,10 @@ def _attack_surface(a):
     return surf
 
 
-def render_attacks(surface, attacks):
+def render_attacks(surface, attacks, offset=(0, 0)):
+    ox, oy = offset
     for a in attacks:
         # blit uses only the dest rect's topleft; a.rect is a pygame-free
         # FrozenRect (#975), so pass its topleft tuple at this render boundary.
-        surface.blit(_attack_surface(a), a.rect.topleft)
+        left, top = a.rect.topleft
+        surface.blit(_attack_surface(a), (left + ox, top + oy))
