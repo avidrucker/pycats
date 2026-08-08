@@ -91,6 +91,14 @@ SLOT_CAPTION_GAP = 10  # gap below a player slot to its "Character · Skin" capt
 START_TITLE_FONT_SIZE = 30
 START_HINT_FONT_SIZE = 22
 
+# Dev-only roster additions (#1292), gated on runtime_settings.dev_mode() (the #1312 gate).
+# The intended-default fixtures exposed for dev testing: `default` (the default.json cat)
+# and `testcat` (the gray placeholder, #591). Absent from the shipping roster, so the
+# non-dev grid stays byte-identical to ARCHETYPE_ROSTER. Order = append after archetypes.
+DEV_ROSTER = ("default", "testcat")
+# Tile / player-slot labels for the dev keys — they have no ARCHETYPE_NAME entry (#1292).
+DEV_KEY_NAMES = {"default": "Default", "testcat": "Test"}
+
 
 class CharacterSelector:
     """Handles character selection screen logic for both players."""
@@ -99,6 +107,12 @@ class CharacterSelector:
         # The roster is the real PM-archetype fighters (#268, #127 Part 1), not the
         # OG colour-skins; each archetype's cosmetic comes from its default palette.
         self.characters = list(ARCHETYPE_ROSTER)
+        # In dev mode (#1292, gate #1312) append the intended-default fixtures so a dev
+        # can pick + play `default` and `testcat`. Read once here — dev_mode is a fixed
+        # launch flag (game.main sets it before this screen is built). Off in the shipping
+        # build → the roster is byte-identical to ARCHETYPE_ROSTER (no player-visible change).
+        if runtime_settings.dev_mode():
+            self.characters += list(DEV_ROSTER)
 
         # Player cursors (grid positions)
         self.p1_cursor = 0  # grid index
@@ -443,6 +457,12 @@ class CharacterSelector:
 
         return can_start
 
+    def _tile_name(self, char_key):
+        """Display name for a roster tile / player-slot caption. Archetypes use
+        ARCHETYPE_NAME; the dev-only fixtures (#1292) have no ARCHETYPE_NAME entry, so they
+        fall back to DEV_KEY_NAMES (then the bare key). Never raises on a dev key."""
+        return ARCHETYPE_NAME.get(char_key) or DEV_KEY_NAMES.get(char_key, char_key)
+
     def _grid_pos_to_screen_pos(self, grid_index):
         """Convert grid index to screen position."""
         col = grid_index % CHAR_SELECT_GRID_COLS
@@ -565,7 +585,7 @@ class CharacterSelector:
             # Draw character name
             text_utils.render_text(
                 screen,
-                ARCHETYPE_NAME[char_key],
+                self._tile_name(char_key),
                 (x + CHAR_SELECT_TILE_SIZE // 2, y + CHAR_SELECT_TILE_SIZE + TILE_NAME_GAP),
                 TILE_NAME_FONT_SIZE,
                 WHITE,
@@ -672,7 +692,7 @@ class CharacterSelector:
                 self._draw_cat_preview(screen, selected, x, y, size, palette_key=palette)
                 pygame.draw.rect(screen, accent, rect, 3)
                 skin = palette_for(palette or selected)["name"]
-                caption, cap_color, tag_color = f"{ARCHETYPE_NAME[selected]} - {skin}", WHITE, accent
+                caption, cap_color, tag_color = f"{self._tile_name(selected)} - {skin}", WHITE, accent
             elif active:
                 # real player, not yet locked in
                 accent = players[slot][3]
