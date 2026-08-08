@@ -1,0 +1,6 @@
+# Revisions to skip in `git blame` — mechanical, whole-file reformats with no
+# authorship meaning. Enable per clone with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# style(tests): normalize the tests/ tree with ruff format (#910)
+9365dfba137f1bb06410076baaed94a121ad7e4d

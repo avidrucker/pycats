@@ -1,0 +1,41 @@
+# ruff configuration for pycats.
+# Decision of record: ADR-0006 (docs/adr/0006-adopt-ruff-lint-format.md).
+# Rule-expansion roadmap: docs/superpowers/plans/2026-07-04-ruff-rule-expansion.md (#505).
+#
+# line-length = 120: chosen 2026-07-04 (#512), relaxed from ruff's default 88 to match
+# the codebase's actual style. Changeable later. Enforced by E501 in the set below (#529).
+line-length = 120
+
+# target-version = py310: declares pycats' Python floor (#524). There is no packaging
+# manifest (run via `-m pycats.game`, no requires-python), so this is the machine-
+# enforceable declaration of the 3.10+ minimum — and it gates which pyupgrade (UP)
+# rewrites ruff emits (e.g. pep604 `X | None`). Human-ratified 2026-07-04 (epic #505).
+target-version = "py310"
+
+[lint]
+# Enforced rule set (the #502 pre-commit hook passes the same list explicitly).
+# Widen incrementally per epic #505, one child at a time:
+#   F     = pyflakes-equivalent (undefined-name / unused-import)
+#   I     = import-sort (#516)
+#   E722  = no bare `except:` (#518)
+#   E702  = no multiple-statements-per-line semicolon (#521)
+#   E402  = imports at top of file (#521)
+#   UP    = pyupgrade: pep604/pep585 syntax modernization, gated by target-version (#524)
+#   E501  = line-too-long, enforcing the line-length = 120 above (#529)
+select = ["F", "I", "E722", "E702", "E402", "UP", "E501"]
+
+[lint.per-file-ignores]
+# These three modules intentionally interleave module-level constants with their
+# imports (a constants-then-imports style, e.g. physics.py's tuning-constant group
+# after the Protocol, player.py's imports after _FSMASH_ANGLE, render_battle's
+# per-section constants). E402 there is by design, not a misplaced import — ignore it
+# per-file rather than scatter inline noqas, while E402 still guards every other file.
+"pycats/core/physics.py" = ["E402"]
+"pycats/entities/player.py" = ["E402"]
+"pycats/render_battle.py" = ["E402"]
+# Deliberate init-before-import (#532): these set os.environ (SDL/config isolation)
+# or run pygame.init() + sys.path.insert() that MUST precede the imports below them,
+# so E402 there is by design, not a misplaced import.
+"tests/test_hold_esc_quit.py" = ["E402"]
+"scripts/comprehensive_test.py" = ["E402"]
+"scripts/run_test.py" = ["E402"]

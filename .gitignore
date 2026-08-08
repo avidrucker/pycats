@@ -1,0 +1,24 @@
+/__pycache__/*
+*.pyc
+pycats.zip
+scratch.py
+.venv/
+.pytest_cache/
+*.egg-info/
+.superpowers/
+media/
+*.mp4
+repros/
+logs/
+frames.log
+.claude/worktrees/
+assignments/
+
+# Archived auto-memories retired from the ~/.claude memory store (#1234 grooming).
+# Kept on disk for recovery, out of git — restore by moving a file back to the memory dir.
+docs/memory_archive/
+
+# verify-claims ledger — a working epistemic record, not a deliverable.
+# What graduates out of it is a committed findings doc or an issue.
+# Relocated out of the repo to the sibling `pycats-claims-data/` (untracked, no git;
+# absolute path in `.claude/ledger.json` `dir`) — #946. Nothing to ignore in-tree now.

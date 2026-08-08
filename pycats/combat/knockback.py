@@ -1,0 +1,109 @@
+"""Authentic Brawl/Project-M knockback + hitstun (pure; no pygame).
+
+KB = (((((p/10) + (p*d/20)) * (200/(w+100)) * 1.4) + 18) * (KBG/100)) + BKB
+where p = target percent AFTER the hit, d = damage, w = weight, BKB/KBG per hitbox.
+Source: https://www.ssbwiki.com/Knockback  (see spec #39 §2).
+"""
+
+import math
+
+from ..config import (
+    CROUCH_CANCEL_FACTOR,
+    HITLAG_BASE,
+    HITLAG_CAP,
+    HITLAG_DAMAGE_FACTOR,
+    HITLAG_VICTIM_CROUCH_CAP,
+    HITSTUN_FLOOR,
+    HITSTUN_MULTIPLIER,
+    KB_GROWTH_BASE,
+    KB_GROWTH_SCALE,
+    KB_KBG_DIVISOR,
+    KB_PERCENT_DAMAGE_DIVISOR,
+    KB_PERCENT_DIVISOR,
+    KB_WEIGHT_NUMERATOR,
+    KB_WEIGHT_OFFSET,
+    SAKURAI_AIRBORNE_DEG,
+    SAKURAI_GROUNDED_HIGH_KB,
+    SAKURAI_GROUNDED_LOW_KB,
+    SAKURAI_GROUNDED_MAX_DEG,
+)
+
+
+def knockback(percent: float, damage: float, weight: int, base_knockback: float, knockback_growth: float) -> float:
+    """Knockback magnitude (Smash units). `percent` is the post-hit percent."""
+    growth = ((percent / KB_PERCENT_DIVISOR) + (percent * damage / KB_PERCENT_DAMAGE_DIVISOR)) * (
+        KB_WEIGHT_NUMERATOR / (weight + KB_WEIGHT_OFFSET)
+    )
+    growth = (growth * KB_GROWTH_SCALE) + KB_GROWTH_BASE
+    return (growth * (knockback_growth / KB_KBG_DIVISOR)) + base_knockback
+
+
+def set_knockback(wdsk: float, weight: int, base_knockback: float, knockback_growth: float) -> float:
+    """Weight-dependent SET knockback (WDSK, #211).
+
+    SmashWiki "Knockback": a set-knockback hit ignores the victim's percent — the
+    damage `d` becomes the WDSK value and the percent `p` is fixed at 10. So it is
+    exactly the normal formula at percent=10 with damage=wdsk; weight + KBG + BKB
+    still apply (hence *weight-dependent*). Pure; no pygame.
+    """
+    return knockback(10.0, wdsk, weight, base_knockback, knockback_growth)
+
+
+def sakurai_angle(kb: float, on_ground: bool) -> float:
+    """Resolve the Sakurai-angle sentinel (361) to launch degrees.
+
+    SmashWiki "Sakurai angle" (Brawl/PM): an airborne victim is launched at a
+    fixed angle; a grounded victim scales LINEARLY from 0° (at/below LOW_KB) up
+    to the max (at/above HIGH_KB) — so weak grounded hits stay flat and don't pop
+    a grounded opponent straight up, while strong hits approach the airborne
+    angle. `kb` is the pycats knockback() magnitude. Pure; no pygame.
+    """
+    if not on_ground:
+        return SAKURAI_AIRBORNE_DEG
+    if kb <= SAKURAI_GROUNDED_LOW_KB:
+        return 0.0
+    if kb >= SAKURAI_GROUNDED_HIGH_KB:
+        return SAKURAI_GROUNDED_MAX_DEG
+    frac = (kb - SAKURAI_GROUNDED_LOW_KB) / (SAKURAI_GROUNDED_HIGH_KB - SAKURAI_GROUNDED_LOW_KB)
+    return SAKURAI_GROUNDED_MAX_DEG * frac
+
+
+def hitstun_frames(kb: float) -> int:
+    """Whole frames of hitstun for a knockback magnitude (floored, min HITSTUN_FLOOR)."""
+    return max(HITSTUN_FLOOR, math.floor(kb * HITSTUN_MULTIPLIER))
+
+
+def hitlag_frames(damage: float, hitlag_mult: float = 1.0, crouch_cancel: bool = False) -> int:
+    """Whole frames of hitlag (freeze frames) for a clean hit of `damage`%.
+
+    Canon nested double-floor (SmashWiki Hitlag, Brawl/PM 3.6):
+        H = min(cap, ⌊⌊(damage·HITLAG_DAMAGE_FACTOR + HITLAG_BASE)·h·e⌋·c⌋)
+    `h` (#1229) is the per-hitbox `hitlag_mult` authored on every `Hitbox`
+    (ADR-0018/#1161); the electric `e` (×1.5) stays 1 in the inner floor.
+
+    `crouch_cancel` (#1230, C-slice of #1228) wires the outer-floor `c` term: a
+    crouch-cancelling VICTIM freezes for ⌊inner·CROUCH_CANCEL_FACTOR⌋ (0.67×,
+    victim-only per canon) capped at HITLAG_VICTIM_CROUCH_CAP (20). The attacker
+    always passes `crouch_cancel=False` → `c = 1`, HITLAG_CAP (30). Byte-identical
+    to the old single-floor form while `hitlag_mult = 1.0` and nobody crouch-cancels
+    (the inner/outer floors collapse onto the already-integer base). Both attacker
+    and defender freeze before the knockback slide.
+    """
+    inner = math.floor((damage * HITLAG_DAMAGE_FACTOR + HITLAG_BASE) * hitlag_mult)  # ·h·e (e=1)
+    if crouch_cancel:
+        return min(HITLAG_VICTIM_CROUCH_CAP, math.floor(inner * CROUCH_CANCEL_FACTOR))  # ·c, victim cap 20
+    return min(HITLAG_CAP, math.floor(inner))  # ·c (=1), cap 30
+
+
+def decay_velocity(vx: float, decay: float) -> float:
+    """Reduce a horizontal launch velocity toward 0 by `decay` per frame.
+
+    Mirrors Smash's per-frame knockback decay (#43): a launched fighter bleeds
+    momentum every frame rather than sliding at constant speed. Never overshoots
+    or flips sign — once it reaches 0 it stays 0.
+    """
+    if vx > 0.0:
+        return max(0.0, vx - decay)
+    if vx < 0.0:
+        return min(0.0, vx + decay)
+    return 0.0

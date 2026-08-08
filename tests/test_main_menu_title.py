@@ -1,0 +1,81 @@
+# tests/test_main_menu_title.py
+"""Regression guard for #17 — the start screen shows the working title 'Cat Fight'.
+
+The game's screen FSM starts in `main_menu` (screen_manager.py), so the first
+screen the player sees is the main menu, and its title IS the start-screen title.
+`MainMenuManager.render` already draws "Cat Fight" (added in e1f2e17); this test
+pins that string so it can't silently regress or get the ticket re-filed.
+
+Able-to-fail: change the title string in main_menu.render and this goes red
+(asserted via revert-check at filing time).
+
+The render path also calls font-dependent helpers (unicode arrows, mixed text,
+SysFont); those are stubbed so the test is fast and order-independent and only
+exercises the title.
+"""
+
+import pygame
+import pytest
+
+from pycats.screens import main_menu
+from pycats.screens.main_menu import MainMenuManager
+
+# Run against a cold render-cache set (incl. _mixed_surface_cache) so this guard
+# exercises the live _compose_mixed path in BOTH isolation and the full suite,
+# rather than false-greening off a neighbour's cached mixed surface (#1256).
+pytestmark = pytest.mark.usefixtures("render_isolation")
+
+
+class _DummyFont:
+    """A stub font covering the full protocol _compose_mixed calls (#1256).
+
+    render_mixed_centered -> _compose_mixed reads get_ascent()/get_height() on the
+    fonts before blitting glyphs; a stub missing either raises AttributeError the
+    moment the mixed cache misses (i.e. always, in isolation). Cover the whole
+    protocol so the stub is order-independent, not just the methods a warm cache
+    happens to skip."""
+
+    def size(self, text):
+        return (10, 10)
+
+    def render(self, *args, **kwargs):
+        return pygame.Surface((1, 1))
+
+    def get_ascent(self):
+        return 10
+
+    def get_height(self):
+        return 10
+
+
+def test_start_screen_renders_cat_fight_title(monkeypatch):
+    simple_calls = []
+
+    # Spy on the title renderer; no-op the other text helpers and SysFont so the
+    # test needs no font init and isolates the title string.
+    monkeypatch.setattr(
+        main_menu.text_renderer,
+        "render_text_simple",
+        lambda text, *a, **k: simple_calls.append(text),
+    )
+    monkeypatch.setattr(main_menu.text_renderer, "render_unicode_char", lambda *a, **k: None)
+    monkeypatch.setattr(main_menu.text_renderer, "render_text_mixed", lambda *a, **k: None)
+    monkeypatch.setattr(pygame.font, "SysFont", lambda *a, **k: _DummyFont())
+
+    # render() does not read the controls, so empty dicts suffice.
+    menu = MainMenuManager({}, {})
+    try:
+        menu.render(pygame.Surface((800, 600)))
+
+        assert "Cat Fight" in simple_calls, (
+            f"start screen must render the working title 'Cat Fight'; render_text_simple got {simple_calls!r}"
+        )
+    finally:
+        # This test injects a fake SysFont (_DummyFont). _get_font / sys_font cache
+        # whatever SysFont returns in the *shared* text_renderer, and that fake object
+        # outlives monkeypatch's SysFont revert (the cache holds the object, not the
+        # patched fn). Flush the shared caches so the fake can't leak into a later
+        # render test's mixed-font path (unicode_font=_DummyFont -> no get_ascent),
+        # keeping this test order-independent as its docstring promises.
+        main_menu.text_renderer.font_cache.clear()
+        main_menu.text_renderer._mixed_surface_cache.clear()

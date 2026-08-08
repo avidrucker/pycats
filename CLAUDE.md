@@ -1,0 +1,124 @@
+# pycats — agent guide
+
+Full conventions: **[RULES.md](./RULES.md)** — read it before filing or labeling work.
+
+## Start here
+
+New to the repo? These are the authoritative homes — link them, don't duplicate them:
+
+- **Commands** (test / run / lint / format / bench) → run `make help`; the
+  [Makefile](./Makefile) is the command SSOT. Use the targets, never a hand-copied
+  command list.
+- **Where is X?** (a mechanic, a value, a landmark) → [`docs/mechanics-index.md`](./docs/mechanics-index.md) — the router.
+- **Conventions** (filing / closing / labeling work) → [RULES.md](./RULES.md).
+- **Run / test / dev setup / layout** → [README.md](./README.md) → *For contributors*.
+- **Project M parity** → [`docs/project-m-parity.md`](./docs/project-m-parity.md) — the parity front door + its doc map.
+
+Critical rules:
+
+- **Work tracking is GitHub issues** (single source of truth), not markdown TODO files.
+- **`severity:*` labels are for DEFECTS (bugs) only.** Features = `enhancement`
+  with no severity; use `blocked` for dependencies. Don't fake severity to express
+  feature priority — assign features directly instead.
+- **A question/suggestion is not authorization to create work** — answer first;
+  file/claim/code only on an explicit go-ahead. See [RULES.md](./RULES.md) → "Filing work".
+- **No unprompted research** — when asked for a narrow action (file/log/label/claim/edit),
+  do exactly that; ask before any unrequested grep/read/issue-list. Resolving the action's
+  minimal required input (incl. reading the file you're about to edit) is fine. See
+  [RULES.md](./RULES.md) → "Filing work".
+- **Installing a new dependency needs explicit human approval** — `pip install` (even
+  into a dev `.venv`), manifests/lockfiles, `npm`, system packages. Using a declared
+  dep is fine; *adding* one (incl. a "harmless" dev tool) is gated — propose, don't
+  install. See [RULES.md](./RULES.md) → "Dependencies".
+- **Repro/spec-first:** if a bug's symptom isn't specific, file a `research` ticket to
+  reproduce/spec it before a DEV ticket.
+- **Every bugfix lands a regression test in the same commit**, and that test must
+  be **able to fail** (red without the fix, green with it — revert-the-fix check).
+  See [RULES.md](./RULES.md) → "Fixing bugs".
+- **Changing a game value needs a basis** — a tuning/balance/config number changes only
+  with a **research/data citation** or a **game-designer decision** (design doc / ratified
+  `decision:` ticket); bare game-feel is declined `wont-do`/`vapid`. Record it as
+  `FOUND`/`TUNED`, not as sourced-when-guessed. See [RULES.md](./RULES.md) → "Changing values".
+- **Read the source before asserting** — ground any PM/canon claim, or an in-repo fact
+  you're recalling rather than reading, in a **verbatim primary quote** or a **provenance
+  record + issue** (body over title, code over memory, registry over prose); no authority →
+  declare it and get consent (or withhold + log), don't assert from a proxy. The
+  `grounded-claim` skill runs this. See [RULES.md](./RULES.md) → "Read the source before asserting".
+- **Research epics:** one umbrella `research` tracker; file child threads one at a
+  time, finishing each before filing the next.
+- **Every `research` ticket produces ≥1 findings doc** (e.g. `docs/research/<topic>-findings.md`)
+  as its closing artifact — a bare comment isn't sufficient; follow-up tickets are optional
+  and filed one-at-a-time downstream of the doc. See [RULES.md](./RULES.md) → "Filing work".
+- **File new issues with `pmtools file`; verify ticket numbers before stating them;
+  mint IDs/refs sequentially** — open issues with `pmtools file` (alias `create`;
+  wraps `gh issue create` behind the area/role/severity gates, `--dry-run` to preview),
+  not bare `gh issue create`; don't tell the human or write a ticket's #/title until
+  confirmed via a `gh` lookup; never run `pmtools file` (issue creation) / `pmtools
+  claim` concurrently (numbers/refs race + swap). See [RULES.md](./RULES.md) → "Filing
+  work".
+- pycats runs **fleet** mode (`.claude/orchestrate.json`); claim work via
+  `pmtools claim <issue> --as <fruit>`.
+- **Every ticket is worked in a claimed worktree + issue branch — no exceptions
+  without an explicit human OK for that ticket.** DEV, RESEARCH, WRITER, ARC,
+  `decision:`, no-code, comment-only — all of them: `pmtools claim` + `EnterWorktree`
+  before any edit/comment/ruling. `git worktree list` is the human's at-a-glance board
+  of who owns what; work on `main` is invisible on it. The type only changes the
+  *close path* (see "Closing work"), never whether you claim. See [RULES.md](./RULES.md)
+  → "Claiming work".
+- **Closing work:** commit with **`Closes #N` in the body**, then close from the
+  **main checkout** with **`cd <main> && pmtools close <N>`** (pmtools#104: `close`
+  resolves the worktree by issue #, so it runs from main and your shell is never
+  stranded). Never `git push` to `main` or `git merge` your branch into `main` by
+  hand — the tool owns the race-safe push + teardown — **unless a human explicitly
+  authorizes a direct merge + push for a specific change in the current session** (then
+  a direct `git merge` + `git push origin main` is permitted; the authorizing human owns
+  the race). That carve-out is **attended, in-session only**; unattended / fleet / close
+  work always routes through the tool. Even when authorized, the change still ships
+  **green (suite passing) with the pre-close error self-audit done** — the go-ahead is
+  for the push route, not for skipping the gate. From main, `close` exits **0**
+  and you comment in place; running it from *inside* the worktree still works but
+  exits 1 (deleted cwd) and strands your shell. No-code (decision/research) tickets
+  close via `gh issue close` + **`pmtools release`**. Before posting the closing
+  comment, **run the pre-close error self-audit** (re-read the session, log any
+  missed rows via `pmtools error log`) and state `error self-audit: N row(s) logged
+  (#…)` or `error self-audit: no loggable errors this session` in the comment — see
+  the **log-error** skill. See [RULES.md](./RULES.md) → "Closing work". And **run the
+  suite right after claiming** (fleet merge race) — see "Claiming work".
+- **Surface the run/sim command for runnable changes.** Any change to the live
+  game / render / input / screens / sim must end the final response with the exact
+  full-path run command — a `REPO=`/`PY=` block pointing at the main repo's venv,
+  ending in `"$PY" -m pycats.game`. **There is no `main.py`** (entry points are
+  `-m pycats.game`, `watch.py`, `bench.py`); never emit `python main.py`.
+  See [RULES.md](./RULES.md) → "Surfacing run/sim commands".
+- **Human eyeball-OK gates closing a player-visible change** — if a change is
+  player-visible (render / UI / HUD / layout / color / animation / screen flow), show
+  it to the human and get an explicit OK **before `pmtools close`, even with a green
+  suite** (a green suite proves pixels are stable, not that they look right). Non-visible
+  changes (logic / tooling / docs, or a byte-identical render-oracle refactor) are
+  exempt. See [RULES.md](./RULES.md) → "Closing work" (step 4).
+<!-- banned-words-ok:start — this rule necessarily names the banned words to define them -->
+- **Banned words in ALL output** (replies, tickets, commits, docs): avoid **crisp**,
+  **honest / honestly / honesty**, **candid / candidly / candor**,
+  **genuine / genuinely / genuineness**, **real**, **actual / actually**, and
+  **substantive** — they read as vague filler / throat-clearing.
+  Also avoid the reflexive phrases **"You're right"** and **"I apologize" / "I'm sorry"** —
+  concede or correct concretely instead ("The probe was the ticket's work, not filing.").
+  Name the concrete quality instead (crisp → specific / precise / clean; honest / candid →
+  plain / direct / accurate / faithful; genuine → specific / concrete / reproducible).
+  Proofread the closing line, where they slip in.
+  Also banned here: **PR / pull request** — this repo has no pull-request workflow
+  (work merges to `main` via `pmtools` direct-push, or an attended in-session `git merge`
+  + push); say "the change" / "the branch" / "the merge" / "the ticket" instead.
+  Full list + replacements: [docs/banned_words.md](./docs/banned_words.md).
+<!-- banned-words-ok:end -->
+- **Reference locations by named landmark, not raw line number** — in tickets, reviews,
+  commits, and docs, point at a **function/class + file path** (or a bare symbol) for
+  code and a **section heading** for markdown; line numbers drift and misdirect. A line
+  number may ride along as a secondary as-of hint; commit-pinned permalinks and quoted
+  tool output are exempt. See [RULES.md](./RULES.md) → "Referencing code & docs".
+- **Every authored doc carries a provenance header** — any prose deliverable an agent
+  writes (research/findings/spec/ADR/catalog) opens, directly under its H1, with a
+  one-line header naming the **agent** (fruit name), the **authored date** (absolute
+  `YYYY-MM-DD`), and the **ticket** (`#N`). Recommended:
+  `> **Agent:** FIG · **Authored:** 2026-08-07 · **Ticket:** #NNNN`.
+  See [RULES.md](./RULES.md) → "Authoring docs".
