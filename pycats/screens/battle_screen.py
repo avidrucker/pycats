@@ -208,6 +208,9 @@ class BattleScreen:
         drawn in SCREEN space afterward so they are not warped by the camera. The
         hit/hurtbox overlay is skipped here (it draws in world==screen coords and would
         be mispositioned under the transform; it is a dev-only default-OFF surface)."""
+        # #1315: in --dev mode the camera draws the CamLimit/Dead zone rects on the
+        # background AND relaxes its clamp to the Dead box, so all three zones show.
+        self.camera.dev_overlay = runtime_settings.dev_mode()
         self.camera.update(self.players)
         self.camera.render_world(surface, self.players, platforms, self.attacks)
         if self.player1 and self.player2:
