@@ -41,7 +41,11 @@ BASE_OFFSET = (_BASE_X, _BASE_Y)
 _MARGIN = 190  # world-px padding around the fighters' box before fitting
 _SCALE_MAX = 1.8  # zoom-IN floor: never magnify past this (fighters very close)
 _SCALE_MIN = 0.55  # zoom-OUT ceiling: never shrink past this (blast lines stay hidden)
-_LERP = 0.12  # per-frame ease toward the target pan + zoom (0..1; higher = snappier)
+# Per-frame ease toward the target (0..1; lower = slower + more perceived delay/lag,
+# since an exponential ease-out lags its target). Zoom eases a touch slower than pan
+# so the zoom trails the pan slightly (#1315 feedback: "slower, with a little delay").
+_PAN_LERP = 0.07
+_ZOOM_LERP = 0.05
 
 
 class Camera:
@@ -86,9 +90,9 @@ class Camera:
     def update(self, players):
         """Ease the live (cx, cy, scale) toward the target framing (pan + zoom lerp)."""
         tcx, tcy, ts = self._target(players)
-        self.cx += (tcx - self.cx) * _LERP
-        self.cy += (tcy - self.cy) * _LERP
-        self.scale += (ts - self.scale) * _LERP
+        self.cx += (tcx - self.cx) * _PAN_LERP
+        self.cy += (tcy - self.cy) * _PAN_LERP
+        self.scale += (ts - self.scale) * _ZOOM_LERP
 
     def render_world(self, surface, players, platforms, attacks):
         """Render the camera-transformed world (platforms + fighters + attacks) onto

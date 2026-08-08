@@ -24,6 +24,7 @@ from ..config import (
     PLAYER2_START_Y,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    WHITE,
 )
 from ..core.physics import resolve_player_push
 from ..entities import Player
@@ -43,6 +44,7 @@ from ..shell.input_history import InputHistory
 from ..storage import runtime_settings
 from ..systems import hit_resolution
 from ..systems.win_condition import winner_loser
+from ..ui import text_utils  # #1315 throwaway camera dev readout
 
 
 class BattleScreen:
@@ -214,6 +216,18 @@ class BattleScreen:
             if runtime_settings.show_input_history():
                 draw_input_history(surface, self.p1_history, "P1")
                 draw_input_history(surface, self.p2_history, "P2", topright=True)
+        # #1315 throwaway dev readout so the human can eyeball good min/max zoom + the
+        # pan target: current zoom (float + %) and camera center (world px). Screen-space,
+        # top-center, so it clears the P1/P2 HUD corners.
+        cam = self.camera
+        text_utils.render_text(
+            surface,
+            f"cam zoom {cam.scale:.3f}x ({cam.scale * 100:.0f}%)   center ({cam.cx:.0f}, {cam.cy:.0f})",
+            (SCREEN_WIDTH // 2, 14),
+            18,
+            WHITE,
+            center=True,
+        )
 
     def render(self, surface, platforms):
         """Render one live battle frame onto `surface` (the playing branch's draw
