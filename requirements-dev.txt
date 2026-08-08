@@ -1,0 +1,17 @@
+# Developer tooling (tests, lint, lint hook) on top of the runtime deps.
+#     .venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
+# Then: run the suite, ruff, and install the pre-commit hook — see README.md.
+pytest
+# pytest-cov: coverage/branch numbers (the #1242 audit) reproducible in-repo, and a
+# coverage ratchet buildable on top. pytest-randomly: default-seed suite shuffle so an
+# order-dependent isolation false-green is caught. Both approved in #1246 D3 (#1258);
+# hypothesis is deferred until a property-test ticket needs it.
+pytest-cov
+pytest-randomly
+ruff
+pre-commit
+# imageio drives the video/recording path (watch.py --video) and is imported by the
+# VideoPresenter caption tests, so the suite needs it to run fully green. imageio-ffmpeg
+# supplies the encoder for actual .mp4 output.
+imageio
+imageio-ffmpeg
