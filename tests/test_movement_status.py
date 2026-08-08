@@ -19,7 +19,7 @@ from pycats.storage import runtime_settings, settings  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
-# settings.py — persisted default-OFF toggle (mirrors show_hitbox_overlay)
+# settings.py — persisted default-OFF toggle (mirrors show_status_timer_bars)
 # --------------------------------------------------------------------------- #
 def test_show_movement_status_defaults_off(tmp_path, monkeypatch):
     monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
@@ -51,7 +51,7 @@ def test_runtime_movement_status_set():
 
 
 # --------------------------------------------------------------------------- #
-# options_menu.py — Options row toggles live + persists (mirrors hitbox_overlay)
+# options_menu.py — Options row toggles live + persists (mirrors status_bars)
 # --------------------------------------------------------------------------- #
 P1 = {"up": pygame.K_w, "down": pygame.K_s, "attack": pygame.K_v, "special": pygame.K_c}
 P2 = {"up": pygame.K_UP, "down": pygame.K_DOWN, "attack": pygame.K_SLASH, "special": pygame.K_PERIOD}

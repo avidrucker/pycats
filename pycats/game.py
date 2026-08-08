@@ -90,6 +90,12 @@ def main():
     # replaces the pref state but never touches dev_mode. No consumer flips behaviour on
     # it yet; later #1311 slices (char-select, HUD, overlays, F1 screen) read it.
     runtime_settings.set_dev_mode(resolve_dev_mode(args))
+    # Seed the dev-HUD master switch to the dev-mode gate (#1324, B2 reconciliation on
+    # #1297): inside dev mode the text dev HUD (#1319) AND the hit/hurtbox overlay (#219)
+    # default ON, and backtick flips both together; outside dev mode dev_hud stays OFF and
+    # the overlay never renders. Seeded here (after set_dev_mode) because dev_hud is a
+    # per-session launch state, not a persisted pref — seed() never touches it.
+    runtime_settings.set_dev_hud(runtime_settings.dev_mode())
     # Restore the implicit "last used" keybindings (#1306, ruling C on #1305) onto the
     # shared P1/P2 keymaps before App wires them into the battle + Options screens, so a
     # rebind from a prior session survives a restart. Missing/invalid slot -> factory

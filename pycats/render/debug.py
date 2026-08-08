@@ -41,13 +41,18 @@ def _active_hurtbox(p):
 
 
 def render_hitbox_overlay(surface, players, attacks):
-    """Draw the hit/hurtbox debug overlay (#219), gated on the live toggle.
+    """Draw the hit/hurtbox debug overlay (#219), dev-gated + backtick-coupled.
 
     Render-only: reads the SAME data hit_resolution.process_hits resolves — `atk.resolved`
     for active hitbox circles, `resolve_circle` on each fighter's active hurtbox —
-    and outlines them in two distinct colours. Default OFF, so the live game and
-    goldens are untouched until a dev flips it on from Options."""
-    if not runtime_settings.show_hitbox_overlay():
+    and outlines them in two distinct colours.
+
+    Gate (#1324, B2 reconciliation on #1297): renders only when BOTH the process-wide
+    dev-mode gate (#1312) AND the dev-HUD master switch (#1319) are on. Outside dev mode
+    it never draws — so the shipping game and goldens are untouched. Inside dev mode it
+    follows backtick: game.main seeds dev_hud = dev_mode() at boot (overlay defaults ON),
+    and each backtick press flips the text dev HUD and this overlay together."""
+    if not (runtime_settings.dev_mode() and runtime_settings.dev_hud()):
         return
     for a in attacks:
         for cx, cy, r, _box in getattr(a, "resolved", ()):

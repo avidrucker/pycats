@@ -87,6 +87,7 @@ def test_render_matches_inline_playing_composition():
     FPS/fullscreen/debug shell overlays moved to draw_shell_chrome (see
     test_shell_chrome)."""
     runtime_settings.seed(settings.defaults())
+    runtime_settings.set_dev_mode(True)  # #1324: overlay renders only under dev_mode() AND dev_hud()
     runtime_settings.set_dev_hud(True)  # #1319: the input-history grid is a dev-HUD item
     bs = _battle()
     platforms = []
@@ -95,7 +96,7 @@ def test_render_matches_inline_playing_composition():
     expected.fill(BG_COLOR)
     render_battle(expected, bs.players, platforms)
     render_attacks(expected, bs.attacks)
-    render_hitbox_overlay(expected, bs.players, bs.attacks)  # #219 debug overlay
+    render_hitbox_overlay(expected, bs.players, bs.attacks)  # #219 debug overlay (#1324 gate ON above)
     draw_hud(expected, bs.player1, "P1")
     draw_hud(expected, bs.player2, "P2", topright=True)
     draw_input_history(expected, bs.p1_history, "P1")  # #21 default-ON strip
@@ -115,6 +116,8 @@ def test_render_paused_excludes_pause_hint():
     into render() (playing only), not into the shared _draw_battle path. Controls ARE
     part of the paused background now (#977), default show_controls ON."""
     runtime_settings.seed(settings.defaults())  # show_controls default ON (#977)
+    runtime_settings.set_dev_mode(True)  # #1324: overlay renders only under dev_mode() AND dev_hud()
+    runtime_settings.set_dev_hud(True)
     bs = _battle()
     platforms = []
 
@@ -145,6 +148,8 @@ def test_render_paused_freezes_battle_onto_intermediate_background():
     are pause-only, default ON) onto an INTERMEDIATE background surface, then delegates
     to pause_menu.render(surface, background) — matching game.py's pause branch."""
     runtime_settings.seed(settings.defaults())  # show_controls default ON (#977)
+    runtime_settings.set_dev_mode(True)  # #1324: overlay renders only under dev_mode() AND dev_hud()
+    runtime_settings.set_dev_hud(True)
     bs = _battle()
     platforms = []
 

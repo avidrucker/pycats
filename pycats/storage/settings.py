@@ -27,11 +27,9 @@ _DEFAULTS = {
     # HUD overlay toggle (#111), migrated from a config.py constant into persisted
     # prefs by #121 so the Options menu can flip it live + remember it.
     "show_status_timer_bars": True,
-    # Hit/hurtbox debug overlay (#219): a dev-facing box visualiser toggled live
-    # from the Options sub-menu, mirroring show_status_timer_bars. TEMPORARILY
-    # defaulted ON (#239) for the #125 combat-visuals work; revert to OFF before
-    # release (#241).
-    "show_hitbox_overlay": True,
+    # Hit/hurtbox debug overlay (#219): retired as a persisted pref #1324. It is no
+    # longer a player toggle — render_hitbox_overlay is dev-gated + backtick-coupled
+    # (dev_mode() and dev_hud()), so nothing persists.
     # In-battle input-history HUD strip (#21): per-fighter last-10 raw inputs,
     # toggleable from the Options sub-menu (mirrors show_status_timer_bars).
     "show_input_history": True,
@@ -108,7 +106,7 @@ def _validated(raw):
         out["windowed_scale"] = float(scale)
     out["fullscreen"] = bool(raw.get("fullscreen", out["fullscreen"]))
     out["show_status_timer_bars"] = bool(raw.get("show_status_timer_bars", out["show_status_timer_bars"]))
-    out["show_hitbox_overlay"] = bool(raw.get("show_hitbox_overlay", out["show_hitbox_overlay"]))
+    # show_hitbox_overlay coercion dropped #1324 — no longer a persisted pref (see defaults).
     out["show_input_history"] = bool(raw.get("show_input_history", out["show_input_history"]))
     out["show_controls"] = bool(raw.get("show_controls", out["show_controls"]))
     out["show_screen_hints"] = bool(raw.get("show_screen_hints", out["show_screen_hints"]))

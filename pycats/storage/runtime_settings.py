@@ -104,9 +104,9 @@ def show_status_timer_bars():
     return bool(get("show_status_timer_bars"))
 
 
-def show_hitbox_overlay():
-    """Live toggle the hit/hurtbox debug overlay render path honours (#219)."""
-    return bool(get("show_hitbox_overlay"))
+# show_hitbox_overlay() retired #1324: the hit/hurtbox overlay (#219) is no longer a
+# persisted player toggle. Its render gate (render_hitbox_overlay) now reads
+# dev_mode() and dev_hud() — dev-gated + backtick-coupled, per B2 reconciliation (#1297).
 
 
 def show_input_history():

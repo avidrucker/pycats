@@ -1,6 +1,6 @@
 """Options 'Input History' toggle — persisted, default ON (#21).
 
-Mirrors the show_hitbox_overlay / show_status_timer_bars toggle chain:
+Mirrors the show_status_timer_bars toggle chain:
 settings default + coercion, runtime live accessor, Options row label + activate.
 Default ON preserves the (new) always-visible strip; a user can hide it.
 """

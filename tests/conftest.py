@@ -108,13 +108,16 @@ def _reset_runtime_settings():
     toggle would otherwise leak a False into later render tests that assume the
     on-by-default behaviour. Cheap, so applied automatically to every test.
 
-    dev_hud (#1319) is a separate module-global NOT in _state, so seed() does not
-    reset it — reset it here too, or a test that turns the dev HUD ON leaks it into
-    later render/parity tests that assume the minimal default HUD."""
+    dev_hud (#1319) and dev_mode (#1312) are separate module-globals NOT in _state, so
+    seed() does not reset them — reset them here too, or a test that turns the dev HUD /
+    dev mode ON leaks it into later tests: dev_hud into render/parity tests that assume
+    the minimal default HUD, dev_mode into e.g. the char-select roster test (#1324), which
+    sees the expanded dev roster when dev_mode is left True by an earlier test."""
     from pycats.storage import runtime_settings, settings
 
     runtime_settings.seed(settings.defaults())
     runtime_settings.set_dev_hud(False)
+    runtime_settings.set_dev_mode(False)
     yield
 
 
