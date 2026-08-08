@@ -26,18 +26,21 @@ from ..ui import text_utils
 # size was repeated at ~10 call sites; the line counts + block gap couple the
 # controls / input-history blocks' start-y to the HUD's row count.
 HUD_FONT_SIZE = 24  # shared size for HUD / controls / input-history / chrome text
-# draw_hud rows split by audience (#545) AND by emphasis (#550). The top-anchored
-# "secondary" group holds the player-facing label/jumps/Shield HP rows (always on)
-# plus the two implementation-jargon rows (FSM state, Shield Attempting bool) that
-# render only when the dev-info flag is on. The two numbers players read constantly
-# — Damage % and Lives — are split OUT of this group and drawn larger in the bottom
-# corners (see hud_emphasis_rows / draw_hud). HUD_LINE_COUNT is the all-secondary-rows
-# total kept for back-compat; layout below anchors on the live hud_line_count().
-HUD_PLAYER_LINE_COUNT = 3  # label + jumps + Shield HP (always on; #550 moved Lives/Damage out)
-HUD_DEV_LINE_COUNT = 2  # FSM: + Shield Attempting: (dev-info-gated)
-HUD_MOVEMENT_LINE_COUNT = 1  # Movement: (movement-status-gated, under Shield HP, #977)
-HUD_MINIMAL_LINE_COUNT = 1  # just the player-name label when minimal-HUD is on (#977)
-HUD_LINE_COUNT = HUD_PLAYER_LINE_COUNT + HUD_DEV_LINE_COUNT  # 5, all secondary rows (dev-info on)
+# draw_hud rows split by emphasis (#550) and gated by the dev-HUD toggle (#1319). The
+# top-anchored "secondary" group holds the player-name label plus the jumps / Shield HP /
+# FSM / Movement / Shield Attempting rows; the two numbers players read constantly —
+# Damage % and Lives — are split OUT of this group and drawn larger in the bottom corners
+# (see hud_emphasis_rows / draw_hud). #1319 makes dev_hud the sole driver: OFF renders
+# just the label (the minimal default HUD); ON renders the COMPLETE secondary group
+# (HUD_PLAYER + HUD_MOVEMENT + HUD_DEV = 6 rows), regardless of the legacy per-item
+# flags. Layout below anchors on the live hud_line_count().
+HUD_PLAYER_LINE_COUNT = 3  # label + jumps + Shield HP (#550 moved Lives/Damage out)
+HUD_DEV_LINE_COUNT = 2  # FSM: + Shield Attempting: (#545)
+HUD_MOVEMENT_LINE_COUNT = 1  # Movement: (under Shield HP, #977)
+HUD_MINIMAL_LINE_COUNT = 1  # just the player-name label when dev_hud is OFF (the minimal default, #1319)
+HUD_FULL_LINE_COUNT = (
+    HUD_PLAYER_LINE_COUNT + HUD_MOVEMENT_LINE_COUNT + HUD_DEV_LINE_COUNT
+)  # 6, complete dev HUD (#1319)
 CONTROLS_LINE_COUNT = 7  # rows drawn by draw_controls (header + 6 controls)
 HUD_BLOCK_GAP = 20  # vertical gap between stacked text blocks
 HUD_EMPHASIS_SPACING = 34  # row pitch for the larger emphasized rows (cf. HUD_SPACING for the size 24 rows)
@@ -66,42 +69,38 @@ INPUT_GRID_HELD_COLOR = (130, 130, 140)  # dimmer than a fresh press
 
 
 def hud_line_count():
-    """Rows draw_hud actually draws given the live HUD flags. The input-history
-    block anchors below the HUD, so it must follow the real row count, not a fixed
-    maximum, or a gap opens. Minimal-HUD (#977) collapses to the single label row;
-    otherwise it's the player rows plus the movement (#977) and dev-info (#545)
-    rows when those flags are on. Mirrors hud_rows exactly."""
-    if runtime_settings.minimal_hud():
+    """Rows draw_hud actually draws given the live dev-HUD toggle (#1319). The
+    input-history block anchors below the HUD, so it must follow the real row count,
+    not a fixed maximum, or a gap opens. dev_hud OFF collapses to the single label row
+    (the minimal default HUD); ON draws the complete secondary group — player rows +
+    the movement (#977) and dev-info (#545) rows, all of them. dev_hud is the sole
+    driver now: the legacy per-item flags no longer gate the battle HUD. Mirrors
+    hud_rows exactly."""
+    if not runtime_settings.dev_hud():
         return HUD_MINIMAL_LINE_COUNT
-    return (
-        HUD_PLAYER_LINE_COUNT
-        + (HUD_MOVEMENT_LINE_COUNT if runtime_settings.show_movement_status() else 0)
-        + (HUD_DEV_LINE_COUNT if runtime_settings.show_dev_info() else 0)
-    )
+    return HUD_FULL_LINE_COUNT
 
 
 def hud_rows(label, p: Player):
     """The ordered *secondary* HUD row strings for player `p` — the top-anchored,
-    standard-size group. Minimal-HUD (#977) collapses this to just the player-name
-    label (the essential Lives / Damage % stay — they are the emphasized bottom-corner
-    rows, see hud_emphasis_rows, #550). Otherwise it honours the live flags: the
-    Movement row (#977) renders under Shield HP when show_movement_status() is on, and
-    the FSM / Shield Attempting jargon rows when show_dev_info() is on (#545); the
-    label / jumps / Shield HP rows always render. Row order matches the pre-gate layout
-    so the flags-off secondary render is unchanged."""
-    if runtime_settings.minimal_hud():
+    standard-size group, driven by the dev-HUD toggle (#1319). dev_hud OFF collapses
+    this to just the player-name label — the minimal default HUD (the essential Lives /
+    Damage % stay: they are the emphasized bottom-corner rows, see hud_emphasis_rows,
+    #550). dev_hud ON renders the COMPLETE dev HUD: FSM (#545), jumps, Shield HP, the
+    Movement row under Shield HP (#977), and Shield Attempting (#545) — all of it, so
+    the dev HUD is whole regardless of the legacy show_dev_info / show_movement_status
+    flags (which no longer gate the battle HUD, #1319). Row order matches the pre-#1319
+    all-flags-on layout."""
+    if not runtime_settings.dev_hud():
         return [label]
-    dev = runtime_settings.show_dev_info()
-    rows = [label]
-    if dev:
-        rows.append(f"FSM: {p.state.capitalize()}")
-    rows.append(f"{p.fighter.jumps_remaining} jump{'s' if p.fighter.jumps_remaining != 1 else ''} left")
-    rows.append(f"Shield HP: {p.fighter.shield_hp}")
-    if runtime_settings.show_movement_status():
-        rows.append(f"Movement: {p.state.capitalize()}")
-    if dev:
-        rows.append(f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}")
-    return rows
+    return [
+        label,
+        f"FSM: {p.state.capitalize()}",
+        f"{p.fighter.jumps_remaining} jump{'s' if p.fighter.jumps_remaining != 1 else ''} left",
+        f"Shield HP: {p.fighter.shield_hp}",
+        f"Movement: {p.state.capitalize()}",
+        f"Shield Attempting: {'Yes' if p.fighter.shield_attempting else 'No'}",
+    ]
 
 
 def hud_emphasis_rows(p: Player):
@@ -135,9 +134,9 @@ def draw_hud_emphasis(surface, p: Player, topright=False):
 
 
 def draw_hud(surface, p: Player, label, topright=False):
-    """Draws the HUD for a player in two groups (#550): the secondary rows (label,
-    jumps, Shield HP, plus the dev-info rows FSM/Shield Attempting when the flag is
-    on, #545) top-anchored at the standard size, and the emphasized Damage %/Lives
+    """Draws the HUD for a player in two groups (#550): the secondary rows
+    (hud_rows — just the label when the dev HUD is OFF, the complete stat rows when it
+    is ON, #1319) top-anchored at the standard size, and the emphasized Damage %/Lives
     rows larger in the bottom corner."""
     for i, txt in enumerate(hud_rows(label, p)):
         x_pos = SCREEN_WIDTH - HUD_PADDING if topright else HUD_PADDING
@@ -278,23 +277,31 @@ def draw_shell_chrome(surface, fps, is_fullscreen, frame_input):
     These read shell/loop state (fps, is_fullscreen, frame_input), NOT battle state,
     so game.py's loop calls this helper with the state it owns instead of inlining the
     draws (#279). Kept out of BattleScreen so the battle object stays free of shell
-    state (cf. #100 Risks, #246). Byte-identical to the old inline block."""
-    if frame_input:
+    state (cf. #100 Risks, #246).
+
+    #1319: the two dev-only readouts — the raw input string (bottom-left) and the FPS
+    counter (bottom-right) — are gated on the dev-HUD toggle, so the minimal default HUD
+    (dev_hud OFF) shows neither. The fullscreen-mode hint and the ESC-hold leave-match
+    hint are NOT dev readouts (the fullscreen hint is a display-mode affordance shown on
+    char-select too, and the ESC-hold hint has its own show_controls toggle), so they
+    render regardless of dev_hud, unchanged."""
+    if runtime_settings.dev_hud():
+        if frame_input:
+            text_utils.render_text(
+                surface,
+                frame_input.__str__(),
+                (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+                HUD_FONT_SIZE,
+                WHITE,
+            )
         text_utils.render_text(
             surface,
-            frame_input.__str__(),
-            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
+            f"FPS: {fps:.1f}",
+            (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
             HUD_FONT_SIZE,
             WHITE,
+            right_align=True,
         )
-    text_utils.render_text(
-        surface,
-        f"FPS: {fps:.1f}",
-        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING),
-        HUD_FONT_SIZE,
-        WHITE,
-        right_align=True,
-    )
     fs_text = "F11: Toggle Fullscreen | " + ("F10: Fullscreen Zoom" if is_fullscreen else "F10: Window Size")
     text_utils.render_text(
         surface,

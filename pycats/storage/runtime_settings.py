@@ -21,6 +21,17 @@ _state = settings.defaults()
 # overlays, F1 screen). Default off — the shipping/default launch is unchanged.
 _dev_mode = False
 
+# Process-wide dev-HUD toggle (#1319, ruling C1–C4 on #1297). Like _dev_mode it is
+# deliberately NOT part of `_state`: it is a per-session runtime toggle, never a
+# persisted preference, so seed() must not touch it and it survives a pause/resume
+# (nothing on the pause path resets it). Default OFF at every launch — the shipping
+# default battle HUD is minimal (player label + emphasized Lives/Damage % only).
+# Flipped by the backtick/tilde key (shell/app.py), available to everyone (not
+# dev_mode-gated). ON shows the complete dev HUD; it is the SOLE battle-HUD driver —
+# it supersedes the legacy per-item flags (show_dev_info / show_movement_status /
+# show_input_history) in battle (they keep their Options rows this slice, #1311 slice 5).
+_dev_hud = False
+
 
 def seed(prefs=None):
     """Replace the live state from `prefs` (or settings.load() if omitted).
@@ -61,6 +72,31 @@ def dev_mode():
     dev-gated surface reads. This slice ships only the flag — no consumer flips behaviour
     on it yet (char-select, dev HUD, overlay gating, F1 screen are later #1311 slices)."""
     return _dev_mode
+
+
+def set_dev_hud(value):
+    """Set the process-wide dev-HUD toggle (#1319). Not persisted; survives pause.
+    Idempotent — pass a bool."""
+    global _dev_hud
+    _dev_hud = bool(value)
+
+
+def toggle_dev_hud():
+    """Flip the dev-HUD toggle and return the new state (#1319). The backtick/tilde
+    key handler (shell/app.py) calls this once per press."""
+    global _dev_hud
+    _dev_hud = not _dev_hud
+    return _dev_hud
+
+
+def dev_hud():
+    """Live process-wide dev-HUD flag (#1319, ruling C1–C4 on #1297). Default OFF —
+    the battle HUD is minimal (player label + emphasized Lives/Damage % corners). ON
+    shows the complete dev HUD (jumps / Shield HP / FSM / Shield Attempting / Movement
+    rows + FPS + raw input string + the input-history grid). The SOLE battle-HUD driver:
+    ON shows the whole dev HUD regardless of show_dev_info / show_movement_status /
+    show_input_history; OFF hides all of it."""
+    return _dev_hud
 
 
 def show_status_timer_bars():
@@ -115,13 +151,6 @@ def show_movement_status():
     it on to confirm the idle/walk/dash/run FSM transitions on screen; off renders the
     battle byte-identical (goldens don't move)."""
     return bool(get("show_movement_status"))
-
-
-def minimal_hud():
-    """Live toggle for minimal-HUD mode (#977): when on, the battle HUD shows only the
-    player-name label plus the essential Lives / Damage % corners, dropping the jumps /
-    Shield HP / Movement / dev-info rows. Flipped from the pause menu. Default off."""
-    return bool(get("minimal_hud"))
 
 
 def font_scale():

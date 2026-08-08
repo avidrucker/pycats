@@ -85,17 +85,18 @@ def test_reset_clears_history():
     assert bs.p1_history.frames() == []
 
 
-def test_draw_battle_gates_input_history_on_toggle():
-    """_draw_battle draws the grid only when show_input_history() is ON."""
+def test_draw_battle_gates_input_history_on_dev_hud():
+    """#1319: _draw_battle draws the input-history grid only when the dev HUD is ON —
+    the grid is a dev-HUD item now (was gated on show_input_history)."""
     bs, platforms = _bs()
     bs.step(_frame([pygame.K_v]), platforms)  # P1 has an attack mark to show
     runtime_settings.seed(settings.defaults())
 
     on = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
     off = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    runtime_settings.set("show_input_history", True)
+    runtime_settings.set_dev_hud(True)
     bs._draw_battle(on, platforms)
-    runtime_settings.set("show_input_history", False)
+    runtime_settings.set_dev_hud(False)
     bs._draw_battle(off, platforms)
 
     assert pygame.image.tobytes(on, "RGB") != pygame.image.tobytes(off, "RGB")

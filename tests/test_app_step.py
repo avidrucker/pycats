@@ -16,6 +16,7 @@ import pygame  # type: ignore
 import pycats.shell.app as app_mod
 from pycats.core.input import InputFrame
 from pycats.shell.app import App
+from pycats.storage import runtime_settings
 
 _PREFS = {"windowed_scale": 1.0, "fullscreen": False}
 
@@ -184,3 +185,28 @@ def test_f11_routes_to_toggle_fullscreen_then_save(monkeypatch):
     monkeypatch.setattr(app.dm, "present", lambda *a, **k: None)
     app.step()
     assert calls == ["toggle", "save"]
+
+
+def _inert(monkeypatch, app):
+    """Keep the rest of a frame inert so a hotkey→handler wire is isolated."""
+    monkeypatch.setattr(app.screen_manager, "update", lambda *a, **k: None)
+    monkeypatch.setattr(app.screen_manager, "should_quit_game", lambda: False)
+    monkeypatch.setattr(app_mod.screen_render, "render_active_screen", lambda *a, **k: None)
+    monkeypatch.setattr(app.dm, "present", lambda *a, **k: None)
+
+
+def test_backquote_toggles_dev_hud(monkeypatch):
+    """#1319: the backtick/tilde key flips the dev-HUD toggle. Available to everyone
+    (not dev_mode-gated). Able-to-fail: drop the K_BACKQUOTE handler and dev_hud stays
+    at its default OFF after the frame."""
+    runtime_settings.set_dev_hud(False)
+    app = _app(_poll_once(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_BACKQUOTE)))
+    _inert(monkeypatch, app)
+    app.step()
+    assert runtime_settings.dev_hud() is True  # first press turns it ON
+
+    # a second press turns it back OFF
+    app2 = _app(_poll_once(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_BACKQUOTE)))
+    _inert(monkeypatch, app2)
+    app2.step()
+    assert runtime_settings.dev_hud() is False

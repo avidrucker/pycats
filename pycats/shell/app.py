@@ -29,7 +29,7 @@ from ..config import tick_fps
 from ..core.keymap import Keymap
 from ..entities.stages import DEFAULT_PLAYER_STAGE
 from ..screens.battle_screen import BattleScreen
-from ..storage import settings
+from ..storage import runtime_settings, settings
 from ..ui import cat_faces
 from . import display, screen_render
 from . import input_poll as inp
@@ -184,6 +184,14 @@ class App:
                         getattr(self.battle.player2, "face_style", cat_faces.PRIMITIVES)
                     )
                     self.dm.zoom_toast.show("P2 face: " + cat_faces.face_style_label(self.battle.player2.face_style))
+                elif ev.key == pygame.K_BACKQUOTE:
+                    # Dev-HUD toggle (#1319, ruling C1–C4 on #1297): backtick/tilde flips
+                    # the in-battle dev HUD (full stat rows + FPS + raw input + input-history
+                    # grid) vs. the minimal default (player label + Lives/Damage %). Shipping-
+                    # available for everyone — deliberately NOT gated on dev_mode(). Runtime-
+                    # only + not persisted (survives pause), so no save_prefs here.
+                    on = runtime_settings.toggle_dev_hud()
+                    self.dm.zoom_toast.show("Dev HUD: " + ("ON" if on else "OFF"))
 
         # Update screen state manager. `platforms` is threaded so the playing state's
         # engine action owns the per-frame battle.step + winner-set (#246).

@@ -69,12 +69,10 @@ _DEFAULTS = {
     # added sustained run but no distinct run animation yet). OFF by default → the
     # battle render is byte-identical (goldens don't move). Options-menu toggle.
     "show_movement_status": False,
-    # Minimal-HUD mode (#977): when True the battle HUD drops every non-essential
-    # secondary row (jumps / Shield HP / Movement / dev-info) and shows only the
-    # player-name label plus the essential emphasized Lives / Damage % corners.
-    # Instruction hints keep their own toggles. OFF by default (full HUD). Toggled
-    # from the in-battle pause menu, not the Options screen.
-    "minimal_hud": False,
+    # (#1319 retired the persisted "minimal_hud" key: the battle HUD's minimal-vs-full
+    # split is now driven by the runtime-only dev_hud toggle — dev_hud OFF *is* the
+    # minimal HUD — flipped by the backtick key, not a saved preference. A stale
+    # "minimal_hud" left in an older settings.json is ignored by load() below.)
 }
 
 
@@ -118,7 +116,7 @@ def _validated(raw):
     out["show_dev_info"] = bool(raw.get("show_dev_info", out["show_dev_info"]))
     out["show_idle_breathing"] = bool(raw.get("show_idle_breathing", out["show_idle_breathing"]))
     out["show_movement_status"] = bool(raw.get("show_movement_status", out["show_movement_status"]))
-    out["minimal_hud"] = bool(raw.get("minimal_hud", out["minimal_hud"]))
+    # (#1319: "minimal_hud" retired — no coercion; a stale key in an older file is dropped.)
     fs = raw.get("font_scale")
     if fs in FONT_SCALES:  # snap an unknown preset back to the default
         out["font_scale"] = fs

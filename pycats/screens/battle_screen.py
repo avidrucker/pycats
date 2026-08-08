@@ -189,8 +189,10 @@ class BattleScreen:
             draw_hud(surface, self.player2, "P2", topright=True)
             # Fighter-controls display (#284) is now pause-only (#977) — see
             # render_paused; it no longer draws during live play.
-            # Input-history strip (#21), gated on the live toggle (default ON).
-            if runtime_settings.show_input_history():
+            # Input-history grid (#21/#875) is part of the dev HUD now (#1319): drawn
+            # only when the dev-HUD toggle is ON (was gated on show_input_history, which
+            # no longer affects the battle HUD — it keeps its Options row this slice).
+            if runtime_settings.dev_hud():
                 draw_input_history(surface, self.p1_history, "P1")
                 draw_input_history(surface, self.p2_history, "P2", topright=True)
 

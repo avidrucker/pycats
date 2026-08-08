@@ -80,12 +80,14 @@ def _draw_pause_hint(surface):
 def test_render_matches_inline_playing_composition():
     """render() == fill(BG) -> render_battle -> render_attacks ->
     render_hitbox_overlay -> draw_hud x2 -> draw_input_history x2 -> pause hint
-    (the playing branch's inline block), byte-for-byte. The input-history strip
-    (#21) is default-ON, so it's part of the composite; the controls display is
-    pause-only now (#977), so it is NOT in the playing composite; the 'P: Pause
-    Game' hint is part of render() (battle HUD, #279) — the FPS/fullscreen/debug
-    shell overlays moved to draw_shell_chrome (see test_shell_chrome)."""
-    runtime_settings.seed(settings.defaults())  # input-history strip default ON (#21)
+    (the playing branch's inline block), byte-for-byte. The input-history grid is part
+    of the dev HUD now (#1319), so this composite is asserted with dev_hud ON (grid
+    drawn); the controls display is pause-only (#977), so it is NOT in the playing
+    composite; the 'P: Pause Game' hint is part of render() (battle HUD, #279) — the
+    FPS/fullscreen/debug shell overlays moved to draw_shell_chrome (see
+    test_shell_chrome)."""
+    runtime_settings.seed(settings.defaults())
+    runtime_settings.set_dev_hud(True)  # #1319: the input-history grid is a dev-HUD item
     bs = _battle()
     platforms = []
 

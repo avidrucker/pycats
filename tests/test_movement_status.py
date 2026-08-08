@@ -86,6 +86,11 @@ def test_movement_status_row_label_reflects_state():
 
 # --------------------------------------------------------------------------- #
 # render.hud.hud_rows — the "Movement:" row under "Shield HP:"
+#
+# #1319: the Movement row now renders as part of the complete dev HUD (dev_hud ON),
+# NOT gated on show_movement_status — dev_hud is the sole battle-HUD driver. The
+# Options row above stays this slice (re-homing to the F1 screen is #1311 slice 5);
+# it simply no longer affects the battle HUD.
 # --------------------------------------------------------------------------- #
 def _fake_player(state="dash", jumps=2, shield_hp=50, shield_attempting=False):
     return types.SimpleNamespace(
@@ -94,16 +99,14 @@ def _fake_player(state="dash", jumps=2, shield_hp=50, shield_attempting=False):
     )
 
 
-def test_movement_row_absent_when_off():
-    runtime_settings.seed(settings.defaults())
-    runtime_settings.set("show_movement_status", False)
+def test_movement_row_absent_when_dev_hud_off():
+    runtime_settings.set_dev_hud(False)
     rows = hud_rows("P1", _fake_player(state="dash"))
     assert not any(r.startswith("Movement:") for r in rows)
 
 
-def test_movement_row_present_directly_under_shield_hp_when_on():
-    runtime_settings.seed(settings.defaults())
-    runtime_settings.set("show_movement_status", True)
+def test_movement_row_present_directly_under_shield_hp_when_dev_hud_on():
+    runtime_settings.set_dev_hud(True)
     rows = hud_rows("P1", _fake_player(state="run"))
     assert "Movement: Run" in rows
     shield_i = next(i for i, r in enumerate(rows) if r.startswith("Shield HP:"))
@@ -112,7 +115,17 @@ def test_movement_row_present_directly_under_shield_hp_when_on():
 
 
 def test_movement_row_capitalizes_each_state():
-    runtime_settings.seed(settings.defaults())
-    runtime_settings.set("show_movement_status", True)
+    runtime_settings.set_dev_hud(True)
     for st, want in (("idle", "Movement: Idle"), ("walk", "Movement: Walk"), ("dash", "Movement: Dash")):
         assert want in hud_rows("P1", _fake_player(state=st))
+
+
+def test_movement_row_unaffected_by_show_movement_status_in_battle():
+    """#1319: flipping show_movement_status changes nothing in the battle HUD — dev_hud
+    is the sole driver. Able-to-fail: re-gate the Movement row on show_movement_status
+    and the dev_hud-on-flag-off branch would drop it."""
+    runtime_settings.set_dev_hud(True)
+    runtime_settings.set("show_movement_status", False)
+    assert "Movement: Run" in hud_rows("P1", _fake_player(state="run"))
+    runtime_settings.set("show_movement_status", True)
+    assert "Movement: Run" in hud_rows("P1", _fake_player(state="run"))

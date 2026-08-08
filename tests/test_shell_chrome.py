@@ -74,6 +74,7 @@ def _actual(fps, is_fullscreen, frame_input):
 
 
 def test_draw_shell_chrome_matches_inline_windowed():
+    runtime_settings.set_dev_hud(True)  # #1319: FPS + raw input are dev-HUD readouts
     fi = InputFrame(held=set(), pressed={1}, released=set())
     fps = 59.97
     assert _raw(_actual(fps, False, fi)) == _raw(_expected(fps, False, fi))
@@ -81,9 +82,47 @@ def test_draw_shell_chrome_matches_inline_windowed():
 
 def test_draw_shell_chrome_matches_inline_fullscreen():
     # is_fullscreen flips the F10 label (Zoom vs Window Size); no ESC hint (#868).
+    runtime_settings.set_dev_hud(True)  # #1319: FPS + raw input are dev-HUD readouts
     fi = InputFrame(held={2}, pressed=set(), released=set())
     fps = 30.0
     assert _raw(_actual(fps, True, fi)) == _raw(_expected(fps, True, fi))
+
+
+def test_dev_hud_off_omits_fps_and_raw_input_but_keeps_fullscreen_hint():
+    """#1319: with the dev HUD OFF (the default), draw_shell_chrome draws neither the
+    FPS counter nor the raw input string — but the fullscreen-mode hint (a display
+    affordance, not a dev readout) still renders. Able-to-fail: drop the dev_hud gate
+    and the FPS/input reappear, so the OFF surface would match the dev-HUD-ON one."""
+    fi = InputFrame(held=set(), pressed={1}, released=set())
+    fps = 59.97
+
+    runtime_settings.set_dev_hud(False)
+    off = _actual(fps, False, fi)
+    runtime_settings.set_dev_hud(True)
+    on = _actual(fps, False, fi)
+    assert _raw(off) != _raw(on)  # the two dev-only readouts differ the surfaces
+
+    # the fullscreen hint is present in the OFF surface too (drawn regardless of dev_hud)
+    runtime_settings.set_dev_hud(False)
+    only_fs = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    fs_text = "F11: Toggle Fullscreen | F10: Window Size"
+    text_utils.render_text(
+        only_fs,
+        fs_text,
+        (SCREEN_WIDTH - HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+        24,
+        WHITE,
+        right_align=True,
+    )
+    if runtime_settings.show_controls() and runtime_settings.esc_hold_to_navigate():
+        text_utils.render_text(
+            only_fs,
+            "Hold ESC to leave match",
+            (HUD_PADDING, SCREEN_HEIGHT - HUD_SPACING * 2),
+            24,
+            WHITE,
+        )
+    assert _raw(_actual(fps, False, None)) == _raw(only_fs)
 
 
 def _fs_hud_ref(fps, fs_text):
@@ -159,6 +198,7 @@ def test_shell_chrome_fps_renders_one_decimal():
     reads "FPS: 60.0" (1 dp, rounded) and NOT "FPS: 59.97" (the old 2-dp form). Able to
     fail: under the pre-fix `.2f` the source paints "59.97", matching the with-2dp
     reference and mismatching the 1-dp one, so both assertions flip."""
+    runtime_settings.set_dev_hud(True)  # #1319: the FPS readout is a dev-HUD item
     fps = 59.97  # .1f → "60.0"; .2f → "59.97" — the two forms differ, so this discriminates
     actual = _actual(fps, False, None)  # windowed, no debug-input line
     one_dp = _chrome_fps_literal("FPS: 60.0")
@@ -173,6 +213,7 @@ def test_fullscreen_hud_omits_esc_exit_fullscreen_hint():
     proves, at the pixel level, that its fs_text is the no-ESC-tail wording and NOT
     the old with-tail wording (able to fail: revert the source and it matches the
     with-tail reference instead)."""
+    runtime_settings.set_dev_hud(True)  # #1319: _fs_hud_ref draws the FPS readout; match it
     fps = 30.0
     actual = _actual(fps, True, None)  # frame_input=None → no debug-input line
     without_tail = _fs_hud_ref(fps, "F11: Toggle Fullscreen | F10: Fullscreen Zoom")

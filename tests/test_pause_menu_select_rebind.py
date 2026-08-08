@@ -29,19 +29,20 @@ def test_rebound_p1_attack_key_selects():
 
 def test_rebound_p2_attack_key_selects():
     # P2 rebinds attack / -> k; the pause menu must select on k.
-    # Index 1 is now the Minimal HUD toggle (#977), so End Match moved to index 2.
+    # #1319 removed the Minimal HUD row, so End Match is index 1 again (rows: Resume,
+    # End Match, Return to Character Select).
     p2 = {"up": pygame.K_UP, "down": pygame.K_DOWN, "attack": pygame.K_k}
     m = PauseMenuManager(DEFAULT_P1, p2)
-    m.selected_option = 2  # End Match
+    m.selected_option = 1  # End Match
     m.update({pygame.K_k})
     assert m.get_action() == "end_match"
 
 
 def test_default_attack_keys_still_select():
-    # No regression for the common (default-bound) case. Return to Character Select is
-    # index 3 now that the Minimal HUD toggle (#977) sits at index 1.
+    # No regression for the common (default-bound) case. #1319 removed the Minimal HUD
+    # row, so Return to Character Select is index 2 (rows: Resume, End Match, Return).
     m = PauseMenuManager(DEFAULT_P1, DEFAULT_P2)
-    m.selected_option = 3  # Return to Character Select
+    m.selected_option = 2  # Return to Character Select
     m.update({pygame.K_v})
     assert m.get_action() == "return_to_char_select"
 

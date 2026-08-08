@@ -106,10 +106,15 @@ def _reset_runtime_settings():
 
     runtime_settings._state is module-global (#121); a test that flips the HUD
     toggle would otherwise leak a False into later render tests that assume the
-    on-by-default behaviour. Cheap, so applied automatically to every test."""
+    on-by-default behaviour. Cheap, so applied automatically to every test.
+
+    dev_hud (#1319) is a separate module-global NOT in _state, so seed() does not
+    reset it — reset it here too, or a test that turns the dev HUD ON leaks it into
+    later render/parity tests that assume the minimal default HUD."""
     from pycats.storage import runtime_settings, settings
 
     runtime_settings.seed(settings.defaults())
+    runtime_settings.set_dev_hud(False)
     yield
 
 
