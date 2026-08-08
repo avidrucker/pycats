@@ -134,7 +134,10 @@
   `docs/research/<topic>-findings.md`) — a bare issue comment is **not** a sufficient
   closing artifact; the closing comment **links** the doc(s). "At least one" lets a
   single investigation emit multiple docs when it naturally splits. (Ties to the
-  issue-review research rubric's "expected output format" check.)
+  issue-review research rubric's "expected output format" check.) Producing the doc is
+  necessary but not sufficient to close: a `research` ticket also passes the **human
+  completeness gate** — the reporter OKs the findings before the close — see
+  [Closing work](#closing-work) step 5.
   **(B) Follow-up tickets are optional and filed downstream of the doc, one at a
   time.** Findings **may** cause follow-up tickets (a DEV to implement, a `decision`
   to rule, or further `research`); those cite the findings doc as their source and are
@@ -551,7 +554,7 @@ the gated worktree teardown. Follow this order — do **not** improvise:
 4. **Human eyeball-approval gate — for player-visible changes.** If the change is
    **player-visible** — anything a player sees on screen: rendering, UI/HUD text,
    layout, colors, animation, or screen flow — **show it to the human and get an
-   explicit OK before you land it (step 5), even when the full suite is green.** A
+   explicit OK before you land it (step 6), even when the full suite is green.** A
    green suite proves behaviour/pixels are *stable*, not that they *look right*: the
    render-parity oracle is a byte comparison, not a judgment of appearance (#677), and
    #868 removed a HUD hint and merged before anyone eyeballed it. Surface the run/sim
@@ -559,8 +562,25 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    command is *how* the human eyeballs it) and wait for their confirmation; only then
    land. **Carve-out — no eyeball OK needed for a non-visible change:** logic, tooling,
    docs, or a render refactor proven byte-identical by a render-hash / parity oracle.
-   (Ratified in-session 2026-07-21; #873.)
-5. **Return the session to main with `ExitWorktree keep`, then land + tear down with
+   (Ratified in-session 2026-07-21; #873.) The sibling human gate for `research`
+   tickets — completeness of the findings — is step 5 below.
+5. **Human completeness gate — for `research` tickets.** Before you close a
+   `research`-labelled ticket (whether via `pmtools close` or, for a no-code ticket,
+   `gh issue close` + `pmtools release`), **present the findings doc — or a summary of
+   it — to the human and wait for an explicit close go-ahead.** A findings doc can *look*
+   complete to the agent yet read as incomplete to the reporter: #1317's spawn/respawn
+   catalog closed with all of Part A (initial-spawn) marked GUESSED — no quoted PM value
+   — and the reporter judged the research unacceptable only *after* the close. This gate
+   is the RESEARCH twin of the player-visible eyeball-OK gate (step 4): the same "don't
+   close until the human OKs" shape, keyed on ticket **type = `research`** rather than on
+   visibility. Name for the human what to check — unsourced / GUESSED rows, an unanswered
+   question, a missing or thin gap table, a repro that never landed — so the check is
+   about the **completeness/quality of the findings**, not process. The go-ahead is a
+   **precondition** of the close, not a replacement for the green-suite (step 2) or the
+   error self-audit (step 7); those still stand. (The findings-doc requirement itself
+   lives in [Filing work](#filing-work) → "Every `research` ticket produces ≥1 findings
+   doc". Basis: #1317; ratified in-session 2026-08-07, #1320.)
+6. **Return the session to main with `ExitWorktree keep`, then land + tear down with
    `pmtools close <N>` from the main checkout.** Because you entered the worktree at
    claim time (see "Claiming work"), the session is now *inside* the worktree — call
    the `ExitWorktree` tool with `action: keep` to move it back to the main checkout
@@ -580,7 +600,7 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    keeps your shell from being stranded in the deleted directory. (No-code
    decision/research tickets close via `gh issue close` + `pmtools release`; the same
    `ExitWorktree keep` applies before running them from main.)
-6. **Run the pre-close error self-audit.** Before posting the closing comment,
+7. **Run the pre-close error self-audit.** Before posting the closing comment,
    re-read the session from claim → now, enumerate every log-error trigger event
    (including resolved ones), log any missing rows (`pmtools error log`), and include
    one of `error self-audit: N row(s) logged (#…)` or `error self-audit: no loggable

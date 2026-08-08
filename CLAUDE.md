@@ -96,6 +96,11 @@ Critical rules:
   suite** (a green suite proves pixels are stable, not that they look right). Non-visible
   changes (logic / tooling / docs, or a byte-identical render-oracle refactor) are
   exempt. See [RULES.md](./RULES.md) → "Closing work" (step 4).
+- **Human completeness-OK gates closing a `research` ticket** — before closing a
+  `research` ticket, present the findings doc (or a summary) and get an explicit human
+  go-ahead; the human checks for unsourced / GUESSED rows, an unanswered question, or a
+  thin/missing gap table. A committed findings doc is necessary but not sufficient. See
+  [RULES.md](./RULES.md) → "Closing work" (step 5).
 <!-- banned-words-ok:start — this rule necessarily names the banned words to define them -->
 - **Banned words in ALL output** (replies, tickets, commits, docs): avoid **crisp**,
   **honest / honestly / honesty**, **candid / candidly / candor**,
