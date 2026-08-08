@@ -472,6 +472,26 @@ Study tree do not inherit this rule.
 
 ## Claiming work
 
+- **Every ticket is worked in a claimed worktree + issue branch — no exceptions
+  without an explicit human OK for that specific ticket.** This is universal: DEV,
+  RESEARCH, WRITER, ARC, `decision:`, no-code, and comment-only tickets **all** get a
+  `pmtools claim <N> --as <fruit>` (which mints the claim ref + `.claude/worktrees/wt-<fruit>-<project>-N`
+  on branch `br-<fruit>/<project>-N`) and an `EnterWorktree` into it before any edit,
+  comment, ruling, or finding is written. **Rationale:** the worktree + issue-branch
+  protocol is what lets the human see, at a glance, **which agent is working on which
+  ticket** — `git worktree list` is the live board. Work done directly on `main` (or in
+  an unclaimed checkout) is invisible on that board, so the human loses the ability to
+  tell what is in flight and who owns it. The **only** way to skip the worktree is an
+  explicit, per-ticket human go-ahead in the session.
+  - **This claim/worktree requirement is separate from the close *path*, which
+    does vary by type** (see "Closing work"): a `decision:`/commit ticket closes via
+    `Closes #N` + `pmtools close`; a research / comment-only ticket closes via
+    `gh issue close` + `pmtools release`. Both close paths still start from a claimed
+    worktree — the type only changes how you *finish*, never whether you claim. Do not
+    read "no-code tickets close differently" as "no-code tickets skip the worktree."
+    (Prompted by #1307, where a `decision:` ruling was posted directly from `main`
+    without a claim/worktree on the wrong belief that decision tickets skip it.)
+
 - **Run the full suite right after `pmtools claim`, before you change anything.** A
   fresh worktree branches off whatever `main` is *right now*, and in fleet mode
   another agent may have just merged a mid-flight (or even red) change. Confirm
@@ -628,11 +648,14 @@ review-gated merge flow this repo doesn't have; #600.)
 
       gh issue comment <N> --body "Closed in <sha>. <summary>
       error self-audit: no loggable errors this session"
-- **No-code tickets close differently.** `pmtools close` needs a `Closes #N`
-  *commit* to land and verify; a **research / comment-only** ticket has
-  none. Close those with `gh issue close <N>` (after posting the ruling/finding as
-  a comment), then **`pmtools release <N>`** to drop the claim ref + worktree. Do
-  **not** fabricate a no-op commit just to satisfy `pmtools close`.
+- **No-code tickets close differently — but are still claimed + worked in a
+  worktree.** This bullet is about the *close path*, not whether you claim: every
+  ticket is claimed into a worktree first (see "Claiming work" → the universal
+  claim/worktree rule). `pmtools close` needs a `Closes #N` *commit* to land and
+  verify; a **research / comment-only** ticket has none. Close those with `gh issue
+  close <N>` (after posting the ruling/finding as a comment), then **`pmtools release
+  <N>`** to drop the claim ref + worktree that the claim created. Do **not** fabricate
+  a no-op commit just to satisfy `pmtools close`.
 - **Closing a `decision:` ticket appends a Decision Log row.** When you close a
   ratified `decision:` ticket, append one row to `docs/decisions-ledger.md`
   (`date · issue # · area · one-line ruling · record`) — the append-only index of

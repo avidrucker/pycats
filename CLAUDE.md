@@ -58,6 +58,13 @@ Critical rules:
   work".
 - pycats runs **fleet** mode (`.claude/orchestrate.json`); claim work via
   `pmtools claim <issue> --as <fruit>`.
+- **Every ticket is worked in a claimed worktree + issue branch — no exceptions
+  without an explicit human OK for that ticket.** DEV, RESEARCH, WRITER, ARC,
+  `decision:`, no-code, comment-only — all of them: `pmtools claim` + `EnterWorktree`
+  before any edit/comment/ruling. `git worktree list` is the human's at-a-glance board
+  of who owns what; work on `main` is invisible on it. The type only changes the
+  *close path* (see "Closing work"), never whether you claim. See [RULES.md](./RULES.md)
+  → "Claiming work".
 - **Closing work:** commit with **`Closes #N` in the body**, then close from the
   **main checkout** with **`cd <main> && pmtools close <N>`** (pmtools#104: `close`
   resolves the worktree by issue #, so it runs from main and your shell is never
