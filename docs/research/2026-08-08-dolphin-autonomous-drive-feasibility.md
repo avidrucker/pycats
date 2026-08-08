@@ -155,6 +155,14 @@ proves annoying.
 
 ## Follow-up DEV harness — what it would involve
 
+**Where it lives: [`pm36-dolphin-harness`](https://github.com/avidrucker/pm36-dolphin-harness),
+not pycats.** That sibling repo already owns this scope (bootstrapped from pycats #1026,
+2026-08-04) with its own tracker, a settled two-mode spec, and a verified `dolphin-memory-engine`
+attach probe. pycats stays deterministic pure-Python game code; the emulator-attaching,
+subprocess-driving driver — and its gitignored copyrighted-RAM artifacts — belong in the harness
+repo. So the follow-up DEV ticket below is filed on the **harness** tracker, and pycats research
+tickets *cite* its findings. The survey in this doc folds into that repo's spec.
+
 A DEV ticket (only if the campaign wants the automated loop) would deliver a small Python
 driver:
 
@@ -187,5 +195,7 @@ this ticket.
 
 #638 (epic — the live-read capability this automates) · #1250 (the manual RAM-read this
 de-manualizes) · #639/#640 (Dolphin + codeset env, done) ·
+[`pm36-dolphin-harness`](https://github.com/avidrucker/pm36-dolphin-harness) (the sibling repo
+that owns the follow-up DEV driver; this survey folds into its spec) ·
 `docs/pm-reference/pm-globals-dump-setup.md` · memory `rukaidata-engine-hardcoded-limit`
 (why the values need a live read at all).
