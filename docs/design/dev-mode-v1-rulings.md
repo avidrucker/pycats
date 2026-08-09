@@ -81,7 +81,7 @@ golden/CI/`runner` runs, with an able-to-fail no-drift test).
 | B2 | hitbox/hurtbox overlay: **on in dev mode, off otherwise**, **removed from Options menu**; backtick master-toggles it within dev mode | **V1** | see reconciliation below |
 | B10 | default-on `PYCATS_DEV_LOG` when dev mode is enabled | **V1** | S, reuses `dev_log.py` |
 | B16 | overlay per-side split (hitbox-only / hurtbox-only) in the F1 screen | ~~V1~~ **scrapped** | **[Amended #1328]** — depended on the F1 screen, which model A drops; the overlay always draws both sides (#1324). Won't-do. |
-| B8 | seed display/set in the live game | **V1** | M; seed plumbing is CLI-only today |
+| B8 | seed display/set in the live game | **V1** | **[Amended #1341]** — folds into the Option-C input-source work (#1342): the controller input-source owns the live `rng`, which is B8's seed display/set hook. No standalone B8 ticket; implemented as part of #1342. |
 | B12 | instant-respawn / stock refill | **V1** | **cheat** — explicit opt-in + no-drift test |
 | B13 | last-hit damage/knockback readout | **V1** | lives in the dev HUD |
 | B4 | on-screen velocity + timers readout | post-V1 | M |
@@ -125,7 +125,7 @@ rest depend on.
    **[Amended #1328]** — was "F1 debug screen hosting granular toggles incl. B16"; model A
    drops the screen and B16. Filed + landed as #1328.
 6. **default-on `PYCATS_DEV_LOG`** under dev mode (B10).
-7. **seed display/set** in the live game (B8).
+7. **host a CPU in the live game** — per-seat input-source abstraction (Option C, ruled #1341) — #1342. **Folds in B8** (seed display/set): the controller input-source owns the live `rng`. **[Amended #1341]** — was "seed display/set (B8)"; B8 has no target without a live controller, so it is implemented as part of the Option-C work rather than as a standalone slice.
 8. **instant-respawn** cheat (B12) — explicit opt-in + no-drift test.
 9. **last-hit damage/knockback** readout (B13) — if not folded into slice 3.
 
