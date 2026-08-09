@@ -8,16 +8,23 @@ a **gitignored** ``logs/LOGS.txt``:
     <fighter> attempted to use <move> with <combo> but it's not yet implemented,
     see relevant files for implementation area(s) [<file1>, <file2>, ...]
 
-OFF by default. It writes only when ``PYCATS_DEV_LOG`` is set (truthy), so the
-sim / golden / test path does **zero file I/O** and stays byte-identical — a hard
-requirement (#587). De-dupes per ``(fighter, move)`` for the process so a held
-input does not spam the file every frame. The log path defaults to
-``logs/LOGS.txt`` (relative to cwd) and is overridable via ``PYCATS_DEV_LOG_PATH``
-(used by tests to point at a tmp dir).
+OFF by default. It writes only when ``PYCATS_DEV_LOG`` is set (truthy) **or** dev
+mode is enabled (#1332, B10 on #1297) — so a dev launch (``--dev`` / ``PYCATS_DEV``,
+or an in-game F1 toggle into dev mode, #1328) starts leaving breadcrumbs without the
+dev also having to set ``PYCATS_DEV_LOG`` by hand. The shipping / sim / golden / test
+path has ``dev_mode`` False and the env unset, so it does **zero file I/O** and stays
+byte-identical — a hard requirement (#587); ``dev_mode()`` is a pure bool read (no
+I/O) that is False in golden / CI / ``runner`` runs, so reading it changes no sim
+outcome. De-dupes per ``(fighter, move)`` for the process so a held input does not
+spam the file every frame. The log path defaults to ``logs/LOGS.txt`` (relative to
+cwd) and is overridable via ``PYCATS_DEV_LOG_PATH`` (used by tests to point at a tmp
+dir).
 """
 
 import os
 import time
+
+from . import runtime_settings
 
 _LINE = (
     "{fighter} attempted to use {move} with {combo} but it's not yet implemented, "
@@ -29,8 +36,14 @@ _seen: set[tuple[str, str]] = set()
 
 
 def enabled() -> bool:
-    """True only when PYCATS_DEV_LOG is set (truthy). Default OFF."""
-    return bool(os.environ.get("PYCATS_DEV_LOG"))
+    """True when PYCATS_DEV_LOG is set (truthy) OR dev mode is enabled (#1332). Default OFF.
+
+    The env path (unchanged, #587) turns the logger on regardless of dev mode. The
+    dev-mode path (#1332, B10) makes it default-on under a dev launch or an F1 toggle
+    into dev mode (#1328) with no env set, and live-tracks F1 (flip out → it stops).
+    dev_mode() is a pure bool read (no I/O), False in golden / CI / ``runner``, so the
+    shipping/sim path (dev mode off, env unset) stays OFF → zero file I/O."""
+    return bool(os.environ.get("PYCATS_DEV_LOG")) or runtime_settings.dev_mode()
 
 
 def _log_path() -> str:

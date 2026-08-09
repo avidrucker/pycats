@@ -12,7 +12,7 @@ from pycats.config import P1_COLOR, WHITE
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
-from pycats.storage import dev_log
+from pycats.storage import dev_log, runtime_settings
 
 MSG_CORE = "attempted to use"
 
@@ -22,6 +22,18 @@ def _enable(monkeypatch, tmp_path):
     monkeypatch.setenv("PYCATS_DEV_LOG", "1")
     monkeypatch.setenv("PYCATS_DEV_LOG_PATH", str(log))
     dev_log.reset()  # clear per-session de-dupe memory
+    return log
+
+
+def _enable_via_dev_mode(monkeypatch, tmp_path):
+    """Turn the logger on via the dev-mode gate (#1332), env explicitly UNSET — so the
+    test proves the coupling, not the env path. The autouse _reset_runtime_settings
+    fixture restores dev_mode to False after the test."""
+    log = tmp_path / "LOGS.txt"
+    monkeypatch.delenv("PYCATS_DEV_LOG", raising=False)
+    monkeypatch.setenv("PYCATS_DEV_LOG_PATH", str(log))
+    runtime_settings.set_dev_mode(True)
+    dev_log.reset()
     return log
 
 
@@ -63,6 +75,42 @@ def test_different_fighters_both_log(tmp_path, monkeypatch):
     dev_log.log_unimplemented("Narz", "up_b", "up+special", ["x.py"])
     text = log.read_text()
     assert "Birky attempted" in text and "Narz attempted" in text
+
+
+# ---- unit: the dev-mode coupling (#1332, B10) --------------------------------
+
+
+def test_enabled_true_under_dev_mode_env_unset(tmp_path, monkeypatch):
+    """#1332: a dev launch / F1-into-dev-mode turns the logger on with no env set."""
+    monkeypatch.delenv("PYCATS_DEV_LOG", raising=False)
+    runtime_settings.set_dev_mode(True)
+    assert dev_log.enabled() is True
+
+
+def test_enabled_false_when_both_off(tmp_path, monkeypatch):
+    """The determinism guard: dev mode off + env unset → OFF (shipping/sim path)."""
+    monkeypatch.delenv("PYCATS_DEV_LOG", raising=False)
+    runtime_settings.set_dev_mode(False)
+    assert dev_log.enabled() is False
+
+
+def test_enabled_live_tracks_dev_mode_toggle(tmp_path, monkeypatch):
+    """#1332 live-tracks F1: flip into dev mode → on; flip out → off (env unset)."""
+    monkeypatch.delenv("PYCATS_DEV_LOG", raising=False)
+    runtime_settings.set_dev_mode(False)
+    assert dev_log.enabled() is False
+    runtime_settings.toggle_dev_mode()  # F1 into dev mode
+    assert dev_log.enabled() is True
+    runtime_settings.toggle_dev_mode()  # F1 back out
+    assert dev_log.enabled() is False
+
+
+def test_dev_mode_on_writes_breadcrumb_env_unset(tmp_path, monkeypatch):
+    """The unit-level write path fires under dev mode alone (no env)."""
+    log = _enable_via_dev_mode(monkeypatch, tmp_path)
+    wrote = dev_log.log_unimplemented("Birky", "up_b", "up+special", ["x.py"])
+    assert wrote is True
+    assert "Birky attempted" in log.read_text()
 
 
 # ---- integration: the fighter_input call site --------------------------------
@@ -109,3 +157,14 @@ def test_undefined_special_silent_when_disabled(tmp_path, monkeypatch):
     p, plats = _airborne_default()
     p.update(_frame({pg.K_c}), plats, pg.sprite.Group())
     assert not (tmp_path / "LOGS.txt").exists(), "OFF → the sim/golden path writes nothing"
+
+
+def test_undefined_special_logs_under_dev_mode_env_unset(tmp_path, monkeypatch):
+    """#1332: the fighter_input breadcrumb fires on the sim path in a dev-mode launch
+    with PYCATS_DEV_LOG unset — the default-on-under-dev-mode acceptance criterion."""
+    log = _enable_via_dev_mode(monkeypatch, tmp_path)
+    p, plats = _airborne_default()
+    p.update(_frame({pg.K_c}), plats, pg.sprite.Group())  # neutral + special
+    assert log.exists(), "dev mode alone should leave a breadcrumb (env unset)"
+    assert MSG_CORE in log.read_text()
+    assert "neutral_b" in log.read_text()
