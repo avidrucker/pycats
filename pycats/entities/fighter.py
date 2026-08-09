@@ -49,6 +49,7 @@ from ..config import (
     BLAST_PADDING_X,
     CROUCH_CANCEL_FACTOR,
     DASH_DURATION,
+    DEAD_FRAMES,
     DODGE_AIR_SPEED,
     DODGE_SPEED,
     DODGE_TIME,
@@ -59,7 +60,6 @@ from ..config import (
     KNOCKDOWN_VY_THRESHOLD,
     LEDGE_REGRAB_LOCKOUT_FRAMES,
     PLAYER_SIZE,
-    RESPAWN_DELAY_FRAMES,
     SAKURAI_ANGLE_CODE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -141,7 +141,19 @@ class Fighter:
         self.is_alive = True
 
         # ---------- timers / counters (#87 / 6b-3b) ----------
-        self.respawn_timer = 0  # frames until next spawn
+        # #1334: `respawn_timer` is now the DEAD-phase countdown (off-screen, uncontrollable).
+        # Set to DEAD_FRAMES on _ko; when it drains, Player.begin_rebirth flips to the REBIRTH
+        # phase (alive on the revival platform). It is NOT the old single ~2 s freeze.
+        self.respawn_timer = 0  # DEAD-phase frames remaining (off-screen after a KO)
+        # Two-phase re-entry (#1334, epic #1316): the revival platform + REBIRTH-descent state.
+        # `respawn_platform` is the live floating platform (a thin Platform) the fighter rides
+        # in after DEAD, or None when not respawning. `rebirth_timer` counts down the descent;
+        # `respawn_platform_timer` counts down the platform's auto-vanish window. All three are
+        # owned by Player.begin_rebirth / Player._advance_respawn_platform and cleared by
+        # reset_to_spawn so a match reset or a normal life carries no revival platform.
+        self.respawn_platform = None
+        self.rebirth_timer = 0
+        self.respawn_platform_timer = 0
         self.dodge_timer = 0
         self.dash_timer = 0  # #388: initial-dash burst window; `dash` state while > 0
         # #388 slice 2b (#403): double-tap edge-detection. `dash_input_window`
@@ -544,7 +556,10 @@ class Fighter:
         # ever let a re-KO through.
         self.lives -= 1
         self.is_alive = False
-        self.respawn_timer = RESPAWN_DELAY_FRAMES
+        # #1334: start the DEAD phase (off-screen, uncontrollable). Player.begin_rebirth
+        # flips to REBIRTH (alive on the revival platform) when this drains — replacing the
+        # retired single ~2 s RESPAWN_DELAY_FRAMES freeze.
+        self.respawn_timer = DEAD_FRAMES
         # hide sprite off-screen
         self.rect = self.rect.with_center(_KO_OFFSCREEN_POS)
         self.vel.update(0, 0)
@@ -584,6 +599,11 @@ class Fighter:
         # from carrying that state into its next life (a frozen dodge_timer, a
         # leaked intangible=True, etc.).
         self.respawn_timer = 0
+        # #1334: a reset (match reset, or the REBIRTH landing itself calls this first) carries
+        # no in-flight revival platform / descent — begin_rebirth re-arms them after.
+        self.respawn_platform = None
+        self.rebirth_timer = 0
+        self.respawn_platform_timer = 0
         self.dodge_timer = 0
         self.hurt_timer = 0
         self.stun_timer = 0

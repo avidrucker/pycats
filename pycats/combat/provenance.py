@@ -420,8 +420,32 @@ TUNING_PROVENANCE: dict[str, Provenance] = {
     "INITIAL_LIVES": Provenance(
         3, "stocks", "pycats default stock count; a match ruleset setting, not a PM physics value", "TUNED", None
     ),
-    "RESPAWN_DELAY_FRAMES": Provenance(
-        120, "frames", "pycats respawn freeze ~2s (config computes int(2*FPS)); ruleset value, no canon", "TUNED", None
+    # ---- post-KO respawn two-phase DEAD/REBIRTH split (#1334; retired RESPAWN_DELAY_FRAMES) ----
+    # GUESS-tier / `[inference]`: engine-only Melee values (meleelight) carried to the Brawl/PM
+    # target with no PM-3.6 / Brawl primary — re-sourced in
+    # docs/research/pm-respawn-frame-timing-findings.md (#1336), which rules them NOT FOUND and
+    # NOT TUNED. The vocabulary's non-FOUND / non-TUNED tier is GUESS; the `[inference]` chain
+    # (Melee -> Brawl -> PM, doubled) is spelled out in the source string and carries issue #1334.
+    "DEAD_FRAMES": Provenance(
+        61,
+        "frames",
+        "[inference] off-screen DEAD phase after a KO blast. meleelight src/characters/shared/moves/DEAD*.js `interrupt` transitions at timer>60 -> 61 f (Melee); no PM-3.6/Brawl primary (doubled Melee->Brawl->PM inference). Re-sourced docs/research/pm-respawn-frame-timing-findings.md (#1336).",  # noqa: E501
+        "GUESS",
+        1334,
+    ),
+    "REBIRTH_FRAMES": Provenance(
+        90,
+        "frames",
+        "[inference] platform-descent REBIRTH phase. meleelight src/characters/shared/moves/REBIRTH.js `interrupt` at timer>90; descent of 135 units at 1.5 u/f = 90 f (internally consistent) (Melee); no PM-3.6/Brawl primary. Re-sourced docs/research/pm-respawn-frame-timing-findings.md (#1336).",  # noqa: E501
+        "GUESS",
+        1334,
+    ),
+    "REVIVAL_PLATFORM_VANISH_FRAMES": Provenance(
+        300,
+        "frames",
+        "revival platform auto-vanishes after ~5 s of inaction. FOUND: SmashWiki:Revival_platform 'disappear by itself after 5 seconds' (Brawl primary); meleelight REBIRTHWAIT.js spawnWaitTime>300 corroborates. config computes int(5*FPS) = 300.",  # noqa: E501
+        "FOUND",
+        1334,
     ),
     # ---- Pass B: #584-ratified collision/rule constants (#598) — TUNED, no PM canon ----
     "PLAYER_SIZE": Provenance(
@@ -522,7 +546,10 @@ TUNING_CONSTANT_NAMES: frozenset[str] = frozenset(
         "LEDGE_REGRAB_LOCKOUT_FRAMES",
         "PLAYER_ATTACK_DURATION",
         "INITIAL_LIVES",
-        "RESPAWN_DELAY_FRAMES",
+        # post-KO respawn two-phase split (#1334; retired RESPAWN_DELAY_FRAMES)
+        "DEAD_FRAMES",
+        "REBIRTH_FRAMES",
+        "REVIVAL_PLATFORM_VANISH_FRAMES",
         # Pass B #584-ratified collision/rule constants (#598)
         "PLAYER_SIZE",
         "LEDGE_CATCH_W",

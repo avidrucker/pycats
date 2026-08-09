@@ -28,6 +28,7 @@ from ..core.input import merge_frames  # noqa: E402
 from ..core.physics import resolve_player_push  # noqa: E402
 from ..entities import Player  # noqa: E402
 from ..entities.ledge import ledges_from_platforms  # noqa: E402
+from ..entities.respawn_platform import active_platforms  # noqa: E402
 from ..entities.stages import BATTLEFIELD  # noqa: E402
 from ..loadout import (  # noqa: E402
     Selection,
@@ -271,11 +272,14 @@ def run_battle(
             fi = controller(p1, p2, f, attacks, ledges)  # ledges: AI edge-hog (#404)
         else:
             fi = frame_inputs[f] if f < len(frame_inputs) else _empty_frame()
+        # #1334: weave any live revival platform into the frame's platform list (byte-identical
+        # to `platforms` when nobody is respawning, so the no-KO goldens are untouched).
+        active = active_platforms(players, platforms)
         for p in players:
-            p.update(fi, platforms, attacks, ledges)
+            p.update(fi, active, attacks, ledges)
         over_time.tick(players)  # #1218: time-driven Health Regen, before process_hits (#1173 Q4-A)
-        resolve_player_push(list(players), platforms)
-        attacks.update(platforms)  # #266: projectiles need platforms to bounce
+        resolve_player_push(list(players), active)
+        attacks.update(active)  # #266: projectiles need platforms to bounce
         hit_resolution.process_hits(players, attacks)
         match.tick()
         snaps.append(snapshot(players, attacks, match))
@@ -284,7 +288,7 @@ def run_battle(
                 pass  # #508: fast-forwarding — run the sim but suppress render + pacing
             else:
                 skip_to = None  # reached the boundary (or not skipping): render this frame
-                intent = presenter.show(platforms, players, attacks, f, inputs=fi)  # #434
+                intent = presenter.show(active, players, attacks, f, inputs=fi)  # #434, #1334 revival platform
                 if intent == "skip" and boundaries:
                     skip_to = min((b for b in boundaries if b > f), default=None)
         if stop_on_match_over and match.phase == "match_over":

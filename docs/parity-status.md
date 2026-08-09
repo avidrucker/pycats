@@ -5,7 +5,7 @@
 > `pycats/combat/provenance.py` registry (#233): 🟢 FOUND · 🟡 TUNED/GUESS · 🔴 DIVERGENCE.
 > Legend: [docs/parity-labeling-legend.md](parity-labeling-legend.md) (#452). Design: #448 (Pass C of #451).
 
-**Summary:** 31 🟢 / 35 🟡 / 4 🔴  (70 constants)
+**Summary:** 32 🟢 / 36 🟡 / 4 🔴  (72 constants)
 
 ## 🟢 Sourced — FOUND (PM-valid, checked)
 
@@ -34,6 +34,7 @@
 | `LEDGE_REGRAB_INTANGIBLE_CUTOFF` | 5 | FOUND | 🟢 | PMDT 3.5 primary: "After a character regrabs the ledge five times without touching the ground, that character no longer receives intangibility for grabbing the ledge again" — grabs 1..5 grant the full burst, grab 6+ only the residual (#656, ratified #670). The COUNT is primary-sourced; the post-cutoff residual (LEDGE_POST_CUTOFF_RESIDUAL_FRAMES) is a separate acknowledged gap, deliberately unregistered. |
 | `MAX_JUMPS` | 2 | FOUND | 🟢 | Mario/PM jump count: 1 ground + 1 midair = 2 (standard 2-jump character; SmashWiki:Mario_(PM)) |
 | `PX_PER_UNIT` | 5.4 | FOUND | 🟢 | data-authoring units->px calibration ~=5.4 (docs/research-120-smash-units-and-sources.md; #120/#195); the base every spatial derivation in this registry references |
+| `REVIVAL_PLATFORM_VANISH_FRAMES` | 300 | FOUND | 🟢 | revival platform auto-vanishes after ~5 s of inaction. FOUND: SmashWiki:Revival_platform 'disappear by itself after 5 seconds' (Brawl primary); meleelight REBIRTHWAIT.js spawnWaitTime>300 corroborates. config computes int(5*FPS) = 300. |
 | `SAKURAI_ANGLE_CODE` | 361 | FOUND | 🟢 | SmashWiki:Sakurai_angle — the 361 sentinel (not a literal degree) |
 | `SHIELDSTUN_FACTOR` | 0.345 | FOUND | 🟢 | SmashWiki:Shieldstun — Brawl/PM factor 0.345 |
 | `SHIELD_BREAK_STUN_MAX` | 490 | FOUND | 🟢 | Melee/PM shield-break stun = (400 - percent) + 90; max at 0% |
@@ -51,6 +52,7 @@
 | `BLAST_PADDING` | 50 | TUNED | 🟡 | pycats KO boundary = px beyond the screen edge; pycats stage rule, no canon |
 | `BLAST_PADDING_TOP` | 150 | TUNED | 🟡 | pycats TOP KO boundary = BLAST_PADDING + 100; owner design decision (Avi 2026-07-20) raising the top blast line 100px above the bottom, no canon |
 | `DASH_DURATION` | 12 | GUESS | 🟡 | pycats initial-dash burst window; GUESS tuning start (config ⚠, #388), no canon single value |
+| `DEAD_FRAMES` | 61 | GUESS | 🟡 | [inference] off-screen DEAD phase after a KO blast. meleelight src/characters/shared/moves/DEAD*.js `interrupt` transitions at timer>60 -> 61 f (Melee); no PM-3.6/Brawl primary (doubled Melee->Brawl->PM inference). Re-sourced docs/research/pm-respawn-frame-timing-findings.md (#1336). |
 | `DODGE_FRAMES` | 15 | GUESS | 🟡 | roll intangibility window; playtest starting point (tracked #65) |
 | `DODGE_MIN_PLATFORM_OVERLAP_PX` | 25 | TUNED | 🟡 | pycats dodge-off-ledge safety margin: a roll/dodge is cancelled if it would leave less than this body-overlap on the platform; pycats edge-safety rule, no PM equivalent |
 | `DODGE_SPEED` | 14 | TUNED | 🟡 | pycats ground-roll horizontal boost; Melee rolls are animation-driven per-character, no single canon speed to derive |
@@ -74,7 +76,7 @@
 | `PROJECTILE_GRAVITY` | 0.5 | GUESS | 🟡 | pycats projectile fall accel; GUESS tuning start (config ⚠, #266/#425), no PM source |
 | `PROJECTILE_MAX_BOUNCES` | 3 | GUESS | 🟡 | pycats projectile bounces before despawn; GUESS (config ⚠, #266/#425) |
 | `PROJECTILE_RESTITUTION` | 0.6 | GUESS | 🟡 | pycats projectile bounce energy kept (<1); GUESS tuning start (config ⚠, #266/#425) |
-| `RESPAWN_DELAY_FRAMES` | 120 | TUNED | 🟡 | pycats respawn freeze ~2s (config computes int(2*FPS)); ruleset value, no canon |
+| `REBIRTH_FRAMES` | 90 | GUESS | 🟡 | [inference] platform-descent REBIRTH phase. meleelight src/characters/shared/moves/REBIRTH.js `interrupt` at timer>90; descent of 135 units at 1.5 u/f = 90 f (internally consistent) (Melee); no PM-3.6/Brawl primary. Re-sourced docs/research/pm-respawn-frame-timing-findings.md (#1336). |
 | `SAKURAI_AIRBORNE_DEG` | 40.0 | TUNED | 🟡 | pycats airborne launch angle; keyed to pycats knockback() magnitude, not Smash units — no canon value |
 | `SAKURAI_GROUNDED_HIGH_KB` | 88.0 | TUNED | 🟡 | pycats threshold — grounded angle reaches max at this pycats KB magnitude; no canon value |
 | `SAKURAI_GROUNDED_LOW_KB` | 60.0 | TUNED | 🟡 | pycats threshold — grounded angle stays flat below this pycats KB magnitude; no canon value |

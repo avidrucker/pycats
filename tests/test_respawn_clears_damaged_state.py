@@ -11,7 +11,7 @@ already zeroes these timers; _respawn() must match it.
 import pygame as pg
 
 from pycats.combat.data import Circle, Hitbox
-from pycats.config import P1_COLOR, P2_COLOR, RESPAWN_DELAY_FRAMES, WHITE
+from pycats.config import DEAD_FRAMES, P1_COLOR, P2_COLOR, REBIRTH_FRAMES, WHITE
 from pycats.core.input import InputFrame
 from pycats.entities.attack import Attack
 from pycats.entities.platform import Platform
@@ -58,7 +58,7 @@ def _ko_while_damaged_then_respawn(kind):
     victim.update(_empty(), plats, empty)
     assert not victim.fighter.is_alive
 
-    for _ in range(RESPAWN_DELAY_FRAMES + 2):  # wait out respawn + settle
+    for _ in range(DEAD_FRAMES + REBIRTH_FRAMES + 2):  # wait out DEAD -> REBIRTH re-entry + settle (#1334)
         victim.update(_empty(), plats, empty)
     return victim
 

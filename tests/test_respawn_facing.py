@@ -12,7 +12,7 @@ import pygame  # type: ignore
 import pytest
 from helpers import mk_player
 
-from pycats.config import RESPAWN_DELAY_FRAMES, SCREEN_HEIGHT
+from pycats.config import DEAD_FRAMES, REBIRTH_FRAMES, SCREEN_HEIGHT
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 
@@ -44,8 +44,8 @@ def test_respawn_restores_initial_facing(initial_facing_right):
     # Facing is untouched while dead/waiting; the reset happens on respawn.
     assert p.fighter.facing_right == (not initial_facing_right)
 
-    # Tick through the respawn delay; _respawn fires from update().
-    for _ in range(RESPAWN_DELAY_FRAMES + 2):
+    # Tick through the two-phase DEAD -> REBIRTH re-entry (#1334); begin_rebirth restores facing.
+    for _ in range(DEAD_FRAMES + REBIRTH_FRAMES + 2):
         p.update(_noop(), platforms, pygame.sprite.Group())
 
     assert p.fighter.is_alive, "player should have respawned"

@@ -93,7 +93,8 @@ def default_timeline(keymaps):
 #   (SCREEN_WIDTH + BLAST_PADDING = 1010 px) → "ko" at ~72%→91%, P1 safe near x≈468.
 #   (A vertical up-smash KO was ruled infeasible in the #588 spike: it needs ~140%+ and
 #   pixel-perfect overlap; the side-blast fsmash is the sanctioned fallback.)
-# - P2 respawns after RESPAWN_DELAY_FRAMES, completing the ko→idle arc.
+# - P2 re-enters via the two-phase DEAD -> REBIRTH respawn (#1334): DEAD_FRAMES off-screen,
+#   then alive on the revival platform, completing the ko→idle arc.
 _COMBAT_JAB_START = 148
 _COMBAT_N_JABS = 48
 _COMBAT_JAB_PERIOD = 16  # = jab length; one clean hit per completed move under #1087's hard-drop

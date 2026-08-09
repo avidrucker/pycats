@@ -12,7 +12,7 @@ import math
 
 import pygame as pg
 
-from pycats.config import P1_COLOR, RESPAWN_DELAY_FRAMES, WHITE
+from pycats.config import DEAD_FRAMES, P1_COLOR, REBIRTH_FRAMES, WHITE
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 from pycats.entities.player import Player
@@ -58,8 +58,8 @@ def test_tail_reinitializes_on_respawn_like_first_load():
         if not p.fighter.is_alive:
             break
     assert not p.fighter.is_alive  # we actually KO'd
-    for _ in range(RESPAWN_DELAY_FRAMES + 1):
-        p.update(_e(), g, pg.sprite.Group())  # -> _respawn
+    for _ in range(DEAD_FRAMES + REBIRTH_FRAMES + 1):
+        p.update(_e(), g, pg.sprite.Group())  # -> DEAD -> REBIRTH (#1334)
     respawn_max = _max_move_over(p, g, 30)
 
     # Post-respawn motion must look like a first load, not a big swing-in.

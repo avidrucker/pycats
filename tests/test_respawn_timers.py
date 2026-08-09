@@ -11,7 +11,7 @@ respawn can clear them. Guards the behaviour through the real per-frame
 import pygame  # type: ignore
 from helpers import mk_player
 
-from pycats.config import RESPAWN_DELAY_FRAMES, SCREEN_HEIGHT
+from pycats.config import DEAD_FRAMES, REBIRTH_FRAMES, SCREEN_HEIGHT
 from pycats.core.input import InputFrame
 from pycats.entities.platform import Platform
 
@@ -55,7 +55,7 @@ def test_respawn_clears_transient_action_state():
     # Tick only until the respawn fires. The respawn frame early-returns, so we
     # assert on the freshly-respawned state without running another update (which
     # would process the stale move clock and mask whether _respawn cleared it).
-    for _ in range(RESPAWN_DELAY_FRAMES + 5):
+    for _ in range(DEAD_FRAMES + REBIRTH_FRAMES + 5):
         if p.fighter.is_alive:
             break
         p.update(_noop(), platforms, pygame.sprite.Group())

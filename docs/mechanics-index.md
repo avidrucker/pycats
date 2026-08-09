@@ -78,7 +78,6 @@ playtest starts) rows are out of scope — read them straight from the registry.
 | `LEDGE_REGRAB_LOCKOUT_FRAMES` | `pycats/config/physics.py::LEDGE_REGRAB_LOCKOUT_FRAMES` | TUNED | `pycats/combat/provenance.py` | post-release regrab-suppression window |
 | `PLAYER_ATTACK_DURATION` | `pycats/config/physics.py::PLAYER_ATTACK_DURATION` | TUNED | `pycats/combat/provenance.py` | default attack duration; no PM canon |
 | `INITIAL_LIVES` | `pycats/config/stage.py::INITIAL_LIVES` | TUNED | `pycats/combat/provenance.py` | ruleset stock count, not a physics value |
-| `RESPAWN_DELAY_FRAMES` | `pycats/config/stage.py::RESPAWN_DELAY_FRAMES` | TUNED | `pycats/combat/provenance.py` | ~2s respawn freeze; ruleset value |
 | `PLAYER_SIZE` | `pycats/config/render.py::PLAYER_SIZE` | TUNED | `pycats/combat/provenance.py` | default collision box (render→collision, #598) |
 | `LEDGE_CATCH_W` | `pycats/config/physics.py::LEDGE_CATCH_W` | TUNED | `pycats/combat/provenance.py` | ledge-grab catch-region width |
 | `LEDGE_CATCH_H` | `pycats/config/physics.py::LEDGE_CATCH_H` | TUNED | `pycats/combat/provenance.py` | ledge-grab catch-region height |

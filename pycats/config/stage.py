@@ -79,4 +79,27 @@ BLAST_PADDING_TOP = BLAST_PADDING + 100  # = 150 px above the screen top = KO (#
 # note above ("Blast zones stay on the existing BLAST_PADDING model"). The vertical
 # (top/bottom) KO boundary stays on BLAST_PADDING (50).
 BLAST_PADDING_X = 100  # px beyond L/R screen edge = KO (temporary; see note above)
-RESPAWN_DELAY_FRAMES = int(2 * FPS)  # 2 s freeze before respawn
+
+# ---------------- post-KO respawn: two-phase DEAD -> REBIRTH (#1334, epic #1316) ----------------
+# The single ~2 s invisible freeze (the retired RESPAWN_DELAY_FRAMES) is replaced by a
+# two-phase re-entry ruled V1 in #1327 (docs/design/spawn-respawn-disposition.md):
+#   DEAD    — the fighter is blasted off-screen / "gone", uncontrollable.
+#   REBIRTH — the fighter is alive again on a floating revival platform that appears
+#             top-centre, descends into place, and auto-vanishes after a timeout.
+# The DEAD/REBIRTH frame split is engine-only Melee `[inference]` (meleelight), re-sourced
+# in docs/research/pm-respawn-frame-timing-findings.md (#1336): no PM-3.6 / Brawl primary
+# exists, so these two carry a GUESS/inference provenance marker (combat/provenance.py),
+# NOT FOUND and NOT TUNED. The 300 f auto-vanish HAS a Brawl primary (SmashWiki 5 s) → FOUND.
+DEAD_FRAMES = 61  # off-screen DEAD phase; meleelight DEAD*.js interrupt at timer>60 → 61 f (#1336, [inference])
+REBIRTH_FRAMES = 90  # platform-descent REBIRTH phase; meleelight REBIRTH.js interrupt at timer>90 (#1336, [inference])
+REVIVAL_PLATFORM_VANISH_FRAMES = int(5 * FPS)  # = 300 f (~5 s): revival platform auto-vanish (SmashWiki; FOUND)
+
+# Revival-platform geometry (#1334) — a thin (pass-through / drop-through) platform rendered
+# top-centre. Layout literals like the THIN_PLAT_* dicts above: pycats stage geometry, not a
+# PM-mapped dimension, so deliberately NOT in the tuning-provenance registry (which excludes
+# platform/render geometry). The fighter + platform descend REVIVAL_PLAT_DESCENT_PX to the rest
+# height over REBIRTH_FRAMES; DESCENT/FRAMES divides evenly (90/90 = 1 px/frame).
+REVIVAL_PLAT_WIDTH = 160
+REVIVAL_PLAT_HEIGHT = THIN_PLAT_HEIGHT  # reuse the thin-platform thickness (20)
+REVIVAL_PLAT_REST_Y = 120  # top of the platform at rest — upper-centre, well above stage surface
+REVIVAL_PLAT_DESCENT_PX = 90  # descends 90 px into place over REBIRTH_FRAMES (1 px/frame)

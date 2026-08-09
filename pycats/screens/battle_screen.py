@@ -28,6 +28,7 @@ from ..config import (
 from ..core.physics import resolve_player_push
 from ..entities import Player
 from ..entities.ledge import ledges_from_platforms
+from ..entities.respawn_platform import active_platforms
 from ..loadout import Selection, Skin, assign_distinct_skins, build_fighter, character_for, starting_lives
 from ..render_battle import (
     draw_controls,
@@ -165,10 +166,14 @@ class BattleScreen:
         held = getattr(frame_input, "held", ())
         self.p1_history.record(pressed, held, self.p1_keys)
         self.p2_history.record(pressed, held, self.p2_keys)
+        # #1334: weave any live revival platform into the frame's platform list so a
+        # respawning fighter stands on / drops through it and it renders. Byte-identical
+        # (returns `platforms` unchanged) when nobody is respawning.
+        active = active_platforms(self.players, platforms)
         for p in self.players:
-            p.update(frame_input, platforms, self.attacks, self._ledges)
-        resolve_player_push(list(self.players), platforms)
-        self.attacks.update(platforms)  # #266: projectiles need platforms to bounce
+            p.update(frame_input, active, self.attacks, self._ledges)
+        resolve_player_push(list(self.players), active)
+        self.attacks.update(active)  # #266: projectiles need platforms to bounce
         hit_resolution.process_hits(self.players, self.attacks)
 
     def winner(self):
@@ -179,7 +184,7 @@ class BattleScreen:
         """Fill + fighters + attacks + HUD/controls — the shared battle composite.
         SAME calls/order as game.py's old inline playing block (#205, slice 2b)."""
         surface.fill(BG_COLOR)
-        render_battle(surface, self.players, platforms)
+        render_battle(surface, self.players, active_platforms(self.players, platforms))  # #1334: draw revival platforms
         render_attacks(surface, self.attacks)
         # Hit/hurtbox debug overlay (#219) — above fighters/attacks, gated on the
         # live toggle (default OFF, so this is a no-op until a dev flips it on).
@@ -210,7 +215,7 @@ class BattleScreen:
         Mirrors game.py's pause branch."""
         background = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         background.fill(BG_COLOR)
-        render_battle(background, self.players, platforms)
+        render_battle(background, self.players, active_platforms(self.players, platforms))  # #1334
         render_attacks(background, self.attacks)
         render_hitbox_overlay(background, self.players, self.attacks)  # #219
         if self.player1 and self.player2:

@@ -56,13 +56,23 @@ from ..config import (
     PROJECTILE_GRAVITY,
     PROJECTILE_MAX_BOUNCES,
     PROJECTILE_RESTITUTION,
+    REBIRTH_FRAMES,
+    REVIVAL_PLAT_DESCENT_PX,
+    REVIVAL_PLAT_HEIGHT,
+    REVIVAL_PLAT_REST_Y,
+    REVIVAL_PLAT_WIDTH,
+    REVIVAL_PLATFORM_VANISH_FRAMES,
+    SCREEN_WIDTH,
 )
+from ..core.geometry import FrozenRect
+from ..core.physics import find_current_platform
 from ..loadout import PlayerIdentity, PlayerName, PlayerNumberSlot, PlayerTeamColor
 from .attack import Attack, Projectile
 from .fighter import Fighter
 from .fighter_input import FighterInput
 from .fighter_physics import step_physics
 from .ledge import ledge_regrab_intangible_frames
+from .platform import Platform
 
 # Angled f-smash (#327/4): map the captured direction to a launch angle.
 _FSMASH_ANGLE = {"up": FSMASH_ANGLE_UP, "down": FSMASH_ANGLE_DOWN}
@@ -259,6 +269,76 @@ class Player(pygame.sprite.Sprite):
         self._landing_spawn_now = None
         self.tail.reset()  # re-lay the tail at the spawn point (#41)
 
+    # ============================================================ REBIRTH (#1334)
+    def begin_rebirth(self) -> None:
+        """End the DEAD phase and enter REBIRTH: spawn a floating revival platform
+        top-centre and stand the fighter on it, alive and controllable (#1334, epic
+        #1316 slice 1). Replaces the old single ~2 s freeze's `reset_to_spawn`.
+
+        Reuses `reset_to_spawn` for the full clean-slate per-life reset (clears every
+        transient timer/flag, is_alive=True, clock/tail), then OVERRIDES the position:
+        instead of dropping airborne at the spawn point, the fighter rides in on a thin
+        (pass-through / drop-through) platform that appears above stage centre and
+        descends into place over REBIRTH_FRAMES (advanced by _advance_respawn_platform).
+        The platform auto-vanishes after REVIVAL_PLATFORM_VANISH_FRAMES of inaction, or
+        when the fighter leaves it. On-platform intangibility (#1317 B10-B11) and the
+        post-drop invincibility grant (#506/#1317 B12-B13) are later child-3 slices."""
+        self.reset_to_spawn()  # full per-life clean slate (also clears the revival-platform fields)
+        # The platform starts REVIVAL_PLAT_DESCENT_PX above its rest height and descends in.
+        start_y = REVIVAL_PLAT_REST_Y - REVIVAL_PLAT_DESCENT_PX
+        plat = Platform(
+            FrozenRect(
+                SCREEN_WIDTH // 2 - REVIVAL_PLAT_WIDTH // 2,
+                start_y,
+                REVIVAL_PLAT_WIDTH,
+                REVIVAL_PLAT_HEIGHT,
+            ),
+            thin=True,
+        )
+        self.fighter.respawn_platform = plat
+        self.fighter.rebirth_timer = REBIRTH_FRAMES
+        self.fighter.respawn_platform_timer = REVIVAL_PLATFORM_VANISH_FRAMES
+        # Stand the fighter on the platform, centred, grounded — it rides the descent.
+        self.rect = self.rect.with_midbottom((plat.rect.centerx, plat.rect.top))
+        self.fighter.vel.update(0, 0)
+        self.fighter.on_ground = True
+        # re-lay the Verlet tail at the platform position (#41): reset_to_spawn laid it
+        # out at the spawn point above, but the fighter is now on the revival platform, so
+        # re-lay it here or the first tail.update whips it across that gap.
+        self.tail.reset()
+
+    def _advance_respawn_platform(self, platforms) -> None:
+        """Advance the live revival platform one frame (#1334): descend it (carrying the
+        grounded fighter) over REBIRTH_FRAMES, then hold at rest until it auto-vanishes
+        after REVIVAL_PLATFORM_VANISH_FRAMES — or the moment the fighter leaves it.
+
+        Called at the END of update() so it has the last word on the co-descending
+        position. The 1 px/frame descent (REVIVAL_PLAT_DESCENT_PX // REBIRTH_FRAMES)
+        keeps the fighter glued to the platform top; a fighter who jumps/walks off during
+        or after the descent leaves it, which dismisses the platform (PM 'inaction')."""
+        f = self.fighter
+        plat = f.respawn_platform
+        if plat is None:
+            return
+        f.respawn_platform_timer -= 1
+        on_it = find_current_platform(f.rect, [plat]) is plat
+        if f.rebirth_timer > 0:
+            step = REVIVAL_PLAT_DESCENT_PX // REBIRTH_FRAMES  # 1 px/frame (divides evenly)
+            plat.rect = plat.rect.with_y(plat.rect.y + step)
+            if on_it and f.on_ground:
+                f.rect = f.rect.with_y(f.rect.y + step)  # carry the grounded rider down
+            f.rebirth_timer -= 1
+            if f.rebirth_timer == 0:
+                plat.rect = plat.rect.with_y(REVIVAL_PLAT_REST_Y)  # snap to the exact rest height
+                if on_it and f.on_ground:
+                    f.rect = f.rect.with_bottom(plat.rect.top)
+        elif not on_it:
+            # Descent done and the fighter has left the platform → it vanishes.
+            f.respawn_platform = None
+            return
+        if f.respawn_platform_timer <= 0:  # auto-vanish after the window
+            f.respawn_platform = None
+
     # ---- move-progress, delegated to MoveClock (#71) ----
     # These three are read by the statechart (fighter_chart) and the runner
     # snapshot; keeping the historical names/values means no consumer changes and
@@ -353,18 +433,29 @@ class Player(pygame.sprite.Sprite):
         # state label so the geometry stays byte-identical (golden-stable).
         self._apply_posture_geometry()
 
+        # #1334 REBIRTH: advance the revival platform's descent + auto-vanish for a
+        # respawning fighter (no-op when there is no live revival platform, so the
+        # normal-life path is byte-identical). Runs last so it has the final say on the
+        # co-descending platform/fighter position this frame.
+        if self.fighter.respawn_platform is not None:
+            self._advance_respawn_platform(platforms)
+
     def _handle_death_and_freezes(self):
         """Dead/respawn, hitlag freeze (#138), and blast-zone KO early-outs.
 
         Returns True when one fired and update() should stop for this frame. Ordered:
         the dead check first (a KO'd fighter is never frozen), then the hitlag freeze
         (a frozen fighter can't drift out), then the blast-zone KO."""
-        # ---------- dead / waiting to respawn ----------
+        # ---------- dead / DEAD phase (off-screen, uncontrollable) ----------
+        # #1334: the KO parks the fighter off-screen for the DEAD phase; `respawn_timer` is now
+        # the DEAD countdown. When it drains, begin_rebirth flips to REBIRTH — alive again on the
+        # floating revival platform (which then descends + auto-vanishes, advanced by
+        # _advance_respawn_platform below in the live-fighter path). No single ~2 s freeze.
         if not self.fighter.is_alive:
             self.fighter.tick_respawn()  # #293/S4b: aggregate owns the decrement
             if self.fighter.respawn_timer <= 0 and self.fighter.lives > 0:
-                self.reset_to_spawn()  # #286: Player owns the clock/tail reset
-            return True  # nothing else while dead
+                self.begin_rebirth()  # #1334: enter REBIRTH on the revival platform
+            return True  # nothing else while dead (DEAD phase)
 
         # ---------- hitlag / freeze frames (#138) ----------
         # On a clean hit both fighters freeze for hitlag_timer frames. Returning
