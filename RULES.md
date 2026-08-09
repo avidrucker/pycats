@@ -5,6 +5,17 @@
 - **Single source of truth: GitHub issues.** Actionable work lives in the issue
   tracker (`gh issue list`), not in markdown TODO files. (`TODOS.md` was retired
   into issues on 2026-06-22; the original list is preserved in git history.)
+- **All work is ticketed — research, decisions, dev, tests, docs alike.** Every unit of
+  work happens inside a claimed ticket; nothing is worked without one, and work isn't
+  proposed as something to just-do-now outside the ticket flow — suggest *filing a
+  ticket* for it instead (see ~/.claude/CLAUDE.md → "Suggest, don't act"). Size is
+  irrelevant: a one-line code change, a one-line doc edit, a small decision, or a quick
+  research pass is still ticketed work. The only activity that happens **between** tickets
+  is asking/answering questions about tickets, building context/understanding of what
+  we're doing, and session housekeeping (clearing/compacting context). Anything beyond
+  that waits for a ticket — if it should be done, we file one first. (Front-end
+  complement of "a question is not authorization to create work" under *Filing work*, and
+  "every ticket is worked in a claimed worktree" under *Claiming work*.)
 - pycats runs the **fleet** orchestration workflow (`.claude/orchestrate.json`,
   `mode: "fleet"`). Triage + assignment via the `/fruit-agent-orchestrate` skill;
   agents claim work with `pmtools claim <issue> --as <fruit>` and close it with
@@ -38,12 +49,14 @@
   - `area:tracker` — ticket discipline, TODO reconciliation, rules/process docs
   - `area:docs` — README, docs, setup, contributor workflow, and developer-experience documentation
 
-  **One area per issue:** if it spans two, pick the dominant one (the orchestrator
-  uses the *first-listed*) and **make a suggestion of how to effectively split the
-  ticket** if it truly needs two lanes. **Why:** `/fruit-agent-orchestrate`
-  partitions the backlog into per-agent lanes by `area:*` (at most one cluster per
-  agent), so an unlabelled ticket lands in the wildcard pool and weakens the
-  same-file collision guard. (Reproducible label *creation*: `avidrucker/pmtools#69`.)
+  **Exactly one `area:*` per issue — never more.** If an issue spans two or more
+  areas, suggest how to split it and ask the human directly: combined, or split. Some
+  issues are inherently cross-cutting; those get **`area:cross-cutting`** (pending —
+  see #1330, the cross-cutting-label + orchestrator-lane ticket, new), never several
+  area labels stacked on one ticket. **Why:** `/fruit-agent-orchestrate` partitions
+  the backlog into per-agent lanes by `area:*` (at most one cluster per agent), so an
+  unlabelled ticket lands in the wildcard pool and weakens the same-file collision
+  guard. (Reproducible label *creation*: `avidrucker/pmtools#69`.)
 
 ### Relationship labels (`parent` / `child`)
 
@@ -72,6 +85,10 @@
   ticket", "go ahead"). Filing-and-claiming is outward-facing and costly to
   unwind — when unsure whether you've been authorized, ask. (Front-end mirror of
   "surface the contradiction before an outward-facing close" under *Fixing bugs*.)
+  This holds **even when the question exposes something you forgot but arguably
+  should have done**: the reflex to remediate on the spot — "did you log the jq
+  error?" answered by logging it — is still *acting on a question*. Answer plainly
+  first ("no — want me to?") and wait; a forgotten obligation is not self-authorization.
 - **No unprompted research.** When asked for a specific action (file/log/label/claim/
   edit a named thing), do **exactly that** — do not first run greps, file reads, or
   issue listings that weren't requested. Resolving the minimal input the asked action
@@ -81,7 +98,12 @@
   and wait for a yes. Burned tokens and the "I didn't ask you to research" correction
   are the tell (errors db 23/24). (Execution-time complement of "a question is not
   authorization" above: that rule bars acting when only *asked* a question; this one
-  bars over-acting when *given* an action.)
+  bars over-acting when *given* an action.) Filing a ticket is **`file`**, not research:
+  **"to make the ticket higher-quality" is not authorization** for an unprompted
+  line-by-line audit or exhaustive gap catalogue. File the complaint at the depth asked; if
+  a deeper pass would help, **offer a depth choice (minimal / moderate / thorough) and
+  wait**, don't perform it (#577 / error #61: a filed README ticket answered with a full
+  unprompted README review).
 - **Suggest, don't act** — see ~/.claude/CLAUDE.md → "Suggest, don't act". When asked for a narrow action, do only that; propose anything further, don't perform it.
 - Shape every ticket as a complaint: **have X / should have Y / repro**
   (yegor-bdd).
@@ -91,13 +113,28 @@
   `--label area:combat`, and refuses a `--severity` that isn't on a `bug`
   (the "severity is for defects only" rule, enforced at filing time). Typical call:
   `pmtools file --title "feat: X" --area <area> --role <ROLE> --body-file <f.md>`
-  (or `--body "…"`). Notes: `--role` is **required** (a valid role, e.g.
-  `DEV`/`RESEARCH`/`WRITER`); `--area X` becomes the `area:X` label; `--severity`
-  and extra `--label`s pass through (severity still gated to defects);
-  `--allow-uncategorized` files without an area. Always **`--dry-run` first** — it
-  prints the exact `gh issue create` call it would run, so you verify the labels
-  before minting. (Bare `gh issue create` still works and is what runs underneath,
+  (or `--body "…"`). Notes: `--role` is **required** and must be one of the 11 tokens in
+  pmtools' `VALID_ROLES` (`store_core.py`, the SSOT): `DEV`, `TEST`, `WRITER`, `RESEARCH`,
+  `SPIKE`, `ARC`, `PM`, `COMBO`, `DATA`, `CHORE`, `REVIEW` — note **`ARC`, not `ARCHITECT`**.
+  The same set gates `pmtools velocity log`'s `role` field. **`--role` only validates — it
+  adds no label.** `--role RESEARCH` won't add `research`, nor `--role DEV` add `enhancement`;
+  add that label yourself. The one auto-label is `--area X` → `area:X`; `--severity` and extra
+  `--label`s pass through (severity still gated to defects); `--allow-uncategorized` files
+  without an area. Always **`--dry-run` first** and read the exact `--label` line — it's how
+  you catch a missing semantic label before minting (#814 dry-ran under `--role RESEARCH` with
+  no `research` label until added by hand). (Bare `gh issue create` still works and is what runs underneath,
   but `pmtools file` is the path that keeps the gates on.)
+- **A `--label`/`--area` naming a nonexistent label fails the file — and `--dry-run`
+  won't catch it.** `pmtools file` (and the `gh issue create` beneath it) rejects an
+  unknown label, but `--dry-run` only *echoes* the `--label` line without checking the
+  label exists on the repo, and pmtools reports the rejection as "gh unavailable" —
+  hiding the cause. So **check names against `gh label list` before filing**, and when a
+  file fails opaquely, re-run the underlying `gh issue create … 2>&1` to read the
+  underlying rejection. Two traps: there is **no `refactor`/`chore`/`tech-debt` label** (a refactor
+  is an `area:*` + `--role DEV`), and **no `sequenced` label** (express a dependency with
+  the `blocked` label; see *Area labels* above for the valid `area:*` set — there is no
+  `area:tooling`, rules/process work is `area:tracker`). (errors #300 — `--label refactor`
+  failed 3×; #531 — rejection masked as "gh unavailable".)
 - **Repro/spec-first for unclear bugs.** If a bug's symptom isn't specific enough to
   write have/should/repro, file a **`research`** ticket to validate / spec /
   reproduce it first, then create the DEV bug ticket once the repro is known.
@@ -112,6 +149,12 @@
   your (possibly stale) base. The claim-time guard cannot cover mid-session drift, and
   `pmtools status` does not surface it today (#171). (Cousin of "merged ≠ what your
   tree has" under *Closing work* and the stale-tracker caution.)
+- **Before filing for a fleet-visible red `main`, dup-check first.** A broken `main` is the
+  most-double-filed thing — every agent sees the same red at once. `gh issue list --state
+  open` + keyword-scan (failing test, stale constant, symptom) for an existing tracker; if
+  one is in-flight, `git merge origin/main` to pull its fix instead of double-filing. #1212
+  (the dup) duplicated #1211 (the narz neutral_b red-`main` fix, landed moments earlier;
+  error #529). (Red-`main`-specific case of *reconcile before filing* above.)
 - **Verify a delegated/audit finding — or a user-reported symptom — in the code
   before filing or acting on it.** A subagent's finding, an audit's claim, or a
   user's "X is broken / it works like Y" is a *lead, not a fact* — it reads with the
@@ -145,6 +188,32 @@
   below. Filing follow-ups is optional; the findings doc (A) is not.
   **(C) The findings doc carries the provenance header.** Every findings doc opens with
   the agent / authored-date / ticket header — see *Authoring docs*.
+  **(D) The doc must answer the *literal* question asked — re-read it before closing.**
+  Before closing a `research`/question ticket, re-read the ticket's exact question and
+  confirm the findings answer *that* question, not an adjacent one that was easier or
+  more interesting to answer. #141 (can two mirror-identical CPU AIs parry/shield each
+  other indefinitely? — closed) was closed on the researcher's own judgment having
+  answered a neighbouring question, not the one posed. Satisfying yourself the literal
+  question is answered is part of the close, not the next reader's job.
+  **(E) Keep the findings doc tight — say each thing once.** Lead with the answer, then
+  the option space and provenance. **Plain-English explanation and necessary context
+  stay** — the target is redundancy, not clarity; explain each thing in the fewest
+  plain-English lines that keep it clear, and no more. Concretely, cut: the same point /
+  number / citation restated across sections; repeated cross-references (link a sibling
+  doc or source **once**, not in every section); block-requoting a source the doc already
+  links (cite + a short quote, don't reproduce it at length); and scaffolding ("in this
+  doc we will…", per-section recaps, a closing summary that echoes the opening). #950
+  (grounded walk/dash/run are per-character, not global — closed) shipped a ~240-line doc
+  that was "entirely way too long" (error #311) — the length was repetition and requoting
+  across 5 pieces, not the explanations themselves.
+  **(F) Research gives findings and the choices — it does not write the spec.** A
+  `research` ticket says what's true and lays out the options to pick from. It stops
+  there: it doesn't decide the design or write the final spec. That comes next, in a
+  separate `ARC` / `decision` ticket where a human makes the call. #866 (RESEARCH:
+  dash-attack mechanic — "V1 spec", closed) got written up as a spec with decisions
+  already made, inside the research ticket — those decisions belong in the follow-up
+  ticket, not this one. A title like "RESEARCH: … spec" is the warning sign: split it in
+  two.
 - **Verify a ticket's identity before stating it; mint IDs/refs one at a time.** Two
   clauses from the #535/#536 misnumbering (errors db 51), ratified in **#541**:
   **(A) Verify before you state.** Never tell the human — or write into any doc,
@@ -161,6 +230,14 @@
   parallel — the ban is only on concurrent ID/ref-minting mutations. (The failure was
   filing two issues concurrently → GitHub assigned their numbers in race order → they
   landed swapped, then propagated into a committed doc + comments before verification.)
+- **Verify a ticket's *state* before stating a dependency or applying `blocked`.** Before
+  you write "blocked by #N", "waiting on #N", or apply the `blocked` label, confirm #N is
+  still open with `gh issue view <N> --json state` — never infer its status from a prose
+  cross-reference, a title, or memory. A dependency asserted from prose can be stale: #14
+  (ledge mechanics) was **CLOSED** when "edge-guard blocked by #14" was asserted as fact
+  across many turns (error #26). (State is the status sibling of *Verify a ticket's identity
+  before stating it* above, and an instance of "code/registry over memory" under *Read the
+  source before asserting*.)
 
 ## Dependencies
 
@@ -188,7 +265,13 @@
   `git restore <file>`: that reverts the whole file to HEAD and discards your
   uncommitted fix along with the mutation — a footgun that has recurred repeatedly.
   Mutating via Edit keeps the undo symmetric so `git checkout` never enters the loop;
-  see `docs/research/2026-07-20-revert-check-footgun-findings.md` (#791). A test that
+  see `docs/research/2026-07-20-revert-check-footgun-findings.md` (#791). A non-Edit
+  restore (`cp`/`sed` back) has a second trap: Python may keep serving the pre-restore
+  `.pyc` from `__pycache__` (mtime-based invalidation misses a restored file), so the
+  test stays red on the mutant value even though the `.py` reads correct — don't trust a
+  post-restore "still red" until you `rm -rf __pycache__` before the confirming run
+  (errors #86 — stale `config.pyc` read 60 not 59; #265 — cleared `__pycache__` → green).
+  A test that
   has never been red proves nothing (it may assert the wrong thing, never reach the intended
   branch, nor whether a given fix is even guarded against regressions). See `docs/learnings/today-i-learned-2026-06-23-dragonfruit.md` §1 & §4.
 - **Already-fixed / non-reproducing bug?** If a reported bug does not reproduce on
@@ -198,10 +281,11 @@
 
 ## Testing
 
-- **Golden-safe by default-identity — not by hand.** A new present-layer or behavioral
-  feature is golden-safe when its **default is an exact identity on the sim/golden path**:
-  gate it off-by-default so the golden cat / scripted controller never exercises it, and the
-  goldens stay byte-identical *by construction*. Precedents — the default cat has no smash
+- **Keep goldens stable by making the default a no-op — not by editing goldens.** A new
+  rendering or behavioral feature is safe for the golden tests when, **left at its default,
+  it changes nothing on the sim/golden path**: gate it off by default so the golden cat /
+  scripted controller never triggers it, and the goldens stay byte-for-byte identical
+  without anyone touching them. Precedents — the default cat has no smash
   (#327); the level-less controller has every AI flag `False` (#312); `font_scale=standard`
   ⇒ `round(base*1.0) == base` (#345); a `dict`-subclass `Keymap` drops into `controls[...]`
   unchanged and a `None` nickname renders the identical `"P1"`/`"P2"` (#438). Extend a shared
@@ -220,6 +304,37 @@
   `y`-comparison broken with no test failure by a KO→respawn to `y = -1000` (switched to asserting the
   input is emitted in-loop; #409). See
   `docs/learnings/today-i-learned-2026-07-01-dragonfruit.md`.
+- **Reproduce the observable in the live loop *before* writing the fix; if a facet is
+  already safe, characterize it — don't fake a red.** (#424, two coupled lessons.) (1) A
+  sibling feature can mask the bug, so a fix written blind ships a non-discriminating test —
+  the edge-hog self-KO didn't reproduce until `jumps_remaining == 0`; reproduce the failing
+  observable in the live `run_battle` loop first, then write the fix against that repro (the
+  *able-to-fail* check under *Fixing bugs* proves the test discriminates). (2) When a facet
+  is **already safe** and you cannot produce a red for it, do **not** dress a passing "it
+  survives" assertion as discriminating coverage: ship a **characterization guard labeled as
+  such** plus a **written finding** that the facet was verified safe. A characterization test
+  pins current behaviour; a regression test proves a fix — say which you shipped.
+- **When an addition reds a test, check what the test asserts before you build to keep it
+  green.** Adding to a growable thing — skins, roster, config — can red a test for two very
+  different reasons. Ask which: is it asserting a **behavior** (something the code must do),
+  or a **frozen census** — `set(x) == {exact catalog}`, "there are exactly six skins" — that
+  only pins today's inventory? A behavior red means fix the code; a census red is a brittle
+  test objecting to growth. **De-census it** — assert the invariant that matters (membership,
+  shape, uniqueness) via TDD — don't build structure to prop the census up. #750 (DEV: split
+  the frozen OG-skin archive from the growable live skin set — closed) invented a frozen
+  six-skin archive slice just to keep `set(x)==catalog` asserts green while #677
+  (per-character starting skins — closed) added skins — ceremony that existed only to satisfy
+  a brittle test.
+- **Never hardcode the authoring worktree's issue #/path in an e2e test — derive
+  `(path, issue)` from the live `git worktree list` at test time.** An e2e/CLI test that
+  bakes in a specific issue number or worktree path (e.g. asserting issue 859 resolves to
+  this checkout) passes only from inside that worktree, and reds the whole suite once the
+  worktree is torn down and the suite runs on `main`. Instead read `git worktree list
+  --porcelain` at runtime, pick a live issue-numbered worktree (prefer *this* checkout if
+  it is one), and **skip** when none exists — so the test is worktree-agnostic. Precedent +
+  exemplar: #895 (test_run_cmd coupled to the #859 worktree — closed) fixed exactly this in
+  `_some_live_issue_worktree()` / `test_cli_resolves_a_live_worktree_from_its_issue_number`
+  in `tests/test_run_cmd.py`.
 
 ## Code conventions
 
@@ -240,7 +355,10 @@
   fixture (or `try/finally`).** A manual restore is skipped if the test throws before
   its last line, leaking the stub into every later test. **Diagnostic:** a change that
   reddens tests in *files the diff never touched* = a leaked global from an earlier
-  failing test. Bit **thrice**: `os.environ` at module top (#345, ~15 tests), hand-restored
+  failing test. Bit **thrice**: `os.environ` at module top (#345, ~15 tests — pytest
+  imports every test module at **collection**, *before* running any test, so a module-scope
+  `os.environ.setdefault` runs once and leaks session-wide; set env only inside a test via
+  `monkeypatch.setenv`, never at module scope), hand-restored
   `settings.load` (#453, ~19 tests), and a **cached-fake variant** (#550→#709): a test
   used `monkeypatch` *correctly*, but the fake `SysFont` product it created was cached in
   the **shared `text_renderer.font_cache`** singleton and outlived the patch (the cache
@@ -269,6 +387,36 @@
   - *Mechanical* test edits from a refactor (a renamed symbol, a moved seam) ride along
     freely; *behaviour/oracle* flips still go through the golden-regen author ≠ reviewer path.
 
+## Agent tool-use (editing, worktrees & shell commands)
+
+- **Read a file with the Read tool before your first Edit to it — `cat`/`grep`/`sed`/`head`
+  via Bash does not count.** The Edit read-gate is satisfied only by the **Read tool** on
+  that **exact path**; viewing the file through Bash leaves the gate unsatisfied and the
+  first Edit fails with "File has not been read yet." (Logged repeatedly: errors 31/36/39/40,
+  all `EDIT_PRECOND`.)
+- **Edit the worktree path, not the main-repo absolute path.** `EnterWorktree` (see
+  *Claiming work*) changes the session cwd, so **bare/relative** paths land in the worktree —
+  but an **absolute main-repo path** in a tool call still writes to `main`, ignoring cwd.
+  Editing `main` both pollutes its tree and does nothing for your tests: the suite imports
+  the *worktree* copy of the package, so the edit you "made" isn't in the code under test (a
+  phantom chase). After `EnterWorktree`, sanity-check `git -C <worktree> status --short` —
+  your edits should show there, not in `main`. Recovery if you catch a main edit: re-apply it
+  in the worktree, then `git -C <main> restore <files>` to revert main. (errors 207/#835,
+  328/#967; worktree edit/run discipline #763.)
+- **Don't put `\(...)` jq interpolation inside a single-quoted `gh -q`.** The shell
+  mangles the backslashes before jq sees them, so `gh … --json … -q '"…\(.field)…"'` dies
+  with a jq parse error (exit 1). Build the string with a plain jq pipe instead —
+  `-q '[.labels[].name] | join(", ")'` or `-q '"#" + (.number|tostring) + " " + .title'` —
+  or use `--template`, or one `-q '.field'` per value. (errors #155, #162 — each cost a
+  failed `gh` call + retry.)
+- **Don't hand-escape quotes inside a single-quoted `python3 -c`, especially in an
+  f-string.** Once Bash is through it, the backslash-escaped quotes (`d[\"key\"]`) collide
+  with the f-string's own quotes and Python dies with `SyntaxError: unexpected character
+  after line continuation`. It's a shell-quoting × f-string interaction, not a Python bug,
+  so it re-bites under time pressure. For anything past a trivial no-quote `-c`, use a
+  heredoc (`python3 - <<'PY'`), a `gh -q '<jq>'` pipe, or write a scratchpad `.py`.
+  (errors #93, #99.)
+
 ## Referencing code & docs
 
 - **Point at named landmarks, not raw line numbers.** When an *authored* reference — a
@@ -290,6 +438,14 @@
   commit, not the moving branch), and **quoted tool output** (stack traces, `pytest` /
   `ruff` output, diffs) keeps its own line numbers. The rule governs the refs you *write*,
   not machine output you paste.
+- **Gloss every ticket number inline.** Whenever you name an issue/ticket number in
+  authored output — a reply, ticket, review, or doc — add a short one-line gloss of what
+  it is on its **first** appearance, so the reader never has to recall or open the
+  number: `#166 (the ledge-getup timing bug, closed)`, not a bare `#166`. A status tag —
+  `(closed)` / `(in progress)` / `(new)` — is encouraged. Every *distinct* number gets
+  its own gloss; later repeats of the same number don't need re-glossing. **Carve-out:**
+  structured machine trailers (`Closes #N`, `Refs #N`, `Sequenced after: #N`) are
+  tokens, not prose mentions — they take no gloss.
 
 ## Authoring docs
 
@@ -372,24 +528,54 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
     `decision` (invent it), not a separate label.
 - This gates *changing* a value; the `⚠`/`🔬`/`❓` markers above only *label* an unpinned
   one — the two compose (a changed value should shed its `⚠` and land a `FOUND`/`TUNED` entry).
+- **Use the named unit→px seam; don't inline the factor.** When converting Smash *units*
+  to pixels in executable code, call the named seam — `combat/units.py::u(units)`
+  (= `round(units * PX_PER_UNIT)`, integer-pixel per #80) for hitbox/hurtbox radii and
+  offsets, or its float sibling `vel(units)` (= `round(units * PX_PER_UNIT, 2)`) for
+  velocity/accel rates — never hand-write `round(x * PX_PER_UNIT)` or, worse, the bare
+  magic `× 5.4`. Inlining re-introduces the manual math the seam exists to remove
+  (`PX_PER_UNIT = 5.4`, `config/physics.py`). This has recurred in per-character movement
+  authoring (ADR-0011, per-character grounded-speed model; #962, closed). **Carve-out:**
+  the existing baked literals kept byte-identical under ADR-0003 C1 stay as-is, and their
+  derivation **comments / provenance strings** cite `PX_PER_UNIT` by name (e.g.
+  `round(3.1 * PX_PER_UNIT)`) — naming the factor rather than the magic `5.4` is the
+  doc-form of the same rule.
 
 ## Read the source before asserting
 
-- **Ground a governed claim before you assert or classify it.** Any claim touching an
-  external canon (**Project M / Melee / Brawl**) — or an **in-repo fact you're recalling
-  rather than reading** that feeds a decision/artifact (a commit, ticket, doc,
-  classification, closing summary) — must rest on a **checkable authority** *before* it is
-  stated: the ticket **body** over its title, the **code** over memory, the **registry**
-  over prose. Grounding is one of two authorities:
-  1. a **verbatim primary quote** (external canon, or a `FOUND` value); or
-  2. the **provenance record + deciding issue** (a pycats decision — `TUNED`/`DIVERGENCE`;
-     `combat/provenance.py`, ADR-0003). A decision-grounded claim must carry a **"not canon"** tag.
+- **Check a fact before you state it.** Before you assert or classify any fact that
+  (a) touches an outside game — **Project M / Melee / Brawl** — or (b) is an **in-repo
+  fact you're remembering instead of reading** and that feeds a commit, ticket, doc,
+  classification, or closing summary, back it with a source you can point to: prefer the
+  ticket **body** over its title, the **code** over memory, the **registry** over prose.
+  The source is one of two:
+  1. a **word-for-word quote from a primary source** (an outside game, or a `FOUND` value); or
+  2. the **provenance record + the issue that decided it** (a pycats decision —
+     `TUNED`/`DIVERGENCE`; `combat/provenance.py`, ADR-0003). A claim grounded in a pycats
+     decision must be tagged **"not canon."**
 - **No authority in hand → don't assert from a proxy.** Emit an **evidence-deviation
   notice** and get consent (interactive), or **withhold + log** the claim as a grounding
   debt (autonomous / fleet). A `GUESS`/unsourced value is a debt to drive to zero, never an
   unflagged assertion. The **`grounded-claim`** skill runs this reflex; **#575** is the
   detective backstop. (Protocol: `docs/superpowers/specs/2026-07-05-grounded-claim-protocol-design.md`;
   origin #571 / #611 / #620.)
+- **A blocked fetch (4xx) on a wanted source is a pause, not a reroute.** When a
+  `WebFetch` returns 4xx (402 paywall, 403 blocked, 404 not-found) on a primary or wanted
+  source during research, **surface the blocked URL(s) to the human and pause before
+  closing** — the human often has access and can paste the content, so rerouting straight
+  to thinner secondary sources drops evidence that was one ask away. Log a
+  **`NETWORK_FAIL`** row (see the log-error skill), and name the blocked URL(s) in the
+  interim/closing comment. #1075 (RESEARCH: ROUNDS core mechanics — closed) closed on
+  thinner sources because two Fandom pages returned HTTP 402 (error #417) — the human had
+  them the whole time.
+- **Read the module before asserting what it contains or that a capability exists — a
+  shallow grep or an assumed shape is not evidence.** This is the everyday form of "code
+  over memory" and applies to **any** claim about a file's contents or whether a capability
+  exists in the repo, not only claims feeding a decision/artifact. A keyword `grep` **hit**
+  locates a candidate to read; a `grep` **miss** proves only that *that spelling* is absent,
+  not that the capability is (it may be named differently, split across modules, or built
+  from primitives). Neither a grep result nor an assumed module shape substitutes for
+  opening the module and reading the relevant code. Open it first, then assert.
 - **Cite primary sources for parity/mechanics claims** (the PM instance of the reflex above).
   When asserting how Project M / Melee / Brawl behaves, pull a **verbatim quote** from a
   **primary source** — PMDT changelogs, rukaidata / `brawllib_rs`, OpenSA/dantarion,
@@ -398,7 +584,14 @@ Codebase audit + rules of record: `docs/research/2026-07-02-pm-parity-marker-aud
   verdict from a chain of reasoning over secondary facts; scope the verdict to what a primary
   quote supports and record the rest as a flagged **`gap`**. Flag Melee/Brawl/Smash-4/Ultimate
   values so they are **never attributed to PM unlabeled**. (Origin: #520 → correction #537,
-  reframe #527, audit #536; ratified **#562**.)
+  reframe #527, audit #536; ratified **#562**.) Two traps even with a primary in hand:
+  **a verbatim quote isn't automatically confirmation** — it confirms only if it addresses
+  *your* claim's character / version / context, not merely the same topic; and **a vague
+  qualitative primary isn't a number** — "slightly faster" licenses no specific value, so
+  record the number as a flagged **`gap`**, not a `FOUND`. The canonical PM evidence register
+  is [`docs/project-m-rules-by-category.md`](docs/project-m-rules-by-category.md) (each
+  mechanic → local doc + primary citation, gated by `tests/test_tuning_provenance.py`; parity
+  front door [`docs/project-m-parity.md`](docs/project-m-parity.md)).
 - **The verify-claims ledger lives outside the repo.** The claims ledger (`PYC-*` IDs,
   per-area subtrees, generated `INDEX.md`) was relocated to the sibling
   **`pycats-claims-data/`** — a plain untracked folder at `…/Study/Python/pycats-claims-data/`,
@@ -430,6 +623,24 @@ they outlive the session that surfaced them.
   the *decision material*, not the decision. (E.g. #466 walk-off jump → A/B; #480 spawn
   model. Composes with *Changing values* above: picking a surrogate is a `decision:`, not a
   DEV edit.)
+- **Lead with a recommendation, not "you decide."** When the human asks what to do, or is
+  weighing a choice, give one opinionated, source-backed answer stated as your pick — not a
+  neutral menu, not a punt. Voicing an opinion is free and is what they're asking for; the
+  human gate (*Suggest, don't act*; "a question is not authorization") is on **doing** the
+  outward or irreversible thing, not on saying what you'd do.
+- **Surface a design fork before you settle it.** At any design/architecture decision —
+  config schema, file layout, naming, data model, where something lives — put the options
+  to the human (with your recommendation, per *Lead with a recommendation* above) and
+  wait, rather than deciding unilaterally and revealing it in the closing summary. The
+  design call is the human's. (Broadens "Research produces a design *choice*…" above
+  beyond parity fixes; whether to commit/push is separately gated under *Closing work*.)
+- **Flag evidence type: the human calls go/no-go.** When you review research/parity
+  evidence, your job is to correctly categorize it — primary vs. inference, and where any
+  gaps might be (see *Cite primary sources* under *Read the source before asserting*) —
+  not to rule it too thin to build on. Whether to proceed on a Brawl-inherited value with
+  no PM-3.6 primary or not, for example, is the human's call: present your categorization,
+  plus your recommendation/suggestion if you have one plus your rationale — don't gate the
+  work on your own judgement.
 
 ## Surfacing run/sim commands
 
@@ -472,6 +683,44 @@ Study tree do not inherit this rule.
   game), `watch.py` (replay/match), and `bench.py` (benchmark). `python main.py`
   fails with `No such file or directory`. If unsure, the README "How to Run"
   section is authoritative — read it rather than guessing a conventional path.
+- **Smoke-test the exact command before you hand it over.** Never surface a run/sim
+  command you haven't run. Run the *exact* string first under a short auto-kill —
+  `timeout 2 <command>` — and treat **exit 124** (the timeout killed an already-launched
+  process) as pass; any other non-zero exit means it crashed at startup and must be
+  fixed before handing over. This catches the malformed-command class: a wrong path, a
+  bad flag, a missing module, or a stray empty env assignment. Testing a *near* variant
+  does not count — #1086 (a storage-module refactor, closed) shipped a `-m pycats.game`
+  launch carrying an empty `SDL_VIDEODRIVER=`/`SDL_AUDIODRIVER=` that crashed, verified
+  only with `--help` (error #426). Smoke-test the verbatim `make run-cmd` output, not a
+  paraphrase of it. (If the exact command needs a display the agent's headless box
+  lacks, smoke-test it under `SDL_VIDEODRIVER=dummy` to confirm the entry point, paths,
+  and flags resolve, and say that's what you did.)
+- **Surface the run command *before* `pmtools close`, not after.** When closing a ticket
+  for a runnable change, emit the exact full-path run command and **pause** so the human
+  can launch and eyeball it *before* the merge — posting it after close denies them that
+  pre-close launch. This holds for **any** runnable change, including new moves and combat
+  data; don't judge a playable combat change "eyeball-exempt" and defer the run block to
+  after close. #947 (DEV: Gnok smashes — closed) posted the run command only after
+  `pmtools close` (COMPLIANCE_FAIL, error #307). (The run-command half of the *Human
+  eyeball-approval gate*, Closing work step 4.)
+
+## Producing visuals (renders / screenshots)
+
+- **Don't produce renders or screenshots without explicit human authorization.** The
+  agent must not, on its own initiative, generate a visual artifact for a human to look
+  at — a game frame dump, a `scripts/compare_representative_frames.py` image, a Playwright
+  browser screenshot, a plot/diagram PNG, or any other rendered image. **Suggesting** one
+  is always welcome ("want a screenshot of X?"); **producing** one is gated on an explicit
+  go-ahead.
+- **Provide the command instead.** Give the human the exact command (full absolute paths)
+  so they generate and inspect the visual themselves. For a live game run, that command
+  comes from `make run-cmd` — see [Surfacing run/sim commands](#surfacing-runsim-commands).
+- **Carve-out — test-internal render bytes.** Render/parity oracles and any golden
+  generation that happens as part of running the suite are exempt: those bytes are consumed
+  inside an assertion, not produced for a human to view. The rule targets visuals surfaced
+  for inspection (attached, shown, or saved for the human).
+- **Authorization is per-request.** A go-ahead for one visual is not standing permission
+  for the next; re-ask. A human may grant standing/session permission explicitly.
 
 ## Claiming work
 
@@ -560,10 +809,17 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    #868 removed a HUD hint and merged before anyone eyeballed it. Surface the run/sim
    command (see [Surfacing run/sim commands](#surfacing-runsim-commands) — the run
    command is *how* the human eyeballs it) and wait for their confirmation; only then
-   land. **Carve-out — no eyeball OK needed for a non-visible change:** logic, tooling,
+   land. The human runs that command and inspects it themselves — the agent produces a
+   screenshot for the gate only on explicit request (see [Producing visuals](#producing-visuals-renders--screenshots)).
+   **Carve-out — no eyeball OK needed for a non-visible change:** logic, tooling,
    docs, or a render refactor proven byte-identical by a render-hash / parity oracle.
-   (Ratified in-session 2026-07-21; #873.) The sibling human gate for `research`
-   tickets — completeness of the findings — is step 5 below.
+   (Ratified in-session 2026-07-21; #873.) **Apply this carve-out narrowly:** it
+   exempts only a change whose byte-identity is *proven* by the oracle — not any change
+   that merely touches the render path. #900 (a `render_battle` package split) was
+   closed under this carve-out with no eyeball check and logged as a `COMPLIANCE_FAIL`
+   (error #264): "it's a render refactor" is not the exemption; "the parity oracle shows
+   byte-identical output" is. The sibling human gate for `research` tickets —
+   completeness of the findings — is step 5 below.
 5. **Human completeness gate — for `research` tickets.** Before you close a
    `research`-labelled ticket (whether via `pmtools close` or, for a no-code ticket,
    `gh issue close` + `pmtools release`), **present the findings doc — or a summary of
@@ -599,14 +855,23 @@ the gated worktree teardown. Follow this order — do **not** improvise:
    ref, closes the issue, and removes the worktree + branch. Exiting to main first
    keeps your shell from being stranded in the deleted directory. (No-code
    decision/research tickets close via `gh issue close` + `pmtools release`; the same
-   `ExitWorktree keep` applies before running them from main.)
+   `ExitWorktree keep` applies before running them from main.) There is **no post-close
+   `ExitWorktree`**: `close` has already removed the worktree, so a post-close
+   `ExitWorktree({remove})` is wasted motion and refuses anyway — the session no longer
+   owns the directory (#708, error #187). The only `ExitWorktree` is the `keep` above,
+   *before* `close`.
 7. **Run the pre-close error self-audit.** Before posting the closing comment,
    re-read the session from claim → now, enumerate every log-error trigger event
    (including resolved ones), log any missing rows (`pmtools error log`), and include
    one of `error self-audit: N row(s) logged (#…)` or `error self-audit: no loggable
    errors this session` in the closing comment. See the **log-error** skill for the
    trigger list + fields. This turns silence into a checkable acknowledgement — a
-   clean session and a forgotten log stop looking identical.
+   clean session and a forgotten log stop looking identical. The audit line captures
+   only errors up to the moment you write it — any error during post-close cleanup (the
+   `ExitWorktree`, a final verify) happens *after* that checkpoint and is never counted
+   (#708's refused `ExitWorktree({remove})`, error #187, landed there). Re-scan the
+   cleanup phase before treating the session as done; if cleanup errors, log the row and
+   amend the audit line.
 
 **Never `git push` to `main` directly, and never manually `git merge` your feature
 branch into `main`** — **unless a human explicitly authorizes a direct merge + push
@@ -674,8 +939,10 @@ review-gated merge flow this repo doesn't have; #600.)
   claim/worktree rule). `pmtools close` needs a `Closes #N` *commit* to land and
   verify; a **research / comment-only** ticket has none. Close those with `gh issue
   close <N>` (after posting the ruling/finding as a comment), then **`pmtools release
-  <N>`** to drop the claim ref + worktree that the claim created. Do **not** fabricate
-  a no-op commit just to satisfy `pmtools close`.
+  <N>`** to drop the claim ref + worktree that the claim created. Note `release` takes
+  the issue number **positionally** — `pmtools release <N> [--force]` — and has **no
+  `--as` flag** (unlike `claim`); `pmtools release --as …` errors with `unknown arg: --as`.
+  Do **not** fabricate a no-op commit just to satisfy `pmtools close`.
 - **Closing a `decision:` ticket appends a Decision Log row.** When you close a
   ratified `decision:` ticket, append one row to `docs/decisions-ledger.md`
   (`date · issue # · area · one-line ruling · record`) — the append-only index of
@@ -686,3 +953,35 @@ review-gated merge flow this repo doesn't have; #600.)
   `pmtools close`** path — *not* the commit-less `gh issue close` + `pmtools release`
   path above (which stays for research / comment-only tickets). Convention basis:
   #705 / ADR-0007.
+
+## Editor repo (`pycats-editor`, cross-repo work)
+
+Some tickets filed in **pycats** track work in the **separate `pycats-editor` repo**
+(`/home/avi/Documents/Study/Python/pycats-editor`), which couples to pycats via an editable
+install (not a declared dependency) and uses a `src/` layout (`src/pycats_editor`). The
+ticket lives in pycats; the code lives in the editor repo — which crosses up several defaults:
+
+- **Claim + worktree go in the *editor* repo — never edit its `main` directly.** Claim mints
+  a worktree under `pycats-editor/.claude/worktrees/wt-<fruit>-editor-<N>` on branch
+  `br-<fruit>/editor-<N>` (note the **`editor-` project token** — omitting it is
+  off-convention: #1154, err #472). Editing the editor's `main` uncommitted is a
+  `COMPLIANCE_FAIL` (#1139 — editor save-not-byte-identical, closed; err #456). The editor
+  has **no pmtools close**, so land the branch by hand: `git commit` → `git merge --no-ff`
+  → `git push origin main`.
+- **Run `pmtools` from a *pycats* cwd, not the editor cwd.** pmtools keys its store off the
+  cwd's repo, so any pmtools call from `pycats-editor/` writes a stray
+  `~/.pmtools/pycats-editor/pmtools.db` instead of the pycats store (#1139, err #457). Editor
+  tickets are pycats tickets — run pmtools from a pycats checkout.
+- **Test worktree editor code with `PYTHONPATH=<worktree>/src`.** The editable install pins
+  imports to **`main`**'s `src/`, so a plain test run exercises main's code, not your
+  worktree's. Point `PYTHONPATH` at the worktree's `src/` so the suite imports what you
+  changed (the editor analogue of the *phantom chase* under *Agent tool-use*).
+- **Close editor tickets via `gh issue close` + `pmtools release`** — there is no pycats
+  commit to carry `Closes #N` (the code landed in the editor repo), so the commit-based
+  `pmtools close` path doesn't apply. Post the closing comment, `gh issue close <N>`, then
+  `pmtools release <N>` to drop the claim ref + editor worktree. (Same shape as no-code
+  tickets under *Closing work*.)
+- **Editor in-flight = a live worktree in `pycats-editor/.claude/worktrees/` + a
+  `refs/claims/issue-N` on the *pycats* origin.** The claim ref lives on pycats (the ticket's
+  home); the worktree lives in the editor repo — so `git worktree list` in *pycats* won't
+  show it. Check the editor repo's worktree list.
