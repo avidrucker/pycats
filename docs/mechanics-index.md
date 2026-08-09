@@ -108,6 +108,7 @@ findings, kept for provenance, not a live spec.
 | `pycats/config/` | the tuning-value SSOT package — plain literals across physics/stage/render submodules, no loader — ADR-0003 (#934) | authoritative |
 | `pycats/combat/provenance.py` | *why* each value is what it is (source/status/derivation) | authoritative |
 | `docs/decisions-ledger.md` | ratified design/decision record | authoritative |
+| `docs/design/spawn-respawn-disposition.md` | spawn/respawn rulings — each rule V1/post-V1/neither + basis (#1327, child 2 of epic #1316) | authoritative |
 | `docs/glossary.md` | project term definitions | authoritative |
 | `docs/mechanics-faq.md` | plain-language mechanics Q&A | derived-pointer |
 | `docs/project-m-parity.md` | PM parity tracker (the parity effort's map) | authoritative |
