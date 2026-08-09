@@ -30,9 +30,12 @@ _DEFAULTS = {
     # Hit/hurtbox debug overlay (#219): retired as a persisted pref #1324. It is no
     # longer a player toggle — render_hitbox_overlay is dev-gated + backtick-coupled
     # (dev_mode() and dev_hud()), so nothing persists.
-    # In-battle input-history HUD strip (#21): per-fighter last-10 raw inputs,
-    # toggleable from the Options sub-menu (mirrors show_status_timer_bars).
-    "show_input_history": True,
+    # show_input_history (#21) / show_dev_info (#545) / show_movement_status (#977) all
+    # retired as persisted prefs #1328: dev_hud became the sole battle-HUD driver in
+    # #1319, so these three per-item flags were no-ops in battle. Their keys, coercions,
+    # accessors, and the two Options rows are gone; a stale key in an older settings.json
+    # is ignored by load() (unknown keys are dropped). The input-history grid, the
+    # jargon rows, and the Movement row now render as part of the dev HUD (dev_hud()).
     # In-battle fighter-controls display (#284): the per-fighter control-scheme
     # readout below the HUD, now toggleable + persisted (was always-on). BATTLE
     # ONLY — the non-battle screens use show_screen_hints below (#681).
@@ -50,23 +53,12 @@ _DEFAULTS = {
     # Global font-scale (#345): "small"/"standard"/"large" — a UI-text size
     # multiplier the Options menu cycles. "standard" (1.0) is byte-identical.
     "font_scale": "standard",
-    # Dev-info HUD flag (#545): when True the HUD shows the implementation-jargon
-    # rows (FSM state, Shield Attempting bool); when False (default) only the
-    # player-facing stats render. Mirrors show_status_timer_bars; an Options
-    # toggle is a later child (#544).
-    "show_dev_info": False,
     # Idle-stance breathing animation (#567): when True, a fighter in the idle FSM
     # state renders a subtle looping vertical body-height oscillation (feet planted)
     # so an idle cat reads as alive. Off → the idle body is byte-identical to a
     # static render. Mirrors show_status_timer_bars; an Options toggle is a later
     # child. ON by default (the feature is player-facing polish, not a dev tool).
     "show_idle_breathing": True,
-    # Movement-status HUD indicator (#977): when True, each fighter's HUD gains a
-    # "Movement:" row (under Shield HP) showing its live Player.state (idle/walk/dash/
-    # run and every other FSM state) so a human can confirm dash→run is firing (#967
-    # added sustained run but no distinct run animation yet). OFF by default → the
-    # battle render is byte-identical (goldens don't move). Options-menu toggle.
-    "show_movement_status": False,
     # (#1319 retired the persisted "minimal_hud" key: the battle HUD's minimal-vs-full
     # split is now driven by the runtime-only dev_hud toggle — dev_hud OFF *is* the
     # minimal HUD — flipped by the backtick key, not a saved preference. A stale
@@ -106,14 +98,12 @@ def _validated(raw):
         out["windowed_scale"] = float(scale)
     out["fullscreen"] = bool(raw.get("fullscreen", out["fullscreen"]))
     out["show_status_timer_bars"] = bool(raw.get("show_status_timer_bars", out["show_status_timer_bars"]))
-    # show_hitbox_overlay coercion dropped #1324 — no longer a persisted pref (see defaults).
-    out["show_input_history"] = bool(raw.get("show_input_history", out["show_input_history"]))
+    # show_hitbox_overlay coercion dropped #1324; show_input_history / show_dev_info /
+    # show_movement_status coercions dropped #1328 — none are persisted prefs (see defaults).
     out["show_controls"] = bool(raw.get("show_controls", out["show_controls"]))
     out["show_screen_hints"] = bool(raw.get("show_screen_hints", out["show_screen_hints"]))
     out["esc_hold_to_navigate"] = bool(raw.get("esc_hold_to_navigate", out["esc_hold_to_navigate"]))
-    out["show_dev_info"] = bool(raw.get("show_dev_info", out["show_dev_info"]))
     out["show_idle_breathing"] = bool(raw.get("show_idle_breathing", out["show_idle_breathing"]))
-    out["show_movement_status"] = bool(raw.get("show_movement_status", out["show_movement_status"]))
     # (#1319: "minimal_hud" retired — no coercion; a stale key in an older file is dropped.)
     fs = raw.get("font_scale")
     if fs in FONT_SCALES:  # snap an unknown preset back to the default

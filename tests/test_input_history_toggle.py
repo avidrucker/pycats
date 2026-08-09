@@ -1,15 +1,17 @@
-"""Options 'Input History' toggle — persisted, default ON (#21).
+"""Options 'Input History' toggle retired (#1328).
 
-Mirrors the show_status_timer_bars toggle chain:
-settings default + coercion, runtime live accessor, Options row label + activate.
-Default ON preserves the (new) always-visible strip; a user can hide it.
+Shipped in #21 as a persisted, default-ON toggle mirroring show_status_timer_bars, then
+made a battle no-op in #1319 when dev_hud became the sole battle-HUD driver. #1328 removes
+the persisted key, the runtime accessor, and the Options row entirely. The input-history
+grid itself still renders as part of the dev HUD (gated on dev_hud); its capture + render
+are covered by test_input_history_capture / test_input_history_render.
+
+Able-to-fail: re-add the setting / accessor / row and each assertion below flips.
 """
-
-import json
 
 import pygame  # noqa: E402
 
-from pycats.screens.options_menu import OptionsMenu  # noqa: E402
+from pycats.screens.options_menu import ROW_DESCRIPTIONS, OptionsMenu  # noqa: E402
 from pycats.storage import runtime_settings, settings  # noqa: E402
 
 _P1 = dict(
@@ -32,49 +34,12 @@ _P2 = dict(
 )
 
 
-# ---- settings.py: persisted default-ON + bool coercion --------------------- #
-def test_show_input_history_defaults_on(tmp_path, monkeypatch):
-    monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    assert settings.defaults()["show_input_history"] is True
-    assert settings.load()["show_input_history"] is True  # missing file -> default
+def test_show_input_history_setting_retired():
+    assert "show_input_history" not in settings.defaults()
+    assert not hasattr(runtime_settings, "show_input_history")
 
 
-def test_show_input_history_round_trips_and_coerces_bool(tmp_path, monkeypatch):
-    monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    settings.save({"show_input_history": False})
-    assert settings.load()["show_input_history"] is False
-    with open(settings.config_path(), "w", encoding="utf-8") as f:
-        f.write(json.dumps({"show_input_history": 1}))
-    assert settings.load()["show_input_history"] is True  # coerced from 1
-
-
-def test_old_settings_without_key_still_load(tmp_path, monkeypatch):
-    monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    with open(settings.config_path(), "w", encoding="utf-8") as f:
-        f.write(json.dumps({"windowed_scale": 1.0}))  # pre-feature file
-    assert settings.load()["show_input_history"] is True  # merged over default
-
-
-# ---- runtime_settings.py: live accessor ------------------------------------ #
-def test_runtime_default_on():
-    runtime_settings.seed(settings.defaults())
-    assert runtime_settings.show_input_history() is True
-
-
-def test_runtime_set_flips():
-    runtime_settings.seed(settings.defaults())
-    runtime_settings.set("show_input_history", False)
-    assert runtime_settings.show_input_history() is False
-
-
-# ---- options_menu.py: row present, label, activate flips + persists -------- #
-def test_options_row_present_labelled_and_toggles(tmp_path, monkeypatch):
-    monkeypatch.setenv("PYCATS_CONFIG_DIR", str(tmp_path))
-    runtime_settings.seed(settings.defaults())
+def test_input_history_row_absent_from_options():
     m = OptionsMenu(_P1, _P2)
-    assert "input_history" in m.rows
-    assert m._row_label("input_history") == "Input History: ON"
-    m._activate("input_history")
-    assert runtime_settings.show_input_history() is False
-    assert settings.load()["show_input_history"] is False
-    assert m._row_label("input_history") == "Input History: OFF"
+    assert "input_history" not in m.rows
+    assert "input_history" not in ROW_DESCRIPTIONS

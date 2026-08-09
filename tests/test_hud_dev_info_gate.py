@@ -75,22 +75,11 @@ def test_dev_hud_on_restores_all_dev_lines():
     assert hud_line_count() == HUD_FULL_LINE_COUNT
 
 
-def test_show_dev_info_no_longer_affects_the_battle_hud():
-    """#1319: show_dev_info is superseded in battle — flipping it changes nothing while
-    dev_hud is OFF (minimal) or ON (complete). Able-to-fail: re-gate hud_rows on
-    show_dev_info and the OFF-with-flag-on branch would leak the jargon rows."""
-    runtime_settings.set_dev_hud(False)
-    p = _player()
-    runtime_settings.set("show_dev_info", False)
-    off_flag_off = hud_rows("P1", p)
-    runtime_settings.set("show_dev_info", True)
-    off_flag_on = hud_rows("P1", p)
-    assert off_flag_off == off_flag_on == ["P1"]  # OFF stays minimal regardless
+def test_show_dev_info_flag_retired():
+    """#1328: the show_dev_info flag (accessor + persisted key) is retired — dev_hud has
+    been the sole driver of the jargon rows since #1319, leaving it a battle no-op. Able-
+    to-fail: re-add the accessor / default key and both assertions flip."""
+    from pycats.storage import settings
 
-    runtime_settings.set_dev_hud(True)
-    runtime_settings.set("show_dev_info", False)
-    on_flag_off = hud_rows("P1", p)
-    runtime_settings.set("show_dev_info", True)
-    on_flag_on = hud_rows("P1", p)
-    assert on_flag_off == on_flag_on  # ON stays complete regardless
-    assert len(on_flag_on) == HUD_FULL_LINE_COUNT
+    assert not hasattr(runtime_settings, "show_dev_info")
+    assert "show_dev_info" not in settings.defaults()

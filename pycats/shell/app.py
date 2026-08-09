@@ -192,6 +192,18 @@ class App:
                     # only + not persisted (survives pause), so no save_prefs here.
                     on = runtime_settings.toggle_dev_hud()
                     self.dm.zoom_toast.show("Dev HUD: " + ("ON" if on else "OFF"))
+                elif ev.key == pygame.K_F1:
+                    # In-game dev-mode toggle (#1328, A1's 3rd door on #1297): F1 flips
+                    # dev_mode live and syncs dev_hud to the new state on BOTH edges, so
+                    # F1-on shows the dev HUD + hit/hurtbox overlay (the overlay gate is
+                    # dev_mode() and dev_hud(), #1324) and F1-off restores the shipping
+                    # default look. Model A — no debug screen; dev mode just changes what
+                    # renders. Runtime-only + not persisted (mirrors backtick), so no
+                    # save_prefs here. Downstream dev-mode surfaces (char-select roster
+                    # #1292) re-read dev_mode() when next built, so they track the toggle.
+                    on = runtime_settings.toggle_dev_mode()
+                    runtime_settings.set_dev_hud(on)
+                    self.dm.zoom_toast.show("Dev mode: " + ("ON" if on else "OFF"))
 
         # Update screen state manager. `platforms` is threaded so the playing state's
         # engine action owns the per-frame battle.step + winner-set (#246).

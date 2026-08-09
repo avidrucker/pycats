@@ -11,7 +11,8 @@ import pygame
 from pycats.characters.roster import ARCHETYPE_PALETTE, ARCHETYPE_ROSTER
 from pycats.combat.data import load_fighter_data
 from pycats.screens.battle_screen import BattleScreen
-from pycats.screens.char_select import CharacterSelector
+from pycats.screens.char_select import DEV_ROSTER, CharacterSelector
+from pycats.storage import runtime_settings
 
 _P1 = dict(
     left=pygame.K_a,
@@ -36,6 +37,28 @@ _P2 = dict(
 def test_char_select_roster_is_the_implemented_archetypes():
     cs = CharacterSelector(_P1, _P2)
     assert list(cs.characters) == ["nalio", "birky", "narz", "gnok"]  # +gnok (#821 slice 1)
+    assert tuple(cs.characters) == ARCHETYPE_ROSTER
+
+
+def test_char_select_roster_tracks_live_dev_mode_across_reset():
+    """#1328: since F1 toggles dev_mode live in-game, the char-select dev roster must
+    reflect the CURRENT dev_mode, not the one at construction. reset() (run on every
+    char-select entry, screen_manager._on_enter_char_select) rebuilds the roster, so an
+    F1 toggle then re-entering char-select shows/hides DEV_ROSTER. Able-to-fail: read
+    dev_mode() once in __init__ (the pre-#1328 behaviour) and the roster stays frozen at
+    construction-time across the reset()s below."""
+    runtime_settings.set_dev_mode(False)
+    cs = CharacterSelector(_P1, _P2)
+    assert tuple(cs.characters) == ARCHETYPE_ROSTER  # shipping roster, no dev fixtures
+
+    # Enter dev mode (as F1 does) and re-enter char-select → dev fixtures appear.
+    runtime_settings.set_dev_mode(True)
+    cs.reset()
+    assert tuple(cs.characters) == ARCHETYPE_ROSTER + DEV_ROSTER
+
+    # Leave dev mode and re-enter → they disappear again.
+    runtime_settings.set_dev_mode(False)
+    cs.reset()
     assert tuple(cs.characters) == ARCHETYPE_ROSTER
 
 

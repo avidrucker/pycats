@@ -106,13 +106,10 @@ class CharacterSelector:
     def __init__(self, p1_controls, p2_controls):
         # The roster is the real PM-archetype fighters (#268, #127 Part 1), not the
         # OG colour-skins; each archetype's cosmetic comes from its default palette.
-        self.characters = list(ARCHETYPE_ROSTER)
-        # In dev mode (#1292, gate #1312) append the intended-default fixtures so a dev
-        # can pick + play `default` and `testcat`. Read once here — dev_mode is a fixed
-        # launch flag (game.main sets it before this screen is built). Off in the shipping
-        # build → the roster is byte-identical to ARCHETYPE_ROSTER (no player-visible change).
-        if runtime_settings.dev_mode():
-            self.characters += list(DEV_ROSTER)
+        # Built via _build_roster so the dev-roster append tracks the LIVE dev_mode
+        # (#1328 made dev_mode F1-toggleable in-game, so it is no longer a fixed launch
+        # flag; reset() rebuilds on every char-select entry, below).
+        self.characters = self._build_roster()
 
         # Player cursors (grid positions)
         self.p1_cursor = 0  # grid index
@@ -157,8 +154,24 @@ class CharacterSelector:
         ) // 2
         self.grid_start_y = GRID_START_Y  # Below title
 
+    @staticmethod
+    def _build_roster():
+        """The selectable roster for the current launch: the shipping archetypes, plus —
+        when dev_mode() is live (#1292, gate #1312) — the intended-default fixtures
+        `default` / `testcat` so a dev can pick + play them. Read fresh each call so it
+        tracks the F1 in-game dev-mode toggle (#1328); off in the shipping build → the
+        roster is byte-identical to ARCHETYPE_ROSTER (no player-visible change)."""
+        roster = list(ARCHETYPE_ROSTER)
+        if runtime_settings.dev_mode():
+            roster += list(DEV_ROSTER)
+        return roster
+
     def reset(self):
         """Reset the character selector to initial state."""
+        # Rebuild the roster so a dev-mode change since construction (F1, #1328) is
+        # reflected — reset() runs on every char-select entry (screen_manager
+        # _on_enter_char_select), so entering after an F1 toggle shows/hides DEV_ROSTER.
+        self.characters = self._build_roster()
         # Reset cursors
         self.p1_cursor = 0
         self.p2_cursor = 1

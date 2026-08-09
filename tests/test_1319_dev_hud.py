@@ -8,10 +8,10 @@ The in-battle HUD is redesigned around one runtime-only ``dev_hud`` toggle:
 - ON: the COMPLETE dev HUD — the full secondary stat rows PLUS FPS + raw input + the
   input-history grid.
 
-``dev_hud`` is the SOLE battle-HUD driver: ON shows the whole dev HUD regardless of the
-legacy per-item flags (``show_dev_info`` / ``show_movement_status`` / ``show_input_history``);
-OFF hides all of it. Those flags keep their Options rows this slice (re-homing to the F1
-screen is #1311 slice 5) — they simply no longer affect the battle HUD.
+``dev_hud`` is the SOLE battle-HUD driver: ON shows the whole dev HUD, OFF hides all of
+it. It superseded the legacy per-item flags (``show_dev_info`` / ``show_movement_status`` /
+``show_input_history``) in battle here; #1328 then retired those flags entirely (their
+retirement is pinned in test_hud_dev_info_gate / test_movement_status / test_input_history_toggle).
 
 The toggle is runtime-only + not persisted (survives a pause/resume — nothing on the
 pause path resets it), and available to everyone (not ``dev_mode``-gated). The backtick
@@ -121,23 +121,20 @@ def test_emphasis_lives_and_damage_present_regardless_of_dev_hud():
 
 
 # --------------------------------------------------------------------------- #
-# dev_hud is the SOLE battle-HUD driver — it supersedes the legacy per-item flags
+# dev_hud is the SOLE battle-HUD driver (the legacy per-item flags it superseded are
+# retired, #1328 — see test_hud_dev_info_gate / test_movement_status).
 # --------------------------------------------------------------------------- #
-def test_dev_hud_on_shows_full_hud_even_with_legacy_flags_off():
-    """ON shows the COMPLETE dev HUD regardless of the legacy flags being off."""
-    runtime_settings.set("show_dev_info", False)
-    runtime_settings.set("show_movement_status", False)
+def test_dev_hud_on_shows_full_hud():
+    """ON shows the COMPLETE dev HUD — the FSM (dev-info) + Movement rows included."""
     runtime_settings.set_dev_hud(True)
     rows = hud_rows("P1", _fake_player())
-    assert any(r.startswith("FSM:") for r in rows)  # dev-info row present despite flag off
-    assert any(r.startswith("Movement:") for r in rows)  # movement row present despite flag off
+    assert any(r.startswith("FSM:") for r in rows)  # the former show_dev_info row
+    assert any(r.startswith("Movement:") for r in rows)  # the former show_movement_status row
     assert len(rows) == HUD_FULL_LINE_COUNT
 
 
-def test_dev_hud_off_hides_full_hud_even_with_legacy_flags_on():
-    """OFF hides all of it regardless of the legacy flags being on."""
-    runtime_settings.set("show_dev_info", True)
-    runtime_settings.set("show_movement_status", True)
+def test_dev_hud_off_hides_full_hud():
+    """OFF collapses to the minimal HUD (player-name label only in the secondary rows)."""
     runtime_settings.set_dev_hud(False)
     assert hud_rows("P1", _fake_player()) == ["P1"]
     assert hud_line_count() == HUD_MINIMAL_LINE_COUNT

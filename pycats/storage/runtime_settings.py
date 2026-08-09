@@ -27,9 +27,9 @@ _dev_mode = False
 # (nothing on the pause path resets it). Default OFF at every launch — the shipping
 # default battle HUD is minimal (player label + emphasized Lives/Damage % only).
 # Flipped by the backtick/tilde key (shell/app.py), available to everyone (not
-# dev_mode-gated). ON shows the complete dev HUD; it is the SOLE battle-HUD driver —
-# it supersedes the legacy per-item flags (show_dev_info / show_movement_status /
-# show_input_history) in battle (they keep their Options rows this slice, #1311 slice 5).
+# dev_mode-gated). ON shows the complete dev HUD; it is the SOLE battle-HUD driver. It
+# superseded the legacy per-item flags show_dev_info / show_movement_status /
+# show_input_history in battle (#1319), which are now retired entirely (#1328).
 _dev_hud = False
 
 
@@ -66,11 +66,22 @@ def set_dev_mode(value):
     _dev_mode = bool(value)
 
 
+def toggle_dev_mode():
+    """Flip the process-wide dev-mode gate and return the new state (#1328, A1's third
+    door on #1297). The F1 key handler (shell/app.py) calls this once per press to
+    enter/leave dev mode live in-game; the caller syncs dev_hud to the new state so
+    F1-on shows the dev HUD + hit/hurtbox overlay and F1-off restores the shipping
+    default look. Not persisted — like set_dev_mode it is a per-session flag."""
+    global _dev_mode
+    _dev_mode = not _dev_mode
+    return _dev_mode
+
+
 def dev_mode():
     """Live process-wide dev-mode flag (#1312, ruling A1 on #1297). False in the default
-    launch; True when started with --dev or a truthy PYCATS_DEV. The single owner every
-    dev-gated surface reads. This slice ships only the flag — no consumer flips behaviour
-    on it yet (char-select, dev HUD, overlay gating, F1 screen are later #1311 slices)."""
+    launch; True when started with --dev or a truthy PYCATS_DEV, and flippable in-game by
+    F1 (#1328). The single owner every dev-gated surface reads (char-select roster #1292,
+    the hit/hurtbox overlay gate #1324)."""
     return _dev_mode
 
 
@@ -94,8 +105,9 @@ def dev_hud():
     the battle HUD is minimal (player label + emphasized Lives/Damage % corners). ON
     shows the complete dev HUD (jumps / Shield HP / FSM / Shield Attempting / Movement
     rows + FPS + raw input string + the input-history grid). The SOLE battle-HUD driver:
-    ON shows the whole dev HUD regardless of show_dev_info / show_movement_status /
-    show_input_history; OFF hides all of it."""
+    ON shows the whole dev HUD; OFF hides all of it. (It superseded the legacy per-item
+    flags show_dev_info / show_movement_status / show_input_history in #1319; those were
+    retired in #1328.)"""
     return _dev_hud
 
 
@@ -107,11 +119,12 @@ def show_status_timer_bars():
 # show_hitbox_overlay() retired #1324: the hit/hurtbox overlay (#219) is no longer a
 # persisted player toggle. Its render gate (render_hitbox_overlay) now reads
 # dev_mode() and dev_hud() — dev-gated + backtick-coupled, per B2 reconciliation (#1297).
-
-
-def show_input_history():
-    """Live toggle the in-battle input-history HUD strip honours (#21)."""
-    return bool(get("show_input_history"))
+#
+# show_input_history() / show_dev_info() / show_movement_status() retired #1328: dev_hud
+# became the sole battle-HUD driver in #1319, leaving these three per-item flags as no-ops
+# in battle. #1328 removes them (accessors + persisted keys + the two Options rows) — the
+# input-history grid, the FSM/Shield-Attempting jargon rows, and the Movement row all
+# render as part of the complete dev HUD, gated on dev_hud() alone (render/hud.py).
 
 
 def show_controls():
@@ -133,24 +146,11 @@ def esc_hold_to_navigate():
     return bool(get("esc_hold_to_navigate"))
 
 
-def show_dev_info():
-    """Live toggle the HUD's dev-jargon rows (FSM / Shield Attempting) honour
-    (#545). Default off — players never see it; a dev turns it on for debugging."""
-    return bool(get("show_dev_info"))
-
-
 def show_idle_breathing():
     """Live toggle the idle-stance breathing animation honours (#567). Default on —
     a subtle looping body-height oscillation in the idle state so cats read as alive;
     off renders the idle body byte-identical to a static frame."""
     return bool(get("show_idle_breathing"))
-
-
-def show_movement_status():
-    """Live toggle the HUD "Movement:" row honours (#977). Default off — a dev turns
-    it on to confirm the idle/walk/dash/run FSM transitions on screen; off renders the
-    battle byte-identical (goldens don't move)."""
-    return bool(get("show_movement_status"))
 
 
 def font_scale():

@@ -210,3 +210,25 @@ def test_backquote_toggles_dev_hud(monkeypatch):
     _inert(monkeypatch, app2)
     app2.step()
     assert runtime_settings.dev_hud() is False
+
+
+def test_f1_toggles_dev_mode_and_syncs_dev_hud(monkeypatch):
+    """#1328 (A1's 3rd door): F1 flips dev_mode live in-game AND syncs dev_hud to the new
+    dev_mode on BOTH edges — F1-on turns both ON (dev HUD + hit/hurtbox overlay render),
+    F1-off turns both OFF (the shipping default look). Able-to-fail: drop the K_F1 handler
+    and dev_mode stays at its default OFF; or drop the set_dev_hud sync and dev_hud does
+    not track the toggle."""
+    runtime_settings.set_dev_mode(False)
+    runtime_settings.set_dev_hud(False)
+    app = _app(_poll_once(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F1)))
+    _inert(monkeypatch, app)
+    app.step()
+    assert runtime_settings.dev_mode() is True  # first press enters dev mode
+    assert runtime_settings.dev_hud() is True  # ...and syncs the dev HUD on
+
+    # a second press leaves dev mode and drops the dev HUD back off (both edges)
+    app2 = _app(_poll_once(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_F1)))
+    _inert(monkeypatch, app2)
+    app2.step()
+    assert runtime_settings.dev_mode() is False
+    assert runtime_settings.dev_hud() is False

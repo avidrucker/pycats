@@ -11,6 +11,16 @@ the option space; this doc records the human designer's ruling on each atomic op
 (V1 / post-V1 / scrap / spike) plus the in-battle HUD redesign. Indexed in
 [`docs/decisions-ledger.md`](../decisions-ledger.md).
 
+> **Amendment (2026-08-08, #1328 grooming ruling — model A).** The original "F1 opens a
+> dedicated **debug screen** hosting granular toggles, incl. the B16 overlay per-side
+> split" shape was replaced with **model A: there is no debug screen — dev mode just
+> changes what renders, entered/left live by F1.** Concretely: **F1 toggles `dev_mode`
+> directly** (press on / press off), syncing `dev_hud` to the new state on both edges; the
+> granular debug toggles are **retired from Options entirely** (not re-homed to an F1
+> screen) — `dev_hud` (backtick) is the sole battle-HUD driver since #1319; and **B16
+> (overlay per-side split) is scrapped** (the overlay always draws both sides). The spots
+> below are annotated inline with **[Amended #1328]**.
+
 ## Structure (A1)
 
 One process-wide `runtime_settings.dev_mode` flag, entered through **three doors**,
@@ -18,7 +28,9 @@ all setting the same flag (one owner):
 
 1. Env var `PYCATS_DEV=1` (mirrors the existing `PYCATS_DEV_LOG` convention).
 2. `--dev` CLI arg on `pycats.game` `parse_args`.
-3. In-game **F1** key → a dedicated debug screen.
+3. In-game **F1** key → **toggles `dev_mode` live** (press on / press off). **[Amended
+   #1328]** — was "a dedicated debug screen"; model A has no screen, F1 just flips the flag
+   (and syncs `dev_hud` to it). Implemented in #1328 (`pycats/shell/app.py` KEYDOWN).
 
 Rejected: comma-list sub-toggles (`--dev=hitboxes,...`) and env-only. A later
 `--dev=<list>` value form is not foreclosed but is out of V1 scope.
@@ -27,8 +39,11 @@ Rejected: comma-list sub-toggles (`--dev=hitboxes,...`) and env-only. A later
 
 - **Backtick / tilde** — toggles the in-battle **dev HUD**. Available in the **shipping
   (non-dev) build for everyone**, matching "a single button press in regular gameplay."
-- **F1** — opens the dedicated **debug screen** (dev-mode), which hosts the granular
-  debug toggles.
+- **F1** — **toggles `dev_mode` live in-game** (press on / press off), syncing `dev_hud`
+  to the new state on both edges. **[Amended #1328]** — was "opens the dedicated debug
+  screen which hosts the granular debug toggles"; model A has no screen (see the
+  In-battle HUD redesign note below), and the granular toggles are retired from Options,
+  not re-homed. Implemented in #1328.
 - Free keys confirmed at ruling time: F1–F9, F12, backtick/tilde. Taken: F10/F11
   (fullscreen), `E`/`;` (cat-face cycle, #108), `P` (pause).
 
@@ -44,8 +59,13 @@ Rejected: comma-list sub-toggles (`--dev=hitboxes,...`) and env-only. A later
   last-hit damage/knockback readout (B13).
 - **Pause menu:** unchanged (resume / options / quit).
 - **Options menu:** stays player-facing; the granular debug toggles
-  (`hitbox_overlay`, `movement_status`, `input_history`) are **removed from it** and
-  live only in the F1 debug screen — one owner per toggle.
+  (`hitbox_overlay`, `movement_status`, `input_history`) are **removed from it**.
+  **[Amended #1328]** — the ruling originally re-homed them to the F1 debug screen; under
+  model A there is no such screen, so they are **retired entirely** (not moved). `dev_hud`
+  (backtick) has been the sole battle-HUD driver since #1319 — the input-history grid, the
+  FSM/Shield-Attempting jargon rows, and the Movement row all render as part of the dev
+  HUD. `hitbox_overlay` was retired in #1324; `movement_status`, `input_history`, and the
+  no-Options-row `show_dev_info` were retired in #1328.
 - **Persistence:** dev-HUD on/off state persists across pause (pausing does not reset it).
 
 ## Affordance dispositions
@@ -60,7 +80,7 @@ golden/CI/`runner` runs, with an able-to-fail no-drift test).
 | B1 | testcat/default selectable on char-select | **V1** | already filed as #1292 |
 | B2 | hitbox/hurtbox overlay: **on in dev mode, off otherwise**, **removed from Options menu**; backtick master-toggles it within dev mode | **V1** | see reconciliation below |
 | B10 | default-on `PYCATS_DEV_LOG` when dev mode is enabled | **V1** | S, reuses `dev_log.py` |
-| B16 | overlay per-side split (hitbox-only / hurtbox-only) in the F1 screen | **V1** | S; F1 screen already in V1 |
+| B16 | overlay per-side split (hitbox-only / hurtbox-only) in the F1 screen | ~~V1~~ **scrapped** | **[Amended #1328]** — depended on the F1 screen, which model A drops; the overlay always draws both sides (#1324). Won't-do. |
 | B8 | seed display/set in the live game | **V1** | M; seed plumbing is CLI-only today |
 | B12 | instant-respawn / stock refill | **V1** | **cheat** — explicit opt-in + no-drift test |
 | B13 | last-hit damage/knockback readout | **V1** | lives in the dev HUD |
@@ -77,7 +97,8 @@ golden/CI/`runner` runs, with an able-to-fail no-drift test).
 Because the dev HUD (backtick) is shipping-available but the overlay is dev-mode-gated:
 **outside dev mode**, backtick toggles only the text dev HUD (the overlay never shows);
 **inside dev mode**, the overlay defaults on and backtick's master switch flips both the
-text HUD and the overlay together. Granular per-side control lives in the F1 screen (B16).
+text HUD and the overlay together. ~~Granular per-side control lives in the F1 screen
+(B16).~~ **[Amended #1328]** — B16 is scrapped; the overlay always draws both sides.
 
 ## Constraints carried into V1
 
@@ -99,7 +120,10 @@ rest depend on.
 2. **char-select: testcat/default under dev mode** — #1292 (re-based onto the gate).
 3. **HUD redesign** — minimal default HUD + backtick dev-HUD toggle + dev-HUD contents.
 4. **hitbox/hurtbox overlay dev-gating** — on in dev, off otherwise, removed from Options.
-5. **F1 debug screen** — hosts granular toggles incl. overlay per-side split (B16).
+5. **F1 in-game dev-mode toggle** — F1 flips `dev_mode` live (+ syncs `dev_hud`) and the
+   superseded `movement_status` / `input_history` Options toggles are retired.
+   **[Amended #1328]** — was "F1 debug screen hosting granular toggles incl. B16"; model A
+   drops the screen and B16. Filed + landed as #1328.
 6. **default-on `PYCATS_DEV_LOG`** under dev mode (B10).
 7. **seed display/set** in the live game (B8).
 8. **instant-respawn** cheat (B12) — explicit opt-in + no-drift test.
@@ -111,7 +135,8 @@ B4 (velocity+timers), B5 (frame-step), B6 (live-speed toggle), B9 (event-log con
 
 ## Scrapped (won't-do)
 
-B11 (god-mode), B15 (spawn tweaks).
+B11 (god-mode), B15 (spawn tweaks), B16 (overlay per-side split — **re-dispositioned V1 →
+scrapped in #1328**; depended on the dropped F1 screen, and the overlay draws both sides).
 
 ## Spike (disposition pending result)
 

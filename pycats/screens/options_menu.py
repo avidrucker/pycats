@@ -80,8 +80,9 @@ ROW_DESCRIPTIONS = {
     "status_bars": "Show the HUD stun / shield timer bars above each fighter.",
     # hitbox_overlay row removed #1324 — the overlay is now dev-gated + backtick-coupled,
     # not a player toggle (render_hitbox_overlay reads dev_mode() and dev_hud()).
-    "movement_status": "Show each fighter's movement state (idle / walk / dash / run) above it.",
-    "input_history": "Show your recent inputs in Project M notation, in-battle.",
+    # movement_status + input_history rows removed #1328 — both were no-ops in battle since
+    # #1319 made dev_hud the sole battle-HUD driver; the Movement row + input-history grid
+    # now render as part of the dev HUD (backtick), not as Options toggles.
     "controls": "Show the on-screen control hints during battle only.",
     "screen_hints": "Show the key hints on the menu / select / win screens (not battle).",
     "font_scale": "Resize all menu / HUD text: Small / Standard / Large.",
@@ -106,8 +107,6 @@ class OptionsMenu:
         # Row keys in display order. "back" is the explicit exit row.
         self.rows = [
             "status_bars",
-            "movement_status",
-            "input_history",
             "controls",
             "screen_hints",
             "font_scale",
@@ -300,14 +299,6 @@ class OptionsMenu:
             new = not runtime_settings.show_status_timer_bars()
             runtime_settings.set("show_status_timer_bars", new)
             settings.save({"show_status_timer_bars": new})
-        elif row == "movement_status":
-            new = not runtime_settings.show_movement_status()
-            runtime_settings.set("show_movement_status", new)
-            settings.save({"show_movement_status": new})
-        elif row == "input_history":
-            new = not runtime_settings.show_input_history()
-            runtime_settings.set("show_input_history", new)
-            settings.save({"show_input_history": new})
         elif row == "controls":
             new = not runtime_settings.show_controls()
             runtime_settings.set("show_controls", new)
@@ -350,10 +341,6 @@ class OptionsMenu:
     def _row_label(self, row):
         if row == "status_bars":
             return "Status Bars: " + ("ON" if runtime_settings.show_status_timer_bars() else "OFF")
-        if row == "movement_status":
-            return "Movement Status: " + ("ON" if runtime_settings.show_movement_status() else "OFF")
-        if row == "input_history":
-            return "Input History: " + ("ON" if runtime_settings.show_input_history() else "OFF")
         if row == "controls":
             return "Controls: " + ("ON" if runtime_settings.show_controls() else "OFF")
         if row == "screen_hints":
