@@ -909,7 +909,7 @@ review-gated merge flow this repo doesn't have; #600.)
 - **No code markers** — pycats does not use `@todo`/`@inprogress #N` markers, so
   there is nothing to delete in the close commit; just include `Closes #N`.
 - **The errors store is live** (`storage.errors.enabled = true`) — `pmtools error
-  log '<json>'` records to `~/.pmtools/pycats/pmtools.db`. The step-6 self-audit
+  log '<json>'` records to `~/.pmtools/pycats/pmtools.db`. The step-7 self-audit
   logs to it, so the `error self-audit: …` line is always available to state.
 - **Fallback only if `pmtools` is unavailable:** `gh issue close <N>` plus a
   closing comment. Prefer the tool whenever it is installed.
@@ -927,9 +927,9 @@ review-gated merge flow this repo doesn't have; #600.)
   `CLOSE OK` banner, not the code — pmtools#8), and your shell is left in a deleted
   directory (`getcwd: cannot access parent directories`, with a stale
   `wt-<fruit>-<project>-N` in your prompt) until you `cd /abs/path/to/pycats`. From-main (pmtools#104) avoids
-  all of this — which is why it is the default in step 5.
+  all of this — which is why it is the default in step 6.
 - **Post the closing comment from `<main>` (where you already are)**, and include the
-  step-6 `error self-audit: …` line:
+  step-7 `error self-audit: …` line:
 
       gh issue comment <N> --body "Closed in <sha>. <summary>
       error self-audit: no loggable errors this session"
