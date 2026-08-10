@@ -103,8 +103,7 @@ def test_hold_across_a_dwell_still_quits(monkeypatch):
 def test_non_interactive_never_quits(monkeypatch):
     # Real _esc_held reads pygame.key.get_pressed(); headless it is all-released, so a
     # long non-interactive run never advances the timer -> byte-identical to today.
-    monkeypatch.setattr(pr, "render_battle", lambda *a, **k: None)
-    monkeypatch.setattr(pr, "render_attacks", lambda *a, **k: None)
+    monkeypatch.setattr(pr, "render_world", lambda *a, **k: None)  # #1339 D1 seam
     monkeypatch.setattr(pr, "draw_captions", lambda *a, **k: None)
     monkeypatch.setattr(pr.pygame.display, "flip", lambda: None)
     p = _presenter(hold_frames=4)  # uses the real _esc_held

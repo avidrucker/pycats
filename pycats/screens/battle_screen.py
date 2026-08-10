@@ -24,25 +24,27 @@ from ..config import (
     PLAYER2_START_Y,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    WHITE,
 )
 from ..core.physics import resolve_player_push
 from ..entities import Player
 from ..entities.ledge import ledges_from_platforms
 from ..entities.respawn_platform import active_platforms
 from ..loadout import Selection, Skin, assign_distinct_skins, build_fighter, character_for, starting_lives
+from ..render.camera import Camera  # #1339 follow+zoom battle camera (ADR-0023)
 from ..render_battle import (
     draw_controls,
     draw_hud,
     draw_input_history,
     draw_pause_hint,
-    render_attacks,
-    render_battle,
     render_hitbox_overlay,
+    render_world,
 )
 from ..shell.input_history import InputHistory
 from ..storage import runtime_settings
 from ..systems import hit_resolution
 from ..systems.win_condition import winner_loser
+from ..ui import text_utils  # #1339 camera dev zoom/center readout
 
 
 class BattleScreen:
@@ -65,6 +67,11 @@ class BattleScreen:
         # on the press-edge; does not participate in the sim.
         self.p1_history = InputHistory()
         self.p2_history = InputHistory()
+        # #1339 follow+zoom battle camera (ADR-0023). Default OFF -> render is
+        # byte-for-byte today's fixed view; App's K key flips camera_on (and the
+        # interim wide-blast scaffold, fighter.EXPERIMENTAL_WIDE_BLAST) together.
+        self.camera = Camera()
+        self.camera_on = False
 
     def create_from_selection(self, p1_char, p2_char, p1_palette=None, p2_palette=None, p1_cards=(), p2_cards=()):
         """Build the two fighters from the selected ARCHETYPES (#268, #127 Part 1):
@@ -184,8 +191,9 @@ class BattleScreen:
         """Fill + fighters + attacks + HUD/controls — the shared battle composite.
         SAME calls/order as game.py's old inline playing block (#205, slice 2b)."""
         surface.fill(BG_COLOR)
-        render_battle(surface, self.players, active_platforms(self.players, platforms))  # #1334: draw revival platforms
-        render_attacks(surface, self.attacks)
+        # #1334 revival platforms + #1339 D1 seam: draw the active platform set through
+        # the single offset-aware world-draw entry.
+        render_world(surface, self.players, active_platforms(self.players, platforms), self.attacks)
         # Hit/hurtbox debug overlay (#219) — above fighters/attacks, gated on the
         # live toggle (default OFF, so this is a no-op until a dev flips it on).
         render_hitbox_overlay(surface, self.players, self.attacks)
@@ -201,12 +209,46 @@ class BattleScreen:
                 draw_input_history(surface, self.p1_history, "P1")
                 draw_input_history(surface, self.p2_history, "P2", topright=True)
 
+    def _draw_battle_camera(self, surface, platforms):
+        """#1339: the camera-on composite. The WORLD (platforms/fighters/attacks) is
+        drawn through the follow+zoom camera; the HUD + input-history are drawn in
+        SCREEN space afterward so they are not warped by the camera. The hit/hurtbox
+        overlay is skipped here (it draws in world==screen coords and would be
+        mispositioned under the transform; it is a dev-only default-OFF surface)."""
+        # In --dev mode the camera draws the CamLimit/Dead zone rects on the background
+        # AND relaxes its clamp to the Dead box, so all three zones show.
+        self.camera.dev_overlay = runtime_settings.dev_mode()
+        self.camera.update(self.players)
+        # #1334: include revival platforms in the camera-drawn world.
+        self.camera.render_world(surface, self.players, active_platforms(self.players, platforms), self.attacks)
+        if self.player1 and self.player2:
+            draw_hud(surface, self.player1, "P1")
+            draw_hud(surface, self.player2, "P2", topright=True)
+            if runtime_settings.dev_hud():
+                draw_input_history(surface, self.p1_history, "P1")
+                draw_input_history(surface, self.p2_history, "P2", topright=True)
+        # Dev readout so the human can eyeball good min/max zoom + the pan target:
+        # current zoom (float + %) and camera center (world px). Screen-space,
+        # top-center, so it clears the P1/P2 HUD corners.
+        cam = self.camera
+        text_utils.render_text(
+            surface,
+            f"cam zoom {cam.scale:.3f}x ({cam.scale * 100:.0f}%)   center ({cam.cx:.0f}, {cam.cy:.0f})",
+            (SCREEN_WIDTH // 2, 14),
+            18,
+            WHITE,
+            center=True,
+        )
+
     def render(self, surface, platforms):
         """Render one live battle frame onto `surface` (the playing branch's draw
         block) + the static 'P: Pause Game' battle-HUD hint (#279). The shell chrome
         (FPS/fullscreen/debug text) reads loop globals, not battle state, so it stays
         out of here — game.py calls render_battle.draw_shell_chrome for that."""
-        self._draw_battle(surface, platforms)
+        if self.camera_on:
+            self._draw_battle_camera(surface, platforms)
+        else:
+            self._draw_battle(surface, platforms)
         draw_pause_hint(surface)
 
     def render_paused(self, surface, platforms, pause_menu):
@@ -215,8 +257,8 @@ class BattleScreen:
         Mirrors game.py's pause branch."""
         background = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         background.fill(BG_COLOR)
-        render_battle(background, self.players, active_platforms(self.players, platforms))  # #1334
-        render_attacks(background, self.attacks)
+        # #1334 revival platforms + #1339 D1 seam.
+        render_world(background, self.players, active_platforms(self.players, platforms), self.attacks)
         render_hitbox_overlay(background, self.players, self.attacks)  # #219
         if self.player1 and self.player2:
             draw_hud(background, self.player1, "P1")

@@ -74,6 +74,18 @@ from ..core.geometry import FrozenRect
 # collide or render on-screen during the respawn wait (#425: named sentinel).
 _KO_OFFSCREEN_POS = (-1000, -1000)
 
+# #1339 INTERIM world-bound scaffold (see _outside_blast_zone). A module flag flipped
+# by App alongside the follow+zoom camera toggle (K); when True the KO paddings widen
+# to the big sourced PM/Melee FD distances (~848 side / 745 top / 486 bottom, #789's
+# table at PX_PER_UNIT=5.4) so the camera has room to follow a launched fighter.
+# Default False = today's screen-edge KO (byte-identical). This is a placeholder, NOT
+# the #789 value-model decision: the KO-in-world-coords decouple is D5 (gated on the
+# deferred #789), which replaces this flag. See the #1339 EPIC (#1340) sequencing.
+EXPERIMENTAL_WIDE_BLAST = False
+_WIDE_BLAST_SIDE = 848
+_WIDE_BLAST_TOP = 745
+_WIDE_BLAST_BOTTOM = 486
+
 
 class Fighter:
     def __init__(self, x, y, facing_right, fighter_data):
@@ -538,11 +550,23 @@ class Fighter:
         # game-feel experiment — see config.py). The TOP uses the raised
         # BLAST_PADDING_TOP (150px above the screen, #823); the bottom stays on
         # BLAST_PADDING (50px below).
+        #
+        # #1339 INTERIM world-bound scaffold: when the follow+zoom camera is on
+        # (EXPERIMENTAL_WIDE_BLAST, flipped by App with the K toggle), swap the 3 KO
+        # paddings for the big sourced PM/Melee FD distances (~848 side / 745 top /
+        # 486 bottom, from #789's table at PX_PER_UNIT=5.4) so a launched fighter has
+        # room for the camera to follow it. Screen-relative model kept. This does NOT
+        # touch #789's parked value model — it is a hardcoded experiment scaffold,
+        # replaced by the KO-in-world-coords decouple (D5, gated on #789).
+        if EXPERIMENTAL_WIDE_BLAST:
+            side, top, bottom = _WIDE_BLAST_SIDE, _WIDE_BLAST_TOP, _WIDE_BLAST_BOTTOM
+        else:
+            side, top, bottom = BLAST_PADDING_X, BLAST_PADDING_TOP, BLAST_PADDING
         return (
-            self.rect.right < -BLAST_PADDING_X
-            or self.rect.left > SCREEN_WIDTH + BLAST_PADDING_X
-            or self.rect.bottom < -BLAST_PADDING_TOP
-            or self.rect.top > SCREEN_HEIGHT + BLAST_PADDING
+            self.rect.right < -side
+            or self.rect.left > SCREEN_WIDTH + side
+            or self.rect.bottom < -top
+            or self.rect.top > SCREEN_HEIGHT + bottom
         )
 
     def _ko(self):

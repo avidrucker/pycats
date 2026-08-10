@@ -498,7 +498,7 @@ _tail_seg_cache: dict = {}
 _tail_outline_cache: dict = {}
 
 
-def render_tail(surface, tail, color, outline_color=FIGHTER_OUTLINE_COLOR):
+def render_tail(surface, tail, color, outline_color=FIGHTER_OUTLINE_COLOR, offset=(0, 0)):
     """Draw a fighter's Verlet `tail` as cached, rotated, tapering rects in `color`
     (#330/H-b — was Tail.draw; the entity holds only sim data now). `color` is the
     already-resolved tint the caller computes (#265); `outline_color` is the slot
@@ -508,6 +508,7 @@ def render_tail(surface, tail, color, outline_color=FIGHTER_OUTLINE_COLOR):
     so the bodies cover the interior stamps and only the tail's outer silhouette
     ring remains — matching the body outline and keeping a low-luminance tail
     separable from the stage."""
+    ox, oy = offset  # #1339 follow+zoom camera world-draw shift; (0, 0) = byte-identical
     outline_color = tuple(outline_color)
     cache = _tail_seg_cache
     color = tuple(color)
@@ -538,7 +539,7 @@ def render_tail(surface, tail, color, outline_color=FIGHTER_OUTLINE_COLOR):
         if halo is None:
             halo = _dilated_silhouette(surf, outline_color, ow, pad=ow)
             _tail_outline_cache[okey] = halo
-        blit(halo, (rect.x - ow, rect.y - ow))
+        blit(halo, (rect.x - ow + ox, rect.y - ow + oy))
     # Pass 2: segment bodies on top, covering the interior stamps.
     for surf, rect, width, deg in placed:
-        blit(surf, rect)
+        blit(surf, (rect.x + ox, rect.y + oy))

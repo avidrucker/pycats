@@ -89,8 +89,7 @@ def test_video_presenter_freezes_on_a_dwelling_caption(monkeypatch):
     pg.init()
     import pycats.sim.presenters as pr
 
-    monkeypatch.setattr(pr, "render_battle", lambda *a, **k: None)
-    monkeypatch.setattr(pr, "render_attacks", lambda *a, **k: None)
+    monkeypatch.setattr(pr, "render_world", lambda *a, **k: None)  # #1339 D1 seam
     monkeypatch.setattr(pr, "draw_captions", lambda *a, **k: None)
 
     class _FW:

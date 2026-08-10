@@ -6,7 +6,7 @@ from __future__ import annotations
 import pygame
 
 from ..config import BG_COLOR, FPS, HUD_PADDING, SCREEN_HEIGHT, SCREEN_WIDTH, WHITE, tick_fps
-from ..render_battle import draw_input_history, render_attacks, render_battle
+from ..render_battle import draw_input_history, render_world
 from ..shell.esc_hold import EscHoldTimer, draw_esc_hold_arc
 from ..shell.input_history import InputHistory
 from ..ui import text_utils
@@ -225,8 +225,7 @@ class LivePresenter(_InputStripMixin):
                 skip = "skip"  # #508: fast-forward gameplay to the next caption section
         self._service_esc_hold()  # #515: hold Esc ~2s to exit the run
         self.screen.fill(BG_COLOR)
-        render_battle(self.screen, players, platforms)
-        render_attacks(self.screen, attacks)
+        render_world(self.screen, players, platforms, attacks)  # #1339 D1 seam
         if self.overlay:
             self._draw_overlay(players)
         self._record_input_strip(players, inputs)  # #434
@@ -263,8 +262,7 @@ class VideoPresenter(_InputStripMixin):
 
     def show(self, platforms, players, attacks, frame, inputs=None):
         self._surface.fill(BG_COLOR)
-        render_battle(self._surface, players, platforms)
-        render_attacks(self._surface, attacks)
+        render_world(self._surface, players, platforms, attacks)  # #1339 D1 seam
         self._record_input_strip(players, inputs)  # #434
         self._draw_input_strip(self._surface)
         draw_captions(self._surface, self.captions, frame)
@@ -339,8 +337,7 @@ class ScreenshotPresenter(_InputStripMixin):
         if frame not in self._frames:
             return
         self._surface.fill(BG_COLOR)
-        render_battle(self._surface, players, platforms)
-        render_attacks(self._surface, attacks)
+        render_world(self._surface, players, platforms, attacks)  # #1339 D1 seam
         if self.overlay:
             self._draw_overlay(players)
         self._draw_input_strip(self._surface)  # #434

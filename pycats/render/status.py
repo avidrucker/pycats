@@ -45,18 +45,21 @@ def _star_points(cx, cy, outer, inner, points, rot):
     return pts
 
 
-def draw_dizzy_stars(surface, p):
+def draw_dizzy_stars(surface, p, offset=(0, 0)):
     """Orbiting 'dizzy' stars above a stunned fighter's head (#12).
 
     Drawn while ``stun_timer > 0``. The orbit phase is derived from stun_timer
     itself (which ticks down one per frame), so the stars advance one step each
     frame with no external clock — and freeze deterministically when paused.
     The orbit is flattened into an ellipse so it reads as circling the head.
+
+    `offset` (#1339 follow+zoom camera) shifts the draw; (0, 0) = byte-identical.
     """
     if p.fighter.stun_timer <= 0:
         return
-    cx = p.rect.centerx
-    cy = p.rect.top - EAR_HEIGHT - DIZZY_ORBIT_LIFT
+    ox, oy = offset
+    cx = p.rect.centerx + ox
+    cy = p.rect.top - EAR_HEIGHT - DIZZY_ORBIT_LIFT + oy
     phase = p.fighter.stun_timer * DIZZY_SPIN_SPEED
     for i in range(DIZZY_STAR_COUNT):
         ang = phase + i * (2 * math.pi / DIZZY_STAR_COUNT)
@@ -104,15 +107,18 @@ GRABS_LEFT_DOT_LIFT = 12  # dot-row centre above the ear tops (below the bar sta
 GRABS_LEFT_LABEL = "grabs left"
 
 
-def draw_timer_bars(surface, p, specs):
+def draw_timer_bars(surface, p, specs, offset=(0, 0)):
     """Stack `specs` above p's dizzy-star halo, specs[0] nearest the head.
 
     Each bar: a background rect + a coloured foreground rect (width = clamped
     `ratio`), an "Ns"/"%"-style `readout` above it, and — when present — a short
     `label` right-aligned to the bar's left. A single `label=None` spec draws at
-    the exact #111 position (the byte-identity guard for shield/stun)."""
-    cx = p.rect.centerx
-    star_cy = p.rect.top - EAR_HEIGHT - DIZZY_ORBIT_LIFT
+    the exact #111 position (the byte-identity guard for shield/stun).
+
+    `offset` (#1339 follow+zoom camera) shifts the draw; (0, 0) = byte-identical."""
+    ox, oy = offset
+    cx = p.rect.centerx + ox
+    star_cy = p.rect.top - EAR_HEIGHT - DIZZY_ORBIT_LIFT + oy
     base_bottom = int(star_cy - _STAR_HALO - STATUS_BAR_GAP_ABOVE_STARS)
     bar_left = cx - STATUS_BAR_WIDTH // 2
 
@@ -151,17 +157,20 @@ def draw_timer_bars(surface, p, specs):
             )
 
 
-def draw_grabs_left_dots(surface, p, n):
+def draw_grabs_left_dots(surface, p, n, offset=(0, 0)):
     """Draw `n` grabs-left dots + the "grabs left" label above p's head (#657).
 
     A row of `n` filled circles centred over the head, with the label right-aligned
     just left of the row (matching the timer-bar label convention). Sits below the
     timer bars and is a separate pass, so it composes with them without suppression
-    (the #720 stack). No-op when `n <= 0`."""
+    (the #720 stack). No-op when `n <= 0`.
+
+    `offset` (#1339 follow+zoom camera) shifts the draw; (0, 0) = byte-identical."""
     if n <= 0:
         return
-    cx = p.rect.centerx
-    row_y = p.rect.top - EAR_HEIGHT - GRABS_LEFT_DOT_LIFT
+    ox, oy = offset
+    cx = p.rect.centerx + ox
+    row_y = p.rect.top - EAR_HEIGHT - GRABS_LEFT_DOT_LIFT + oy
     x0 = cx - ((n - 1) * GRABS_LEFT_DOT_SPACING) // 2
     for i in range(n):
         pygame.draw.circle(

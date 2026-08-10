@@ -101,7 +101,7 @@ def _presenter(captions=()):
 
 
 def _quiet(monkeypatch):
-    for name in ("render_battle", "render_attacks", "draw_captions", "draw_esc_hold_arc"):
+    for name in ("render_world", "draw_captions", "draw_esc_hold_arc"):  # #1339 D1 seam
         monkeypatch.setattr(pr, name, lambda *a, **k: None)
     monkeypatch.setattr(pr.pygame.display, "flip", lambda: None)
 
